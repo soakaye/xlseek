@@ -77,3 +77,12 @@ auto_commit:
   after_taskstoissues:
     enabled: false
     message: "[Spec Kit] Sync tasks to issues"
+  after_bug_assess:
+    enabled: true
+    message: "[Spec Kit] Assess bug"
+  after_bug_fix:
+    enabled: true
+    message: "[Spec Kit] Fix bug: window drag issue"
+  after_bug_test:
+    enabled: true
+    message: "[Spec Kit] Verify bug fix: window drag issue"
