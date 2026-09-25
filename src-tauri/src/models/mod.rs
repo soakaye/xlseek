@@ -124,3 +124,14 @@ pub struct ExportRequest {
     pub output_path: String,
     pub items: Vec<SearchMatch>,
 }
+
+/// サポートアプリケーション情報
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SupportedApp {
+    pub id: String,
+    pub name: String,
+    pub executable_path: String,
+    pub is_default: bool,
+    pub icon_hint: Option<String>,
+}
+

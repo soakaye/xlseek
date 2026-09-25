@@ -22,6 +22,10 @@ pub fn run() {
             commands::open_in_excel,
             commands::open_in_folder,
             commands::export_results,
+            commands::resolve_dropped_path,
+            commands::get_supported_apps,
+            commands::launch_associated_app,
+            commands::show_open_with_dialog,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

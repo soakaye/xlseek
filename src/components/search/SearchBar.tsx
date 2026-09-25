@@ -1,6 +1,8 @@
-import React, { KeyboardEvent } from "react";
-import { Search, X, Folder, FolderOpen, SlidersHorizontal, Square } from "lucide-react";
+import React, { KeyboardEvent, useState, useRef, useEffect } from "react";
+import { Search, X, Folder, FolderOpen, SlidersHorizontal, Square, ArrowDownToLine } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
+import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { SearchQuery } from "../../types/search";
 
 interface SearchBarProps {
@@ -18,6 +20,111 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onCancel,
   isScanning,
 }) => {
+  const [isDragOver, setIsDragOver] = useState(false);
+  const folderInputRef = useRef<HTMLDivElement>(null);
+
+  // Tauri ネイティブのドラッグ＆ドロップイベントの購読
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+
+    const setupDragDrop = async () => {
+      try {
+        const webview = getCurrentWebview();
+        unlisten = await webview.onDragDropEvent(async (event) => {
+          const payload = event.payload;
+
+          if (payload.type === "over" || payload.type === "enter") {
+            if (folderInputRef.current) {
+              const rect = folderInputRef.current.getBoundingClientRect();
+              const scale = window.devicePixelRatio || 1;
+              const logicalX = payload.position.x / scale;
+              const logicalY = payload.position.y / scale;
+
+              const isInside =
+                logicalX >= rect.left &&
+                logicalX <= rect.right &&
+                logicalY >= rect.top &&
+                logicalY <= rect.bottom;
+
+              setIsDragOver(isInside);
+            }
+          } else if (payload.type === "drop") {
+            if (folderInputRef.current) {
+              const rect = folderInputRef.current.getBoundingClientRect();
+              const scale = window.devicePixelRatio || 1;
+              const logicalX = payload.position.x / scale;
+              const logicalY = payload.position.y / scale;
+
+              const isInside =
+                logicalX >= rect.left &&
+                logicalX <= rect.right &&
+                logicalY >= rect.top &&
+                logicalY <= rect.bottom;
+
+              if (isInside && payload.paths && payload.paths.length > 0) {
+                try {
+                  const resolvedPath = await invoke<string>("resolve_dropped_path", {
+                    path: payload.paths[0],
+                  });
+                  onChangeQuery({ target_dir: resolvedPath });
+                } catch (err) {
+                  console.error("ドロップパス解決エラー:", err);
+                }
+              }
+            }
+            setIsDragOver(false);
+          } else if (payload.type === "leave") {
+            setIsDragOver(false);
+          }
+        });
+      } catch (err) {
+        console.warn("Tauri drag-drop listener 初期化エラー:", err);
+      }
+    };
+
+    setupDragDrop();
+
+    return () => {
+      if (unlisten) {
+        unlisten();
+      }
+    };
+  }, [onChangeQuery]);
+
+  // HTML5 標準のドラッグ＆ドロップ（ブラウザ環境向けフォールバック）
+  const handleHtmlDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleHtmlDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleHtmlDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      const file = e.dataTransfer.files[0];
+      const filePath = (file as any).path;
+      if (filePath) {
+        try {
+          const resolvedPath = await invoke<string>("resolve_dropped_path", {
+            path: filePath,
+          });
+          onChangeQuery({ target_dir: resolvedPath });
+        } catch (err) {
+          console.error("ドロップパス解決エラー:", err);
+        }
+      }
+    }
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && !isScanning) {
       onSearch();
@@ -74,23 +181,48 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             </div>
           </div>
 
-          {/* フォルダパス選択 */}
-          <div className="lg:col-span-4 relative">
+          {/* フォルダパス選択 & DnD ドロップゾーン */}
+          <div
+            ref={folderInputRef}
+            onDragOver={handleHtmlDragOver}
+            onDragEnter={handleHtmlDragOver}
+            onDragLeave={handleHtmlDragLeave}
+            onDrop={handleHtmlDrop}
+            className={`lg:col-span-4 relative rounded-lg transition-all ${
+              isDragOver
+                ? "ring-2 ring-emerald-500 bg-emerald-950/40 shadow-lg shadow-emerald-950/50"
+                : ""
+            }`}
+          >
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
-              <Folder className="w-4 h-4" />
+              {isDragOver ? (
+                <ArrowDownToLine className="w-4 h-4 text-emerald-400 animate-bounce" />
+              ) : (
+                <Folder className="w-4 h-4" />
+              )}
             </div>
             <input
               type="text"
               value={query.target_dir}
               onChange={(e) => onChangeQuery({ target_dir: e.target.value })}
-              placeholder="フォルダを選択してください..."
-              className="w-full pl-9 pr-10 py-2 bg-[#202024] border border-zinc-700 rounded-lg text-sm text-zinc-300 placeholder-zinc-500 focus:outline-none focus:border-excel-light font-mono text-xs transition"
+              placeholder={isDragOver ? "ここにフォルダをドロップ..." : "フォルダを選択またはドラッグ＆ドロップ..."}
+              className={`w-full pl-9 pr-10 py-2 border rounded-lg text-sm placeholder-zinc-500 focus:outline-none font-mono text-xs transition ${
+                isDragOver
+                  ? "bg-emerald-950/30 border-emerald-500 text-emerald-200 border-dashed"
+                  : "bg-[#202024] border-zinc-700 text-zinc-300 focus:border-excel-light"
+              }`}
             />
+            {isDragOver && (
+              <div className="absolute inset-0 flex items-center justify-center bg-emerald-900/80 border-2 border-dashed border-emerald-400 rounded-lg pointer-events-none text-xs font-medium text-emerald-100 gap-2 z-10 backdrop-blur-[1px]">
+                <ArrowDownToLine className="w-4 h-4 text-emerald-300 animate-bounce" />
+                <span>フォルダをここにドロップ</span>
+              </div>
+            )}
             <button
               type="button"
               onClick={handleBrowseFolder}
               title="フォルダを選択"
-              className="absolute inset-y-1 right-1 px-2.5 flex items-center justify-center bg-zinc-700 hover:bg-zinc-600 rounded text-zinc-200 transition"
+              className="absolute inset-y-1 right-1 px-2.5 flex items-center justify-center bg-zinc-700 hover:bg-zinc-600 rounded text-zinc-200 transition z-0"
             >
               <FolderOpen className="w-4 h-4" />
             </button>
