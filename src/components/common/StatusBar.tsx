@@ -8,6 +8,7 @@
  *
  * ## 変更履歴
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化（COMMANDS.EXPORT_RESULTS）およびJSDoc付与。
+ * - v1.1.0 (2026-09-26, AI Agent): デザイン改善フィードバック対応。プログレスバーをメッセージ前（固定幅 w-44）へ配置変更し、ファイル読み込み前のフォルダスキャン中表示（対象フォルダ名表示）を導入。
  */
 
 import React from "react";
@@ -106,6 +107,9 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     const elapsedSec = (progress.elapsed_ms / 1000).toFixed(2);
     switch (progress.state) {
       case "Scanning":
+        if (progress.scanned_files === 0) {
+          return `フォルダスキャン中: ${progress.current_file || "対象フォルダを探索しています..."}`;
+        }
         return `スキャン中: ${progress.scanned_files}/${progress.total_files} ファイル (${progress.matches_found} 件一致, ${elapsedSec}s) - ${progress.current_file}`;
       case "Completed":
         return `完了: ${progress.matches_found} 件一致 (${progress.scanned_files} ファイル, ${elapsedSec}s)`;
@@ -121,41 +125,56 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   return (
     <footer className="h-10 bg-[#18181b] border-t border-zinc-800 px-4 flex items-center justify-between text-xs text-zinc-400 flex-shrink-0 select-none">
       {/* 検索メトリクス & 進捗 */}
-      <div className="flex items-center gap-4 min-w-0 flex-1">
-        <div className="flex items-center gap-2 truncate">
-          <span
-            className={`w-2 h-2 rounded-full flex-shrink-0 ${
-              isScanning
-                ? "bg-amber-400 animate-pulse"
-                : progress?.state === "Completed"
-                ? "bg-emerald-500"
-                : progress?.state === "Cancelled"
-                ? "bg-red-400"
-                : "bg-zinc-600"
-            }`}
-          />
-          <span
-            className="text-zinc-200 font-medium truncate"
-            title={statusText}
-          >
-            {statusText}
+      <div className="flex items-center gap-3 min-w-0 flex-1">
+        {/* 状態インジケーター */}
+        <span
+          className={`w-2 h-2 rounded-full flex-shrink-0 ${
+            isScanning
+              ? "bg-amber-400 animate-pulse"
+              : progress?.state === "Completed"
+              ? "bg-emerald-500"
+              : progress?.state === "Cancelled"
+              ? "bg-red-400"
+              : "bg-zinc-600"
+          }`}
+        />
+
+        {/* プログレスバー (メッセージの前に固定幅 w-44 で配置: 可変テキストによる位置ズレを防止) */}
+        <div className="flex items-center gap-2 flex-shrink-0 w-44">
+          <div className="w-24 bg-zinc-800 h-1.5 rounded-full overflow-hidden border border-zinc-700/50 flex-shrink-0">
+            <div
+              className={`h-full rounded-full transition-all duration-300 ${
+                isScanning && progress?.scanned_files === 0
+                  ? "bg-amber-500 animate-pulse w-1/4"
+                  : "bg-excel"
+              }`}
+              style={{
+                width:
+                  isScanning && progress?.scanned_files === 0
+                    ? undefined
+                    : `${percent}%`,
+              }}
+            />
+          </div>
+          <span className="text-[11px] text-zinc-400 font-mono flex-shrink-0">
+            {isScanning && progress?.scanned_files === 0
+              ? "探索中"
+              : progress
+              ? `${percent}% (${progress.scanned_files}/${progress.total_files})`
+              : "待機中"}
           </span>
         </div>
 
-        {/* プログレスバー */}
-        {(isScanning || progress?.state === "Completed") && (
-          <div className="hidden md:flex items-center gap-2 flex-shrink-0">
-            <div className="w-28 bg-zinc-800 h-1.5 rounded-full overflow-hidden border border-zinc-700/50">
-              <div
-                className="bg-excel h-full rounded-full transition-all duration-300"
-                style={{ width: `${percent}%` }}
-              />
-            </div>
-            <span className="text-[11px] text-zinc-400 font-mono">
-              {percent}% ({progress?.scanned_files}/{progress?.total_files})
-            </span>
-          </div>
-        )}
+        {/* 縦仕切り線 */}
+        <div className="h-3.5 w-px bg-zinc-800 flex-shrink-0" />
+
+        {/* ステータステキスト (可変長・右側へ伸長・truncate) */}
+        <span
+          className="text-zinc-200 font-medium truncate flex-1"
+          title={statusText}
+        >
+          {statusText}
+        </span>
       </div>
 
       {/* 右側: エンジンバッジ & エクスポートボタン群 */}

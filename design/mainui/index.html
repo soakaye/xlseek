@@ -1,12 +1,43 @@
 <!DOCTYPE html>
 <html lang="ja" class="dark">
 <head>
+  <!--
+    /**
+     * @fileoverview Excel Grep 最新画面構成プロトタイプ (design/mainui/index.html)
+     *
+     * ## 処理内容
+     * Excel Grep アプリケーションの最新UI画面構成（Tauri v2 + React + Tailwind CSS）を完全再現した
+     * スタンドアローンHTML/CSS/JSプロトタイプ。
+     * - OSネイティブウィンドウ装飾への準拠（独自カスタムタイトルバーの廃止）
+     * - フォルダドラッグ＆ドロップ対応検索バー
+     * - 仮想スクロール風結果テーブル（ソート・絞り込み・キーボード移動）
+     * - アプリ連携スプリットボタン（OS既定起動、サポートアプリドロップダウン、関連付けダイアログ）
+     * - 独立パス表示行とクリップボードコピー
+     * - Excel風数式バー、周辺セルグリッド、ワークシート切替タブ、詳細メタ情報カード
+     * - ステータスバー（進捗インジケーター、Calamineエンジン情報、CSV/Excel出力）
+     * - トースト通知
+     * 憲章原則I（自然かつ正確な日本語）、原則III（網羅的なヘッダコメント）に準拠。
+     *
+     * ## 構成要素
+     * - Tailwind CSS CDN: スタイリングエンジン
+     * - Lucide Icons CDN: アイコン描画
+     * - Mock Data & Interactive Controller: インタラクティブUI操作ロジック
+     *
+     * ## エラー・例外条件
+     * - 静的HTMLファイルのため外部通信エラーは発生しない。クリップボードAPI非対応環境ではフォールバックトーストを表示。
+     *
+     * ## 変更履歴
+     * - v1.0.0 (2026-09-25, AI Agent): 初版プロトタイプ作成。
+     * - v2.0.0 (2026-09-26, AI Agent): 現行Reactコンポーネント構成（002-launch-associated-app、003-macos-support、004-align-with-constitution）に完全準拠し全面刷新。
+     * - v2.1.0 (2026-09-26, AI Agent): デザインレビューフィードバック対応。プログレスバーをメッセージ前（固定幅 w-44）へ配置変更し、ファイル読み込み前のフォルダスキャン中表示（対象フォルダ名表示）を導入。
+     */
+  -->
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Excel Grep - 高速Excel検索ツール</title>
-  <!-- Tailwind CSS -->
+  <title>Excel Grep - 高速Excel検索ツール (UI Design Mockup)</title>
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Lucide Icons -->
+  <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <script>
     tailwind.config = {
@@ -21,10 +52,10 @@
               subtle: '#064E3B'
             },
             surface: {
-              DEFAULT: '#18181B', // zinc-900
-              card: '#27272A',    // zinc-800
+              DEFAULT: '#18181B',
+              card: '#27272A',
               input: '#1F1F23',
-              hover: '#3F3F46',   // zinc-700
+              hover: '#3F3F46',
               border: '#3F3F46'
             }
           },
@@ -37,7 +68,7 @@
     }
   </script>
   <style>
-    /* スクロールバーのカスタマイズ (視認性向上) */
+    /* スクロールバーのカスタマイズ */
     ::-webkit-scrollbar {
       width: 9px;
       height: 9px;
@@ -56,638 +87,818 @@
     ::-webkit-scrollbar-corner {
       background: #141416;
     }
-    /* グリッド線の微細スタイル */
+    /* スプレッドシート グリッドボーダースタイル */
     .excel-grid td, .excel-grid th {
       border: 1px solid #333338;
     }
-    /* スプレッドシート固定ヘッダー (縦横スクロール時に見出しを固定) */
-    .excel-grid thead th {
-      position: sticky;
-      top: 0;
-      z-index: 20;
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
     }
-    .excel-grid tbody td:first-child {
-      position: sticky;
-      left: 0;
-      z-index: 10;
-    }
-    .excel-grid thead th:first-child {
-      position: sticky;
-      left: 0;
-      top: 0;
-      z-index: 30;
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
     }
   </style>
 </head>
 <body class="bg-[#121214] text-zinc-100 min-h-screen flex flex-col font-sans select-none overflow-hidden h-screen">
 
-  <!-- ==================== ウィンドウタイトルバー (Tauri / Windows風) ==================== -->
-  <div class="h-9 bg-[#1e1e20] flex items-center justify-between px-3 border-b border-zinc-800 text-xs text-zinc-400 select-none">
-    <div class="flex items-center gap-2">
-      <!-- Excel風アイコン -->
-      <div class="w-5 h-5 bg-excel rounded flex items-center justify-center text-white font-bold text-xs shadow-sm">
-        X
-      </div>
-      <span class="font-semibold text-zinc-200">Excel Grep</span>
-      <span class="text-[11px] text-zinc-500">v0.1.0 (Rust & Tauri)</span>
-    </div>
-    <div class="flex items-center gap-1">
-      <span class="text-[11px] bg-zinc-800/80 px-2 py-0.5 rounded text-zinc-400 border border-zinc-700/60 flex items-center gap-1">
-        <i data-lucide="zap" class="w-3 h-3 text-emerald-400"></i> Calamine Engine
-      </span>
-      <!-- ウィンドウコントロールボタン -->
-      <div class="flex items-center ml-2">
-        <button class="w-8 h-7 flex items-center justify-center hover:bg-zinc-700/60 rounded text-zinc-400 hover:text-zinc-200 transition">
-          <i data-lucide="minus" class="w-3.5 h-3.5"></i>
-        </button>
-        <button class="w-8 h-7 flex items-center justify-center hover:bg-zinc-700/60 rounded text-zinc-400 hover:text-zinc-200 transition">
-          <i data-lucide="square" class="w-3 h-3"></i>
-        </button>
-        <button class="w-8 h-7 flex items-center justify-center hover:bg-red-600/80 rounded text-zinc-400 hover:text-white transition">
-          <i data-lucide="x" class="w-3.5 h-3.5"></i>
-        </button>
-      </div>
-    </div>
-  </div>
+  <!-- ========================================================================= -->
+  <!-- メインコンテンツラッパー (src/components/layout/WindowFrame.tsx 準拠)        -->
+  <!-- ※ 003-macos-support 仕様に基づき OSネイティブウィンドウ装飾を使用するため、   -->
+  <!--    Webview 内の独自タイトルバーは廃止され、検索バーが最上部に配置されます。    -->
+  <!-- ========================================================================= -->
+  <div class="flex-1 flex flex-col overflow-hidden">
 
-  <!-- ==================== 検索入力 & 設定コントロールパネル ==================== -->
-  <header class="bg-[#18181b] border-b border-zinc-800 p-4 shadow-md flex-shrink-0">
-    <div class="max-w-[1920px] mx-auto space-y-3">
-      
-      <!-- 上段: 検索キーワード入力 & フォルダ選択 & 検索実行ボタン -->
-      <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
-        <!-- 検索キーワード入力 -->
-        <div class="lg:col-span-6 relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
-            <i data-lucide="search" class="w-4 h-4"></i>
-          </div>
-          <input 
-            type="text" 
-            id="searchInput"
-            value="Financial Report Q3"
-            placeholder="検索するテキストまたは正規表現を入力... (Enterで検索)"
-            class="w-full pl-9 pr-24 py-2 bg-[#202024] border border-zinc-700 rounded-lg text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-excel-light focus:ring-1 focus:ring-excel-light transition"
-          />
-          <div class="absolute inset-y-0 right-1 flex items-center gap-1 pr-1.5">
-            <button id="clearBtn" title="クリア" class="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded">
-              <i data-lucide="x" class="w-3.5 h-3.5"></i>
-            </button>
-            <span class="text-[10px] text-zinc-400 font-mono bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">Enter</span>
-          </div>
-        </div>
-
-        <!-- フォルダパス選択 -->
-        <div class="lg:col-span-4 relative">
-          <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
-            <i data-lucide="folder" class="w-4 h-4"></i>
-          </div>
-          <input 
-            type="text" 
-            id="folderInput"
-            value="C:\Users\JohnDoe\Documents\Reports\Q3_Data\"
-            placeholder="フォルダをドラッグ＆ドロップ、または選択..."
-            class="w-full pl-9 pr-10 py-2 bg-[#202024] border border-zinc-700 rounded-lg text-sm text-zinc-300 placeholder-zinc-500 focus:outline-none focus:border-excel-light font-mono text-xs transition"
-          />
-          <button 
-            id="browseBtn" 
-            title="フォルダを選択"
-            class="absolute inset-y-1 right-1 px-2 flex items-center justify-center bg-zinc-700 hover:bg-zinc-600 rounded text-zinc-200 transition">
-            <i data-lucide="folder-open" class="w-4 h-4"></i>
-          </button>
-        </div>
-
-        <!-- 検索開始ボタン -->
-        <div class="lg:col-span-2">
-          <button 
-            id="searchBtn" 
-            class="w-full py-2 px-4 bg-excel hover:bg-excel-hover active:scale-[0.99] text-white font-semibold text-sm rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition">
-            <i data-lucide="search" class="w-4 h-4"></i>
-            <span>SEARCH</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- 下段: 検索オプション (トグルピル) -->
-      <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs">
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="text-zinc-400 mr-1 font-medium flex items-center gap-1">
-            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i> オプション:
-          </span>
-
-          <!-- Match Case -->
-          <label class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800 hover:bg-zinc-700/80 border border-zinc-700 transition">
-            <input type="checkbox" id="optCase" class="accent-excel rounded">
-            <span class="text-zinc-300">大文字/小文字を区別</span>
-          </label>
-
-          <!-- Regex -->
-          <label class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950/40 text-emerald-300 border border-emerald-700/60 font-medium transition">
-            <input type="checkbox" id="optRegex" checked class="accent-emerald-500 rounded">
-            <span>正規表現 (Regex)</span>
-          </label>
-
-          <!-- Formula -->
-          <label class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800 hover:bg-zinc-700/80 border border-zinc-700 transition">
-            <input type="checkbox" id="optFormula" checked class="accent-excel rounded">
-            <span class="text-zinc-300">数式 (Formula)</span>
-          </label>
-
-          <!-- Comments -->
-          <label class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800 hover:bg-zinc-700/80 border border-zinc-700 transition">
-            <input type="checkbox" id="optComments" checked class="accent-excel rounded">
-            <span class="text-zinc-300">コメント / メモ</span>
-          </label>
-
-          <!-- Hidden Sheets -->
-          <label class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-zinc-800 hover:bg-zinc-700/80 border border-zinc-700 transition">
-            <input type="checkbox" id="optHidden" class="accent-excel rounded">
-            <span class="text-zinc-300">非表示シート</span>
-          </label>
-        </div>
-
-        <!-- 拡張子フィルタ表示 -->
-        <div class="flex items-center gap-2 text-zinc-400 text-xs">
-          <span>対象拡張子:</span>
-          <div class="flex gap-1">
-            <span class="bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] font-mono border border-zinc-700 text-zinc-300">.xlsx</span>
-            <span class="bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] font-mono border border-zinc-700 text-zinc-300">.xlsm</span>
-            <span class="bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] font-mono border border-zinc-700 text-zinc-300">.xlsb</span>
-            <span class="bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] font-mono border border-zinc-700 text-zinc-300">.xls</span>
-          </div>
-        </div>
-      </div>
-
-    </div>
-  </header>
-
-  <!-- ==================== メイン作業エリア (2ペイン分割) ==================== -->
-  <div class="flex-1 flex overflow-hidden">
-
-    <!-- ========== 左ペイン: 検索結果テーブル (60%) ========== -->
-    <div class="w-[58%] border-r border-zinc-800 flex flex-col bg-[#141416]">
-      <!-- テーブル操作ヘッダー -->
-      <div class="p-2.5 bg-[#18181b] border-b border-zinc-800 flex items-center justify-between text-xs">
-        <div class="flex items-center gap-2 text-zinc-400">
-          <i data-lucide="list-filter" class="w-4 h-4 text-zinc-400"></i>
-          <span class="font-medium text-zinc-200">検索結果リスト</span>
-          <span id="badgeCount" class="bg-zinc-800 text-emerald-400 px-2 py-0.2 rounded-full font-mono text-[11px] border border-zinc-700">142 件</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <!-- 簡易フィルタ -->
-          <div class="relative">
+    <!-- ==================== 検索入力 & 設定バー (SearchBar.tsx) ==================== -->
+    <header class="bg-[#18181b] border-b border-zinc-800 p-4 shadow-md flex-shrink-0">
+      <div class="max-w-[1920px] mx-auto space-y-3">
+        
+        <!-- 上段: 検索キーワード入力 & フォルダ選択 & 検索実行/中断ボタン -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
+          
+          <!-- 検索キーワード入力 (lg:col-span-6) -->
+          <div class="lg:col-span-6 relative">
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
+              <i data-lucide="search" class="w-4 h-4"></i>
+            </div>
             <input 
               type="text" 
-              id="filterTableInput" 
-              placeholder="結果内を絞り込み..." 
-              class="w-44 pl-7 pr-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+              id="searchInput"
+              value="Financial Report Q3"
+              placeholder="検索するテキストまたは正規表現を入力... (Enterで検索)"
+              class="w-full pl-9 pr-24 py-2 bg-[#202024] border border-zinc-700 rounded-lg text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-excel-light focus:ring-1 focus:ring-excel-light transition"
             />
-            <i data-lucide="filter" class="w-3.5 h-3.5 text-zinc-500 absolute left-2 top-1.5"></i>
-          </div>
-        </div>
-      </div>
-
-      <!-- テーブル本体 (スクロール可能) -->
-      <div class="flex-1 overflow-auto">
-        <table class="w-full text-left border-collapse text-xs">
-          <thead class="sticky top-0 bg-[#1e1e22] text-zinc-400 font-semibold border-b border-zinc-800 shadow-sm z-10">
-            <tr>
-              <th class="py-2.5 px-3 cursor-pointer hover:text-zinc-200 transition">
-                <div class="flex items-center gap-1">ファイル名 <i data-lucide="arrow-up" class="w-3 h-3 text-emerald-400"></i></div>
-              </th>
-              <th class="py-2.5 px-3 cursor-pointer hover:text-zinc-200 transition">シート</th>
-              <th class="py-2.5 px-3 cursor-pointer hover:text-zinc-200 transition">セル</th>
-              <th class="py-2.5 px-3 cursor-pointer hover:text-zinc-200 transition">一致種別</th>
-              <th class="py-2.5 px-3">一致内容 (プレビュー)</th>
-            </tr>
-          </thead>
-          <tbody id="resultTableBody" class="divide-y divide-zinc-800/60 font-sans">
-            <!-- JSで動的レンダリングされる行群 -->
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <!-- ========== 右ペイン: セル & スプレッドシート プレビュー (42%) ========== -->
-    <div class="flex-1 flex flex-col bg-[#161618] min-w-0">
-      
-      <!-- プレビュー上部ヘッダー & アクションバー -->
-      <div class="p-3 pr-4 bg-[#1c1c1f] border-b border-zinc-800 flex flex-col gap-2 flex-shrink-0">
-        <!-- 1行目: ファイル名 & シート名バッジ と アクションボタン群 -->
-        <div class="flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2 min-w-0 flex-1">
-            <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400 flex-shrink-0"></i>
-            <span class="text-xs font-semibold text-zinc-100 truncate" id="previewFileName" title="Q3_Summary.xlsx">Q3_Summary.xlsx</span>
-            
-            <!-- シート名バッジ (欠けないよう flex-shrink-0、かつシート名であることを明確化) -->
-            <div class="flex items-center gap-1.5 bg-emerald-950/80 text-emerald-300 border border-emerald-700/70 px-2 py-0.5 rounded text-[11px] font-medium flex-shrink-0 shadow-sm" title="検索一致が発生したワークシート">
-              <i data-lucide="layers" class="w-3 h-3 text-emerald-400"></i>
-              <span class="text-zinc-400 font-normal">シート:</span>
-              <span id="previewSheetBadge" class="font-bold text-emerald-200">Data</span>
+            <div class="absolute inset-y-0 right-1 flex items-center gap-1 pr-1.5">
+              <button id="clearBtn" title="クリア" class="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded transition">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+              <span class="text-[10px] text-zinc-400 font-mono bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">Enter</span>
             </div>
           </div>
 
-          <!-- アクションボタン群 (右端が絶対に欠けないように十分なマージン & flex-shrink-0) -->
-          <div class="flex items-center gap-2 flex-shrink-0 mr-1">
+          <!-- フォルダパス選択 & DnD ドロップゾーン (lg:col-span-4) -->
+          <div 
+            id="folderDropZone" 
+            class="lg:col-span-4 relative rounded-lg transition-all"
+          >
+            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
+              <i id="folderIcon" data-lucide="folder" class="w-4 h-4"></i>
+            </div>
+            <input 
+              type="text" 
+              id="folderInput"
+              value="/Users/soakaye/Documents/Reports/Q3_Data/"
+              placeholder="フォルダを選択またはドラッグ＆ドロップ..."
+              class="w-full pl-9 pr-10 py-2 border rounded-lg text-sm placeholder-zinc-500 focus:outline-none font-mono text-xs transition bg-[#202024] border-zinc-700 text-zinc-300 focus:border-excel-light"
+            />
+            <!-- ドラッグオーバー時のオーバーレイ表示 (DnDガイド) -->
+            <div id="dropOverlay" class="hidden absolute inset-0 flex items-center justify-center bg-emerald-900/80 border-2 border-dashed border-emerald-400 rounded-lg pointer-events-none text-xs font-medium text-emerald-100 gap-2 z-10 backdrop-blur-[1px]">
+              <i data-lucide="arrow-down-to-line" class="w-4 h-4 text-emerald-300 animate-bounce"></i>
+              <span>フォルダをここにドロップ</span>
+            </div>
             <button 
-              id="openInExcelBtn"
-              class="px-2.5 py-1.5 bg-excel hover:bg-excel-hover active:scale-[0.98] text-white text-xs font-medium rounded flex items-center gap-1.5 shadow transition flex-shrink-0">
-              <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5"></i>
-              <span>Excel で開く</span>
+              id="browseBtn" 
+              type="button"
+              title="フォルダを選択"
+              class="absolute inset-y-1 right-1 px-2.5 flex items-center justify-center bg-zinc-700 hover:bg-zinc-600 rounded text-zinc-200 transition z-0">
+              <i data-lucide="folder-open" class="w-4 h-4"></i>
             </button>
+          </div>
+
+          <!-- 検索開始 / 中断ボタン (lg:col-span-2) -->
+          <div class="lg:col-span-2">
             <button 
-              id="openFolderBtn"
-              title="ファイルの保存場所を開く" 
-              class="p-1.5 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.98] text-zinc-300 hover:text-white rounded border border-zinc-700 transition flex-shrink-0">
-              <i data-lucide="folder" class="w-3.5 h-3.5"></i>
+              id="searchBtn" 
+              type="button"
+              class="w-full py-2 px-4 bg-excel hover:bg-excel-hover active:scale-[0.99] text-white font-semibold text-sm rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition">
+              <i id="searchBtnIcon" data-lucide="search" class="w-4 h-4"></i>
+              <span id="searchBtnText">SEARCH</span>
             </button>
           </div>
         </div>
 
-        <!-- 2行目: ファイルパス専用行 (ボタンと重ならない独立行) -->
-        <div class="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono bg-zinc-900/80 px-2.5 py-1 rounded border border-zinc-800/80 min-w-0 mr-1">
-          <i data-lucide="folder-open" class="w-3 h-3 text-zinc-500 flex-shrink-0"></i>
-          <span class="text-zinc-500 select-none flex-shrink-0">場所:</span>
-          <span class="text-zinc-400 truncate select-text flex-1" id="previewFilePath" title="C:\Users\JohnDoe\Documents\Reports\Q3_Data\Q3_Summary.xlsx">
-            C:\Users\JohnDoe\Documents\Reports\Q3_Data\Q3_Summary.xlsx
+        <!-- 下段: 検索オプション (トグルピル) & 対象拡張子 -->
+        <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs select-none">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-zinc-400 mr-1 font-medium flex items-center gap-1">
+              <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i> オプション:
+            </span>
+
+            <!-- 大文字/小文字を区別 -->
+            <label id="pillCase" class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition bg-zinc-800 hover:bg-zinc-700/80 text-zinc-300 border-zinc-700">
+              <input type="checkbox" id="optCase" class="accent-excel rounded cursor-pointer">
+              <span>大文字/小文字を区別</span>
+            </label>
+
+            <!-- 正規表現 (Regex) -->
+            <label id="pillRegex" class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition bg-zinc-800 hover:bg-zinc-700/80 text-zinc-300 border-zinc-700">
+              <input type="checkbox" id="optRegex" class="accent-emerald-500 rounded cursor-pointer">
+              <span>正規表現 (Regex)</span>
+            </label>
+
+            <!-- 数式 (Formula) -->
+            <label id="pillFormula" class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition bg-emerald-950/60 text-emerald-300 border-emerald-600/80 font-medium">
+              <input type="checkbox" id="optFormula" checked class="accent-excel rounded cursor-pointer">
+              <span>数式 (Formula)</span>
+            </label>
+
+            <!-- コメント / メモ -->
+            <label id="pillComment" class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition bg-emerald-950/60 text-emerald-300 border-emerald-600/80 font-medium">
+              <input type="checkbox" id="optComment" checked class="accent-excel rounded cursor-pointer">
+              <span>コメント / メモ</span>
+            </label>
+
+            <!-- 非表示シート -->
+            <label id="pillHidden" class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition bg-zinc-800 hover:bg-zinc-700/80 text-zinc-300 border-zinc-700">
+              <input type="checkbox" id="optHidden" class="accent-excel rounded cursor-pointer">
+              <span>非表示シート</span>
+            </label>
+          </div>
+
+          <!-- 対象拡張子表示 -->
+          <div class="flex items-center gap-2 text-zinc-400 text-xs">
+            <span>対象拡張子:</span>
+            <div class="flex gap-1">
+              <span class="bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] font-mono border border-zinc-700 text-zinc-300">.xlsx</span>
+              <span class="bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] font-mono border border-zinc-700 text-zinc-300">.xlsm</span>
+              <span class="bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] font-mono border border-zinc-700 text-zinc-300">.xlsb</span>
+              <span class="bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] font-mono border border-zinc-700 text-zinc-300">.xls</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- ==================== メイン作業エリア (2ペイン分割: 左58%, 右42%) ==================== -->
+    <div class="flex-1 flex overflow-hidden">
+
+      <!-- ==================== 左ペイン: 検索結果テーブル (ResultTable.tsx) ==================== -->
+      <div class="w-[58%] border-r border-zinc-800 flex flex-col bg-[#141416]">
+        
+        <!-- テーブル操作ヘッダー -->
+        <div class="p-2.5 bg-[#18181b] border-b border-zinc-800 flex items-center justify-between text-xs flex-shrink-0">
+          <div class="flex items-center gap-2 text-zinc-400">
+            <i data-lucide="list-filter" class="w-4 h-4 text-zinc-400"></i>
+            <span class="font-medium text-zinc-200">検索結果リスト</span>
+            <span id="badgeCount" class="bg-zinc-800 text-emerald-400 px-2 py-0.2 rounded-full font-mono text-[11px] border border-zinc-700">5 件</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <!-- 簡易フィルタ -->
+            <div class="relative">
+              <input 
+                type="text" 
+                id="filterTableInput" 
+                placeholder="結果内を絞り込み..." 
+                class="w-44 pl-7 pr-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
+              />
+              <i data-lucide="filter" class="w-3.5 h-3.5 text-zinc-500 absolute left-2 top-1.5"></i>
+            </div>
+          </div>
+        </div>
+
+        <!-- 固定テーブルヘッダー (ソート対応) -->
+        <div class="bg-[#1e1e22] text-zinc-400 font-semibold border-b border-zinc-800 shadow-sm z-10 text-xs flex-shrink-0">
+          <div class="flex items-center">
+            <button id="sortFile" class="w-[30%] py-2.5 px-3 flex items-center gap-1 hover:text-zinc-200 transition text-left">
+              <span>ファイル名</span>
+              <span id="sortFileIcon"><i data-lucide="arrow-up" class="w-3 h-3 text-emerald-400"></i></span>
+            </button>
+            <button id="sortSheet" class="w-[18%] py-2.5 px-3 flex items-center gap-1 hover:text-zinc-200 transition text-left">
+              <span>シート</span>
+              <span id="sortSheetIcon"></span>
+            </button>
+            <button id="sortCell" class="w-[12%] py-2.5 px-3 flex items-center gap-1 hover:text-zinc-200 transition text-left">
+              <span>セル</span>
+              <span id="sortCellIcon"></span>
+            </button>
+            <button id="sortType" class="w-[15%] py-2.5 px-3 flex items-center gap-1 hover:text-zinc-200 transition text-left">
+              <span>一致種別</span>
+              <span id="sortTypeIcon"></span>
+            </button>
+            <div class="w-[25%] py-2.5 px-3 text-left">一致内容 (プレビュー)</div>
+          </div>
+        </div>
+
+        <!-- 仮想スクロール風結果テーブルコンテナ -->
+        <div id="resultTableContainer" class="flex-1 overflow-auto">
+          <div id="resultTableBody" class="w-full">
+            <!-- JSで動的にレンダリング -->
+          </div>
+        </div>
+      </div>
+
+      <!-- ==================== 右ペイン: セル & スプレッドシート プレビュー ==================== -->
+      <div class="flex-1 flex flex-col bg-[#161618] min-w-0">
+        
+        <!-- プレビュー上部ヘッダー & アクションバー (PreviewHeader.tsx) -->
+        <div class="p-3 pr-4 bg-[#1c1c1f] border-b border-zinc-800 flex flex-col gap-2 flex-shrink-0">
+          
+          <!-- 1行目: ファイル名 & シート名バッジ と アクションボタン群 -->
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+              <i data-lucide="file-spreadsheet" class="w-4 h-4 text-emerald-400 flex-shrink-0"></i>
+              <span id="previewFileName" class="text-xs font-semibold text-zinc-100 truncate" title="Q3_Summary.xlsx">
+                Q3_Summary.xlsx
+              </span>
+
+              <!-- シート名バッジ -->
+              <div class="flex items-center gap-1.5 bg-emerald-950/80 text-emerald-300 border border-emerald-700/70 px-2 py-0.5 rounded text-[11px] font-medium flex-shrink-0 shadow-sm" title="検索一致が発生したワークシート">
+                <i data-lucide="layers" class="w-3 h-3 text-emerald-400"></i>
+                <span class="text-zinc-400 font-normal">シート:</span>
+                <span id="previewSheetBadge" class="font-bold text-emerald-200">Data</span>
+              </div>
+            </div>
+
+            <!-- アクションボタン群 (スプリットボタン + フォルダを開く) -->
+            <div class="flex items-center gap-2 flex-shrink-0 mr-1">
+              
+              <!-- スプリットボタン（左: 既定アプリで起動, 右: ▼サポートアプリメニュー） -->
+              <div class="relative inline-flex items-stretch rounded shadow" id="splitBtnContainer">
+                <button 
+                  id="mainAppLaunchBtn"
+                  type="button"
+                  title="Microsoft Excel で開く" 
+                  class="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-xs font-medium rounded-l flex items-center gap-1.5 transition flex-shrink-0">
+                  <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-white"></i>
+                  <span>アプリで開く</span>
+                </button>
+                <button 
+                  id="menuDropdownBtn" 
+                  type="button"
+                  title="開くアプリケーションを選択"
+                  class="px-1.5 py-1.5 bg-emerald-700 hover:bg-emerald-600 active:scale-[0.98] text-white rounded-r border-l border-emerald-800 transition flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="chevron-down" class="w-3.5 h-3.5"></i>
+                </button>
+
+                <!-- サポートアプリ ドロップダウンポップアップメニュー -->
+                <div id="appDropdownMenu" class="hidden absolute right-0 top-full mt-1 w-64 bg-zinc-900 border border-zinc-700 rounded-md shadow-2xl py-1 z-50 text-xs">
+                  <div class="max-h-60 overflow-y-auto">
+                    <!-- Microsoft Excel (既定) -->
+                    <button class="app-item w-full text-left px-3 py-2 hover:bg-zinc-800 text-zinc-200 flex items-center justify-between gap-2 transition" data-app="Microsoft Excel">
+                      <div class="flex items-center gap-2 min-w-0 flex-1">
+                        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-400 flex-shrink-0"></i>
+                        <span class="truncate">Microsoft Excel</span>
+                      </div>
+                      <span class="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-700/60 px-1.5 py-0.5 rounded flex-shrink-0 font-medium">既定</span>
+                    </button>
+                    <!-- Numbers -->
+                    <button class="app-item w-full text-left px-3 py-2 hover:bg-zinc-800 text-zinc-200 flex items-center justify-between gap-2 transition" data-app="Numbers">
+                      <div class="flex items-center gap-2 min-w-0 flex-1">
+                        <i data-lucide="bar-chart-2" class="w-3.5 h-3.5 text-amber-400 flex-shrink-0"></i>
+                        <span class="truncate">Numbers</span>
+                      </div>
+                    </button>
+                    <!-- LibreOffice Calc -->
+                    <button class="app-item w-full text-left px-3 py-2 hover:bg-zinc-800 text-zinc-200 flex items-center justify-between gap-2 transition" data-app="LibreOffice Calc">
+                      <div class="flex items-center gap-2 min-w-0 flex-1">
+                        <i data-lucide="table" class="w-3.5 h-3.5 text-blue-400 flex-shrink-0"></i>
+                        <span class="truncate">LibreOffice Calc</span>
+                      </div>
+                    </button>
+                  </div>
+                  <!-- 区切り線 -->
+                  <div class="border-t border-zinc-800 my-1"></div>
+                  <!-- 別のプログラムを選択... -->
+                  <button id="btnOpenWithOther" class="w-full text-left px-3 py-2 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center gap-2 transition">
+                    <i data-lucide="external-link" class="w-3.5 h-3.5 text-zinc-400 flex-shrink-0"></i>
+                    <span>別のプログラムを選択...</span>
+                  </button>
+                </div>
+              </div>
+
+              <!-- フォルダを開くボタン -->
+              <button 
+                id="openFolderBtn"
+                type="button"
+                title="ファイルの保存場所を開く" 
+                class="p-1.5 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.98] text-zinc-300 hover:text-white rounded border border-zinc-700 transition flex-shrink-0">
+                <i data-lucide="folder" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- 2行目: ファイルパス専用行 (独立行 + 右端マージン) -->
+          <div class="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono bg-zinc-900/80 px-2.5 py-1 rounded border border-zinc-800/80 min-w-0 mr-1">
+            <i data-lucide="folder" class="w-3 h-3 text-zinc-500 flex-shrink-0"></i>
+            <span class="text-zinc-500 select-none flex-shrink-0">場所:</span>
+            <span id="previewFilePath" class="text-zinc-400 truncate select-text flex-1" title="/Users/soakaye/Documents/Reports/Q3_Data/Q3_Summary.xlsx">
+              /Users/soakaye/Documents/Reports/Q3_Data/Q3_Summary.xlsx
+            </span>
+            <button id="copyPathBtn" title="パスをコピー" class="p-0.5 hover:text-zinc-200 text-zinc-500 rounded flex-shrink-0 transition">
+              <i id="copyIcon" data-lucide="copy" class="w-3 h-3"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Excel風数式バー (FormulaBar.tsx) -->
+        <div class="bg-[#202024] border-b border-zinc-800 px-3.5 py-1.5 flex items-center gap-2 text-xs flex-shrink-0">
+          <!-- 名前ボックス (セル番地) -->
+          <div id="nameBox" class="w-16 bg-[#18181b] border border-zinc-700 rounded px-2 py-1 text-center font-mono font-bold text-emerald-400">
+            A12
+          </div>
+          <div class="h-4 w-px bg-zinc-700"></div>
+          <div class="flex items-center gap-1 text-zinc-500 font-mono text-[11px] select-none">
+            <span>✕</span>
+            <span>✓</span>
+            <span class="font-serif italic font-bold text-zinc-400">fx</span>
+          </div>
+          <!-- 数式・値内容表示ボックス -->
+          <div id="formulaBarContent" class="flex-1 bg-[#18181b] border border-zinc-700 rounded px-2.5 py-1 font-mono text-zinc-200 overflow-x-auto whitespace-nowrap">
+            Financial Report Q3
+          </div>
+        </div>
+
+        <!-- 周辺セルプレビューグリッド領域 (SpreadsheetGrid.tsx) -->
+        <div class="flex-1 p-3.5 pr-5 pb-3 overflow-auto bg-[#141416] flex flex-col">
+          <!-- ガイダンスミニバー -->
+          <div class="flex items-center justify-between text-[11px] text-zinc-400 mb-2 px-1 select-none flex-shrink-0">
+            <div class="flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              <span class="font-medium text-zinc-300">周辺セルプレビュー (前後3行・前後2列)</span>
+            </div>
+            <div class="flex items-center gap-1 text-zinc-500 bg-zinc-900/90 px-2 py-0.5 rounded border border-zinc-800 text-[10px]">
+              <i data-lucide="move" class="w-2.5 h-2.5 text-zinc-400"></i>
+              <span>縦横スクロール可能 (固定見出し)</span>
+            </div>
+          </div>
+
+          <!-- テーブルラッパー (右辺境界線欠け防止) -->
+          <div class="min-w-full inline-block pb-2 pr-2">
+            <div class="rounded border border-zinc-700/80 bg-[#1a1a1d] shadow-sm overflow-hidden">
+              <table class="excel-grid w-full text-xs border-collapse font-sans">
+                <thead>
+                  <tr id="gridHeaderRow" class="bg-[#242428] text-zinc-400 text-center font-medium">
+                    <!-- 列見出し (JSで動的生成) -->
+                  </tr>
+                </thead>
+                <tbody id="gridBody">
+                  <!-- 行データ (JSで動的生成) -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Excel風シートタブバー (SheetTabs.tsx) -->
+        <div id="sheetTabsWrapper" class="px-3.5 pb-1 bg-[#141416]">
+          <div class="mt-2 bg-[#1a1a1d] rounded border border-zinc-800 px-2 py-1 flex items-center justify-between text-xs select-none flex-shrink-0 mr-2 shadow-sm">
+            <div class="flex items-center gap-1 overflow-x-auto min-w-0">
+              <!-- シート移動ナビゲーション -->
+              <div class="flex items-center text-zinc-500 border-r border-zinc-800 pr-1.5 mr-1 gap-0.5 flex-shrink-0">
+                <button id="sheetScrollLeft" type="button" class="p-1 hover:text-zinc-300 hover:bg-zinc-800 rounded transition" title="前のシートへ">
+                  <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
+                </button>
+                <button id="sheetScrollRight" type="button" class="p-1 hover:text-zinc-300 hover:bg-zinc-800 rounded transition" title="次のシートへ">
+                  <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
+                </button>
+              </div>
+              <!-- シートタブ一覧 -->
+              <div id="sheetTabsList" class="flex items-center gap-1 overflow-x-auto no-scrollbar min-w-0">
+                <!-- 動的レンダリング -->
+              </div>
+            </div>
+            <div class="text-[10px] text-zinc-500 flex items-center gap-1 pl-2 flex-shrink-0">
+              <span class="bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700 font-mono text-[10px] text-zinc-400">Sheet Tabs</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- プレビュー下部：セルメタ情報カード (MetaInfoCard.tsx) -->
+        <div id="metaInfoWrapper" class="px-3.5 pb-3.5 bg-[#141416]">
+          <div class="mt-3 p-3 bg-zinc-900/90 rounded-lg border border-zinc-800 text-xs space-y-2 mr-2 flex-shrink-0">
+            <div class="flex items-center justify-between text-zinc-400">
+              <span class="font-medium text-zinc-300 flex items-center gap-1.5">
+                <i data-lucide="info" class="w-3.5 h-3.5 text-emerald-400"></i> 一致の詳細情報
+              </span>
+              <span class="text-[11px] text-zinc-500">
+                タイプ: <strong id="metaMatchType" class="text-zinc-300">セル値 (Text / Number)</strong>
+              </span>
+            </div>
+
+            <div id="metaFullContent" class="text-zinc-300 bg-zinc-950/80 p-2 rounded border border-zinc-800/80 font-mono text-[11px] select-text break-words">
+              Financial Report Q3 (FY2026-Q3-Final-Audit)
+            </div>
+
+            <div class="flex items-center gap-4 text-[11px] text-zinc-400 pt-1">
+              <span>行番号: <strong id="metaRow" class="text-zinc-200">12</strong></span>
+              <span>列番号: <strong id="metaCol" class="text-zinc-200">1 (A)</strong></span>
+              <span>非表示状態: <strong id="metaHidden" class="text-zinc-200">表示</strong></span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- ==================== フッター & ステータスバー (StatusBar.tsx) ==================== -->
+    <footer class="h-10 bg-[#18181b] border-t border-zinc-800 px-4 flex items-center justify-between text-xs text-zinc-400 flex-shrink-0 select-none">
+      
+      <!-- 左側: 状態インジケーター & プログレスバー (メッセージ前に固定幅で配置) & ステータステキスト -->
+      <div class="flex items-center gap-3 min-w-0 flex-1">
+        <!-- 状態インジケータードット -->
+        <span id="statusIndicatorDot" class="w-2 h-2 rounded-full flex-shrink-0 bg-emerald-500"></span>
+
+        <!-- プログレスバー (固定幅 w-44: テキスト長の変化に影響されない固定配置) -->
+        <div id="progressBarWrapper" class="flex items-center gap-2 flex-shrink-0 w-44">
+          <div class="w-24 bg-zinc-800 h-1.5 rounded-full overflow-hidden border border-zinc-700/50 flex-shrink-0">
+            <div id="progressBarFill" class="bg-excel h-full rounded-full transition-all duration-300" style="width: 100%;"></div>
+          </div>
+          <span id="progressPercentText" class="text-[11px] text-zinc-400 font-mono flex-shrink-0">100% (5/5)</span>
+        </div>
+
+        <!-- 縦仕切り線 -->
+        <div class="h-3.5 w-px bg-zinc-800 flex-shrink-0"></div>
+
+        <!-- ステータステキスト (可変長・右側へ伸長・truncate) -->
+        <span id="statusText" class="text-zinc-200 font-medium truncate flex-1" title="完了: 5 件一致 (5 ファイル, 0.38s)">
+          完了: 5 件一致 (5 ファイル, 0.38s)
+        </span>
+      </div>
+
+      <!-- 右側: Calamine Engine情報 & エクスポートボタン群 -->
+      <div class="flex items-center gap-3 flex-shrink-0">
+        <div class="hidden sm:flex items-center gap-2">
+          <span class="text-[11px] bg-zinc-800/80 px-2 py-0.5 rounded text-zinc-400 border border-zinc-700/60 flex items-center gap-1">
+            <i data-lucide="zap" class="w-3 h-3 text-emerald-400"></i> Calamine Engine
           </span>
-          <button id="copyPathBtn" title="パスをコピー" class="p-0.5 hover:text-zinc-200 text-zinc-500 rounded flex-shrink-0 transition">
-            <i data-lucide="copy" class="w-3 h-3"></i>
+          <span class="text-[11px] text-zinc-500 font-mono">v0.1.0</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button 
+            id="exportCsvBtn" 
+            type="button"
+            class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-200 hover:text-white rounded border border-zinc-700 flex items-center gap-1.5 transition">
+            <i data-lucide="file-text" class="w-3.5 h-3.5 text-zinc-400"></i>
+            <span>CSV 出力</span>
+          </button>
+          <button 
+            id="exportExcelBtn" 
+            type="button"
+            class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-emerald-400 hover:text-emerald-300 rounded border border-zinc-700 flex items-center gap-1.5 transition">
+            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-500"></i>
+            <span>Excel 出力</span>
           </button>
         </div>
       </div>
+    </footer>
 
-      <!-- Excel 数式バー (Formula Bar) -->
-      <div class="bg-[#202024] border-b border-zinc-800 px-3.5 py-1.5 flex items-center gap-2 text-xs flex-shrink-0">
-        <!-- 名前ボックス (セル番地) -->
-        <div class="w-16 bg-[#18181b] border border-zinc-700 rounded px-2 py-1 text-center font-mono font-bold text-emerald-400" id="nameBox">
-          A12
-        </div>
-        <div class="h-4 w-px bg-zinc-700"></div>
-        <div class="flex items-center gap-1 text-zinc-500 font-mono text-[11px]">
-          <span>✕</span>
-          <span>✓</span>
-          <span class="font-serif italic font-bold text-zinc-400">fx</span>
-        </div>
-        <!-- 数式バー入力欄 -->
-        <div class="flex-1 bg-[#18181b] border border-zinc-700 rounded px-2.5 py-1 font-mono text-zinc-200 overflow-x-auto whitespace-nowrap" id="formulaBarContent">
-          Financial Report Q3
-        </div>
-      </div>
-
-      <!-- スプレッドシート領域 (縦横スクロール可能コンテナ & 右辺欠け防止マージン) -->
-      <div class="flex-1 p-3.5 pr-5 pb-3 overflow-auto bg-[#141416] flex flex-col">
-        <!-- スクロールガイダンス / 情報ミニバー -->
-        <div class="flex items-center justify-between text-[11px] text-zinc-400 mb-2 px-1 select-none flex-shrink-0">
-          <div class="flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-            <span class="font-medium text-zinc-300">ワークシートプレビュー</span>
-          </div>
-          <div class="flex items-center gap-1 text-zinc-500 bg-zinc-900/90 px-2 py-0.5 rounded border border-zinc-800 text-[10px]">
-            <i data-lucide="move" class="w-2.5 h-2.5 text-zinc-400"></i>
-            <span>縦横スクロール可能 (固定ヘッダー)</span>
-          </div>
-        </div>
-
-        <!-- テーブルラッパー (右辺境界線が絶対に欠けないように inline-block + pr-2) -->
-        <div class="min-w-full inline-block pb-2 pr-2">
-          <div class="rounded border border-zinc-700/80 bg-[#1a1a1d] shadow-sm overflow-hidden">
-            <table class="excel-grid w-full text-xs border-collapse font-sans">
-              <thead>
-                <tr class="bg-[#242428] text-zinc-400 text-center font-medium">
-                  <th class="w-12 py-1.5 px-2 bg-[#202024] select-none text-zinc-500"></th>
-                  <th class="py-1.5 px-3 min-w-[130px] bg-[#222226]">A</th>
-                  <th class="py-1.5 px-3 min-w-[110px] bg-[#222226]">B</th>
-                  <th class="py-1.5 px-3 min-w-[110px] bg-[#222226]">C</th>
-                  <th class="py-1.5 px-3 min-w-[110px] bg-[#222226]">D</th>
-                  <th class="py-1.5 px-3 min-w-[110px] bg-[#222226]">E</th>
-                </tr>
-              </thead>
-              <tbody id="spreadsheetBody">
-                <!-- グリッド行 (JSで動的生成) -->
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <!-- Excel風シートタブバー (グリッド直下でシート名・タブを明示) -->
-        <div class="mt-2 bg-[#1a1a1d] rounded border border-zinc-800 px-2 py-1 flex items-center justify-between text-xs select-none flex-shrink-0 mr-2 shadow-sm">
-          <div class="flex items-center gap-1 overflow-x-auto min-w-0">
-            <!-- シート移動ナビゲーション -->
-            <div class="flex items-center text-zinc-500 border-r border-zinc-800 pr-1.5 mr-1 gap-0.5 flex-shrink-0">
-              <button class="p-1 hover:text-zinc-300 hover:bg-zinc-800 rounded transition" title="前のシートへ">
-                <i data-lucide="chevron-left" class="w-3.5 h-3.5"></i>
-              </button>
-              <button class="p-1 hover:text-zinc-300 hover:bg-zinc-800 rounded transition" title="次のシートへ">
-                <i data-lucide="chevron-right" class="w-3.5 h-3.5"></i>
-              </button>
-            </div>
-            <!-- シートタブ一覧 (JSで動的生成) -->
-            <div id="sheetTabsList" class="flex items-center gap-1 min-w-0">
-              <!-- 動的レンダリング -->
-            </div>
-          </div>
-          <div class="text-[10px] text-zinc-500 flex items-center gap-1 pl-2 flex-shrink-0">
-            <span class="bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700 font-mono text-[10px] text-zinc-400">Sheet Tabs</span>
-          </div>
-        </div>
-
-        <!-- プレビュー下部：セルメタ情報カード (右辺欠け防止で mr-2) -->
-        <div class="mt-3 p-3 bg-zinc-900/90 rounded-lg border border-zinc-800 text-xs space-y-2 mr-2">
-          <div class="flex items-center justify-between text-zinc-400">
-            <span class="font-medium text-zinc-300 flex items-center gap-1.5">
-              <i data-lucide="info" class="w-3.5 h-3.5 text-emerald-400"></i> 一致の詳細情報
-            </span>
-            <span class="text-[11px] text-zinc-500">タイプ: <strong class="text-zinc-300" id="metaMatchType">セル値 (Text)</strong></span>
-          </div>
-          <div class="text-zinc-300 bg-zinc-950/80 p-2 rounded border border-zinc-800/80 font-mono text-[11px]" id="metaFullText">
-            Financial Report Q3 (FY2026-Q3-Final-Audit)
-          </div>
-          <div class="flex items-center gap-4 text-[11px] text-zinc-400 pt-1">
-            <span>行番号: <strong class="text-zinc-200" id="metaRow">12</strong></span>
-            <span>列番号: <strong class="text-zinc-200" id="metaCol">1 (A)</strong></span>
-            <span>非表示状態: <strong class="text-zinc-200" id="metaHidden">表示</strong></span>
-          </div>
-        </div>
-      </div>
-
+    <!-- ==================== トースト通知コンポーネント (Toast.tsx) ==================== -->
+    <div id="toast" class="fixed bottom-12 right-6 z-50 flex items-center gap-2 bg-zinc-800 text-zinc-100 border border-emerald-600/60 shadow-xl px-3.5 py-2.5 rounded-lg text-xs transform translate-y-20 opacity-0 pointer-events-none transition-all duration-200">
+      <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400 flex-shrink-0"></i>
+      <span id="toastMsg" class="font-medium">通知メッセージ</span>
+      <button id="toastCloseBtn" class="ml-2 text-zinc-400 hover:text-zinc-200 p-0.5 rounded transition">
+        <i data-lucide="x" class="w-3.5 h-3.5"></i>
+      </button>
     </div>
 
   </div>
 
-  <!-- ==================== フッター & ステータスバー ==================== -->
-  <footer class="h-10 bg-[#18181b] border-t border-zinc-800 px-4 flex items-center justify-between text-xs text-zinc-400 flex-shrink-0">
-    <!-- 検索メトリクス & 進捗 -->
-    <div class="flex items-center gap-4">
-      <div class="flex items-center gap-2">
-        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-        <span id="statusText" class="text-zinc-200 font-medium">Found 142 matches in 28 files (0.42s)</span>
-      </div>
-      <div class="hidden sm:flex items-center gap-2">
-        <div class="w-28 bg-zinc-800 h-1.5 rounded-full overflow-hidden">
-          <div id="progressBar" class="bg-excel h-full w-full rounded-full transition-all duration-300"></div>
-        </div>
-        <span class="text-[11px] text-zinc-400">スキャン完了: 100%</span>
-      </div>
-    </div>
-
-    <!-- エクスポートボタン群 -->
-    <div class="flex items-center gap-2">
-      <button 
-        id="exportCsvBtn" 
-        class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded border border-zinc-700 flex items-center gap-1.5 transition">
-        <i data-lucide="file-text" class="w-3.5 h-3.5 text-zinc-400"></i>
-        <span>CSV エクスポート</span>
-      </button>
-      <button 
-        id="exportExcelBtn" 
-        class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 text-emerald-400 hover:text-emerald-300 rounded border border-zinc-700 flex items-center gap-1.5 transition">
-        <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-500"></i>
-        <span>Excel エクスポート</span>
-      </button>
-    </div>
-  </footer>
-
-  <!-- ==================== トースト通知用コンテナ ==================== -->
-  <div id="toast" class="fixed bottom-14 right-5 bg-zinc-800 text-zinc-100 px-4 py-2.5 rounded-lg shadow-xl border border-zinc-700 text-xs flex items-center gap-2 transform translate-y-20 opacity-0 pointer-events-none transition-all duration-300 z-50">
-    <i data-lucide="check-circle-2" class="w-4 h-4 text-emerald-400"></i>
-    <span id="toastMsg">通知メッセージ</span>
-  </div>
-
-  <!-- ==================== アプリケーションロジック (JavaScript) ==================== -->
+  <!-- ========================================================================= -->
+  <!-- アプリケーションモック インタラクティブスクリプト                              -->
+  <!-- ========================================================================= -->
   <script>
-    // モックデータ定義 (sheets配列およびE列データを追加)
-    const mockData = [
+    /**
+     * 最新の仕様（SearchMatch, CellPreviewData）に完全対応したモックデータセット
+     */
+    const mockMatches = [
       {
         id: 1,
-        fileName: "Q3_Summary.xlsx",
-        fullPath: "C:\\Users\\JohnDoe\\Documents\\Reports\\Q3_Data\\Q3_Summary.xlsx",
-        sheet: "Data",
-        sheets: ["Data", "Sheet Index", "Summary", "Notes"],
-        cell: "A12",
-        row: 12,
-        col: "A",
-        matchType: "Cell Value",
-        matchBadgeClass: "bg-blue-950 text-blue-300 border-blue-800",
-        snippet: "...based on <mark class='bg-yellow-500/30 text-yellow-300 px-0.5 rounded font-semibold'>Financial Report Q3</mark> data...",
-        fullContent: "Financial Report Q3 (FY2026-Q3-Final-Audit)",
-        formula: "Financial Report Q3",
-        grid: [
-          { row: 9, a: "Sheet Index", b: "Q3 -1", c: "Deh Q2", d: "Mar Q4", e: "Active" },
-          { row: 10, a: "Data", b: "200", c: "310", d: "205", e: "Verified" },
-          { row: 11, a: "Data", b: "400", c: "350", d: "402", e: "Verified" },
-          { row: 12, a: "Financial Report Q3", b: "200", c: "170", d: "300", e: "Audit Pending", targetCol: 'a' },
-          { row: 13, a: "Total", b: "=SUM(B10:B12)", c: "=SUM(C10:C12)", d: "=SUM(D10:D12)", e: "Auto-Calc" },
-          { row: 14, a: "Notes", b: "Approved", c: "Verified", d: "Pending", e: "FY2026" }
-        ]
+        file_name: "Q3_Summary.xlsx",
+        full_path: "/Users/soakaye/Documents/Reports/Q3_Data/Q3_Summary.xlsx",
+        sheet_name: "Data",
+        cell_address: "A12",
+        row_index: 12,
+        col_index: 1,
+        col_name: "A",
+        match_type: "CellValue",
+        snippet: "...based on <mark class='bg-yellow-400/30 text-yellow-200 px-1 py-0.5 rounded font-semibold'>Financial Report Q3</mark> data...",
+        full_content: "Financial Report Q3 (FY2026-Q3-Final-Audit)",
+        formula: null,
+        preview: {
+          sheet_name: "Data",
+          sheets_in_workbook: ["Data", "Summary", "Chart", "Notes"],
+          columns: [
+            { key: "col_1", label: "A", index: 1 },
+            { key: "col_2", label: "B", index: 2 },
+            { key: "col_3", label: "C", index: 3 },
+            { key: "col_4", label: "D", index: 4 },
+            { key: "col_5", label: "E", index: 5 }
+          ],
+          rows: [
+            {
+              row_number: 9,
+              cells: {
+                col_1: { value: "Sheet Index", is_target: false },
+                col_2: { value: "Q3 -1", is_target: false },
+                col_3: { value: "Deh Q2", is_target: false },
+                col_4: { value: "Mar Q4", is_target: false },
+                col_5: { value: "Active", is_target: false }
+              }
+            },
+            {
+              row_number: 10,
+              cells: {
+                col_1: { value: "Revenue", is_target: false },
+                col_2: { value: "200,000", is_target: false },
+                col_3: { value: "310,000", is_target: false },
+                col_4: { value: "205,000", is_target: false },
+                col_5: { value: "Verified", is_target: false }
+              }
+            },
+            {
+              row_number: 11,
+              cells: {
+                col_1: { value: "Expenditure", is_target: false },
+                col_2: { value: "400,000", is_target: false },
+                col_3: { value: "350,000", is_target: false },
+                col_4: { value: "402,000", is_target: false },
+                col_5: { value: "Verified", is_target: false }
+              }
+            },
+            {
+              row_number: 12,
+              cells: {
+                col_1: { value: "Financial Report Q3", is_target: true },
+                col_2: { value: "200,000", is_target: false },
+                col_3: { value: "170,000", is_target: false },
+                col_4: { value: "300,000", is_target: false },
+                col_5: { value: "Audit Pending", is_target: false }
+              }
+            },
+            {
+              row_number: 13,
+              cells: {
+                col_1: { value: "Total", is_target: false },
+                col_2: { value: "800,000", formula: "=SUM(B10:B12)", is_target: false },
+                col_3: { value: "830,000", formula: "=SUM(C10:C12)", is_target: false },
+                col_4: { value: "907,000", formula: "=SUM(D10:D12)", is_target: false },
+                col_5: { value: "Auto-Calc", is_target: false }
+              }
+            },
+            {
+              row_number: 14,
+              cells: {
+                col_1: { value: "Notes", is_target: false },
+                col_2: { value: "Approved", is_target: false },
+                col_3: { value: "Verified", is_target: false },
+                col_4: { value: "Pending", is_target: false },
+                col_5: { value: "FY2026", is_target: false }
+              }
+            }
+          ]
+        }
       },
       {
         id: 2,
-        fileName: "Q3_Summary.xlsx",
-        fullPath: "C:\\Users\\JohnDoe\\Documents\\Reports\\Q3_Data\\Q3_Summary.xlsx",
-        sheet: "Data",
-        sheets: ["Data", "Sheet Index", "Summary", "Notes"],
-        cell: "B13",
-        row: 13,
-        col: "B",
-        matchType: "Formula",
-        matchBadgeClass: "bg-purple-950 text-purple-300 border-purple-800",
-        snippet: "=SUM(B10:B12) /* calc for <mark class='bg-yellow-500/30 text-yellow-300 px-0.5 rounded font-semibold'>Financial Report Q3</mark> */",
-        fullContent: "=SUM(B10:B12)",
+        file_name: "Q3_Summary.xlsx",
+        full_path: "/Users/soakaye/Documents/Reports/Q3_Data/Q3_Summary.xlsx",
+        sheet_name: "Data",
+        cell_address: "B13",
+        row_index: 13,
+        col_index: 2,
+        col_name: "B",
+        match_type: "Formula",
+        snippet: "<mark class='bg-yellow-400/30 text-yellow-200 px-1 py-0.5 rounded font-semibold'>=SUM(B10:B12)</mark> /* calc for Financial Report Q3 */",
+        full_content: "=SUM(B10:B12)",
         formula: "=SUM(B10:B12)",
-        grid: [
-          { row: 10, a: "Data", b: "200", c: "310", d: "205", e: "Verified" },
-          { row: 11, a: "Data", b: "400", c: "350", d: "402", e: "Verified" },
-          { row: 12, a: "Financial Report Q3", b: "200", c: "170", d: "300", e: "Audit Pending" },
-          { row: 13, a: "Total", b: "=SUM(B10:B12)", c: "=SUM(C10:C12)", d: "=SUM(D10:D12)", e: "Auto-Calc", targetCol: 'b' },
-          { row: 14, a: "Notes", b: "Approved", c: "Verified", d: "Pending", e: "FY2026" }
-        ]
+        preview: {
+          sheet_name: "Data",
+          sheets_in_workbook: ["Data", "Summary", "Chart", "Notes"],
+          columns: [
+            { key: "col_1", label: "A", index: 1 },
+            { key: "col_2", label: "B", index: 2 },
+            { key: "col_3", label: "C", index: 3 },
+            { key: "col_4", label: "D", index: 4 }
+          ],
+          rows: [
+            {
+              row_number: 11,
+              cells: {
+                col_1: { value: "Expenditure", is_target: false },
+                col_2: { value: "400,000", is_target: false },
+                col_3: { value: "350,000", is_target: false },
+                col_4: { value: "402,000", is_target: false }
+              }
+            },
+            {
+              row_number: 12,
+              cells: {
+                col_1: { value: "Financial Report Q3", is_target: false },
+                col_2: { value: "200,000", is_target: false },
+                col_3: { value: "170,000", is_target: false },
+                col_4: { value: "300,000", is_target: false }
+              }
+            },
+            {
+              row_number: 13,
+              cells: {
+                col_1: { value: "Total", is_target: false },
+                col_2: { value: "800,000", formula: "=SUM(B10:B12)", is_target: true },
+                col_3: { value: "830,000", formula: "=SUM(C10:C12)", is_target: false },
+                col_4: { value: "907,000", formula: "=SUM(D10:D12)", is_target: false }
+              }
+            },
+            {
+              row_number: 14,
+              cells: {
+                col_1: { value: "Notes", is_target: false },
+                col_2: { value: "Approved", is_target: false },
+                col_3: { value: "Verified", is_target: false },
+                col_4: { value: "Pending", is_target: false }
+              }
+            }
+          ]
+        }
       },
       {
         id: 3,
-        fileName: "Auditing_2026.xlsm",
-        fullPath: "C:\\Users\\JohnDoe\\Documents\\Reports\\Q3_Data\\Auditing_2026.xlsm",
-        sheet: "Executive_Summary",
-        sheets: ["Executive_Summary", "Audit_Checklist", "SignOff"],
-        cell: "C4",
-        row: 4,
-        col: "C",
-        matchType: "Comment",
-        matchBadgeClass: "bg-amber-950 text-amber-300 border-amber-800",
-        snippet: "メモ: <mark class='bg-yellow-500/30 text-yellow-300 px-0.5 rounded font-semibold'>Financial Report Q3</mark> 監査承認済み (2026/09/20)",
-        fullContent: "監査役メモ: Financial Report Q3 は外部会計監査にて承認完了",
-        formula: "承認ステータス：完了",
-        grid: [
-          { row: 2, a: "ID", b: "Audit Item", c: "Status", d: "Sign-off", e: "Timestamp" },
-          { row: 3, a: "101", b: "Revenue Check", c: "OK", d: "S. Tanaka", e: "09:30" },
-          { row: 4, a: "102", b: "Expense Audit", c: "Approved [Comment]", d: "K. Sato", e: "11:15", targetCol: 'c' },
-          { row: 5, a: "103", b: "Balance Sheet", c: "OK", d: "S. Tanaka", e: "14:00" }
-        ]
+        file_name: "Auditing_2026.xlsm",
+        full_path: "/Users/soakaye/Documents/Reports/Q3_Data/Auditing_2026.xlsm",
+        sheet_name: "Executive_Summary",
+        cell_address: "C4",
+        row_index: 4,
+        col_index: 3,
+        col_name: "C",
+        match_type: "Comment",
+        snippet: "メモ: <mark class='bg-yellow-400/30 text-yellow-200 px-1 py-0.5 rounded font-semibold'>Financial Report Q3</mark> 監査承認済み (2026/09/20)",
+        full_content: "監査役メモ: Financial Report Q3 は外部会計監査にて承認完了",
+        formula: null,
+        preview: {
+          sheet_name: "Executive_Summary",
+          sheets_in_workbook: ["Executive_Summary", "Audit_Checklist", "SignOff"],
+          columns: [
+            { key: "col_1", label: "A", index: 1 },
+            { key: "col_2", label: "B", index: 2 },
+            { key: "col_3", label: "C", index: 3 },
+            { key: "col_4", label: "D", index: 4 }
+          ],
+          rows: [
+            {
+              row_number: 2,
+              cells: {
+                col_1: { value: "101", is_target: false },
+                col_2: { value: "Revenue Check", is_target: false },
+                col_3: { value: "OK", is_target: false },
+                col_4: { value: "S. Tanaka", is_target: false }
+              }
+            },
+            {
+              row_number: 3,
+              cells: {
+                col_1: { value: "102", is_target: false },
+                col_2: { value: "Expense Audit", is_target: false },
+                col_3: { value: "OK", is_target: false },
+                col_4: { value: "K. Sato", is_target: false }
+              }
+            },
+            {
+              row_number: 4,
+              cells: {
+                col_1: { value: "103", is_target: false },
+                col_2: { value: "Balance Sheet", is_target: false },
+                col_3: { value: "Approved [Comment]", is_target: true },
+                col_4: { value: "S. Tanaka", is_target: false }
+              }
+            },
+            {
+              row_number: 5,
+              cells: {
+                col_1: { value: "104", is_target: false },
+                col_2: { value: "Tax Filing", is_target: false },
+                col_3: { value: "Pending", is_target: false },
+                col_4: { value: "K. Sato", is_target: false }
+              }
+            }
+          ]
+        }
       },
       {
         id: 4,
-        fileName: "Budget_Master_v2.xlsb",
-        fullPath: "C:\\Users\\JohnDoe\\Documents\\Reports\\Q3_Data\\Budget_Master_v2.xlsb",
-        sheet: "Hidden_Archive",
-        sheets: ["Master", "Dept_Allocations", "Hidden_Archive (Hidden)"],
-        cell: "D18",
-        row: 18,
-        col: "D",
-        matchType: "Hidden Sheet",
-        matchBadgeClass: "bg-rose-950 text-rose-300 border-rose-800",
-        snippet: "非表示シート内: ...archive backup of <mark class='bg-yellow-500/30 text-yellow-300 px-0.5 rounded font-semibold'>Financial Report Q3</mark>...",
-        fullContent: "Archive Backup of Financial Report Q3 - Final Version",
-        formula: "Archive Backup",
-        grid: [
-          { row: 16, a: "Archived Date", b: "Version", c: "Author", d: "Title", e: "Checksum" },
-          { row: 17, a: "2026-08-31", b: "v2.1", c: "Finance Team", d: "Q2 Final Review", e: "e4f8c" },
-          { row: 18, a: "2026-09-24", b: "v3.0", c: "Finance Team", d: "Financial Report Q3", e: "9a2b1", targetCol: 'd' },
-          { row: 19, a: "2026-09-25", b: "v3.1", c: "Audit Team", d: "Pending Sign", e: "1f4a9" }
-        ]
+        file_name: "Budget_Master_v2.xlsb",
+        full_path: "/Users/soakaye/Documents/Reports/Q3_Data/Budget_Master_v2.xlsb",
+        sheet_name: "Hidden_Archive",
+        cell_address: "D18",
+        row_index: 18,
+        col_index: 4,
+        col_name: "D",
+        match_type: "HiddenSheet",
+        snippet: "非表示シート内: ...archive backup of <mark class='bg-yellow-400/30 text-yellow-200 px-1 py-0.5 rounded font-semibold'>Financial Report Q3</mark>...",
+        full_content: "Archive Backup of Financial Report Q3 - Final Version",
+        formula: null,
+        preview: {
+          sheet_name: "Hidden_Archive",
+          sheets_in_workbook: ["Master", "Dept_Allocations", "Hidden_Archive"],
+          columns: [
+            { key: "col_1", label: "A", index: 1 },
+            { key: "col_2", label: "B", index: 2 },
+            { key: "col_3", label: "C", index: 3 },
+            { key: "col_4", label: "D", index: 4 }
+          ],
+          rows: [
+            {
+              row_number: 16,
+              cells: {
+                col_1: { value: "2026-08-31", is_target: false },
+                col_2: { value: "v2.1", is_target: false },
+                col_3: { value: "Finance Team", is_target: false },
+                col_4: { value: "Q2 Final Review", is_target: false }
+              }
+            },
+            {
+              row_number: 17,
+              cells: {
+                col_1: { value: "2026-09-15", is_target: false },
+                col_2: { value: "v2.9", is_target: false },
+                col_3: { value: "Finance Team", is_target: false },
+                col_4: { value: "Draft Q3 Prep", is_target: false }
+              }
+            },
+            {
+              row_number: 18,
+              cells: {
+                col_1: { value: "2026-09-24", is_target: false },
+                col_2: { value: "v3.0", is_target: false },
+                col_3: { value: "Finance Team", is_target: false },
+                col_4: { value: "Financial Report Q3", is_target: true }
+              }
+            },
+            {
+              row_number: 19,
+              cells: {
+                col_1: { value: "2026-09-25", is_target: false },
+                col_2: { value: "v3.1", is_target: false },
+                col_3: { value: "Audit Team", is_target: false },
+                col_4: { value: "Pending Sign", is_target: false }
+              }
+            }
+          ]
+        }
       },
       {
         id: 5,
-        fileName: "Tax_Calculation_Final.xlsx",
-        fullPath: "C:\\Users\\JohnDoe\\Documents\\Reports\\Q3_Data\\Tax_Calculation_Final.xlsx",
-        sheet: "Tax_Schedule",
-        sheets: ["Tax_Schedule", "Deductions", "Summary"],
-        cell: "B2",
-        row: 2,
-        col: "B",
-        matchType: "Cell Value",
-        matchBadgeClass: "bg-blue-950 text-blue-300 border-blue-800",
-        snippet: "...Ref Table: <mark class='bg-yellow-500/30 text-yellow-300 px-0.5 rounded font-semibold'>Financial Report Q3</mark>...",
-        fullContent: "Tax Return based on Financial Report Q3",
-        formula: "Tax Schedule FY26",
-        grid: [
-          { row: 1, a: "Section", b: "Description", c: "Amount (JPY)", d: "Rate", e: "DueDate" },
-          { row: 2, a: "Corporate Tax", b: "Financial Report Q3 Ref", c: "12,450,000", d: "23.2%", e: "2026-11-30", targetCol: 'b' },
-          { row: 3, a: "Local Tax", b: "Prefecture Base", c: "2,310,000", d: "4.8%", e: "2026-11-30" },
-          { row: 4, a: "Total Tax", b: "=SUM(C2:C3)", c: "14,760,000", d: "-", e: "Final" }
-        ]
+        file_name: "Tax_Calculation_Final.xlsx",
+        full_path: "/Users/soakaye/Documents/Reports/Q3_Data/Tax_Calculation_Final.xlsx",
+        sheet_name: "Corporate_Tax",
+        cell_address: "A5",
+        row_index: 5,
+        col_index: 1,
+        col_name: "A",
+        match_type: "CellValue",
+        snippet: "項目: <mark class='bg-yellow-400/30 text-yellow-200 px-1 py-0.5 rounded font-semibold'>Financial Report Q3</mark> 連動税額計算...",
+        full_content: "Financial Report Q3 連動税額計算マスターシート",
+        formula: null,
+        preview: {
+          sheet_name: "Corporate_Tax",
+          sheets_in_workbook: ["Corporate_Tax", "Depreciation", "Deductions"],
+          columns: [
+            { key: "col_1", label: "A", index: 1 },
+            { key: "col_2", label: "B", index: 2 },
+            { key: "col_3", label: "C", index: 3 }
+          ],
+          rows: [
+            {
+              row_number: 4,
+              cells: {
+                col_1: { value: "Base Calculation", is_target: false },
+                col_2: { value: "1,200,000", is_target: false },
+                col_3: { value: "Taxable", is_target: false }
+              }
+            },
+            {
+              row_number: 5,
+              cells: {
+                col_1: { value: "Financial Report Q3 連動税額計算マスターシート", is_target: true },
+                col_2: { value: "360,000", is_target: false },
+                col_3: { value: "Computed", is_target: false }
+              }
+            },
+            {
+              row_number: 6,
+              cells: {
+                col_1: { value: "Final Adjustment", is_target: false },
+                col_2: { value: "-12,000", is_target: false },
+                col_3: { value: "Adjusted", is_target: false }
+              }
+            }
+          ]
+        }
       }
     ];
 
-    let selectedItem = mockData[0];
+    // 状態管理
+    let currentSelectedId = 1;
+    let currentFilteredMatches = [...mockMatches];
+    let sortField = "file_name";
+    let sortOrder = "asc";
+    let isScanning = false;
+    let selectedCellState = null;
+    let activeSheetTab = "Data";
+    let toastTimer = null;
 
-    // テーブル行の描画
-    function renderTable(items) {
-      const tbody = document.getElementById("resultTableBody");
-      tbody.innerHTML = "";
-      
-      items.forEach(item => {
-        const tr = document.createElement("tr");
-        const isSelected = selectedItem && selectedItem.id === item.id;
-        tr.className = `cursor-pointer transition-colors duration-150 border-b border-zinc-800/60 ${
-          isSelected ? "bg-emerald-950/40 border-l-2 border-l-emerald-500 text-zinc-100" : "hover:bg-zinc-800/50 text-zinc-300"
-        }`;
-        
-        tr.innerHTML = `
-          <td class="py-2 px-3 font-medium flex items-center gap-1.5">
-            <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-500 flex-shrink-0"></i>
-            <span class="truncate max-w-[140px]" title="${item.fullPath}">${item.fileName}</span>
-          </td>
-          <td class="py-2 px-3 text-zinc-400 font-mono text-[11px]">${item.sheet}</td>
-          <td class="py-2 px-3 font-mono font-semibold text-emerald-400">${item.cell}</td>
-          <td class="py-2 px-3">
-            <span class="text-[10px] px-1.5 py-0.5 rounded border ${item.matchBadgeClass} font-mono">
-              ${item.matchType}
-            </span>
-          </td>
-          <td class="py-2 px-3 text-zinc-300 font-mono text-[11px] truncate max-w-[240px]">
-            ${item.snippet}
-          </td>
-        `;
-
-        tr.addEventListener("click", () => {
-          selectedItem = item;
-          renderTable(items);
-          renderPreview(item);
-        });
-
-        tbody.appendChild(tr);
-      });
-
-      lucide.createIcons();
-    }
-
-    // プレビューペインの更新
-    function renderPreview(item) {
-      document.getElementById("previewFileName").textContent = item.fileName;
-      document.getElementById("previewFileName").title = item.fileName;
-      document.getElementById("previewFilePath").textContent = item.fullPath;
-      document.getElementById("previewFilePath").title = item.fullPath;
-      document.getElementById("previewSheetBadge").textContent = item.sheet;
-      document.getElementById("nameBox").textContent = item.cell;
-      document.getElementById("formulaBarContent").textContent = item.formula;
-      
-      document.getElementById("metaMatchType").textContent = item.matchType;
-      document.getElementById("metaFullText").textContent = item.fullContent;
-      document.getElementById("metaRow").textContent = item.row;
-      document.getElementById("metaCol").textContent = `${item.col} 列`;
-      document.getElementById("metaHidden").textContent = item.matchType === "Hidden Sheet" ? "非表示 (Hidden)" : "表示 (Visible)";
-
-      // Excel風シートタブバーの生成
-      const sheetTabsList = document.getElementById("sheetTabsList");
-      if (sheetTabsList) {
-        sheetTabsList.innerHTML = "";
-        const sheets = item.sheets || [item.sheet, "Sheet Index", "Summary"];
-        sheets.forEach(sheetName => {
-          const isCurrent = sheetName.startsWith(item.sheet);
-          const tabBtn = document.createElement("button");
-          tabBtn.className = `flex items-center gap-1.5 px-3 py-1 rounded-t text-xs font-sans transition flex-shrink-0 border-t border-x ${
-            isCurrent
-              ? "bg-[#242428] text-emerald-300 font-semibold border-t-2 border-t-emerald-500 border-x-zinc-700/70 border-b-0 shadow-sm"
-              : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60 border-transparent border-b border-b-zinc-800"
-          }`;
-          tabBtn.innerHTML = `
-            <i data-lucide="${isCurrent ? 'sheet' : 'file-spreadsheet'}" class="w-3 h-3 ${isCurrent ? 'text-emerald-400' : 'text-zinc-500'}"></i>
-            <span>${sheetName}</span>
-          `;
-          tabBtn.addEventListener("click", () => {
-            showToast(`シート切り替え: [${sheetName}]`);
-          });
-          sheetTabsList.appendChild(tabBtn);
-        });
-      }
-
-      // スプレッドシートグリッド生成 (列 A〜E 対応 & sticky固定)
-      const gridBody = document.getElementById("spreadsheetBody");
-      gridBody.innerHTML = "";
-
-      item.grid.forEach(row => {
-        const tr = document.createElement("tr");
-        tr.className = "hover:bg-zinc-800/30";
-
-        // 行ヘッダー番号 (sticky left-0)
-        let rowHtml = `<td class="py-1 px-2.5 text-center bg-[#202024] text-zinc-500 font-mono font-semibold select-none border-r border-zinc-700/80">${row.row}</td>`;
-
-        ['a', 'b', 'c', 'd', 'e'].forEach(colKey => {
-          const val = row[colKey] !== undefined ? row[colKey] : "";
-          const isTarget = (row.targetCol === colKey);
-          
-          if (isTarget) {
-            rowHtml += `
-              <td class="py-1.5 px-3 bg-emerald-950/70 border-2 border-emerald-500 font-mono font-medium text-emerald-200 shadow-inner">
-                <span class="bg-yellow-400/30 text-yellow-200 px-1 py-0.5 rounded font-semibold">${val}</span>
-              </td>
-            `;
-          } else {
-            rowHtml += `
-              <td class="py-1.5 px-3 text-zinc-300 font-mono text-[11px] truncate max-w-[130px]">
-                ${val}
-              </td>
-            `;
-          }
-        });
-
-        tr.innerHTML = rowHtml;
-        gridBody.appendChild(tr);
-      });
-
-      lucide.createIcons();
-    }
-
-    // トースト通知の表示
+    // トースト通知表示関数
     function showToast(message) {
       const toast = document.getElementById("toast");
       const toastMsg = document.getElementById("toastMsg");
@@ -695,99 +906,526 @@
       toast.classList.remove("translate-y-20", "opacity-0", "pointer-events-none");
       toast.classList.add("translate-y-0", "opacity-100");
 
-      setTimeout(() => {
+      if (toastTimer) clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => {
         toast.classList.add("translate-y-20", "opacity-0", "pointer-events-none");
         toast.classList.remove("translate-y-0", "opacity-100");
-      }, 2600);
+      }, 3000);
     }
 
-    // イベントリスナーの登録
-    document.addEventListener("DOMContentLoaded", () => {
-      lucide.createIcons();
-      renderTable(mockData);
-      renderPreview(mockData[0]);
+    // 一致種別バッジ生成 (ResultTable.tsx 準拠: 値 / 数式 / メモ / 非表示)
+    function renderBadgeHtml(matchType) {
+      switch (matchType) {
+        case "CellValue":
+          return `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-950/80 text-blue-300 border border-blue-800/60">値</span>`;
+        case "Formula":
+          return `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-950/80 text-purple-300 border border-purple-800/60">数式</span>`;
+        case "Comment":
+          return `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-950/80 text-amber-300 border border-amber-800/60">メモ</span>`;
+        case "HiddenSheet":
+          return `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">非表示</span>`;
+        default:
+          return `<span class="px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">一致</span>`;
+      }
+    }
 
-      // 検索ボタンクリック (シミュレーション)
-      const searchBtn = document.getElementById("searchBtn");
-      const searchInput = document.getElementById("searchInput");
-      const statusText = document.getElementById("statusText");
+    // 検索結果テーブルの描画
+    function renderResultTable() {
+      const tbody = document.getElementById("resultTableBody");
+      const badgeCount = document.getElementById("badgeCount");
+      badgeCount.textContent = `${currentFilteredMatches.length} 件`;
 
-      function triggerSearch() {
-        const query = searchInput.value.trim();
-        searchBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 animate-spin"></i><span>SEARCHING...</span>`;
-        lucide.createIcons();
-        searchBtn.disabled = true;
-        statusText.textContent = "スキャン中... (rayon 並列処理)";
-
-        setTimeout(() => {
-          searchBtn.innerHTML = `<i data-lucide="search" class="w-4 h-4"></i><span>SEARCH</span>`;
-          searchBtn.disabled = false;
-          lucide.createIcons();
-          statusText.textContent = `Found 142 matches in 28 files (0.42s) - Keyword: "${query || '*'}"`;
-          showToast(`検索完了: 142 件がヒットしました (0.42秒)`);
-        }, 500);
+      if (currentFilteredMatches.length === 0) {
+        tbody.innerHTML = `
+          <div class="p-8 flex items-center justify-center text-xs text-zinc-500 select-none">
+            一致する結果がありません
+          </div>
+        `;
+        return;
       }
 
-      searchBtn.addEventListener("click", triggerSearch);
-      searchInput.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") triggerSearch();
+      let html = "";
+      currentFilteredMatches.forEach((item) => {
+        const isSelected = (item.id === currentSelectedId);
+        html += `
+          <div 
+            class="result-row flex items-center text-xs border-b border-zinc-800/80 cursor-pointer select-none transition-colors overflow-hidden h-[36px] ${
+              isSelected 
+                ? "bg-emerald-950/70 text-emerald-200 font-medium" 
+                : "hover:bg-zinc-800/60 text-zinc-300"
+            }"
+            data-id="${item.id}"
+          >
+            <div class="w-[30%] px-3 truncate font-mono text-[11px]" title="${item.file_name}">${item.file_name}</div>
+            <div class="w-[18%] px-3 truncate" title="${item.sheet_name}">${item.sheet_name}</div>
+            <div class="w-[12%] px-3 font-mono font-bold text-emerald-400">${item.cell_address}</div>
+            <div class="w-[15%] px-3">${renderBadgeHtml(item.match_type)}</div>
+            <div class="w-[25%] px-3 truncate text-zinc-300 font-mono text-[11px]" title="${item.full_content}">
+              ${item.snippet}
+            </div>
+          </div>
+        `;
+      });
+      tbody.innerHTML = html;
+
+      // 行クリックイベントの付与
+      document.querySelectorAll(".result-row").forEach(row => {
+        row.addEventListener("click", () => {
+          const id = parseInt(row.getAttribute("data-id"), 10);
+          selectMatchById(id);
+        });
+      });
+    }
+
+    // プレビューペイン全体の更新
+    function updatePreviewPane(item) {
+      if (!item) return;
+
+      // 1. ヘッダー情報
+      document.getElementById("previewFileName").textContent = item.file_name;
+      document.getElementById("previewFileName").title = item.file_name;
+      document.getElementById("previewSheetBadge").textContent = item.sheet_name;
+      document.getElementById("previewFilePath").textContent = item.full_path;
+      document.getElementById("previewFilePath").title = item.full_path;
+
+      // 2. 数式バー初期化 (対象セルの値/数式)
+      const currentCellAddress = selectedCellState ? selectedCellState.address : item.cell_address;
+      const currentFormulaVal = selectedCellState 
+        ? selectedCellState.value 
+        : (item.formula || item.full_content);
+
+      document.getElementById("nameBox").textContent = currentCellAddress;
+      document.getElementById("formulaBarContent").textContent = currentFormulaVal;
+
+      // 3. グリッドテーブル描画
+      const headerRow = document.getElementById("gridHeaderRow");
+      const gridBody = document.getElementById("gridBody");
+
+      // ヘッダー (列番号)
+      let headHtml = `<th class="w-12 py-1.5 px-2 bg-[#202024] select-none text-zinc-500 font-mono text-[11px] sticky left-0 top-0 z-30">#</th>`;
+      item.preview.columns.forEach(col => {
+        headHtml += `<th class="py-1.5 px-3 min-w-[120px] bg-[#222226] sticky top-0 z-20 font-mono text-zinc-300 border border-zinc-800">${col.label}</th>`;
+      });
+      headerRow.innerHTML = headHtml;
+
+      // 行データ
+      let bodyHtml = "";
+      item.preview.rows.forEach(r => {
+        bodyHtml += `<tr class="hover:bg-zinc-800/30 transition">`;
+        bodyHtml += `<td class="w-12 py-1.5 px-2 bg-[#202024] select-none text-zinc-500 font-mono text-[11px] text-center sticky left-0 z-10 border border-zinc-800">${r.row_number}</td>`;
+
+        item.preview.columns.forEach(col => {
+          const cellData = r.cells[col.key];
+          const val = cellData ? cellData.value : "";
+          const formula = cellData ? cellData.formula : null;
+          const isTarget = cellData ? cellData.is_target : false;
+          const address = `${col.label}${r.row_number}`;
+          const isSelected = selectedCellState && selectedCellState.address === address;
+
+          let cellClass = "text-zinc-300 hover:bg-zinc-800/60";
+          if (isTarget) {
+            cellClass = "bg-emerald-950/60 text-emerald-200 font-semibold ring-1 ring-emerald-500";
+          } else if (isSelected) {
+            cellClass = "bg-zinc-800 text-white font-medium ring-1 ring-zinc-500";
+          }
+
+          bodyHtml += `
+            <td 
+              class="grid-cell py-1.5 px-2.5 font-mono text-xs cursor-pointer border border-zinc-800/80 transition ${cellClass}"
+              data-address="${address}"
+              data-value="${val}"
+              data-formula="${formula || ''}"
+              title="${formula ? '数式: ' + formula : val}"
+            >
+              <div class="truncate max-w-[200px]">${val || '&nbsp;'}</div>
+            </td>
+          `;
+        });
+        bodyHtml += `</tr>`;
+      });
+      gridBody.innerHTML = bodyHtml;
+
+      // セルクリックイベント
+      document.querySelectorAll(".grid-cell").forEach(cell => {
+        cell.addEventListener("click", () => {
+          const addr = cell.getAttribute("data-address");
+          const val = cell.getAttribute("data-value");
+          const form = cell.getAttribute("data-formula");
+          selectedCellState = { address: addr, value: form || val };
+          updatePreviewPane(item);
+        });
       });
 
-      // クリアボタン
-      document.getElementById("clearBtn").addEventListener("click", () => {
+      // 4. シートタブバー描画
+      const sheetTabsList = document.getElementById("sheetTabsList");
+      sheetTabsList.innerHTML = "";
+      item.preview.sheets_in_workbook.forEach(sName => {
+        const isActive = (sName === activeSheetTab);
+        const tabBtn = document.createElement("button");
+        tabBtn.type = "button";
+        tabBtn.className = `px-3 py-1 rounded text-xs font-medium flex items-center gap-1.5 whitespace-nowrap transition flex-shrink-0 ${
+          isActive
+            ? "bg-[#27272a] text-emerald-400 border-b-2 border-emerald-500 font-semibold shadow-sm"
+            : "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/60"
+        }`;
+        tabBtn.innerHTML = `
+          <i data-lucide="file-spreadsheet" class="w-3 h-3"></i>
+          <span>${sName}</span>
+        `;
+        tabBtn.addEventListener("click", () => {
+          activeSheetTab = sName;
+          showToast(`シート切り替え: [${sName}]`);
+          updatePreviewPane(item);
+        });
+        sheetTabsList.appendChild(tabBtn);
+      });
+
+      // 5. メタ情報カード描画 (MetaInfoCard.tsx 準拠)
+      const matchTypeLabels = {
+        CellValue: "セル値 (Text / Number)",
+        Formula: "数式 (Formula)",
+        Comment: "コメント / メモ",
+        HiddenSheet: "非表示シート一致"
+      };
+      document.getElementById("metaMatchType").textContent = matchTypeLabels[item.match_type] || item.match_type;
+      document.getElementById("metaFullContent").textContent = item.full_content || "(空)";
+      document.getElementById("metaRow").textContent = item.row_index;
+      document.getElementById("metaCol").textContent = `${item.col_index} (${item.col_name})`;
+      document.getElementById("metaHidden").textContent = (item.match_type === "HiddenSheet") ? "非表示" : "表示";
+
+      lucide.createIcons();
+    }
+
+    // 指定IDの一致アイテムを選択
+    function selectMatchById(id) {
+      currentSelectedId = id;
+      selectedCellState = null;
+      const found = mockMatches.find(m => m.id === id);
+      if (found) {
+        activeSheetTab = found.sheet_name;
+        renderResultTable();
+        updatePreviewPane(found);
+      }
+    }
+
+    // フィルタ・ソート処理
+    function applyFilterAndSort() {
+      const filterVal = document.getElementById("filterTableInput").value.trim().toLowerCase();
+      let res = mockMatches;
+      if (filterVal) {
+        res = mockMatches.filter(m => 
+          m.file_name.toLowerCase().includes(filterVal) ||
+          m.sheet_name.toLowerCase().includes(filterVal) ||
+          m.cell_address.toLowerCase().includes(filterVal) ||
+          m.full_content.toLowerCase().includes(filterVal)
+        );
+      }
+
+      currentFilteredMatches = [...res].sort((a, b) => {
+        let valA = a[sortField];
+        let valB = b[sortField];
+        if (typeof valA === "string" && typeof valB === "string") {
+          const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: "base" });
+          return sortOrder === "asc" ? cmp : -cmp;
+        }
+        return 0;
+      });
+
+      if (!currentFilteredMatches.some(m => m.id === currentSelectedId) && currentFilteredMatches.length > 0) {
+        currentSelectedId = currentFilteredMatches[0].id;
+      }
+
+      renderResultTable();
+      const currentItem = mockMatches.find(m => m.id === currentSelectedId);
+      if (currentItem) {
+        updatePreviewPane(currentItem);
+      }
+    }
+
+    // ソートボタンのクリックハンドラ
+    function handleSortClick(field) {
+      if (sortField === field) {
+        sortOrder = (sortOrder === "asc") ? "desc" : "asc";
+      } else {
+        sortField = field;
+        sortOrder = "asc";
+      }
+
+      // ソートアイコン更新
+      ["File", "Sheet", "Cell", "Type"].forEach(key => {
+        const el = document.getElementById(`sort${key}Icon`);
+        if (el) el.innerHTML = "";
+      });
+
+      const currentIconEl = document.getElementById(`sort${field.replace("file_name", "File").replace("sheet_name", "Sheet").replace("cell_address", "Cell").replace("match_type", "Type")}Icon`);
+      if (currentIconEl) {
+        currentIconEl.innerHTML = `<i data-lucide="${sortOrder === 'asc' ? 'arrow-up' : 'arrow-down'}" class="w-3 h-3 text-emerald-400"></i>`;
+      }
+
+      applyFilterAndSort();
+      lucide.createIcons();
+    }
+
+    // 初期化およびイベントリスナー登録
+    document.addEventListener("DOMContentLoaded", () => {
+      lucide.createIcons();
+      renderResultTable();
+      updatePreviewPane(mockMatches[0]);
+
+      // 検索バー入力・クリア・Enter
+      const searchInput = document.getElementById("searchInput");
+      const clearBtn = document.getElementById("clearBtn");
+      const searchBtn = document.getElementById("searchBtn");
+      const searchBtnIcon = document.getElementById("searchBtnIcon");
+      const searchBtnText = document.getElementById("searchBtnText");
+      const statusText = document.getElementById("statusText");
+      const statusIndicatorDot = document.getElementById("statusIndicatorDot");
+      const progressBarFill = document.getElementById("progressBarFill");
+      const progressPercentText = document.getElementById("progressPercentText");
+      const folderInput = document.getElementById("folderInput");
+      let searchTimeout1 = null;
+      let searchTimeout2 = null;
+
+      function startSearchSimulation() {
+        if (isScanning) {
+          // CANCEL処理
+          isScanning = false;
+          if (searchTimeout1) clearTimeout(searchTimeout1);
+          if (searchTimeout2) clearTimeout(searchTimeout2);
+          searchBtn.className = "w-full py-2 px-4 bg-excel hover:bg-excel-hover active:scale-[0.99] text-white font-semibold text-sm rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition";
+          searchBtnText.textContent = "SEARCH";
+          searchBtnIcon.setAttribute("data-lucide", "search");
+          searchBtnIcon.classList.remove("fill-white");
+          statusIndicatorDot.className = "w-2 h-2 rounded-full flex-shrink-0 bg-red-400";
+          progressBarFill.className = "bg-zinc-600 h-full rounded-full transition-all duration-300";
+          progressPercentText.textContent = "中断";
+          statusText.textContent = "検索中断: 3 件一致 (3 ファイル走査済)";
+          statusText.title = statusText.textContent;
+          showToast("検索を中断しました");
+          lucide.createIcons();
+          return;
+        }
+
+        // SEARCH開始
+        isScanning = true;
+        searchBtn.className = "w-full py-2 px-4 bg-red-600 hover:bg-red-500 active:scale-[0.99] text-white font-semibold text-sm rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-red-950/40 transition";
+        searchBtnText.textContent = "CANCEL";
+        searchBtnIcon.setAttribute("data-lucide", "square");
+        searchBtnIcon.classList.add("fill-white");
+
+        // フェーズ1: フォルダスキャン中 (ファイル読み込み前の探索動作を明示)
+        const targetDir = folderInput.value.trim() || "/Users/soakaye/Documents/Reports/Q3_Data/";
+        statusIndicatorDot.className = "w-2 h-2 rounded-full flex-shrink-0 bg-amber-400 animate-pulse";
+        progressBarFill.className = "bg-amber-500 h-full rounded-full animate-pulse transition-all duration-300";
+        progressBarFill.style.width = "25%";
+        progressPercentText.textContent = "探索中";
+        statusText.textContent = `フォルダスキャン中: ${targetDir} (対象ファイルを探索しています...)`;
+        statusText.title = statusText.textContent;
+        lucide.createIcons();
+
+        // フェーズ2: ファイル解析・セル走査中 (350ms後)
+        searchTimeout1 = setTimeout(() => {
+          if (!isScanning) return;
+          progressBarFill.className = "bg-excel h-full rounded-full transition-all duration-300";
+          progressBarFill.style.width = "60%";
+          progressPercentText.textContent = "60% (3/5)";
+          statusText.textContent = "ファイル解析中: 3/5 ファイル (3 件一致, 0.22s) - Auditing_2026.xlsm";
+          statusText.title = statusText.textContent;
+        }, 350);
+
+        // フェーズ3: 完了 (750ms後)
+        searchTimeout2 = setTimeout(() => {
+          if (!isScanning) return;
+          isScanning = false;
+          searchBtn.className = "w-full py-2 px-4 bg-excel hover:bg-excel-hover active:scale-[0.99] text-white font-semibold text-sm rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition";
+          searchBtnText.textContent = "SEARCH";
+          searchBtnIcon.setAttribute("data-lucide", "search");
+          searchBtnIcon.classList.remove("fill-white");
+          statusIndicatorDot.className = "w-2 h-2 rounded-full flex-shrink-0 bg-emerald-500";
+          progressBarFill.className = "bg-excel h-full rounded-full transition-all duration-300";
+          progressBarFill.style.width = "100%";
+          progressPercentText.textContent = "100% (5/5)";
+          statusText.textContent = "完了: 5 件一致 (5 ファイル, 0.38s)";
+          statusText.title = statusText.textContent;
+          showToast("検索完了: 5 件がヒットしました (0.38秒)");
+          lucide.createIcons();
+        }, 750);
+      }
+
+      searchBtn.addEventListener("click", startSearchSimulation);
+      searchInput.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") startSearchSimulation();
+      });
+
+      clearBtn.addEventListener("click", () => {
         searchInput.value = "";
         searchInput.focus();
       });
 
       // フォルダ参照ボタン
       document.getElementById("browseBtn").addEventListener("click", () => {
-        showToast("フォルダ選択ダイアログ (Tauri native dialog)");
+        showToast("フォルダ選択ダイアログを表示しました (Tauri dialog)");
       });
 
-      // パスコピーボタン
-      const copyPathBtn = document.getElementById("copyPathBtn");
-      if (copyPathBtn) {
-        copyPathBtn.addEventListener("click", () => {
-          if (selectedItem && selectedItem.fullPath) {
-            navigator.clipboard.writeText(selectedItem.fullPath).then(() => {
-              showToast("パスをクリップボードにコピーしました");
-            }).catch(() => {
-              showToast("パスをコピーしました");
-            });
+      // フォルダDnDシミュレーション (ドラッグ＆ドロップ)
+      const folderDropZone = document.getElementById("folderDropZone");
+      const dropOverlay = document.getElementById("dropOverlay");
+      const folderInput = document.getElementById("folderInput");
+
+      folderDropZone.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dropOverlay.classList.remove("hidden");
+        folderDropZone.classList.add("ring-2", "ring-emerald-500", "bg-emerald-950/40");
+      });
+      folderDropZone.addEventListener("dragleave", (e) => {
+        e.preventDefault();
+        dropOverlay.classList.add("hidden");
+        folderDropZone.classList.remove("ring-2", "ring-emerald-500", "bg-emerald-950/40");
+      });
+      folderDropZone.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dropOverlay.classList.add("hidden");
+        folderDropZone.classList.remove("ring-2", "ring-emerald-500", "bg-emerald-950/40");
+        folderInput.value = "/Users/soakaye/Documents/DroppedFolder/";
+        showToast("フォルダを設定しました: /Users/soakaye/Documents/DroppedFolder/");
+      });
+
+      // 検索オプションピルのクリック状態トグル
+      const optionPills = [
+        { id: "optCase", pillId: "pillCase" },
+        { id: "optRegex", pillId: "pillRegex" },
+        { id: "optFormula", pillId: "pillFormula" },
+        { id: "optComment", pillId: "pillComment" },
+        { id: "optHidden", pillId: "pillHidden" }
+      ];
+
+      optionPills.forEach(opt => {
+        const input = document.getElementById(opt.id);
+        const pill = document.getElementById(opt.pillId);
+        input.addEventListener("change", () => {
+          if (input.checked) {
+            pill.className = "cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition bg-emerald-950/60 text-emerald-300 border-emerald-600/80 font-medium";
+          } else {
+            pill.className = "cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition bg-zinc-800 hover:bg-zinc-700/80 text-zinc-300 border-zinc-700";
           }
         });
-      }
+      });
 
-      // Excelで開くボタン
-      document.getElementById("openInExcelBtn").addEventListener("click", () => {
-        showToast(`Excelで起動: ${selectedItem.fileName} -> セル ${selectedItem.cell}`);
+      // 結果テーブル絞り込みフィルタ
+      document.getElementById("filterTableInput").addEventListener("input", applyFilterAndSort);
+
+      // ソートボタン
+      document.getElementById("sortFile").addEventListener("click", () => handleSortClick("file_name"));
+      document.getElementById("sortSheet").addEventListener("click", () => handleSortClick("sheet_name"));
+      document.getElementById("sortCell").addEventListener("click", () => handleSortClick("cell_address"));
+      document.getElementById("sortType").addEventListener("click", () => handleSortClick("match_type"));
+
+      // キーボード上下キーによるテーブル行選択移動
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          if (currentFilteredMatches.length === 0) return;
+          e.preventDefault();
+          const currIdx = currentFilteredMatches.findIndex(m => m.id === currentSelectedId);
+          let nextIdx = 0;
+          if (currIdx !== -1) {
+            nextIdx = (e.key === "ArrowDown")
+              ? Math.min(currentFilteredMatches.length - 1, currIdx + 1)
+              : Math.max(0, currIdx - 1);
+          }
+          selectMatchById(currentFilteredMatches[nextIdx].id);
+        }
+      });
+
+      // スプリットボタン (アプリで開く / ▼メニュー)
+      const mainAppLaunchBtn = document.getElementById("mainAppLaunchBtn");
+      const menuDropdownBtn = document.getElementById("menuDropdownBtn");
+      const appDropdownMenu = document.getElementById("appDropdownMenu");
+
+      mainAppLaunchBtn.addEventListener("click", () => {
+        const cur = mockMatches.find(m => m.id === currentSelectedId);
+        showToast(`既定アプリで起動: Microsoft Excel -> ${cur.file_name}`);
+      });
+
+      menuDropdownBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        appDropdownMenu.classList.toggle("hidden");
+      });
+
+      // メニュー外クリックまたは Esc キーで閉じる
+      document.addEventListener("click", (e) => {
+        if (!document.getElementById("splitBtnContainer").contains(e.target)) {
+          appDropdownMenu.classList.add("hidden");
+        }
+      });
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") {
+          appDropdownMenu.classList.add("hidden");
+        }
+      });
+
+      // サポートアプリ選択
+      document.querySelectorAll(".app-item").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const appName = btn.getAttribute("data-app");
+          const cur = mockMatches.find(m => m.id === currentSelectedId);
+          appDropdownMenu.classList.add("hidden");
+          showToast(`${appName} で起動しました: ${cur.file_name}`);
+        });
+      });
+
+      // 別のプログラムを選択...
+      document.getElementById("btnOpenWithOther").addEventListener("click", () => {
+        appDropdownMenu.classList.add("hidden");
+        showToast("「プログラムから開く」ダイアログを起動しました");
       });
 
       // フォルダを開くボタン
       document.getElementById("openFolderBtn").addEventListener("click", () => {
-        showToast(`エクスプローラーでフォルダを表示しました`);
+        showToast("ファイルの保存場所を開きました (Finder / エクスプローラー)");
       });
 
-      // CSVエクスポート
+      // パスコピーボタン
+      const copyPathBtn = document.getElementById("copyPathBtn");
+      const copyIcon = document.getElementById("copyIcon");
+      copyPathBtn.addEventListener("click", () => {
+        const cur = mockMatches.find(m => m.id === currentSelectedId);
+        if (cur && cur.full_path) {
+          navigator.clipboard.writeText(cur.full_path).catch(() => {});
+          copyIcon.setAttribute("data-lucide", "check");
+          copyIcon.classList.add("text-emerald-400");
+          lucide.createIcons();
+          showToast("ファイルパスをコピーしました");
+
+          setTimeout(() => {
+            copyIcon.setAttribute("data-lucide", "copy");
+            copyIcon.classList.remove("text-emerald-400");
+            lucide.createIcons();
+          }, 2000);
+        }
+      });
+
+      // シートスクロールボタン
+      const sheetTabsList = document.getElementById("sheetTabsList");
+      document.getElementById("sheetScrollLeft").addEventListener("click", () => {
+        sheetTabsList.scrollBy({ left: -100, behavior: "smooth" });
+      });
+      document.getElementById("sheetScrollRight").addEventListener("click", () => {
+        sheetTabsList.scrollBy({ left: 100, behavior: "smooth" });
+      });
+
+      // CSV / Excel エクスポート
       document.getElementById("exportCsvBtn").addEventListener("click", () => {
-        showToast("検索結果を CSV ファイルに出力しました (results_20260925.csv)");
+        showToast("CSVファイルを保存しました: ExcelGrep_Results_2026-09-26.csv");
       });
-
-      // Excelエクスポート
       document.getElementById("exportExcelBtn").addEventListener("click", () => {
-        showToast("検索結果を Excel ブックに出力しました (results_20260925.xlsx)");
+        showToast("Excelファイルを保存しました: ExcelGrep_Results_2026-09-26.xlsx");
       });
 
-      // 結果テーブル絞り込みフィルタ
-      document.getElementById("filterTableInput").addEventListener("input", (e) => {
-        const val = e.target.value.toLowerCase();
-        const filtered = mockData.filter(item => 
-          item.fileName.toLowerCase().includes(val) ||
-          item.sheet.toLowerCase().includes(val) ||
-          item.cell.toLowerCase().includes(val) ||
-          item.matchType.toLowerCase().includes(val)
-        );
-        renderTable(filtered);
+      // トースト閉じるボタン
+      document.getElementById("toastCloseBtn").addEventListener("click", () => {
+        const toast = document.getElementById("toast");
+        toast.classList.add("translate-y-20", "opacity-0", "pointer-events-none");
+        toast.classList.remove("translate-y-0", "opacity-100");
       });
     });
   </script>
