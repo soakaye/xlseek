@@ -14,6 +14,14 @@ pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_shell::init())
+        .setup(|app| {
+            #[cfg(target_os = "macos")]
+            {
+                let menu = tauri::menu::Menu::default(app.handle())?;
+                app.set_menu(menu)?;
+            }
+            Ok(())
+        })
         .manage(AppState { engine })
         .invoke_handler(tauri::generate_handler![
             commands::start_search,

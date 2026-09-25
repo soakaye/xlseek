@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { FileSpreadsheet, Layers, Folder, Copy, Check, ChevronDown, ExternalLink } from "lucide-react";
+import { FileSpreadsheet, Layers, Folder, Copy, Check, ChevronDown, ExternalLink, BarChart2, Table } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { SearchMatch, SupportedApp } from "../../types/search";
 
@@ -73,6 +73,19 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
   const defaultAppTooltip = defaultApp
     ? `${defaultApp.name} で開く`
     : "既定のアプリで開く";
+
+  const renderAppIcon = (iconHint?: string | null, className?: string) => {
+    switch (iconHint) {
+      case "excel":
+        return <FileSpreadsheet className={className || "w-3.5 h-3.5 text-emerald-400 flex-shrink-0"} />;
+      case "numbers":
+        return <BarChart2 className={className || "w-3.5 h-3.5 text-amber-400 flex-shrink-0"} />;
+      case "calc":
+        return <Table className={className || "w-3.5 h-3.5 text-blue-400 flex-shrink-0"} />;
+      default:
+        return <FileSpreadsheet className={className || "w-3.5 h-3.5 text-zinc-400 flex-shrink-0"} />;
+    }
+  };
 
   // メインボタン押下: OS 既定アプリで直接起動 (appPath: null)
   const handleLaunchDefaultApp = async () => {
@@ -165,7 +178,7 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
               title={defaultAppTooltip}
               className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-xs font-medium rounded-l flex items-center gap-1.5 transition flex-shrink-0"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5" />
+              {renderAppIcon(defaultApp?.icon_hint, "w-3.5 h-3.5 text-white")}
               <span>アプリで開く</span>
             </button>
             <button
@@ -190,9 +203,12 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
                         onClick={() => handleLaunchSpecificApp(app)}
                         className="w-full text-left px-3 py-2 hover:bg-zinc-800 text-zinc-200 flex items-center justify-between gap-2 transition"
                       >
-                        <span className="truncate" title={app.name}>
-                          {app.name}
-                        </span>
+                        <div className="flex items-center gap-2 min-w-0 flex-1">
+                          {renderAppIcon(app.icon_hint)}
+                          <span className="truncate" title={app.name}>
+                            {app.name}
+                          </span>
+                        </div>
                         {app.is_default && (
                           <span className="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-700/60 px-1.5 py-0.5 rounded flex-shrink-0 font-medium">
                             既定

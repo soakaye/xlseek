@@ -75,6 +75,6 @@ export interface SupportedApp {
   name: string;
   executable_path: string;
   is_default: boolean;
-  icon_hint?: string | null;
+  icon_hint?: "excel" | "numbers" | "calc" | "generic" | string | null;
 }
 

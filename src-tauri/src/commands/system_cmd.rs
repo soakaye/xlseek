@@ -152,8 +152,106 @@ pub async fn get_supported_apps(extension: Option<String>) -> Result<Vec<Support
             Ok(apps)
         }
 
-        #[cfg(not(target_os = "windows"))]
+        #[cfg(target_os = "macos")]
         {
+            let _ = ext_normalized;
+            let mut apps = Vec::new();
+
+            struct MacCandidate {
+                id: &'static str,
+                name: &'static str,
+                paths: &'static [&'static str],
+                icon_hint: &'static str,
+            }
+
+            let candidates = [
+                MacCandidate {
+                    id: "com.microsoft.Excel",
+                    name: "Microsoft Excel",
+                    paths: &[
+                        "/Applications/Microsoft Excel.app",
+                        "/Applications/Excel.app",
+                    ],
+                    icon_hint: "excel",
+                },
+                MacCandidate {
+                    id: "com.apple.iWork.Numbers",
+                    name: "Numbers",
+                    paths: &[
+                        "/Applications/Numbers.app",
+                        "/System/Applications/Numbers.app",
+                    ],
+                    icon_hint: "numbers",
+                },
+                MacCandidate {
+                    id: "org.libreoffice.script",
+                    name: "LibreOffice Calc",
+                    paths: &[
+                        "/Applications/LibreOffice.app",
+                    ],
+                    icon_hint: "calc",
+                },
+                MacCandidate {
+                    id: "cn.wps.moffice",
+                    name: "WPS Office",
+                    paths: &[
+                        "/Applications/wpsoffice.app",
+                        "/Applications/WPS Office.app",
+                    ],
+                    icon_hint: "generic",
+                },
+            ];
+
+            let home_dir = std::env::var("HOME").unwrap_or_default();
+
+            for cand in &candidates {
+                let mut found_path = None;
+                for p in cand.paths {
+                    if Path::new(p).exists() {
+                        found_path = Some(p.to_string());
+                        break;
+                    }
+                    if !home_dir.is_empty() && p.starts_with("/Applications/") {
+                        let user_app = format!("{}/{}", home_dir, &p[1..]);
+                        if Path::new(&user_app).exists() {
+                            found_path = Some(user_app);
+                            break;
+                        }
+                    }
+                }
+
+                if let Some(app_path) = found_path {
+                    apps.push(SupportedApp {
+                        id: cand.id.to_string(),
+                        name: cand.name.to_string(),
+                        executable_path: app_path,
+                        is_default: false,
+                        icon_hint: Some(cand.icon_hint.to_string()),
+                    });
+                }
+            }
+
+            // 既定アプリの優先判定: Excel があれば最優先、無ければ Numbers を既定、いずれもなければ最初の検出アプリ
+            if !apps.is_empty() {
+                let mut default_idx = 0;
+                for (idx, app) in apps.iter().enumerate() {
+                    if app.id == "com.microsoft.Excel" {
+                        default_idx = idx;
+                        break;
+                    } else if app.id == "com.apple.iWork.Numbers" && default_idx == 0 {
+                        default_idx = idx;
+                    }
+                }
+                apps[default_idx].is_default = true;
+                apps.sort_by(|a, b| b.is_default.cmp(&a.is_default));
+            }
+
+            Ok(apps)
+        }
+
+        #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+        {
+            let _ = ext_normalized;
             Ok(vec![])
         }
     })
@@ -178,11 +276,24 @@ pub async fn launch_associated_app(
             if !exe_path.exists() {
                 return Err(format!("指定されたアプリケーションが存在しません: {}", exe));
             }
-            std::process::Command::new(exe_path)
-                .arg(&file_path)
-                .spawn()
-                .map_err(|e| format!("アプリケーションの起動に失敗しました: {}", e))?;
-            Ok(())
+
+            #[cfg(target_os = "macos")]
+            {
+                std::process::Command::new("open")
+                    .args(["-a", &exe, &file_path])
+                    .spawn()
+                    .map_err(|e| format!("アプリケーションの起動に失敗しました: {}", e))?;
+                Ok(())
+            }
+
+            #[cfg(not(target_os = "macos"))]
+            {
+                std::process::Command::new(exe_path)
+                    .arg(&file_path)
+                    .spawn()
+                    .map_err(|e| format!("アプリケーションの起動に失敗しました: {}", e))?;
+                Ok(())
+            }
         } else {
             // OS既定のアプリで開く
             open::that(&file_path)
@@ -195,29 +306,49 @@ pub async fn launch_associated_app(
 
 /// OS標準の「プログラムから開く」ダイアログを表示する
 #[tauri::command]
-pub async fn show_open_with_dialog(file_path: String) -> Result<(), String> {
-    tauri::async_runtime::spawn_blocking(move || {
-        let p = Path::new(&file_path);
-        if !p.exists() {
-            return Err("対象ファイルが存在しません".to_string());
-        }
+pub async fn show_open_with_dialog(app: tauri::AppHandle, file_path: String) -> Result<(), String> {
+    let p = Path::new(&file_path);
+    if !p.exists() {
+        return Err("対象ファイルが存在しません".to_string());
+    }
 
-        #[cfg(target_os = "windows")]
-        {
+    #[cfg(target_os = "windows")]
+    {
+        let _ = app;
+        tauri::async_runtime::spawn_blocking(move || {
             std::process::Command::new("rundll32.exe")
                 .args(["shell32.dll,OpenAs_RunDLL", &file_path])
                 .spawn()
                 .map_err(|e| format!("プログラムから開くダイアログの起動に失敗しました: {}", e))?;
             Ok(())
-        }
+        })
+        .await
+        .map_err(|e| format!("実行エラー: {}", e))?
+    }
 
-        #[cfg(not(target_os = "windows"))]
-        {
-            open::that(&file_path).map_err(|e| format!("ファイルを開けませんでした: {}", e))
+    #[cfg(target_os = "macos")]
+    {
+        use tauri_plugin_dialog::DialogExt;
+        let chosen = app.dialog()
+            .file()
+            .set_directory("/Applications")
+            .blocking_pick_file();
+
+        if let Some(app_path) = chosen {
+            let app_str = app_path.to_string();
+            std::process::Command::new("open")
+                .args(["-a", &app_str, &file_path])
+                .spawn()
+                .map_err(|e| format!("アプリケーションの起動に失敗しました: {}", e))?;
         }
-    })
-    .await
-    .map_err(|e| format!("実行エラー: {}", e))?
+        Ok(())
+    }
+
+    #[cfg(not(any(target_os = "windows", target_os = "macos")))]
+    {
+        let _ = app;
+        open::that(&file_path).map_err(|e| format!("ファイルを開けませんでした: {}", e))
+    }
 }
 
 /// コマンドライン文字列から実行ファイルパスとアプリ表示名をパースする補助関数
@@ -262,6 +393,20 @@ pub async fn open_in_folder(file_path: String) -> Result<(), String> {
             // Windowsではエクスプローラーで該当ファイルを選択状態で開く
             let status = std::process::Command::new("explorer")
                 .arg(format!("/select,{}", path.display()))
+                .status();
+
+            if let Ok(s) = status {
+                if s.success() {
+                    return Ok(());
+                }
+            }
+        }
+
+        #[cfg(target_os = "macos")]
+        {
+            // macOSではFinderで該当ファイルを選択状態で開く
+            let status = std::process::Command::new("open")
+                .args(["-R", &file_path])
                 .status();
 
             if let Ok(s) = status {
