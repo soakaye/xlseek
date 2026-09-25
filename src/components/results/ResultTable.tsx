@@ -221,7 +221,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
 
               return (
                 <div
-                  key={item.id}
+                  key={virtualRow.key}
                   onClick={() => onSelectItem(item)}
                   style={{
                     position: "absolute",
@@ -231,10 +231,10 @@ export const ResultTable: React.FC<ResultTableProps> = ({
                     height: `${virtualRow.size}px`,
                     transform: `translateY(${virtualRow.start}px)`,
                   }}
-                  className={`flex items-center text-xs border-b border-zinc-800/60 cursor-pointer select-none transition ${
+                  className={`flex items-center text-xs border-b border-zinc-800/80 cursor-pointer select-none transition-colors overflow-hidden ${
                     isSelected
-                      ? "bg-emerald-950/40 text-emerald-200 font-medium"
-                      : "hover:bg-zinc-800/50 text-zinc-300"
+                      ? "bg-emerald-950/70 text-emerald-200 font-medium"
+                      : "hover:bg-zinc-800/60 text-zinc-300"
                   }`}
                 >
                   <div className="w-[30%] px-3 truncate font-mono text-[11px]" title={item.file_name}>
@@ -249,9 +249,11 @@ export const ResultTable: React.FC<ResultTableProps> = ({
                   <div className="w-[15%] px-3">
                     {renderBadge(item.match_type)}
                   </div>
-                  <div className="w-[25%] px-3 truncate text-zinc-400 font-mono text-[11px]" title={item.snippet}>
-                    {item.snippet}
-                  </div>
+                  <div
+                    className="w-[25%] px-3 truncate text-zinc-300 font-mono text-[11px]"
+                    title={item.full_content}
+                    dangerouslySetInnerHTML={{ __html: item.snippet }}
+                  />
                 </div>
               );
             })}

@@ -42,27 +42,41 @@ export function useSearch(options?: UseSearchOptions) {
   const resultsBufferRef = useRef<SearchMatch[]>([]);
   const flushTimerRef = useRef<number | null>(null);
 
-  // Tauri イベントリスナーの登録
+  // Tauri イベントリスナーの登録 (React 18 StrictMode での2重登録を防止)
   useEffect(() => {
     let unlistenMatch: UnlistenFn | undefined;
     let unlistenProg: UnlistenFn | undefined;
+    let isCancelled = false;
+
+    const appendResultsSafely = (newItems: SearchMatch[]) => {
+      if (newItems.length === 0) return;
+      setResults((prev) => {
+        const existingIds = new Set(prev.map((it) => it.id));
+        const uniqueItems = newItems.filter((it) => !existingIds.has(it.id));
+        if (uniqueItems.length === 0) return prev;
+        return [...prev, ...uniqueItems];
+      });
+    };
 
     const setupListeners = async () => {
       try {
-        unlistenMatch = await listen<SearchMatch>("search-match", (event) => {
+        const uMatch = await listen<SearchMatch>("search-match", (event) => {
+          if (isCancelled) return;
           resultsBufferRef.current.push(event.payload);
 
           if (!flushTimerRef.current) {
             flushTimerRef.current = window.setTimeout(() => {
+              if (isCancelled) return;
               const buffered = resultsBufferRef.current;
               resultsBufferRef.current = [];
-              setResults((prev) => [...prev, ...buffered]);
+              appendResultsSafely(buffered);
               flushTimerRef.current = null;
-            }, 60);
+            }, 50);
           }
         });
 
-        unlistenProg = await listen<ScanProgress>("scan-progress", (event) => {
+        const uProg = await listen<ScanProgress>("scan-progress", (event) => {
+          if (isCancelled) return;
           console.log("[useSearch] 進捗通知受信:", event.payload);
           setProgress(event.payload);
 
@@ -75,12 +89,19 @@ export function useSearch(options?: UseSearchOptions) {
             if (resultsBufferRef.current.length > 0) {
               const buffered = resultsBufferRef.current;
               resultsBufferRef.current = [];
-              setResults((prev) => [...prev, ...buffered]);
+              appendResultsSafely(buffered);
             }
           }
         });
 
-        console.log("[useSearch] Tauri イベントリスナー登録完了");
+        if (isCancelled) {
+          uMatch();
+          uProg();
+        } else {
+          unlistenMatch = uMatch;
+          unlistenProg = uProg;
+          console.log("[useSearch] Tauri イベントリスナー登録完了");
+        }
       } catch (err) {
         console.error("[useSearch] イベントリスナー登録エラー:", err);
       }
@@ -89,9 +110,13 @@ export function useSearch(options?: UseSearchOptions) {
     setupListeners();
 
     return () => {
+      isCancelled = true;
       if (unlistenMatch) unlistenMatch();
       if (unlistenProg) unlistenProg();
-      if (flushTimerRef.current) clearTimeout(flushTimerRef.current);
+      if (flushTimerRef.current) {
+        clearTimeout(flushTimerRef.current);
+        flushTimerRef.current = null;
+      }
     };
   }, []);
 
