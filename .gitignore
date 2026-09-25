@@ -94,3 +94,15 @@ worktrees/
 .cache/
 .tmp/
 tmp/
+
+# Node.js / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Rust / Tauri
+target/
+src-tauri/target/
+

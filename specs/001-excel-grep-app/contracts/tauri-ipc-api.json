@@ -1,0 +1,203 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ExcelGrepTauriIpcContracts",
+  "description": "Tauri IPC Command & Event Contracts between Frontend (TypeScript) and Backend (Rust)",
+  "version": "1.0.0",
+  "commands": {
+    "start_search": {
+      "description": "検索条件を受け取り、バックグラウンドスレッドプール (rayon) で高速走査を開始する",
+      "parameters": {
+        "query": {
+          "type": "object",
+          "required": ["keyword", "target_dir"],
+          "properties": {
+            "keyword": { "type": "string", "minLength": 1 },
+            "target_dir": { "type": "string", "minLength": 1 },
+            "match_case": { "type": "boolean", "default": false },
+            "use_regex": { "type": "boolean", "default": false },
+            "include_formula": { "type": "boolean", "default": true },
+            "include_comment": { "type": "boolean", "default": true },
+            "include_hidden": { "type": "boolean", "default": false },
+            "extensions": {
+              "type": "array",
+              "items": { "type": "string" },
+              "default": [".xlsx", ".xlsm", ".xlsb", ".xls"]
+            }
+          }
+        }
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "error": { "type": "string", "nullable": true }
+        }
+      }
+    },
+    "cancel_search": {
+      "description": "現在実行中のバックグラウンド検索処理を安全に中断する",
+      "parameters": {},
+      "returns": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" }
+        }
+      }
+    },
+    "get_cell_preview": {
+      "description": "指定されたファイル、シート、セル座標の周辺グリッドデータ (前後3行・前後2列) を高速抽出して取得する",
+      "parameters": {
+        "file_path": { "type": "string" },
+        "sheet_name": { "type": "string" },
+        "target_row": { "type": "integer", "minimum": 1 },
+        "target_col": { "type": "integer", "minimum": 1 }
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "target_row": { "type": "integer" },
+          "target_col": { "type": "integer" },
+          "columns": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "key": { "type": "string" },
+                "label": { "type": "string" }
+              }
+            }
+          },
+          "rows": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "row_number": { "type": "integer" },
+                "cells": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "object",
+                    "properties": {
+                      "value": { "type": "string" },
+                      "is_target": { "type": "boolean" },
+                      "formula": { "type": "string", "nullable": true }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "sheets_in_workbook": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "open_in_excel": {
+      "description": "指定されたファイルを OS 規定の Excel アプリケーションで起動する",
+      "parameters": {
+        "file_path": { "type": "string" },
+        "cell_address": { "type": "string", "nullable": true }
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "error": { "type": "string", "nullable": true }
+        }
+      }
+    },
+    "open_in_folder": {
+      "description": "指定されたファイルの保存先フォルダを OS エクスプローラーで選択状態で表示する",
+      "parameters": {
+        "file_path": { "type": "string" }
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "error": { "type": "string", "nullable": true }
+        }
+      }
+    },
+    "export_results": {
+      "description": "検索結果の一覧を CSV または XLSX 形式で指定パスへ保存する",
+      "parameters": {
+        "format": { "type": "string", "enum": ["csv", "xlsx"] },
+        "output_path": { "type": "string" },
+        "items": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/SearchMatchItem" }
+        }
+      },
+      "returns": {
+        "type": "object",
+        "properties": {
+          "success": { "type": "boolean" },
+          "output_file": { "type": "string" },
+          "error": { "type": "string", "nullable": true }
+        }
+      }
+    }
+  },
+  "events": {
+    "search-match": {
+      "description": "走査スレッドが一致セルを発見するたびにフロントエンドへストリーミング送信されるイベント",
+      "payload": {
+        "type": "object",
+        "$ref": "#/definitions/SearchMatchItem"
+      }
+    },
+    "search-progress": {
+      "description": "定期的に（例: 50ms または 10ファイル走査ごと）送信される検索進捗更新イベント",
+      "payload": {
+        "type": "object",
+        "properties": {
+          "state": { "type": "string", "enum": ["Scanning", "Completed", "Cancelled", "Error"] },
+          "scanned_files": { "type": "integer" },
+          "total_files": { "type": "integer" },
+          "matches_found": { "type": "integer" },
+          "current_file": { "type": "string" },
+          "elapsed_ms": { "type": "integer" }
+        }
+      }
+    },
+    "search-complete": {
+      "description": "全走査が終了（完了または中断）した際に送信される最終イベント",
+      "payload": {
+        "type": "object",
+        "properties": {
+          "state": { "type": "string", "enum": ["Completed", "Cancelled"] },
+          "total_scanned_files": { "type": "integer" },
+          "total_matches_found": { "type": "integer" },
+          "total_elapsed_ms": { "type": "integer" }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "SearchMatchItem": {
+      "type": "object",
+      "required": ["id", "file_name", "full_path", "sheet_name", "cell_address", "match_type", "snippet", "full_content"],
+      "properties": {
+        "id": { "type": "integer" },
+        "file_name": { "type": "string" },
+        "full_path": { "type": "string" },
+        "sheet_name": { "type": "string" },
+        "cell_address": { "type": "string" },
+        "row_index": { "type": "integer" },
+        "col_index": { "type": "integer" },
+        "col_name": { "type": "string" },
+        "match_type": { "type": "string", "enum": ["CellValue", "Formula", "Comment", "HiddenSheet"] },
+        "snippet": { "type": "string" },
+        "full_content": { "type": "string" },
+        "formula": { "type": "string", "nullable": true },
+        "sheets_in_workbook": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}
