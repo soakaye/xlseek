@@ -22,6 +22,7 @@ pub fn run() {
             commands::open_in_excel,
             commands::open_in_folder,
             commands::export_results,
+            commands::resolve_dropped_path,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
