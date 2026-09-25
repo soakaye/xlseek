@@ -1,50 +1,91 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+<!--
+# Sync Impact Report
+- Version change: Unversioned (Initial draft) → 1.0.0
+- List of modified principles:
+  - [PRINCIPLE_1_NAME] → I. 自然かつ正確な日本語出力（Japanese-First & Quality）
+  - [PRINCIPLE_2_NAME] → II. 定数の外部抽出とハードコードの禁止（No Hardcoded Constants）
+  - [PRINCIPLE_3_NAME] → III. 厳格なヘッダコメントとドキュメンテーション（Comprehensive Header Comments）
+  - [PRINCIPLE_4_NAME] → IV. 責務に応じたモジュール分割と標準スタイル準拠（Modular Design & Code Standards）
+  - [PRINCIPLE_5_NAME] → V. 堅牢なエラーハンドリングとテスト検証（Robust Error Handling & Testing）
+- Added sections:
+  - 技術制約および品質基準（Technical Constraints & Quality Standards）
+  - 開発ワークフローと品質ゲート（Development Workflow & Quality Gates）
+- Removed sections:
+  - None
+- Follow-up TODOs:
+  - None
+-->
+
+# Excel Grep Constitution
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. 自然かつ正確な日本語出力（Japanese-First & Quality）
+AIエージェントのすべての出力、ユーザーへの回答、および生成ドキュメントは自然かつ正確な日本語で作成しなければならない（MUST）。英語などの他言語テキストを扱う場合、利用者に提示する内容は自然な日本語へ翻訳しなければならない（MUST）。成果物を提出する前に、文字化けや `<PAD>`、`<pad>` 等の不要または不明な特殊トークンが含まれていないことを検証し、検出時は自然な日本語へ補正しなければならない（MUST）。
+- **根拠**: 日本語を主要言語とする利用環境において、誤訳や不自然な表現、不要トークン混入による混乱・誤動作を防ぎ、成果物の信頼性とユーザー体験を最高水準に保つため。
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+### II. 定数の外部抽出とハードコードの禁止（No Hardcoded Constants）
+`0` と空文字列（`""`）を除き、定数値（数値、マジックナンバー、固定文字列等）をコードへ直接ハードコードしてはならない（MUST NOT）。すべての定数値は `src/constants.rs` 等の定数定義ファイルへ抽出し、利用箇所には該当定数を参照している旨のコメントを明記しなければならない（MUST）。自動生成されたコードであっても、同様に定数抽出および定数参照コメントを適用しなければならない（MUST）。
+- **根拠**: マジックナンバーやハードコードされた固定値は保守性を著しく低下させ、仕様変更時の修正漏れや不整合を招くため。定数を一元管理し利用箇所を明示することで変更容易性を担保する。
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+### III. 厳格なヘッダコメントとドキュメンテーション（Comprehensive Header Comments）
+ファイル、モジュール、構造体、クラス、関数、およびメソッドにはヘッダコメントを必ず記載しなければならない（MUST）。ヘッダコメントには以下を漏れなく含めなければならない（MUST）：
+1. 処理内容の詳細な説明
+2. 引数・戻り値の型と各説明
+3. 起こり得るエラー、`Result`/`Option` の扱い、または panic / 例外の発生条件
+4. 変更履歴（バージョン、作成日、作成者、修正内容）
+自動生成されたコードであっても、同様にヘッダコメントを適用しなければならない（MUST）。
+- **根拠**: コードの自己文書化とトレーサビリティを徹底し、長期的な保守性および複数開発者・AIエージェント協調時の理解コストを最小化するため。
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### IV. 責務に応じたモジュール分割と標準スタイル準拠（Modular Design & Code Standards）
+実装は対象言語の標準的な書式に従い、一貫した正しいインデントを維持しなければならない（MUST）。実装対象言語（Rust等）の公式スタイルガイドおよびベストプラクティス（`clippy`, `rustfmt` 等）に完全準拠すること（MUST）。クラス、関数、責務の単位に応じて適切にモジュール分割を行い、責務と内容を明確に表す分かりやすいファイル名を使用しなければならない（MUST）。
+- **根拠**: 単一責任の原則（SRP）を遵守してコードベースの見通しと再利用性を高め、公式ツールによる自動検証を通じて品質を均一化するため。
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+### V. 堅牢なエラーハンドリングとテスト検証（Robust Error Handling & Testing）
+予期しないパニックや未処理例外を排除し、`Result` や適切なエラー型を用いて堅牢なエラーハンドリングを行うこと（MUST）。モジュールおよび関数は独立して単体テストが可能な構造とし、テストケースを作成して正当性を検証すること（MUST）。
+- **根拠**: デスクトップアプリケーションにおいて異常終了やクラッシュはユーザーの作業喪失に直結するため。堅牢なエラー処理と継続的なテスト検証により信頼性を恒常的に保証する。
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+## 技術制約および品質基準
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### 1. アーキテクチャと技術スタック
+- **GUI層**: Tauri v2, React, TypeScript, Tailwind CSS
+- **バックエンド層**: Rust (2021 edition)
+- **Excel解析エンジン**: `calamine`, `rust_xlsxwriter`, `csv`
+- **並列走査**: `rayon` によるマルチスレッド高速スキャン
+- **パターンマッチング**: `regex`
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+### 2. パフォーマンスとリソース管理
+- 大容量および多数の Excel ファイルの検索時においても、過剰なメモリ消費を抑え、UI スレッドをブロックしない非同期・並列処理を維持しなければならない（MUST）。
+- 不要なフルスキャンや重複読み込みを避け、効率的なストリーミングおよび反復走査を採用すること（SHOULD）。
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### 3. セキュリティおよびプライバシー
+- 検索処理は完全にローカル環境内で完結させ、利用者の明示的な承諾なく外部ネットワークへファイルデータや検索内容を送信してはならない（MUST NOT）。
+- ファイルアクセス権限およびOS API呼び出しは最小権限の原則に従わなければならない（MUST）。
+
+## 開発ワークフローと品質ゲート
+
+### 1. テスト主導と検証
+- すべての新機能およびバグ修正は、対応する単体テスト（Rust: `cargo test` / TypeScript: ユニットテスト）を作成して動作を検証しなければならない（MUST）。
+- 境界値（空ファイル、破損したブック、パスワード保護ファイル、極小/極大セル値など）に対するテストケースを網羅しなければならない（MUST）。
+
+### 2. コード品質と静的解析
+- Rustコードは `cargo clippy --all-targets -- -D warnings` および `cargo fmt --check` をパスしなければならない（MUST）。
+- TypeScriptコードは型エラー（`tsc --noEmit`）およびリンター警告をゼロに保たなければならない（MUST）。
+- ヘッダコメントの記載漏れやハードコードされた定数が残存していないことをレビュー時に検証しなければならない（MUST）。
+
+### 3. AI生成コードの品質保証
+- AIエージェントが生成したコードやドキュメントは、文字化けや `<PAD>` などの不要トークンがないことを必ず検査し、不備がある場合は提出前に自己修正しなければならない（MUST）。
+- 自動生成されたコードであっても、手動実装と同様のヘッダコメント記載および定数抽出基準を満たさなければならない（MUST）。
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- **最上位規約**: 本憲章はプロジェクト内のすべての設計文書、実装ルール、および運用指針に優先する（MUST）。
+- **準拠確認**: すべての変更（Pull Request、レビュー、AIエージェントによるコード生成）において、本憲章に定められた原則への準拠を必須条件とする（MUST）。
+- **改定プロセス**: 憲章の改定は慎重に行われなければならず、変更理由の明記、利害関係者によるレビュー、および後方互換性や移行方針の提示を必要とする（MUST）。
+- **バージョニング方針**: セマンティックバージョニング（MAJOR.MINOR.PATCH）に厳格に準拠する（MUST）：
+  - **MAJOR**: 原則の削除、後方互換性のない方針変更、または統治ルールの全面的な改新
+  - **MINOR**: 新たな原則やセクションの追加、既存指針の適用範囲の実質的な拡充
+  - **PATCH**: 文言の明確化、表記ゆれ・タイポの修正、意味を変えない説明の補足
+- **実行時ガイダンス**: 開発および仕様策定時には `.specify/` 配下の仕様ファイルおよび本憲章を常時参照し、プロジェクト全体の一貫性を維持しなければならない（MUST）。
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-25
