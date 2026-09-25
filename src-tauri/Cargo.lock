@@ -893,6 +893,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-shell",
  "walkdir",
+ "winreg",
 ]
 
 [[package]]

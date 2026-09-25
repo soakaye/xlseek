@@ -8,9 +8,9 @@
 
 **目的**: プロジェクト設定・依存クレートおよび型定義の共通基盤整備
 
-- [ ] T001 [P] `src-tauri/Cargo.toml` に Windows レジストリ走査用の依存クレート `winreg = "0.55"` を追加
-- [ ] T002 [P] `src/types/search.ts` に `SupportedApp` インターフェース（id, name, executable_path, is_default, icon_hint）を追加定義
-- [ ] T003 [P] `src-tauri/src/models/mod.rs` に `SupportedApp` 構造体（Serialize/Deserialize, Clone, Debug）を追加定義
+- [X] T001 [P] `src-tauri/Cargo.toml` に Windows レジストリ走査用の依存クレート `winreg = "0.55"` を追加
+- [X] T002 [P] `src/types/search.ts` に `SupportedApp` インターフェース（id, name, executable_path, is_default, icon_hint）を追加定義
+- [X] T003 [P] `src-tauri/src/models/mod.rs` に `SupportedApp` 構造体（Serialize/Deserialize, Clone, Debug）を追加定義
 
 ---
 
@@ -20,9 +20,9 @@
 
 **⚠️ CRITICAL**: 本フェーズ完了までユーザーストーリーの実装・UI連携はブロックされます
 
-- [ ] T004 `src-tauri/src/commands/system_cmd.rs` に Windows レジストリ（`FileExts\.xlsx\OpenWithProgids` / `OpenWithList`）を走査してインストール済みサポートアプリ一覧を列挙する `get_supported_apps` コマンドを実装
-- [ ] T005 `src-tauri/src/commands/system_cmd.rs` に指定アプリまたは既定アプリで起動する `launch_associated_app` および OS の「プログラムから開く」ダイアログを呼び出す `show_open_with_dialog` コマンドを実装
-- [ ] T006 `src-tauri/src/lib.rs` の `invoke_handler` に `get_supported_apps`, `launch_associated_app`, `show_open_with_dialog` を登録
+- [X] T004 `src-tauri/src/commands/system_cmd.rs` に Windows レジストリ（`FileExts\.xlsx\OpenWithProgids` / `OpenWithList`）を走査してインストール済みサポートアプリ一覧を列挙する `get_supported_apps` コマンドを実装
+- [X] T005 `src-tauri/src/commands/system_cmd.rs` に指定アプリまたは既定アプリで起動する `launch_associated_app` および OS の「プログラムから開く」ダイアログを呼び出す `show_open_with_dialog` コマンドを実装
+- [X] T006 `src-tauri/src/lib.rs` の `invoke_handler` に `get_supported_apps`, `launch_associated_app`, `show_open_with_dialog` を登録
 
 **Checkpoint**: バックエンド API 基盤が完成し、フロントエンドからの各機能連携が可能になります
 
@@ -36,8 +36,8 @@
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] `src/components/preview/PreviewHeader.tsx` の「Excel で開く」ボタンを固定ラベル「アプリで開く」と表計算アイコンを持つスプリットボタン形式に刷新し、ツールチップで現在の OS 既定アプリ名（例: "Microsoft Excel で開く"）を表示する UI を実装
-- [ ] T008 [US1] `src/components/preview/PreviewHeader.tsx` でメインボタン押下時に `invoke("launch_associated_app", { filePath, appPath: null })` を呼び出し、OS 既定アプリでのワンクリック起動を連携
+- [X] T007 [US1] `src/components/preview/PreviewHeader.tsx` の「Excel で開く」ボタンを固定ラベル「アプリで開く」と表計算アイコンを持つスプリットボタン形式に刷新し、ツールチップで現在の OS 既定アプリ名（例: "Microsoft Excel で開く"）を表示する UI を実装
+- [X] T008 [US1] `src/components/preview/PreviewHeader.tsx` でメインボタン押下時に `invoke("launch_associated_app", { filePath, appPath: null })` を呼び出し、OS 既定アプリでのワンクリック起動を連携
 
 **Checkpoint**: User Story 1 (MVP) 単体で登録アプリの直接起動が完了し、テスト可能です
 
@@ -51,9 +51,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T009 [US2] `src/components/preview/PreviewHeader.tsx` にスプリットボタンのドロップダウントリガー（▼ボタン）と開閉状態管理（`isMenuOpen`）、および外側クリック / Esc キー検知のイベントリスナーを実装
-- [ ] T010 [US2] `src/components/preview/PreviewHeader.tsx` にポップアップメニューコンポーネント（サポートアプリ一覧、各アプリの表示名、既定バッジ「(既定)」、区切り線、末尾の「別のプログラムを選択...」）を実装
-- [ ] T011 [US2] `src/components/preview/PreviewHeader.tsx` でメニュー内のアプリ項目クリック時に `invoke("launch_associated_app", { filePath, appPath })`、および「別のプログラムを選択...」クリック時に `invoke("show_open_with_dialog", { filePath })` を呼び出す起動処理を連携
+- [X] T009 [US2] `src/components/preview/PreviewHeader.tsx` にスプリットボタンのドロップダウントリガー（▼ボタン）と開閉状態管理（`isMenuOpen`）、および外側クリック / Esc キー検知のイベントリスナーを実装
+- [X] T010 [US2] `src/components/preview/PreviewHeader.tsx` にポップアップメニューコンポーネント（サポートアプリ一覧、各アプリの表示名、既定バッジ「(既定)」、区切り線、末尾の「別のプログラムを選択...」）を実装
+- [X] T011 [US2] `src/components/preview/PreviewHeader.tsx` でメニュー内のアプリ項目クリック時に `invoke("launch_associated_app", { filePath, appPath })`、および「別のプログラムを選択...」クリック時に `invoke("show_open_with_dialog", { filePath })` を呼び出す起動処理を連携
 
 **Checkpoint**: User Story 1 と User Story 2 が共に独立して動作し、テスト可能です
 
@@ -67,9 +67,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T012 [US3] `src-tauri/src/commands/system_cmd.rs` にドロップパス解決コマンド `resolve_dropped_path` を実装・検証（ディレクトリならそのまま、ファイルなら親ディレクトリを返す）
-- [ ] T013 [US3] `src/components/search/SearchBar.tsx` に Tauri `onDragDropEvent` および HTML5 DnD ハンドラを接続し、フォルダ選択領域へのドラッグオーバー時に破線枠とハイライト演出（「フォルダをここにドロップ」）を表示する UI を実装
-- [ ] T014 [US3] `src/components/search/SearchBar.tsx` でドロップ時に `resolve_dropped_path` 経由でパスを解決して `target_dir` に反映し、自動検索は実行せずユーザーの明示的な検索操作（SEARCHボタン/Enter）を待機する処理を確立
+- [X] T012 [US3] `src-tauri/src/commands/system_cmd.rs` にドロップパス解決コマンド `resolve_dropped_path` を実装・検証（ディレクトリならそのまま、ファイルなら親ディレクトリを返す）
+- [X] T013 [US3] `src/components/search/SearchBar.tsx` に Tauri `onDragDropEvent` および HTML5 DnD ハンドラを接続し、フォルダ選択領域へのドラッグオーバー時に破線枠とハイライト演出（「フォルダをここにドロップ」）を表示する UI を実装
+- [X] T014 [US3] `src/components/search/SearchBar.tsx` でドロップ時に `resolve_dropped_path` 経由でパスを解決して `target_dir` に反映し、自動検索は実行せずユーザーの明示的な検索操作（SEARCHボタン/Enter）を待機する処理を確立
 
 **Checkpoint**: フォルダ選択領域への直感的な DnD 操作が完了し、テスト可能です
 
@@ -83,8 +83,8 @@
 
 ### Implementation for User Story 4
 
-- [ ] T015 [US4] `src/components/preview/PreviewHeader.tsx` の起動処理呼び出しに try-catch を適用し、起動失敗時にエラー内容をトースト通知（`onShowToast("アプリケーションを起動できませんでした: ...")`）するハンドリングを実装
-- [ ] T016 [US4] `src/components/preview/PreviewHeader.tsx` でサポートアプリ一覧が 0 件の場合に「利用可能なアプリが見つかりません」の空状態表示と「別のプログラムを選択...」への誘導項目を表示するよう調整
+- [X] T015 [US4] `src/components/preview/PreviewHeader.tsx` の起動処理呼び出しに try-catch を適用し、起動失敗時にエラー内容をトースト通知（`onShowToast("アプリケーションを起動できませんでした: ...")`）するハンドリングを実装
+- [X] T016 [US4] `src/components/preview/PreviewHeader.tsx` でサポートアプリ一覧が 0 件の場合に「利用可能なアプリが見つかりません」の空状態表示と「別のプログラムを選択...」への誘導項目を表示するよう調整
 
 **Checkpoint**: 全ユーザーストーリーの正常系・異常系がすべて完了し、テスト可能です
 
@@ -94,9 +94,9 @@
 
 **目的**: 複数ストーリーにまたがる品質改善・レイアウト調整・最終動作検証
 
-- [ ] T017 [P] `src/components/preview/PreviewHeader.tsx` のポップアップメニューについて、ウィンドウ端や右端で見切れない配置調整（`right-0` や z-index 制御）を実施
-- [ ] T018 `specs/002-launch-associated-app/quickstart.md` に記載の全 E2E 検証シナリオ（DnD、既定起動、ポップアップ選択、Open With ダイアログ、エラー通知）を実施し動作確認
-- [ ] T019 [P] `npm run build` によるフロントエンドビルドおよび `cargo check` による Rust バックエンドの最終検証
+- [X] T017 [P] `src/components/preview/PreviewHeader.tsx` のポップアップメニューについて、ウィンドウ端や右端で見切れない配置調整（`right-0` や z-index 制御）を実施
+- [X] T018 `specs/002-launch-associated-app/quickstart.md` に記載の全 E2E 検証シナリオ（DnD、既定起動、ポップアップ選択、Open With ダイアログ、エラー通知）を実施し動作確認
+- [X] T019 [P] `npm run build` によるフロントエンドビルドおよび `cargo check` による Rust バックエンドの最終検証
 
 ---
 

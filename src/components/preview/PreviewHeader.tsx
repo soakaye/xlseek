@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { FileSpreadsheet, Layers, Folder, Copy, Check } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { FileSpreadsheet, Layers, Folder, Copy, Check, ChevronDown, ExternalLink } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
-import { SearchMatch } from "../../types/search";
+import { SearchMatch, SupportedApp } from "../../types/search";
 
 interface PreviewHeaderProps {
   selectedMatch: SearchMatch | null;
@@ -13,6 +13,52 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
   onShowToast,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [supportedApps, setSupportedApps] = useState<SupportedApp[]>([]);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // マウント時にサポートアプリ一覧を取得
+  useEffect(() => {
+    let isMounted = true;
+    const fetchApps = async () => {
+      try {
+        const apps = await invoke<SupportedApp[]>("get_supported_apps");
+        if (isMounted) {
+          setSupportedApps(apps || []);
+        }
+      } catch (err) {
+        console.error("サポートアプリ一覧の取得に失敗しました:", err);
+      }
+    };
+    fetchApps();
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  // 外側クリックおよび Esc キーでポップアップメニューを閉じる
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMenuOpen]);
 
   if (!selectedMatch) {
     return (
@@ -22,11 +68,46 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
     );
   }
 
-  const handleOpenInExcel = async () => {
+  // OS 既定アプリ名を取得（ツールチップ表示用）
+  const defaultApp = supportedApps.find((app) => app.is_default);
+  const defaultAppTooltip = defaultApp
+    ? `${defaultApp.name} で開く`
+    : "既定のアプリで開く";
+
+  // メインボタン押下: OS 既定アプリで直接起動 (appPath: null)
+  const handleLaunchDefaultApp = async () => {
     try {
-      await invoke("open_in_excel", { filePath: selectedMatch.full_path });
+      await invoke("launch_associated_app", {
+        filePath: selectedMatch.full_path,
+        appPath: null,
+      });
     } catch (err) {
-      onShowToast(`Excel起動エラー: ${err}`);
+      onShowToast(`アプリケーションを起動できませんでした: ${err}`);
+    }
+  };
+
+  // メニュー内の個別アプリ押下: 指定アプリで起動
+  const handleLaunchSpecificApp = async (app: SupportedApp) => {
+    setIsMenuOpen(false);
+    try {
+      await invoke("launch_associated_app", {
+        filePath: selectedMatch.full_path,
+        appPath: app.executable_path,
+      });
+    } catch (err) {
+      onShowToast(`アプリケーションを起動できませんでした: ${err}`);
+    }
+  };
+
+  // メニュー末尾の「別のプログラムを選択...」押下
+  const handleShowOpenWithDialog = async () => {
+    setIsMenuOpen(false);
+    try {
+      await invoke("show_open_with_dialog", {
+        filePath: selectedMatch.full_path,
+      });
+    } catch (err) {
+      onShowToast(`「プログラムから開く」ダイアログを起動できませんでした: ${err}`);
     }
   };
 
@@ -77,13 +158,70 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
 
         {/* アクションボタン群 */}
         <div className="flex items-center gap-2 flex-shrink-0 mr-1">
-          <button
-            onClick={handleOpenInExcel}
-            className="px-2.5 py-1.5 bg-excel hover:bg-excel-hover active:scale-[0.98] text-white text-xs font-medium rounded flex items-center gap-1.5 shadow transition flex-shrink-0"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span>Excel で開く</span>
-          </button>
+          {/* スプリットボタン（左: アプリで開く, 右: ▼） */}
+          <div className="relative inline-flex items-stretch rounded shadow" ref={menuRef}>
+            <button
+              onClick={handleLaunchDefaultApp}
+              title={defaultAppTooltip}
+              className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-xs font-medium rounded-l flex items-center gap-1.5 transition flex-shrink-0"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5" />
+              <span>アプリで開く</span>
+            </button>
+            <button
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              title="開くアプリケーションを選択"
+              aria-expanded={isMenuOpen}
+              aria-haspopup="true"
+              className="px-1.5 py-1.5 bg-emerald-700 hover:bg-emerald-600 active:scale-[0.98] text-white rounded-r border-l border-emerald-800 transition flex items-center justify-center flex-shrink-0"
+            >
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+
+            {/* ドロップダウンメニュー */}
+            {isMenuOpen && (
+              <div className="absolute right-0 top-full mt-1 w-64 bg-zinc-900 border border-zinc-700 rounded-md shadow-2xl py-1 z-50 text-xs animate-in fade-in zoom-in-95 duration-100">
+                {/* サポートアプリ一覧 */}
+                {supportedApps.length > 0 ? (
+                  <div className="max-h-60 overflow-y-auto">
+                    {supportedApps.map((app) => (
+                      <button
+                        key={app.id}
+                        onClick={() => handleLaunchSpecificApp(app)}
+                        className="w-full text-left px-3 py-2 hover:bg-zinc-800 text-zinc-200 flex items-center justify-between gap-2 transition"
+                      >
+                        <span className="truncate" title={app.name}>
+                          {app.name}
+                        </span>
+                        {app.is_default && (
+                          <span className="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-700/60 px-1.5 py-0.5 rounded flex-shrink-0 font-medium">
+                            既定
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="px-3 py-2 text-[11px] text-zinc-500 select-none">
+                    利用可能なアプリが見つかりません
+                  </div>
+                )}
+
+                {/* 区切り線 */}
+                <div className="border-t border-zinc-800 my-1" />
+
+                {/* 別のプログラムを選択... */}
+                <button
+                  onClick={handleShowOpenWithDialog}
+                  className="w-full text-left px-3 py-2 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center gap-2 transition"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" />
+                  <span>別のプログラムを選択...</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           <button
             onClick={handleOpenFolder}
             title="ファイルの保存場所を開く"

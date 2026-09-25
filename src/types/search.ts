@@ -69,3 +69,12 @@ export interface ExportRequest {
   output_path: string;
   items: SearchMatch[];
 }
+
+export interface SupportedApp {
+  id: string;
+  name: string;
+  executable_path: string;
+  is_default: boolean;
+  icon_hint?: string | null;
+}
+
