@@ -2,7 +2,7 @@ use crate::models::{MatchType, SearchMatch, SearchQuery};
 use calamine::{open_workbook_auto, Data, Reader, Sheets};
 use regex::Regex;
 use std::path::Path;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 static MATCH_ID_COUNTER: AtomicU64 = AtomicU64::new(1);
 
@@ -64,7 +64,12 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
     path: P,
     query: &SearchQuery,
     regex_opt: Option<&Regex>,
+    cancel_flag: Option<&AtomicBool>,
 ) -> Result<Vec<SearchMatch>, String> {
+    if cancel_flag.map_or(false, |f| f.load(Ordering::Relaxed)) {
+        return Ok(Vec::new());
+    }
+
     let path_ref = path.as_ref();
     let full_path = path_ref.to_string_lossy().to_string();
     let file_name = path_ref
@@ -79,6 +84,10 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
     let mut matches = Vec::new();
 
     for sheet_name in &sheet_names {
+        if cancel_flag.map_or(false, |f| f.load(Ordering::Relaxed)) {
+            return Ok(matches);
+        }
+
         // 非表示シート判定 (calamine の sheet メタデータ)
         let is_hidden_sheet = sheet_name.to_lowercase().contains("hidden");
 
@@ -89,6 +98,10 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
         // ワークシートのセル値読み込み
         if let Ok(range) = workbook.worksheet_range(sheet_name) {
             for (row_idx, row) in range.rows().enumerate() {
+                if (row_idx & 0x7F) == 0 && cancel_flag.map_or(false, |f| f.load(Ordering::Relaxed)) {
+                    return Ok(matches);
+                }
+
                 for (col_idx, cell) in row.iter().enumerate() {
                     let cell_str = match cell {
                         Data::Empty => continue,
@@ -151,6 +164,9 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
         if query.include_formula {
             if let Ok(formula_range) = workbook.worksheet_formula(sheet_name) {
                 for (row_idx, row) in formula_range.rows().enumerate() {
+                    if (row_idx & 0x7F) == 0 && cancel_flag.map_or(false, |f| f.load(Ordering::Relaxed)) {
+                        return Ok(matches);
+                    }
                     for (col_idx, formula_str) in row.iter().enumerate() {
                         if formula_str.is_empty() {
                             continue;

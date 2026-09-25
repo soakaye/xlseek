@@ -41,6 +41,8 @@ export function useSearch(options?: UseSearchOptions) {
   // 結果リスト蓄積用のバッファ（大量のマッチ受信時の再レンダリング頻度を抑える）
   const resultsBufferRef = useRef<SearchMatch[]>([]);
   const flushTimerRef = useRef<number | null>(null);
+  // 中断要求中フラグ (中断要求後に届く遅延Scanningイベントを破棄するため)
+  const isCancellingRef = useRef(false);
 
   // Tauri イベントリスナーの登録 (React 18 StrictMode での2重登録を防止)
   useEffect(() => {
@@ -61,12 +63,12 @@ export function useSearch(options?: UseSearchOptions) {
     const setupListeners = async () => {
       try {
         const uMatch = await listen<SearchMatch>("search-match", (event) => {
-          if (isCancelled) return;
+          if (isCancelled || isCancellingRef.current) return;
           resultsBufferRef.current.push(event.payload);
 
           if (!flushTimerRef.current) {
             flushTimerRef.current = window.setTimeout(() => {
-              if (isCancelled) return;
+              if (isCancelled || isCancellingRef.current) return;
               const buffered = resultsBufferRef.current;
               resultsBufferRef.current = [];
               appendResultsSafely(buffered);
@@ -77,8 +79,19 @@ export function useSearch(options?: UseSearchOptions) {
 
         const uProg = await listen<ScanProgress>("scan-progress", (event) => {
           if (isCancelled) return;
+
+          // 中断要求後の遅延 Scanning イベントは破棄して状態の巻き戻りを防止
+          if (isCancellingRef.current && event.payload.state === "Scanning") {
+            console.log("[useSearch] 中断要求後の遅延Scanningイベントをスキップ");
+            return;
+          }
+
           console.log("[useSearch] 進捗通知受信:", event.payload);
           setProgress(event.payload);
+
+          if (event.payload.state === "Cancelled") {
+            isCancellingRef.current = false;
+          }
 
           // スキャン完了または中断時にバッファを強制フラッシュ
           if (event.payload.state !== "Scanning") {
@@ -189,6 +202,7 @@ export function useSearch(options?: UseSearchOptions) {
     }
 
     console.log("[useSearch] 検索リクエスト送信:", query);
+    isCancellingRef.current = false;
     setResults([]);
     resultsBufferRef.current = [];
     setSelectedMatch(null);
@@ -226,6 +240,41 @@ export function useSearch(options?: UseSearchOptions) {
   const cancelSearch = useCallback(async () => {
     try {
       console.log("[useSearch] 検索中断を要求");
+      isCancellingRef.current = true;
+
+      // ユーザーへの即時フィードバック: 中断状態へ切り替えてボタンを即座にSEARCHに戻す
+      setProgress((prev) =>
+        prev
+          ? {
+              ...prev,
+              state: "Cancelled",
+              current_file: "スキャンが中断されました",
+            }
+          : {
+              state: "Cancelled",
+              scanned_files: 0,
+              total_files: 0,
+              matches_found: 0,
+              current_file: "スキャンが中断されました",
+              elapsed_ms: 0,
+            }
+      );
+
+      // バッファに残っている結果を即時フラッシュ
+      if (flushTimerRef.current) {
+        clearTimeout(flushTimerRef.current);
+        flushTimerRef.current = null;
+      }
+      if (resultsBufferRef.current.length > 0) {
+        const buffered = resultsBufferRef.current;
+        resultsBufferRef.current = [];
+        setResults((prev) => {
+          const existingIds = new Set(prev.map((it) => it.id));
+          const uniqueItems = buffered.filter((it) => !existingIds.has(it.id));
+          return uniqueItems.length > 0 ? [...prev, ...uniqueItems] : prev;
+        });
+      }
+
       await invoke("cancel_search");
     } catch (err) {
       console.error("[useSearch] 検索中断エラー:", err);

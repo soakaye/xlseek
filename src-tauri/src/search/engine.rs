@@ -141,9 +141,14 @@ impl SearchEngine {
                 .unwrap_or_default();
 
             // Excelファイルパース (破損ファイルやcalamineパニックは安全にスキップして全体を停止させない)
+            let cancel_flag_ref = Arc::clone(&cancel_flag);
             let parse_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                parse_and_search_file(file_path, &query, regex_obj.as_ref())
+                parse_and_search_file(file_path, &query, regex_obj.as_ref(), Some(&cancel_flag_ref))
             }));
+
+            if cancel_flag.load(Ordering::Relaxed) {
+                return;
+            }
 
             match parse_result {
                 Ok(Ok(matches)) => {
@@ -167,6 +172,11 @@ impl SearchEngine {
             let scanned = scanned_count.fetch_add(1, Ordering::Relaxed) + 1;
             let current_matches = match_count.load(Ordering::Relaxed);
             let elapsed = start_time.elapsed().as_millis() as u64;
+
+            // 中断要求後は Scanning 状態の進捗通知を送信しない
+            if cancel_flag.load(Ordering::Relaxed) {
+                return;
+            }
 
             // 1件目、全完了、または前回通知から50ms以上経過した時に進捗通知 (スムーズなUI更新)
             let last = last_notify_ms.load(Ordering::Relaxed);
@@ -315,6 +325,45 @@ mod tests {
         let mat_end_tail = japanese_text.len();
         let snippet_tail = make_snippet(japanese_text, mat_start_tail, mat_end_tail);
         assert!(snippet_tail.contains("確認"));
+    }
+
+    #[test]
+    fn test_search_engine_cancellation() {
+        let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("tests")
+            .join("fixtures");
+
+        assert!(fixtures_dir.exists(), "Fixtures dir should exist: {:?}", fixtures_dir);
+
+        let engine = Arc::new(SearchEngine::new());
+        let engine_clone = Arc::clone(&engine);
+
+        let query = SearchQuery {
+            keyword: "Financial".to_string(),
+            target_dir: fixtures_dir.to_str().unwrap().to_string(),
+            match_case: false,
+            use_regex: false,
+            include_formula: true,
+            include_comment: true,
+            include_hidden: false,
+            extensions: vec![".xlsx".to_string()],
+        };
+
+        // 検索実行中に中断フラグをセット
+        let result = engine.execute_search(
+            query,
+            move |_m| {
+                // 1件マッチした時点で中断
+                engine_clone.cancel();
+            },
+            |_| {},
+        );
+
+        assert!(result.is_ok());
+        let final_prog = result.unwrap();
+        assert_eq!(final_prog.state, ScanState::Cancelled);
     }
 }
 
