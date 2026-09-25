@@ -37,13 +37,27 @@ export const WindowFrame: React.FC<WindowFrameProps> = ({ children }) => {
     }
   };
 
+  // タイトルバーのマウスダウンによるウィンドウドラッグ移動
+  const handleTitleBarMouseDown = async (e: React.MouseEvent<HTMLDivElement>) => {
+    // 左クリックのみを対象とし、ボタン等の子要素クリック時は何もしない
+    if (e.button === 0) {
+      try {
+        const appWindow = getCurrentWindow();
+        await appWindow.startDragging();
+      } catch (err) {
+        console.error("Failed to start dragging window:", err);
+      }
+    }
+  };
+
   return (
     <div className="bg-[#121214] text-zinc-100 min-h-screen flex flex-col font-sans select-none overflow-hidden h-screen border border-zinc-800/80">
       {/* ウィンドウタイトルバー */}
       <div 
         data-tauri-drag-region
+        onMouseDown={handleTitleBarMouseDown}
         onDoubleClick={handleToggleMaximize}
-        className="h-9 bg-[#1e1e20] flex items-center justify-between px-3 border-b border-zinc-800 text-xs text-zinc-400 select-none flex-shrink-0"
+        className="h-9 bg-[#1e1e20] flex items-center justify-between px-3 border-b border-zinc-800 text-xs text-zinc-400 select-none flex-shrink-0 cursor-default"
       >
         <div className="flex items-center gap-2 pointer-events-none">
           {/* Excel風アイコン */}
