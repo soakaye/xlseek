@@ -14,6 +14,10 @@ import { useSearch } from "./hooks/useSearch";
 export const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+  };
+
   const {
     query,
     updateQuery,
@@ -31,11 +35,7 @@ export const App: React.FC = () => {
     handleSelectCell,
     startSearch,
     cancelSearch,
-  } = useSearch();
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-  };
+  } = useSearch({ onShowToast: showToast });
 
   return (
     <WindowFrame>

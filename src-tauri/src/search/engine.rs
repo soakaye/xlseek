@@ -95,6 +95,10 @@ impl SearchEngine {
         // ファイルリスト収集
         let file_list = Self::collect_files(&query.target_dir, &query.extensions);
         let total_files = file_list.len();
+        println!(
+            "[engine] 対象ディレクトリ '{}' 内で {} 件のExcelファイルを検出しました",
+            query.target_dir, total_files
+        );
 
         let scanned_count = Arc::new(AtomicUsize::new(0));
         let match_count = Arc::new(AtomicUsize::new(0));

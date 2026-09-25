@@ -8,7 +8,11 @@ import {
   CellPreviewData,
 } from "../types/search";
 
-export function useSearch() {
+interface UseSearchOptions {
+  onShowToast?: (message: string) => void;
+}
+
+export function useSearch(options?: UseSearchOptions) {
   const [query, setQuery] = useState<SearchQuery>({
     keyword: "",
     target_dir: "",
@@ -44,34 +48,42 @@ export function useSearch() {
     let unlistenProg: UnlistenFn | undefined;
 
     const setupListeners = async () => {
-      unlistenMatch = await listen<SearchMatch>("search-match", (event) => {
-        resultsBufferRef.current.push(event.payload);
+      try {
+        unlistenMatch = await listen<SearchMatch>("search-match", (event) => {
+          resultsBufferRef.current.push(event.payload);
 
-        if (!flushTimerRef.current) {
-          flushTimerRef.current = window.setTimeout(() => {
-            const buffered = resultsBufferRef.current;
-            resultsBufferRef.current = [];
-            setResults((prev) => [...prev, ...buffered]);
-            flushTimerRef.current = null;
-          }, 60);
-        }
-      });
+          if (!flushTimerRef.current) {
+            flushTimerRef.current = window.setTimeout(() => {
+              const buffered = resultsBufferRef.current;
+              resultsBufferRef.current = [];
+              setResults((prev) => [...prev, ...buffered]);
+              flushTimerRef.current = null;
+            }, 60);
+          }
+        });
 
-      unlistenProg = await listen<ScanProgress>("scan-progress", (event) => {
-        setProgress(event.payload);
-        // スキャン完了または中断時にバッファを強制フラッシュ
-        if (event.payload.state !== "Scanning") {
-          if (flushTimerRef.current) {
-            clearTimeout(flushTimerRef.current);
-            flushTimerRef.current = null;
+        unlistenProg = await listen<ScanProgress>("scan-progress", (event) => {
+          console.log("[useSearch] 進捗通知受信:", event.payload);
+          setProgress(event.payload);
+
+          // スキャン完了または中断時にバッファを強制フラッシュ
+          if (event.payload.state !== "Scanning") {
+            if (flushTimerRef.current) {
+              clearTimeout(flushTimerRef.current);
+              flushTimerRef.current = null;
+            }
+            if (resultsBufferRef.current.length > 0) {
+              const buffered = resultsBufferRef.current;
+              resultsBufferRef.current = [];
+              setResults((prev) => [...prev, ...buffered]);
+            }
           }
-          if (resultsBufferRef.current.length > 0) {
-            const buffered = resultsBufferRef.current;
-            resultsBufferRef.current = [];
-            setResults((prev) => [...prev, ...buffered]);
-          }
-        }
-      });
+        });
+
+        console.log("[useSearch] Tauri イベントリスナー登録完了");
+      } catch (err) {
+        console.error("[useSearch] イベントリスナー登録エラー:", err);
+      }
     };
 
     setupListeners();
@@ -142,9 +154,16 @@ export function useSearch() {
 
   // 検索開始
   const startSearch = useCallback(async () => {
-    if (!query.keyword.trim()) return;
-    if (!query.target_dir.trim()) return;
+    if (!query.keyword.trim()) {
+      options?.onShowToast?.("検索キーワードを入力してください");
+      return;
+    }
+    if (!query.target_dir.trim()) {
+      options?.onShowToast?.("検索対象フォルダを選択してください");
+      return;
+    }
 
+    console.log("[useSearch] 検索リクエスト送信:", query);
     setResults([]);
     resultsBufferRef.current = [];
     setSelectedMatch(null);
@@ -157,31 +176,34 @@ export function useSearch() {
       scanned_files: 0,
       total_files: 0,
       matches_found: 0,
-      current_file: "開始準備中...",
+      current_file: "スキャン開始準備中...",
       elapsed_ms: 0,
     });
 
     try {
       await invoke("start_search", { query });
     } catch (err) {
-      console.error("検索開始エラー:", err);
+      console.error("[useSearch] 検索開始エラー:", err);
+      const errMsg = String(err);
+      options?.onShowToast?.(`検索開始エラー: ${errMsg}`);
       setProgress({
         state: "Error",
         scanned_files: 0,
         total_files: 0,
         matches_found: 0,
-        current_file: `エラー: ${err}`,
+        current_file: `エラー: ${errMsg}`,
         elapsed_ms: 0,
       });
     }
-  }, [query]);
+  }, [query, options]);
 
   // 検索中断
   const cancelSearch = useCallback(async () => {
     try {
+      console.log("[useSearch] 検索中断を要求");
       await invoke("cancel_search");
     } catch (err) {
-      console.error("検索中断エラー:", err);
+      console.error("[useSearch] 検索中断エラー:", err);
     }
   }, []);
 
