@@ -1,4 +1,14 @@
+//! # Excel Grep コアライブラリ (lib.rs)
+//!
+//! ## 処理内容
+//! Tauriデスクトップアプリケーションの初期化、プラグイン（dialog, shell）の登録、
+//! 各種IPCコマンドハンドラの登録、およびアプリケーション実行ループを管理する。
+//!
+//! ## 変更履歴
+//! - v1.0.0 (2026-09-26, AI Agent): 初版策定。constantsモジュールの公開と憲章準拠ヘッダコメントの追加。
+
 pub mod commands;
+pub mod constants;
 pub mod export;
 pub mod models;
 pub mod search;
@@ -7,6 +17,21 @@ use commands::AppState;
 use search::engine::SearchEngine;
 use std::sync::Arc;
 
+/// ## 処理内容
+/// Tauriアプリケーションを構築し、ステート管理、プラグイン、メニュー、
+/// コマンドハンドラを登録してメインイベントループを実行する。
+///
+/// ## 引数
+/// なし
+///
+/// ## 戻り値
+/// なし
+///
+/// ## エラー / 例外発生条件
+/// アプリケーション起動時のコンテキスト生成やランタイムエラー時にパニックする。
+///
+/// ## 変更履歴
+/// - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let engine = Arc::new(SearchEngine::new());

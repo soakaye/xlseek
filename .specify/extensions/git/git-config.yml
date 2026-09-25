@@ -67,7 +67,7 @@ auto_commit:
     message: "[Spec Kit] Add tasks"
   after_implement:
     enabled: true
-    message: "[Spec Kit] Implement macOS support and native window decorations"
+    message: "[Spec Kit] Align codebase with project constitution (憲章準拠のプログラム改修)"
   after_checklist:
     enabled: false
     message: "[Spec Kit] Add checklist"

@@ -1,7 +1,30 @@
+/**
+ * @fileoverview 周辺セルプレビューグリッド表示コンポーネント (src/components/preview/SpreadsheetGrid.tsx)
+ *
+ * ## 処理内容
+ * 検索一致セルを中心とする周辺セル（前後3行・前後2列）を仮想スプレッドシートテーブル形式で描画する。
+ * 行・列ヘッダーの固定表示（sticky）、一致セルおよび現在選択セルのハイライト、セル選択イベントのハンドリングを行う。
+ * 憲章原則I（自然かつ正確な日本語）、原則II（定数の外部抽出とハードコード禁止）、原則III（網羅的なヘッダコメント）に準拠。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+ * - v1.1.0 (2026-09-26, AI Agent): 憲章準拠改修。UIメッセージの定数参照化、4要素ヘッダコメントを付与。
+ */
+
 import React from "react";
 import { Move } from "lucide-react";
 import { CellPreviewData } from "../../types/search";
+import { UI_MESSAGES } from "../../constants";
 
+/**
+ * 周辺セルプレビューグリッドコンポーネントのプロパティ定義
+ *
+ * ## プロパティ一覧
+ * - `previewData`: CellPreviewData | null - バックエンドから取得したプレビューテーブル構造データ
+ * - `isLoading`: boolean - プレビューデータ取得中のローディング状態フラグ
+ * - `selectedCell`: { address: string; value: string } | null - ユーザーが現在クリック選択しているセル情報
+ * - `onSelectCell`: (address: string, value: string, formula?: string | null) => void - セル選択時コールバック
+ */
 interface SpreadsheetGridProps {
   previewData: CellPreviewData | null;
   isLoading: boolean;
@@ -12,6 +35,25 @@ interface SpreadsheetGridProps {
   onSelectCell: (address: string, value: string, formula?: string | null) => void;
 }
 
+/**
+ * 周辺セルプレビューグリッドコンポーネント
+ *
+ * ## 処理詳細
+ * 周辺セルのテーブル表示を行い、ローディング中や空データ時のプレースホルダー表示を制御する。
+ *
+ * ## 引数
+ * - `props`: SpreadsheetGridProps - コンポーネントプロパティ
+ *
+ * ## 戻り値
+ * - `React.ReactElement`: グリッドテーブルUI要素
+ *
+ * ## エラー・例外条件
+ * - `previewData` が null または空行の場合は、空状態のガイダンスメッセージを表示する。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版作成。
+ * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、定数参照と4要素コメントを追加。
+ */
 export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   previewData,
   isLoading,
@@ -23,7 +65,8 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       <div className="flex-1 p-6 flex items-center justify-center text-xs text-zinc-500">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-          <span>プレビュー読み込み中...</span>
+          {/* 定数参照: UI_MESSAGES.PREVIEW_LOADING */}
+          <span>{UI_MESSAGES.PREVIEW_LOADING}</span>
         </div>
       </div>
     );
@@ -32,7 +75,8 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   if (!previewData || previewData.rows.length === 0) {
     return (
       <div className="flex-1 p-6 flex items-center justify-center text-xs text-zinc-500">
-        プレビューデータがありません
+        {/* 定数参照: UI_MESSAGES.PREVIEW_EMPTY */}
+        {UI_MESSAGES.PREVIEW_EMPTY}
       </div>
     );
   }
@@ -43,11 +87,13 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       <div className="flex items-center justify-between text-[11px] text-zinc-400 mb-2 px-1 select-none flex-shrink-0">
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-          <span className="font-medium text-zinc-300">周辺セルプレビュー (前後3行・前後2列)</span>
+          {/* 定数参照: UI_MESSAGES.PREVIEW_GUIDANCE */}
+          <span className="font-medium text-zinc-300">{UI_MESSAGES.PREVIEW_GUIDANCE}</span>
         </div>
         <div className="flex items-center gap-1 text-zinc-500 bg-zinc-900/90 px-2 py-0.5 rounded border border-zinc-800 text-[10px]">
           <Move className="w-2.5 h-2.5 text-zinc-400" />
-          <span>縦横スクロール可能 (固定見出し)</span>
+          {/* 定数参照: UI_MESSAGES.PREVIEW_SCROLL_GUIDANCE */}
+          <span>{UI_MESSAGES.PREVIEW_SCROLL_GUIDANCE}</span>
         </div>
       </div>
 

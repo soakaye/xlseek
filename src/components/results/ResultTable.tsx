@@ -1,7 +1,21 @@
+/**
+ * @fileoverview 検索結果一覧テーブルコンポーネント (src/components/results/ResultTable.tsx)
+ *
+ * ## 処理内容
+ * 検索に一致したセルアイテム一覧を TanStack Virtual を用いて高速仮想スクロール表示する。
+ * 列ヘッダークリックによるソート（昇順/降順）、キーワードによる結果内絞り込み、
+ * 上下キーによる選択行移動、および各セル一致バッジの描画を提供する。
+ * 憲章原則II（定数参照）および原則III（ヘッダコメント）に準拠。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化（LAYOUT_CONSTANTS）およびJSDoc付与。
+ */
+
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ListFilter, Filter, ArrowUp, ArrowDown } from "lucide-react";
 import { SearchMatch, MatchType } from "../../types/search";
+import { LAYOUT_CONSTANTS } from "../../constants";
 
 interface ResultTableProps {
   items: SearchMatch[];
@@ -12,6 +26,22 @@ interface ResultTableProps {
 type SortField = "file_name" | "sheet_name" | "cell_address" | "match_type";
 type SortOrder = "asc" | "desc";
 
+/**
+ * ## 処理内容
+ * 検索結果テーブルを表示し、選択や絞り込み、ソートを管理するUIコンポーネント。
+ *
+ * ## 引数
+ * @param props - 検索結果リスト、選択中アイテムID、選択ハンドラ
+ *
+ * ## 戻り値
+ * @returns レンダリング要素
+ *
+ * ## エラー / 例外発生条件
+ * panicや例外は発生しない。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
+ */
 export const ResultTable: React.FC<ResultTableProps> = ({
   items,
   selectedId,
@@ -42,7 +72,10 @@ export const ResultTable: React.FC<ResultTableProps> = ({
       let valA = a[sortField];
       let valB = b[sortField];
       if (typeof valA === "string" && typeof valB === "string") {
-        const cmp = valA.localeCompare(valB, undefined, { numeric: true, sensitivity: "base" });
+        const cmp = valA.localeCompare(valB, undefined, {
+          numeric: true,
+          sensitivity: "base",
+        });
         return sortOrder === "asc" ? cmp : -cmp;
       }
       return 0;
@@ -52,8 +85,10 @@ export const ResultTable: React.FC<ResultTableProps> = ({
   const rowVirtualizer = useVirtualizer({
     count: filteredItems.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 36,
-    overscan: 10,
+    // 定数参照: LAYOUT_CONSTANTS.RESULT_ROW_HEIGHT_PX を使用
+    estimateSize: () => LAYOUT_CONSTANTS.RESULT_ROW_HEIGHT_PX,
+    // 定数参照: LAYOUT_CONSTANTS.VIRTUAL_OVERSCAN を使用
+    overscan: LAYOUT_CONSTANTS.VIRTUAL_OVERSCAN,
   });
 
   const handleSort = (field: SortField) => {

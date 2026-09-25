@@ -1,8 +1,21 @@
+/**
+ * @fileoverview ステータスバーUIコンポーネント (src/components/common/StatusBar.tsx)
+ *
+ * ## 処理内容
+ * 画面下部にスキャン進捗状態、走査ファイル数、ヒット件数、経過時間を表示する。
+ * プログレスバー描画および検索結果のCSV/Excelエクスポート実行ボタンを提供する。
+ * 憲章原則I（日本語表示）、原則II（定数参照）、原則III（ヘッダコメント）に準拠。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化（COMMANDS.EXPORT_RESULTS）およびJSDoc付与。
+ */
+
 import React from "react";
 import { FileText, FileSpreadsheet, Zap } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { ScanProgress, SearchMatch, ExportRequest } from "../../types/search";
+import { COMMANDS } from "../../constants";
 
 interface StatusBarProps {
   progress: ScanProgress | null;
@@ -10,6 +23,22 @@ interface StatusBarProps {
   onShowToast: (msg: string) => void;
 }
 
+/**
+ * ## 処理内容
+ * アプリケーションの最下部ステータスバーを表示するコンポーネント。
+ *
+ * ## 引数
+ * @param props - 進捗情報、検索結果一覧、トースト通知コールバック
+ *
+ * ## 戻り値
+ * @returns レンダリング要素
+ *
+ * ## エラー / 例外発生条件
+ * エクスポート失敗時はトースト通知で日本語エラーを表示する。例外は外部へスローしない。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
+ */
 export const StatusBar: React.FC<StatusBarProps> = ({
   progress,
   items,
@@ -19,7 +48,13 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     progress && progress.total_files > 0
       ? progress.state === "Completed"
         ? 100
-        : Math.min(99, Math.max(1, Math.round((progress.scanned_files / progress.total_files) * 100)))
+        : Math.min(
+            99,
+            Math.max(
+              1,
+              Math.round((progress.scanned_files / progress.total_files) * 100)
+            )
+          )
       : progress?.state === "Completed"
       ? 100
       : 0;
@@ -53,7 +88,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         items,
       };
 
-      await invoke("export_results", { request: req });
+      // 定数参照: COMMANDS.EXPORT_RESULTS を使用
+      await invoke(COMMANDS.EXPORT_RESULTS, { request: req });
       onShowToast(
         `${format.toUpperCase()}ファイルを保存しました: ${selectedPath}`
       );

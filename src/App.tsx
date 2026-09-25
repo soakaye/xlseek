@@ -1,3 +1,17 @@
+/**
+ * @fileoverview アプリケーションルートコンポーネント (src/App.tsx)
+ *
+ * ## 処理内容
+ * Excel Grep アプリケーションの最上位コンポーネント。カスタムフック `useSearch` を通じて
+ * 検索状態、結果リスト、プレビューデータ、およびトースト通知状態を一括管理し、
+ * タイトルバー、検索バー、結果テーブル、プレビューペイン、ステータスバーを統合配置する。
+ * 憲章原則I（自然かつ正確な日本語）、原則III（網羅的なヘッダコメント）、原則IV（モジュール設計）に準拠。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+ * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、4要素ヘッダコメントを追加。
+ */
+
 import React, { useState } from "react";
 import { WindowFrame } from "./components/layout/WindowFrame";
 import { SearchBar } from "./components/search/SearchBar";
@@ -11,6 +25,26 @@ import { StatusBar } from "./components/common/StatusBar";
 import { Toast } from "./components/common/Toast";
 import { useSearch } from "./hooks/useSearch";
 
+/**
+ * Excel Grep アプリケーションのメイン画面コンポーネント
+ *
+ * ## 処理詳細
+ * 状態管理フック `useSearch` を初期化し、トースト通知および各サブコンポーネントへの
+ * データバインディングとイベントハンドラの受け渡しを行う。
+ *
+ * ## 引数
+ * - なし (ルートコンポーネント)
+ *
+ * ## 戻り値
+ * - `React.ReactElement`: アプリケーション全体のUIツリー
+ *
+ * ## エラー・例外条件
+ * - 各種非同期処理のエラーは `showToast` を通じてトースト通知へ集約され、画面全体のクラッシュを防止する。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版作成。
+ * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、4要素コメントを追加。
+ */
 export const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 

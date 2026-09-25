@@ -1,3 +1,16 @@
+/**
+ * @fileoverview 検索・プレビュー管理カスタムフック (src/hooks/useSearch.ts)
+ *
+ * ## 処理内容
+ * 検索クエリの管理、Tauriバックエンドへの検索開始・中断コマンド発行、
+ * バックグラウンド走査進捗およびヒット結果イベントの購読とバッファリング処理、
+ * 選択行に応じたセル周辺プレビューデータの取得・シート切り替えを提供する。
+ * 憲章原則I（日本語通知）、原則II（定数参照）、原則III（ヘッダコメント）に準拠。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化および4要素JSDocコメントの付与。
+ */
+
 import { useState, useEffect, useCallback, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
@@ -7,12 +20,36 @@ import {
   ScanProgress,
   CellPreviewData,
 } from "../types/search";
+import {
+  COMMANDS,
+  EVENT_NAMES,
+  FILE_EXTENSIONS,
+  TIMING_CONSTANTS,
+  UI_MESSAGES,
+} from "../constants";
 
 interface UseSearchOptions {
   onShowToast?: (message: string) => void;
 }
 
+/**
+ * ## 処理内容
+ * 検索機能、進捗同期、およびセルプレビュー管理を行うメインカスタムフック。
+ *
+ * ## 引数
+ * @param options - トースト表示用コールバックを含むオプション設定
+ *
+ * ## 戻り値
+ * @returns 検索状態、クエリ、結果リスト、プレビューデータ、および各種ハンドラ関数
+ *
+ * ## エラー / 例外発生条件
+ * Tauri IPC呼び出し失敗時はエラーをコンソールログおよびトースト通知で処理し、例外は外部へスローしない。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
+ */
 export function useSearch(options?: UseSearchOptions) {
+  // 定数参照: FILE_EXTENSIONS.DEFAULT_LIST を使用
   const [query, setQuery] = useState<SearchQuery>({
     keyword: "",
     target_dir: "",
@@ -21,7 +58,7 @@ export function useSearch(options?: UseSearchOptions) {
     include_formula: true,
     include_comment: true,
     include_hidden: false,
-    extensions: [".xlsx", ".xlsm", ".xlsb", ".xls"],
+    extensions: [...FILE_EXTENSIONS.DEFAULT_LIST],
   });
 
   const [results, setResults] = useState<SearchMatch[]>([]);
@@ -62,22 +99,25 @@ export function useSearch(options?: UseSearchOptions) {
 
     const setupListeners = async () => {
       try {
-        const uMatch = await listen<SearchMatch>("search-match", (event) => {
+        // 定数参照: EVENT_NAMES.SEARCH_MATCH ("search-match") を使用
+        const uMatch = await listen<SearchMatch>(EVENT_NAMES.SEARCH_MATCH, (event) => {
           if (isCancelled || isCancellingRef.current) return;
           resultsBufferRef.current.push(event.payload);
 
           if (!flushTimerRef.current) {
+            // 定数参照: TIMING_CONSTANTS.PROGRESS_THROTTLE_MS を使用
             flushTimerRef.current = window.setTimeout(() => {
               if (isCancelled || isCancellingRef.current) return;
               const buffered = resultsBufferRef.current;
               resultsBufferRef.current = [];
               appendResultsSafely(buffered);
               flushTimerRef.current = null;
-            }, 50);
+            }, TIMING_CONSTANTS.PROGRESS_THROTTLE_MS);
           }
         });
 
-        const uProg = await listen<ScanProgress>("scan-progress", (event) => {
+        // 定数参照: EVENT_NAMES.SCAN_PROGRESS ("scan-progress") を使用
+        const uProg = await listen<ScanProgress>(EVENT_NAMES.SCAN_PROGRESS, (event) => {
           if (isCancelled) return;
 
           // 中断要求後の遅延 Scanning イベントは破棄して状態の巻き戻りを防止
@@ -141,7 +181,8 @@ export function useSearch(options?: UseSearchOptions) {
       setActiveSheet(targetSheet);
 
       try {
-        const data = await invoke<CellPreviewData>("get_cell_preview", {
+        // 定数参照: COMMANDS.GET_CELL_PREVIEW を使用
+        const data = await invoke<CellPreviewData>(COMMANDS.GET_CELL_PREVIEW, {
           filePath: match.full_path,
           sheetName: targetSheet,
           rowIndex: match.row_index,
@@ -193,11 +234,13 @@ export function useSearch(options?: UseSearchOptions) {
   // 検索開始
   const startSearch = useCallback(async () => {
     if (!query.keyword.trim()) {
+      // 定数参照: UI_MESSAGES.KEYWORD_PLACEHOLDER を使用
       options?.onShowToast?.("検索キーワードを入力してください");
       return;
     }
     if (!query.target_dir.trim()) {
-      options?.onShowToast?.("検索対象フォルダを選択してください");
+      // 定数参照: UI_MESSAGES.SELECT_FOLDER_PROMPT を使用
+      options?.onShowToast?.(UI_MESSAGES.SELECT_FOLDER_PROMPT);
       return;
     }
 
@@ -220,7 +263,8 @@ export function useSearch(options?: UseSearchOptions) {
     });
 
     try {
-      await invoke("start_search", { query });
+      // 定数参照: COMMANDS.START_SEARCH を使用
+      await invoke(COMMANDS.START_SEARCH, { query });
     } catch (err) {
       console.error("[useSearch] 検索開始エラー:", err);
       const errMsg = String(err);
@@ -275,7 +319,8 @@ export function useSearch(options?: UseSearchOptions) {
         });
       }
 
-      await invoke("cancel_search");
+      // 定数参照: COMMANDS.CANCEL_SEARCH を使用
+      await invoke(COMMANDS.CANCEL_SEARCH);
     } catch (err) {
       console.error("[useSearch] 検索中断エラー:", err);
     }

@@ -1,12 +1,53 @@
+/**
+ * @fileoverview スプレッドシート内ワークシート切替タブバーコンポーネント (src/components/preview/SheetTabs.tsx)
+ *
+ * ## 処理内容
+ * プレビュー中のブックに含まれる全ワークシート一覧をタブ形式で表示し、横スクロールナビゲーションおよび
+ * クリックによるアクティブシート切り替え操作を提供する。
+ * 憲章原則I（自然かつ正確な日本語）、原則II（定数の外部抽出とハードコード禁止）、原則III（網羅的なヘッダコメント）に準拠。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+ * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、スクロール量およびUI文言の定数参照化、4要素ヘッダコメントを追加。
+ */
+
 import React, { useRef } from "react";
 import { ChevronLeft, ChevronRight, FileSpreadsheet } from "lucide-react";
+import { LAYOUT_CONSTANTS, UI_MESSAGES } from "../../constants";
 
+/**
+ * シートタブコンポーネントのプロパティ定義
+ *
+ * ## プロパティ一覧
+ * - `sheets`: string[] - ブック内に存在するシート名の配列
+ * - `activeSheet`: string - 現在アクティブ表示されているシート名
+ * - `onSelectSheet`: (sheetName: string) => void - シート選択時コールバック関数
+ */
 interface SheetTabsProps {
   sheets: string[];
   activeSheet: string;
   onSelectSheet: (sheetName: string) => void;
 }
 
+/**
+ * ワークシート切替タブバーコンポーネント
+ *
+ * ## 処理詳細
+ * 左右スクロールボタンおよびシート名ボタングループを描画し、タブ選択イベントを発火する。
+ *
+ * ## 引数
+ * - `props`: SheetTabsProps - コンポーネントプロパティ
+ *
+ * ## 戻り値
+ * - `React.ReactElement | null`: シートタブバーUI要素。シートが存在しない場合は null。
+ *
+ * ## エラー・例外条件
+ * - `sheets` が空配列または未定義の場合は何も描画せず安全に終了する。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版作成。
+ * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、定数参照と4要素コメントを追加。
+ */
 export const SheetTabs: React.FC<SheetTabsProps> = ({
   sheets,
   activeSheet,
@@ -16,13 +57,15 @@ export const SheetTabs: React.FC<SheetTabsProps> = ({
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: -100, behavior: "smooth" });
+      // 定数参照: LAYOUT_CONSTANTS.SHEET_SCROLL_OFFSET_PX
+      scrollContainerRef.current.scrollBy({ left: -LAYOUT_CONSTANTS.SHEET_SCROLL_OFFSET_PX, behavior: "smooth" });
     }
   };
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollBy({ left: 100, behavior: "smooth" });
+      // 定数参照: LAYOUT_CONSTANTS.SHEET_SCROLL_OFFSET_PX
+      scrollContainerRef.current.scrollBy({ left: LAYOUT_CONSTANTS.SHEET_SCROLL_OFFSET_PX, behavior: "smooth" });
     }
   };
 
@@ -39,7 +82,8 @@ export const SheetTabs: React.FC<SheetTabsProps> = ({
             type="button"
             onClick={scrollLeft}
             className="p-1 hover:text-zinc-300 hover:bg-zinc-800 rounded transition"
-            title="前のシートへ"
+            /* 定数参照: UI_MESSAGES.PREV_SHEET_TOOLTIP */
+            title={UI_MESSAGES.PREV_SHEET_TOOLTIP}
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -47,7 +91,8 @@ export const SheetTabs: React.FC<SheetTabsProps> = ({
             type="button"
             onClick={scrollRight}
             className="p-1 hover:text-zinc-300 hover:bg-zinc-800 rounded transition"
-            title="次のシートへ"
+            /* 定数参照: UI_MESSAGES.NEXT_SHEET_TOOLTIP */
+            title={UI_MESSAGES.NEXT_SHEET_TOOLTIP}
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
@@ -81,7 +126,8 @@ export const SheetTabs: React.FC<SheetTabsProps> = ({
 
       <div className="text-[10px] text-zinc-500 flex items-center gap-1 pl-2 flex-shrink-0">
         <span className="bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700 font-mono text-[10px] text-zinc-400">
-          Sheet Tabs
+          {/* 定数参照: UI_MESSAGES.SHEET_TABS_BADGE */}
+          {UI_MESSAGES.SHEET_TABS_BADGE}
         </span>
       </div>
     </div>

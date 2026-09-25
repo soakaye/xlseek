@@ -1,10 +1,49 @@
+/**
+ * @fileoverview Excel風数式バーコンポーネント (src/components/preview/FormulaBar.tsx)
+ *
+ * ## 処理内容
+ * 選択中のセル番地（例: `A1`）およびそのセルの生データ（数式または値文字列）を、
+ * Excelスプレッドシートの数式入力バーに模した形式でリアルタイムに表示する。
+ * 憲章原則I（自然かつ正確な日本語）、原則III（網羅的なヘッダコメント）に準拠。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+ * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、4要素ヘッダコメントを付与。
+ */
+
 import React from "react";
 
+/**
+ * 数式バーコンポーネントのプロパティ定義
+ *
+ * ## プロパティ一覧
+ * - `cellAddress`: string - 表示対象のセル番地文字列（例: "B5"）
+ * - `formulaOrValue`: string - セルに設定されている数式または値文字列
+ */
 interface FormulaBarProps {
   cellAddress: string;
   formulaOrValue: string;
 }
 
+/**
+ * Excel風数式バーコンポーネント
+ *
+ * ## 処理詳細
+ * セル番地ボックスと、数式/テキスト値表示エリアをインライン描画する。
+ *
+ * ## 引数
+ * - `props`: FormulaBarProps - コンポーネントプロパティ
+ *
+ * ## 戻り値
+ * - `React.ReactElement`: 数式バーUI要素
+ *
+ * ## エラー・例外条件
+ * - セル番地が未指定の場合はデフォルト記号 ("--") を安全にフォールバック表示する。
+ *
+ * ## 変更履歴
+ * - v1.0.0 (2026-09-26, AI Agent): 初版作成。
+ * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、4要素コメントを追加。
+ */
 export const FormulaBar: React.FC<FormulaBarProps> = ({
   cellAddress,
   formulaOrValue,
