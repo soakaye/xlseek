@@ -126,9 +126,13 @@ impl SearchEngine {
                 .map(|f| f.to_string_lossy().to_string())
                 .unwrap_or_default();
 
-            // Excelファイルパース (破損ファイルはスキップし全体を停止させない)
-            match parse_and_search_file(file_path, &query, regex_obj.as_ref()) {
-                Ok(matches) => {
+            // Excelファイルパース (破損ファイルやcalamineパニックは安全にスキップして全体を停止させない)
+            let parse_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                parse_and_search_file(file_path, &query, regex_obj.as_ref())
+            }));
+
+            match parse_result {
+                Ok(Ok(matches)) => {
                     let m_count = matches.len();
                     if m_count > 0 {
                         match_count.fetch_add(m_count, Ordering::Relaxed);
@@ -138,9 +142,13 @@ impl SearchEngine {
                         }
                     }
                 }
-                Err(err_msg) => {
+                Ok(Err(err_msg)) => {
                     // スキップして処理継続 (T036)
                     eprintln!("Skipping corrupted/unreadable file {}: {}", file_name, err_msg);
+                }
+                Err(_) => {
+                    // calamine 内部などのパニックから安全に回復 (T036)
+                    eprintln!("Recovered from panic while parsing file {}. Skipping safely.", file_name);
                 }
             }
 
@@ -148,8 +156,8 @@ impl SearchEngine {
             let current_matches = match_count.load(Ordering::Relaxed);
             let elapsed = start_time.elapsed().as_millis() as u64;
 
-            // 10ファイルごとまたは一定間隔で進捗通知
-            if scanned % 5 == 0 || scanned == total_files {
+            // 1件目、5ファイルごと、または全完了時に進捗通知
+            if scanned == 1 || scanned % 5 == 0 || scanned == total_files {
                 let mut prog_cb = on_progress.lock().unwrap();
                 prog_cb(ScanProgress {
                     state: ScanState::Scanning,
@@ -262,6 +270,35 @@ mod tests {
 
         let _ = std::fs::remove_file(temp_csv);
         let _ = std::fs::remove_file(temp_xlsx);
+    }
+
+    #[test]
+    fn test_snippet_utf8_boundary_safety() {
+        use crate::search::parser::make_snippet;
+
+        // 日本語文字列の任意の位置でスニペット生成を行い、パニックしないことを検証
+        let japanese_text = "財務報告書2026年第3四半期における監査報告書の承認およびシステム移行計画の進捗状況確認";
+        
+        // "監査報告書" をマッチ対象にする
+        let mat_start = japanese_text.find("監査報告書").unwrap();
+        let mat_end = mat_start + "監査報告書".len();
+
+        let snippet = make_snippet(japanese_text, mat_start, mat_end);
+        assert!(snippet.contains("<mark"));
+        assert!(snippet.contains("監査報告書"));
+        assert!(snippet.contains("</mark>"));
+
+        // 先頭マッチのテスト
+        let mat_start_head = 0;
+        let mat_end_head = "財務".len();
+        let snippet_head = make_snippet(japanese_text, mat_start_head, mat_end_head);
+        assert!(snippet_head.contains("財務"));
+
+        // 末尾マッチのテスト
+        let mat_start_tail = japanese_text.rfind("確認").unwrap();
+        let mat_end_tail = japanese_text.len();
+        let snippet_tail = make_snippet(japanese_text, mat_start_tail, mat_end_tail);
+        assert!(snippet_tail.contains("確認"));
     }
 }
 

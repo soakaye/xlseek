@@ -27,17 +27,31 @@ pub fn format_cell_address(row_idx: u32, col_idx: u32) -> (String, String) {
     (address, col_str)
 }
 
-/// ハイライト付き抜粋スニペットの生成
+/// ハイライト付き抜粋スニペットの生成 (UTF-8 char boundary安全)
 pub fn make_snippet(text: &str, mat_start: usize, mat_end: usize) -> String {
-    let start = mat_start.saturating_sub(25);
-    let end = (mat_end + 25).min(text.len());
-
-    let prefix = if start > 0 { "..." } else { "" };
-    let suffix = if end < text.len() { "..." } else { "" };
-
-    let before = &text[start..mat_start];
+    let before_str = &text[..mat_start];
     let matched = &text[mat_start..mat_end];
-    let after = &text[mat_end..end];
+    let after_str = &text[mat_end..];
+
+    // 前方は末尾から最大 20 文字を安全にスライス
+    let before_chars_count = 20;
+    let before_byte_len = before_str
+        .char_indices()
+        .rev()
+        .take(before_chars_count)
+        .last()
+        .map(|(idx, _)| idx)
+        .unwrap_or(0);
+
+    let before = &before_str[before_byte_len..];
+    let prefix = if before_byte_len > 0 { "..." } else { "" };
+
+    // 後方は先頭から最大 20 文字を安全にスライス
+    let after_chars_count = 20;
+    let (after, suffix) = match after_str.char_indices().nth(after_chars_count) {
+        Some((idx, _)) => (&after_str[..idx], "..."),
+        None => (after_str, ""),
+    };
 
     format!(
         "{}{}<mark class='bg-yellow-500/30 text-yellow-300 px-0.5 rounded font-semibold'>{}</mark>{}{}",
