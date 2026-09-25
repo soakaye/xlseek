@@ -115,6 +115,16 @@ impl SearchEngine {
             });
         }
 
+        // サードパーティライブラリ等のパニック時にstderrへの大量ダンプを抑制
+        static INIT_HOOK: std::sync::Once = std::sync::Once::new();
+        INIT_HOOK.call_once(|| {
+            std::panic::set_hook(Box::new(|_info| {
+                // catch_unwind 側でキャッチしてハンドリングするため、標準stderrダンプを抑止
+            }));
+        });
+
+        let last_notify_ms = Arc::new(std::sync::atomic::AtomicU64::new(0));
+
         // rayon によるマルチスレッド並列走査
         file_list.par_iter().for_each(|file_path| {
             if cancel_flag.load(Ordering::Relaxed) {
@@ -142,13 +152,11 @@ impl SearchEngine {
                         }
                     }
                 }
-                Ok(Err(err_msg)) => {
+                Ok(Err(_err_msg)) => {
                     // スキップして処理継続 (T036)
-                    eprintln!("Skipping corrupted/unreadable file {}: {}", file_name, err_msg);
                 }
                 Err(_) => {
                     // calamine 内部などのパニックから安全に回復 (T036)
-                    eprintln!("Recovered from panic while parsing file {}. Skipping safely.", file_name);
                 }
             }
 
@@ -156,8 +164,12 @@ impl SearchEngine {
             let current_matches = match_count.load(Ordering::Relaxed);
             let elapsed = start_time.elapsed().as_millis() as u64;
 
-            // 1件目、5ファイルごと、または全完了時に進捗通知
-            if scanned == 1 || scanned % 5 == 0 || scanned == total_files {
+            // 1件目、全完了、または前回通知から50ms以上経過した時に進捗通知 (スムーズなUI更新)
+            let last = last_notify_ms.load(Ordering::Relaxed);
+            let should_notify = scanned == 1 || scanned == total_files || (elapsed.saturating_sub(last) >= 50);
+
+            if should_notify {
+                last_notify_ms.store(elapsed, Ordering::Relaxed);
                 let mut prog_cb = on_progress.lock().unwrap();
                 prog_cb(ScanProgress {
                     state: ScanState::Scanning,

@@ -17,7 +17,9 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 }) => {
   const percent =
     progress && progress.total_files > 0
-      ? Math.round((progress.scanned_files / progress.total_files) * 100)
+      ? progress.state === "Completed"
+        ? 100
+        : Math.min(99, Math.max(1, Math.round((progress.scanned_files / progress.total_files) * 100)))
       : progress?.state === "Completed"
       ? 100
       : 0;
@@ -114,7 +116,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
               />
             </div>
             <span className="text-[11px] text-zinc-400 font-mono">
-              {percent}%
+              {percent}% ({progress?.scanned_files}/{progress?.total_files})
             </span>
           </div>
         )}
