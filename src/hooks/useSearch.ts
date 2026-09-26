@@ -124,11 +124,11 @@ export function useSearch(options?: UseSearchOptions) {
 
           // 中断要求後の遅延 Scanning イベントは破棄して状態の巻き戻りを防止
           if (isCancellingRef.current && event.payload.state === "Scanning") {
-            console.log("[useSearch] 中断要求後の遅延Scanningイベントをスキップ");
+            console.log("[useSearch] Ignored delayed scan event after cancellation");
             return;
           }
 
-          console.log("[useSearch] 進捗通知受信:", event.payload);
+          console.log("[useSearch] Scan progress received");
           setProgress(event.payload);
 
           if (event.payload.state === "Cancelled") {
@@ -155,10 +155,10 @@ export function useSearch(options?: UseSearchOptions) {
         } else {
           unlistenMatch = uMatch;
           unlistenProg = uProg;
-          console.log("[useSearch] Tauri イベントリスナー登録完了");
+          console.log("[useSearch] Search event listeners registered");
         }
-      } catch (err) {
-        console.error("[useSearch] イベントリスナー登録エラー:", err);
+      } catch {
+        console.error("[useSearch] Failed to register search event listeners");
       }
     };
 
@@ -196,14 +196,15 @@ export function useSearch(options?: UseSearchOptions) {
           value: match.formula || match.full_content,
         });
         setFormulaOrValue(match.formula || match.full_content);
-      } catch (err) {
-        console.error("プレビュー取得失敗:", err);
+      } catch {
+        console.error("[useSearch] Failed to load cell preview");
+        options?.onShowToast?.(UI_MESSAGES.PREVIEW_LOAD_ERROR);
         setPreviewData(null);
       } finally {
         setLoadingPreview(false);
       }
     },
-    []
+    [options]
   );
 
   // アイテム選択時
@@ -237,7 +238,7 @@ export function useSearch(options?: UseSearchOptions) {
   const startSearch = useCallback(async () => {
     if (!query.keyword.trim()) {
       // 定数参照: UI_MESSAGES.KEYWORD_PLACEHOLDER を使用
-      options?.onShowToast?.("検索キーワードを入力してください");
+      options?.onShowToast?.(UI_MESSAGES.TOAST_SEARCH_KEYWORD);
       return;
     }
     if (!query.target_dir.trim()) {
@@ -251,7 +252,7 @@ export function useSearch(options?: UseSearchOptions) {
       return;
     }
 
-    console.log("[useSearch] 検索リクエスト送信:", query);
+    console.log("[useSearch] Search request submitted");
     isCancellingRef.current = false;
     setResults([]);
     resultsBufferRef.current = [];
@@ -263,26 +264,29 @@ export function useSearch(options?: UseSearchOptions) {
     // 定数参照: UI_MESSAGES.STATUS_SCAN_PREPARING を使用
     setProgress({
       state: "Scanning",
+      phase: "preparing",
+      error_code: null,
       scanned_files: 0,
       total_files: 0,
       matches_found: 0,
-      current_file: UI_MESSAGES.STATUS_SCAN_PREPARING,
+      current_file: "",
       elapsed_ms: 0,
     });
 
     try {
       // 定数参照: COMMANDS.START_SEARCH を使用
       await invoke(COMMANDS.START_SEARCH, { query });
-    } catch (err) {
-      console.error("[useSearch] 検索開始エラー:", err);
-      const errMsg = String(err);
-      options?.onShowToast?.(`検索開始エラー: ${errMsg}`);
+    } catch {
+      console.error("[useSearch] Failed to start search");
+      options?.onShowToast?.(UI_MESSAGES.SEARCH_START_ERROR);
       setProgress({
         state: "Error",
+        phase: "finished",
+        error_code: "internal_error",
         scanned_files: 0,
         total_files: 0,
         matches_found: 0,
-        current_file: `エラー: ${errMsg}`,
+        current_file: "",
         elapsed_ms: 0,
       });
     }
@@ -291,7 +295,7 @@ export function useSearch(options?: UseSearchOptions) {
   // 検索中断
   const cancelSearch = useCallback(async () => {
     try {
-      console.log("[useSearch] 検索中断を要求");
+      console.log("[useSearch] Search cancellation requested");
       isCancellingRef.current = true;
 
       // ユーザーへの即時フィードバック: 中断状態へ切り替えてボタンを即座にSEARCHに戻す
@@ -301,14 +305,16 @@ export function useSearch(options?: UseSearchOptions) {
           ? {
               ...prev,
               state: "Cancelled",
-              current_file: UI_MESSAGES.SCAN_CANCELLED_MSG,
+              current_file: "",
             }
           : {
               state: "Cancelled",
+              phase: "finished",
+              error_code: null,
               scanned_files: 0,
               total_files: 0,
               matches_found: 0,
-              current_file: UI_MESSAGES.SCAN_CANCELLED_MSG,
+              current_file: "",
               elapsed_ms: 0,
             }
       );
@@ -330,8 +336,8 @@ export function useSearch(options?: UseSearchOptions) {
 
       // 定数参照: COMMANDS.CANCEL_SEARCH を使用
       await invoke(COMMANDS.CANCEL_SEARCH);
-    } catch (err) {
-      console.error("[useSearch] 検索中断エラー:", err);
+    } catch {
+      console.error("[useSearch] Failed to cancel search");
     }
   }, []);
 

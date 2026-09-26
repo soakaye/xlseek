@@ -9,7 +9,7 @@
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化、4要素ヘッダコメント付与。
 
 use crate::export::{export_to_csv, export_to_xlsx};
-use crate::models::{ExportFormat, ExportRequest};
+use crate::models::{CommandError, ErrorCode, ExportFormat, ExportRequest};
 
 /// ## 処理内容
 /// 検索結果アイテム一覧を指定されたフォーマット（CSVまたはExcel）で指定パスへ書き出す。
@@ -26,14 +26,25 @@ use crate::models::{ExportFormat, ExportRequest};
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
 #[tauri::command]
-pub async fn export_results(request: ExportRequest) -> Result<(), String> {
+pub async fn export_results(request: ExportRequest) -> Result<(), CommandError> {
+    if request.language != crate::constants::LANGUAGE_JA
+        && request.language != crate::constants::LANGUAGE_EN
+    {
+        return Err(CommandError {
+            code: ErrorCode::InternalError,
+        });
+    }
     tauri::async_runtime::spawn_blocking(move || match request.format {
-        ExportFormat::Csv => export_to_csv(&request.output_path, &request.items),
-        ExportFormat::Xlsx => export_to_xlsx(&request.output_path, &request.items),
+        ExportFormat::Csv => export_to_csv(&request.output_path, &request.items, &request.language),
+        ExportFormat::Xlsx => {
+            export_to_xlsx(&request.output_path, &request.items, &request.language)
+        }
     })
     .await
-    .map_err(|e| {
-        // 定数参照: crate::constants::ERR_TASK_EXECUTION を使用
-        format!("{}: {}", crate::constants::ERR_TASK_EXECUTION, e)
+    .map_err(|_| CommandError {
+        code: ErrorCode::ExportFailed,
     })?
+    .map_err(|_| CommandError {
+        code: ErrorCode::ExportFailed,
+    })
 }

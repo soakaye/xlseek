@@ -41,6 +41,7 @@
      *   ステータスバー最右端にInfoアイコンボタンを配置し、アプリ基本情報表示および左右2ペインの
      *   マスター／ディテールライセンス一覧（リアルタイム検索・ライセンス本文ワンクリックコピー）を完全シミュレート。
      * - v2.7.0 (2026-09-26, AI Agent): 並行ファイル走査・即時検索パイプライン対応。ステータスバーにおける未確定時アニメーションパルスおよび検出・走査中ファイル数表示、進捗フェーズ遷移ロジックを同期。
+     * - v2.8.0 (2026-09-26, AI Agent): 言語設定ダイアログと設定ボタンの操作モックを追加。
      */
   -->
   <meta charset="UTF-8">
@@ -549,6 +550,14 @@
         </button>
         <div class="h-4 w-px bg-zinc-800 mx-0.5"></div>
         <button 
+          id="settingsDialogBtn"
+          type="button"
+          title="設定"
+          aria-label="設定"
+          class="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded border border-transparent hover:border-zinc-700 transition cursor-pointer">
+          <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+        </button>
+        <button 
           id="aboutDialogBtn" 
           type="button"
           title="アプリについて"
@@ -557,6 +566,25 @@
         </button>
       </div>
     </footer>
+
+    <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <section class="w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 p-5 text-zinc-100 shadow-2xl">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 id="settingsTitle" class="text-base font-semibold">言語設定</h2>
+          <button id="settingsCloseBtn" type="button" aria-label="閉じる" class="rounded px-2 py-1 hover:bg-zinc-700">×</button>
+        </div>
+        <p id="settingsDescription" class="mb-4 text-sm text-zinc-400">言語を選択してください。デフォルトはシステム言語を使用します。</p>
+        <fieldset>
+          <legend id="displayLanguageLabel" class="mb-2 text-sm font-medium">表示言語</legend>
+          <div class="space-y-2">
+            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-700 px-3 py-2"><input type="radio" name="mockLanguage" value="default" checked><span id="defaultLanguageLabel">デフォルト</span></label>
+            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-700 px-3 py-2"><input type="radio" name="mockLanguage" value="ja"><span>日本語</span></label>
+            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-700 px-3 py-2"><input type="radio" name="mockLanguage" value="en"><span>English</span></label>
+          </div>
+        </fieldset>
+        <p class="mt-4 text-xs text-zinc-400"><span id="currentLanguageLabel">現在の表示言語</span>: <span id="currentLanguageValue">日本語</span></p>
+      </section>
+    </div>
 
     <!-- ==================== トースト通知コンポーネント (Toast.tsx) ==================== -->
     <div id="toast" class="fixed bottom-12 right-6 z-50 flex items-center gap-2 bg-zinc-800 text-zinc-100 border border-emerald-600/60 shadow-xl px-3.5 py-2.5 rounded-lg text-xs transform translate-y-20 opacity-0 pointer-events-none transition-all duration-200">
@@ -8829,6 +8857,22 @@
       const detailCopyIcon = document.getElementById("detailCopyIcon");
       const detailCopyText = document.getElementById("detailCopyText");
       const aboutPackageDetail = document.getElementById("aboutPackageDetail");
+
+      const settingsModal = document.getElementById("settingsModal");
+      document.getElementById("settingsDialogBtn").addEventListener("click", () => settingsModal.classList.remove("hidden"));
+      document.getElementById("settingsCloseBtn").addEventListener("click", () => settingsModal.classList.add("hidden"));
+      settingsModal.addEventListener("click", (event) => { if (event.target === settingsModal) settingsModal.classList.add("hidden"); });
+      settingsModal.addEventListener("change", (event) => {
+        if (event.target.name !== "mockLanguage") return;
+        const english = event.target.value === "en";
+        document.getElementById("settingsTitle").textContent = english ? "Language Settings" : "言語設定";
+        document.getElementById("settingsDescription").textContent = english ? "Choose a language. Default follows the system language." : "言語を選択してください。デフォルトはシステム言語を使用します。";
+        document.getElementById("displayLanguageLabel").textContent = english ? "Display language" : "表示言語";
+        document.getElementById("defaultLanguageLabel").textContent = english ? "Default" : "デフォルト";
+        document.getElementById("currentLanguageLabel").textContent = english ? "Current display language" : "現在の表示言語";
+        document.getElementById("currentLanguageValue").textContent = english ? "English" : "日本語";
+      });
+      settingsModal.addEventListener("keydown", (event) => { if (event.key === "Escape") settingsModal.classList.add("hidden"); });
 
       let currentSelectedLicenseId = mockLicenses[0].id;
       let currentLicenseKeyword = "";

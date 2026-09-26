@@ -127,8 +127,8 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
         setTimeout(() => {
           setCopyFeedback(false);
         }, LAYOUT_CONSTANTS.COPY_FEEDBACK_DURATION_MS);
-      } catch (err) {
-        console.error("クリップボードコピー失敗:", err);
+      } catch {
+        console.error("[AboutDialog] Failed to copy license text");
         onShowToast(ABOUT_DIALOG_CONSTANTS.TOAST_COPY_FAILED);
       }
     },
@@ -226,15 +226,15 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
 
               <div className="w-full max-w-md bg-[#1c1c20] border border-zinc-800 rounded-lg p-4 text-xs text-zinc-400 space-y-2 mb-6">
                 <div className="flex justify-between items-center py-1 border-b border-zinc-800/80">
-                  <span className="text-zinc-500">著作権:</span>
+                  <span className="text-zinc-500">{ABOUT_DIALOG_CONSTANTS.COPYRIGHT_LABEL}</span>
                   <span className="font-mono text-zinc-300">{ABOUT_DIALOG_CONSTANTS.COPYRIGHT}</span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-zinc-800/80">
-                  <span className="text-zinc-500">ライセンス:</span>
+                  <span className="text-zinc-500">{ABOUT_DIALOG_CONSTANTS.LICENSE_LABEL}</span>
                   <span className="font-medium text-emerald-400">{ABOUT_DIALOG_CONSTANTS.APP_LICENSE_LABEL}</span>
                 </div>
                 <div className="flex justify-between items-center py-1">
-                  <span className="text-zinc-500">サードパーティパッケージ:</span>
+                  <span className="text-zinc-500">{ABOUT_DIALOG_CONSTANTS.THIRD_PARTY_LABEL}</span>
                   <span className="font-mono text-zinc-300">
                     {licenses.length}
                     {ABOUT_DIALOG_CONSTANTS.PACKAGE_COUNT_SUFFIX}
@@ -248,7 +248,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
                 className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded-lg border border-zinc-700 text-xs font-medium transition flex items-center gap-2 cursor-pointer"
               >
                 <FileCode2 className="w-4 h-4 text-emerald-400" />
-                <span>オープンソースライセンス一覧を確認する</span>
+                <span>{ABOUT_DIALOG_CONSTANTS.PACKAGE_LIST_LINK}</span>
               </button>
             </div>
           ) : (

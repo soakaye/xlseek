@@ -37,6 +37,7 @@ use std::sync::Arc;
 #[cfg(target_os = "macos")]
 fn create_app_menu<R: tauri::Runtime>(
     app_handle: &tauri::AppHandle<R>,
+    language: &str,
 ) -> tauri::Result<tauri::menu::Menu<R>> {
     use constants::{
         MENU_ITEM_ABOUT_ID, MENU_ITEM_ABOUT_TEXT, MENU_SUBMENU_EDIT, MENU_SUBMENU_FILE,
@@ -51,7 +52,11 @@ fn create_app_menu<R: tauri::Runtime>(
     let about_item = MenuItem::with_id(
         app_handle,
         MENU_ITEM_ABOUT_ID,
-        MENU_ITEM_ABOUT_TEXT,
+        if language == crate::constants::LANGUAGE_JA {
+            MENU_ITEM_ABOUT_TEXT
+        } else {
+            constants::MENU_ITEM_ABOUT_TEXT_EN
+        },
         true,
         None::<&str>,
     )?;
@@ -76,7 +81,11 @@ fn create_app_menu<R: tauri::Runtime>(
     // 定数参照: constants::MENU_SUBMENU_FILE
     let file_submenu = Submenu::with_items(
         app_handle,
-        MENU_SUBMENU_FILE,
+        if language == crate::constants::LANGUAGE_JA {
+            constants::MENU_SUBMENU_FILE_JA
+        } else {
+            MENU_SUBMENU_FILE
+        },
         true,
         &[&PredefinedMenuItem::close_window(app_handle, None)?],
     )?;
@@ -85,7 +94,11 @@ fn create_app_menu<R: tauri::Runtime>(
     // 定数参照: constants::MENU_SUBMENU_EDIT
     let edit_submenu = Submenu::with_items(
         app_handle,
-        MENU_SUBMENU_EDIT,
+        if language == crate::constants::LANGUAGE_JA {
+            constants::MENU_SUBMENU_EDIT_JA
+        } else {
+            MENU_SUBMENU_EDIT
+        },
         true,
         &[
             &PredefinedMenuItem::undo(app_handle, None)?,
@@ -102,7 +115,11 @@ fn create_app_menu<R: tauri::Runtime>(
     // 定数参照: constants::MENU_SUBMENU_VIEW
     let view_submenu = Submenu::with_items(
         app_handle,
-        MENU_SUBMENU_VIEW,
+        if language == crate::constants::LANGUAGE_JA {
+            constants::MENU_SUBMENU_VIEW_JA
+        } else {
+            MENU_SUBMENU_VIEW
+        },
         true,
         &[&PredefinedMenuItem::fullscreen(app_handle, None)?],
     )?;
@@ -111,7 +128,11 @@ fn create_app_menu<R: tauri::Runtime>(
     // 定数参照: constants::MENU_SUBMENU_WINDOW
     let window_submenu = Submenu::with_items(
         app_handle,
-        MENU_SUBMENU_WINDOW,
+        if language == crate::constants::LANGUAGE_JA {
+            constants::MENU_SUBMENU_WINDOW_JA
+        } else {
+            MENU_SUBMENU_WINDOW
+        },
         true,
         &[
             &PredefinedMenuItem::minimize(app_handle, None)?,
@@ -123,7 +144,16 @@ fn create_app_menu<R: tauri::Runtime>(
 
     // 6. ヘルプサブメニュー (Help Submenu)
     // 定数参照: constants::MENU_SUBMENU_HELP
-    let help_submenu = Submenu::with_items(app_handle, MENU_SUBMENU_HELP, true, &[])?;
+    let help_submenu = Submenu::with_items(
+        app_handle,
+        if language == crate::constants::LANGUAGE_JA {
+            constants::MENU_SUBMENU_HELP_JA
+        } else {
+            MENU_SUBMENU_HELP
+        },
+        true,
+        &[],
+    )?;
 
     Menu::with_items(
         app_handle,
@@ -160,11 +190,12 @@ pub fn run() {
 
     tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
         .setup(|app| {
             #[cfg(target_os = "macos")]
             {
-                let menu = create_app_menu(app.handle())?;
+                let menu = create_app_menu(app.handle(), "en")?;
                 app.set_menu(menu)?;
             }
             Ok(())
@@ -180,6 +211,7 @@ pub fn run() {
         })
         .manage(AppState { engine })
         .invoke_handler(tauri::generate_handler![
+            set_menu_locale,
             commands::start_search,
             commands::cancel_search,
             commands::get_cell_preview,
@@ -193,4 +225,38 @@ pub fn run() {
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+/// ## 処理内容
+/// macOS アプリメニューを現在の表示言語に合わせて再構築する。
+/// ## 引数・戻り値
+/// Tauri アプリハンドルと `ja` または `en` を受け取り、成功時 `Ok(())` を返す。
+/// ## エラー
+/// 不正な言語コードおよび macOS メニュー更新失敗時は英語エラーコードを返す。他 OS では成功する。
+/// ## 変更履歴
+/// - v1.2.0 (2026-09-26, AI Agent): 言語別メニュー更新を追加。
+#[tauri::command]
+fn set_menu_locale(
+    app_handle: tauri::AppHandle,
+    language: String,
+) -> Result<(), models::CommandError> {
+    if language != crate::constants::LANGUAGE_JA && language != crate::constants::LANGUAGE_EN {
+        return Err(models::CommandError {
+            code: models::ErrorCode::InternalError,
+        });
+    }
+    #[cfg(target_os = "macos")]
+    {
+        let menu = create_app_menu(&app_handle, &language).map_err(|_| models::CommandError {
+            code: models::ErrorCode::InternalError,
+        })?;
+        app_handle
+            .set_menu(menu)
+            .map_err(|_| models::CommandError {
+                code: models::ErrorCode::InternalError,
+            })?;
+    }
+    #[cfg(not(target_os = "macos"))]
+    let _ = app_handle;
+    Ok(())
 }

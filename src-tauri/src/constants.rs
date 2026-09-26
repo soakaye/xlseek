@@ -16,6 +16,9 @@
 
 /// デフォルトの検索対象 Excel 拡張子リスト
 pub const DEFAULT_EXTENSIONS: [&str; 4] = [".xlsx", ".xlsm", ".xlsb", ".xls"];
+pub const DEFAULT_EXPORT_LANGUAGE: &str = "en";
+pub const LANGUAGE_JA: &str = "ja";
+pub const LANGUAGE_EN: &str = "en";
 
 /// 個別拡張子定数
 pub const EXT_XLSX: &str = ".xlsx";
@@ -48,13 +51,6 @@ pub const EXCEL_TEMP_FILE_PREFIX: &str = "~$";
 /// パイプライン並行処理における有界同期チャネルのバッファ容量
 pub const CHANNEL_BUFFER_SIZE: usize = 1024;
 
-/// スキャン状態メッセージ定数
-pub const MSG_SCAN_STARTING: &str = "スキャン開始中...";
-pub const MSG_SCAN_DISCOVERING: &str = "ファイルを検出・走査中...";
-pub const MSG_FILES_DISCOVERING_PREFIX: &str = "検出・走査中";
-pub const MSG_SCAN_COMPLETED: &str = "スキャン完了";
-pub const MSG_SCAN_CANCELLED: &str = "スキャンが中断されました";
-
 // ==============================================================================
 // 3. プレビュー表示設定定数 (Preview Settings)
 // ==============================================================================
@@ -83,6 +79,7 @@ pub const MENU_ITEM_ABOUT_ID: &str = "open_about";
 
 /// メニュー項目表示テキスト: Aboutダイアログ
 pub const MENU_ITEM_ABOUT_TEXT: &str = "Excel Grep について";
+pub const MENU_ITEM_ABOUT_TEXT_EN: &str = "About Excel Grep";
 
 /// メニューサブメニュー表示名: File
 pub const MENU_SUBMENU_FILE: &str = "File";
@@ -98,6 +95,11 @@ pub const MENU_SUBMENU_WINDOW: &str = "Window";
 
 /// メニューサブメニュー表示名: Help
 pub const MENU_SUBMENU_HELP: &str = "Help";
+pub const MENU_SUBMENU_FILE_JA: &str = "ファイル";
+pub const MENU_SUBMENU_EDIT_JA: &str = "編集";
+pub const MENU_SUBMENU_VIEW_JA: &str = "表示";
+pub const MENU_SUBMENU_WINDOW_JA: &str = "ウィンドウ";
+pub const MENU_SUBMENU_HELP_JA: &str = "ヘルプ";
 
 // ==============================================================================
 // 5. エクスポート設定定数 (Export Settings)
@@ -114,9 +116,20 @@ pub const CSV_EXPORT_HEADERS: [&str; 8] = [
     "一致内容",
     "数式",
 ];
+pub const CSV_EXPORT_HEADERS_EN: [&str; 8] = [
+    "ID",
+    "File name",
+    "Full path",
+    "Sheet name",
+    "Cell",
+    "Match type",
+    "Matched content",
+    "Formula",
+];
 
 /// Excelエクスポートのデフォルトシート名
 pub const EXPORT_DEFAULT_SHEET_NAME: &str = "検索結果";
+pub const EXPORT_DEFAULT_SHEET_NAME_EN: &str = "Search Results";
 
 /// Excelエクスポート時のヘッダ背景色 (Teal 700)
 pub const XLSX_HEADER_BG_COLOR: u32 = 0x000F_766E;
@@ -135,12 +148,27 @@ pub const XLSX_HEADERS_WITH_WIDTH: [(&str, f64); 8] = [
     ("一致内容", 45.0),
     ("数式", 30.0),
 ];
+pub const XLSX_HEADERS_WITH_WIDTH_EN: [(&str, f64); 8] = [
+    ("ID", 8.0),
+    ("File name", 25.0),
+    ("Full path", 40.0),
+    ("Sheet name", 20.0),
+    ("Cell", 12.0),
+    ("Match type", 14.0),
+    ("Matched content", 45.0),
+    ("Formula", 30.0),
+];
 
 /// 一致種別の日本語ラベル定数
 pub const LABEL_MATCH_CELL_VALUE: &str = "値";
 pub const LABEL_MATCH_FORMULA: &str = "数式";
 pub const LABEL_MATCH_COMMENT: &str = "コメント";
 pub const LABEL_MATCH_HIDDEN_SHEET: &str = "非表示シート";
+pub const LABEL_MATCH_CELL_VALUE_EN: &str = "Value";
+pub const LABEL_MATCH_FORMULA_EN: &str = "Formula";
+pub const LABEL_MATCH_COMMENT_EN: &str = "Comment";
+pub const LABEL_MATCH_HIDDEN_SHEET_EN: &str = "Hidden sheet";
+pub const ERR_INVALID_LANGUAGE: &str = "Unsupported export language";
 
 // ==============================================================================
 // 6. アプリケーション識別子・表示名定数 (Supported Apps)
@@ -163,23 +191,27 @@ pub const ICON_HINT_GENERIC: &str = "generic";
 // 7. 日本語エラーメッセージテンプレート (Localized Error Messages)
 // ==============================================================================
 
-pub const ERR_WORKBOOK_OPEN: &str = "ワークブックを開けませんでした";
-pub const ERR_SHEET_NOT_FOUND: &str = "指定されたシートが見つかりません";
-pub const ERR_CSV_HEADER_WRITE: &str = "CSVヘッダー書き込みエラー";
-pub const ERR_CSV_RECORD_WRITE: &str = "CSVレコード書き込みエラー";
-pub const ERR_XLSX_CREATE: &str = "Excelファイル作成エラー";
-pub const ERR_XLSX_WORKSHEET: &str = "ワークシート追加エラー";
-pub const ERR_XLSX_WRITE: &str = "Excel書き込みエラー";
-pub const ERR_XLSX_SAVE: &str = "Excelファイル保存エラー";
-pub const ERR_INVALID_REGEX: &str = "正規表現の構文が無効です";
-pub const ERR_FILE_NOT_FOUND: &str = "指定されたファイルが存在しません";
-pub const ERR_FOLDER_OPEN: &str = "フォルダを開けませんでした";
-pub const ERR_APP_LAUNCH: &str = "アプリケーションを起動できませんでした";
-pub const ERR_LOCK_FAILED: &str = "エンジンのロック取得に失敗しました";
-pub const ERR_SYSTEM_APP_NOT_FOUND: &str =
-    "対象ファイルを開くアプリケーションが見つかりませんでした";
-pub const ERR_TASK_EXECUTION: &str = "タスク実行エラー";
-pub const ERR_PATH_NOT_DIR: &str = "ディレクトリパスを特定できませんでした";
+pub const ERR_WORKBOOK_OPEN: &str = "Could not open workbook";
+pub const ERR_SHEET_NOT_FOUND: &str = "Requested sheet was not found";
+pub const ERR_CSV_HEADER_WRITE: &str = "Failed to write CSV header";
+pub const ERR_CSV_RECORD_WRITE: &str = "Failed to write CSV record";
+pub const ERR_XLSX_CREATE: &str = "Failed to create Excel workbook";
+pub const ERR_XLSX_WORKSHEET: &str = "Failed to add worksheet";
+pub const ERR_XLSX_WRITE: &str = "Failed to write Excel data";
+pub const ERR_XLSX_SAVE: &str = "Failed to save Excel workbook";
+pub const ERR_INVALID_REGEX: &str = "Invalid regular expression";
+pub const ERR_FILE_NOT_FOUND: &str = "Requested file was not found";
+pub const ERR_FOLDER_OPEN: &str = "Could not open folder";
+pub const ERR_APP_LAUNCH: &str = "Could not launch application";
+pub const ERR_LOCK_FAILED: &str = "Failed to acquire engine lock";
+pub const ERR_SYSTEM_APP_NOT_FOUND: &str = "No application is available for this file";
+pub const ERR_TASK_EXECUTION: &str = "Task execution failed";
+pub const ERR_PATH_NOT_DIR: &str = "Path is not a directory";
+pub const LOG_SEARCH_STARTED: &str = "[start_search] Search request received";
+pub const LOG_SEARCH_COMPLETED: &str = "[start_search] Search completed";
+pub const LOG_SEARCH_FAILED: &str = "[start_search] Search engine failed";
+pub const LOG_EVENT_EMIT_FAILED: &str = "Failed to emit Tauri event";
+pub const LOG_CANCEL_REQUESTED: &str = "[cancel_search] Cancellation requested";
 
 /// macOS アプリケーションバンドル識別子
 pub const MAC_BUNDLE_EXCEL: &str = "com.microsoft.Excel";
@@ -236,6 +268,11 @@ mod tests {
         assert_eq!(CSV_EXPORT_HEADERS[0], "ID");
         assert_eq!(CSV_EXPORT_HEADERS[1], "ファイル名");
         assert_eq!(CSV_EXPORT_HEADERS[7], "数式");
+        assert_eq!(CSV_EXPORT_HEADERS_EN[1], "File name");
+        assert_eq!(CSV_EXPORT_HEADERS_EN[7], "Formula");
+        assert_eq!(LABEL_MATCH_HIDDEN_SHEET_EN, "Hidden sheet");
+        assert_eq!(XLSX_HEADERS_WITH_WIDTH_EN[6].0, "Matched content");
+        assert_eq!(EXPORT_DEFAULT_SHEET_NAME_EN, "Search Results");
     }
 
     /// ## 処理内容
@@ -304,7 +341,5 @@ mod tests {
     #[test]
     fn test_pipeline_constants() {
         assert_eq!(CHANNEL_BUFFER_SIZE, 1024);
-        assert!(!MSG_SCAN_DISCOVERING.is_empty());
-        assert!(!MSG_FILES_DISCOVERING_PREFIX.is_empty());
     }
 }

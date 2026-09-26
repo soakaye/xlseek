@@ -16,17 +16,20 @@
  */
 
 import React from "react";
-import { FileText, FileSpreadsheet, Info } from "lucide-react";
+import { FileText, FileSpreadsheet, Info, Settings } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { ScanProgress, SearchMatch, ExportRequest } from "../../types/search";
 import { COMMANDS, UI_MESSAGES, ABOUT_DIALOG_CONSTANTS } from "../../constants";
+import { DisplayLanguage } from "../../locale-core";
 
 interface StatusBarProps {
   progress: ScanProgress | null;
   items: SearchMatch[];
   onShowToast: (msg: string) => void;
   onOpenAbout: () => void;
+  onOpenSettings: () => void;
+  language: DisplayLanguage;
 }
 
 /**
@@ -52,6 +55,8 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   items,
   onShowToast,
   onOpenAbout,
+  onOpenSettings,
+  language,
 }) => {
   const isScanning = progress?.state === "Scanning";
   const isDetermined = !!(progress && progress.total_files > 0);
@@ -104,6 +109,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         format,
         output_path: selectedPath,
         items,
+        language,
       };
 
       // 定数参照: COMMANDS.EXPORT_RESULTS を使用
@@ -112,10 +118,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       onShowToast(
         `${format.toUpperCase()}${UI_MESSAGES.EXPORT_SAVED_PREFIX}${selectedPath}`
       );
-    } catch (err) {
-      console.error("エクスポートエラー:", err);
+    } catch {
+      console.error("[StatusBar] Export failed");
       // 定数参照: UI_MESSAGES.EXPORT_ERROR_PREFIX
-      onShowToast(`${UI_MESSAGES.EXPORT_ERROR_PREFIX}${err}`);
+      onShowToast(UI_MESSAGES.EXPORT_FAILED);
     }
   };
 
@@ -125,25 +131,29 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       return UI_MESSAGES.STATUS_IDLE;
     }
     const elapsedSec = (progress.elapsed_ms / 1000).toFixed(2);
+    const fileUnit = UI_MESSAGES.UNIT_FILES;
+    const matchUnit = UI_MESSAGES.UNIT_MATCHES;
+    const elapsed = `${elapsedSec}${UI_MESSAGES.UNIT_SECONDS_SUFFIX}`;
     switch (progress.state) {
       case "Scanning":
         if (!isDetermined) {
+          if (progress.phase === "preparing") return UI_MESSAGES.STATUS_SCAN_PREPARING;
           if (progress.scanned_files === 0) {
             // 定数参照: UI_MESSAGES.FOLDER_SCANNING_PREFIX / FOLDER_SEARCHING_DEFAULT
             return `${UI_MESSAGES.FOLDER_SCANNING_PREFIX}${progress.current_file || UI_MESSAGES.FOLDER_SEARCHING_DEFAULT}`;
           }
           // 定数参照: UI_MESSAGES.STATUS_DISCOVERING_PREFIX
-          return `${UI_MESSAGES.STATUS_DISCOVERING_PREFIX}: ${progress.scanned_files} ファイル (${progress.matches_found} 件一致, ${elapsedSec}s) - ${progress.current_file}`;
+          return `${UI_MESSAGES.STATUS_DISCOVERING_DETAIL}: ${progress.scanned_files} ${fileUnit} (${progress.matches_found} ${matchUnit}, ${elapsed}) - ${progress.current_file}`;
         }
         // 定数参照: UI_MESSAGES.STATUS_SCANNING_PREFIX
-        return `${UI_MESSAGES.STATUS_SCANNING_PREFIX}${progress.scanned_files}/${progress.total_files} ファイル (${progress.matches_found} 件一致, ${elapsedSec}s) - ${progress.current_file}`;
+        return `${UI_MESSAGES.STATUS_SCANNING_DETAIL}: ${progress.scanned_files}/${progress.total_files} ${fileUnit} (${progress.matches_found} ${matchUnit}, ${elapsed}) - ${progress.current_file}`;
       case "Completed":
         // 定数参照: UI_MESSAGES.STATUS_COMPLETED_PREFIX
-        return `${UI_MESSAGES.STATUS_COMPLETED_PREFIX}${progress.matches_found} 件一致 (${progress.scanned_files} ファイル, ${elapsedSec}s)`;
+        return `${UI_MESSAGES.STATUS_COMPLETED_PREFIX}${progress.matches_found} ${matchUnit} (${progress.scanned_files} ${fileUnit}, ${elapsed})`;
       case "Cancelled":
-        return `${UI_MESSAGES.CANCELLED}: ${progress.matches_found} 件一致 (${progress.scanned_files} ファイル走査済)`;
+        return `${UI_MESSAGES.STATUS_CANCELLED_DETAIL}: ${progress.matches_found} ${matchUnit} (${progress.scanned_files} ${fileUnit})`;
       case "Error":
-        return `${UI_MESSAGES.ERROR}が発生しました`;
+        return UI_MESSAGES.STATUS_ERROR_DETAIL;
     }
   })();
 
@@ -185,7 +195,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             {isScanning && !isDetermined
               ? progress.scanned_files === 0
                 ? UI_MESSAGES.SEARCHING_DIR
-                : `${UI_MESSAGES.STATUS_DISCOVERING_PREFIX} (${progress.scanned_files})`
+                : `${UI_MESSAGES.STATUS_DISCOVERING_DETAIL} (${progress.scanned_files})`
               : progress
               ? `${percent}% (${progress.scanned_files}/${progress.total_files})`
               : UI_MESSAGES.STATUS_WAITING}
@@ -206,6 +216,9 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
       {/* 右側: エクスポートボタン群 */}
       <div className="flex items-center gap-2 flex-shrink-0">
+        <button type="button" onClick={onOpenSettings} title={UI_MESSAGES.SETTINGS} aria-label={UI_MESSAGES.SETTINGS} className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded border border-zinc-700/60 transition flex items-center justify-center cursor-pointer">
+          <Settings className="w-3.5 h-3.5" />
+        </button>
         <button
           type="button"
           onClick={() => handleExport("csv")}
@@ -213,7 +226,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-200 hover:text-white rounded border border-zinc-700 flex items-center gap-1.5 transition"
         >
           <FileText className="w-3.5 h-3.5 text-zinc-400" />
-          <span>CSV 出力</span>
+          <span>{UI_MESSAGES.EXPORT_CSV_BUTTON}</span>
         </button>
         <button
           type="button"
@@ -222,7 +235,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-emerald-400 hover:text-emerald-300 rounded border border-zinc-700 flex items-center gap-1.5 transition"
         >
           <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
-          <span>Excel 出力</span>
+          <span>{UI_MESSAGES.EXPORT_XLSX_BUTTON}</span>
         </button>
 
         {/* 縦仕切り線 */}

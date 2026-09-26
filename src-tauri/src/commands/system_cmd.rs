@@ -9,7 +9,7 @@
 //! ## 変更履歴
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。Clippy指摘修正（sort_by_key）、定数参照化、4要素ヘッダコメント付与。
 
-use crate::models::SupportedApp;
+use crate::models::{CommandError, SupportedApp};
 use std::path::Path;
 
 #[cfg(target_os = "windows")]
@@ -32,7 +32,12 @@ use winreg::RegKey;
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
 #[tauri::command]
-pub async fn open_in_excel(file_path: String) -> Result<(), String> {
+pub async fn open_in_excel(file_path: String) -> Result<(), CommandError> {
+    if !Path::new(&file_path).exists() {
+        return Err(CommandError {
+            code: crate::models::ErrorCode::PathNotFound,
+        });
+    }
     tauri::async_runtime::spawn_blocking(move || {
         open::that(&file_path).map_err(|e| {
             // 定数参照: crate::constants::ERR_APP_LAUNCH を使用
@@ -40,10 +45,12 @@ pub async fn open_in_excel(file_path: String) -> Result<(), String> {
         })
     })
     .await
-    .map_err(|e| {
-        // 定数参照: crate::constants::ERR_TASK_EXECUTION を使用
-        format!("{}: {}", crate::constants::ERR_TASK_EXECUTION, e)
+    .map_err(|_| CommandError {
+        code: crate::models::ErrorCode::AppLaunchFailed,
     })?
+    .map_err(|_| CommandError {
+        code: crate::models::ErrorCode::AppLaunchFailed,
+    })
 }
 
 /// ## 処理内容
@@ -61,8 +68,10 @@ pub async fn open_in_excel(file_path: String) -> Result<(), String> {
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。Clippy指摘修正（sort_by_key）、定数参照化。
 #[tauri::command]
-pub async fn get_supported_apps(extension: Option<String>) -> Result<Vec<SupportedApp>, String> {
-    tauri::async_runtime::spawn_blocking(move || {
+pub async fn get_supported_apps(
+    extension: Option<String>,
+) -> Result<Vec<SupportedApp>, CommandError> {
+    tauri::async_runtime::spawn_blocking(move || -> Result<Vec<SupportedApp>, String> {
         // 定数参照: crate::constants::EXT_XLSX を使用
         let ext = extension.unwrap_or_else(|| crate::constants::EXT_XLSX.to_string());
         let _ext_normalized = if ext.starts_with('.') {
@@ -236,10 +245,12 @@ pub async fn get_supported_apps(extension: Option<String>) -> Result<Vec<Support
         }
     })
     .await
-    .map_err(|e| {
-        // 定数参照: crate::constants::ERR_TASK_EXECUTION を使用
-        format!("{}: {}", crate::constants::ERR_TASK_EXECUTION, e)
+    .map_err(|_| CommandError {
+        code: crate::models::ErrorCode::InternalError,
     })?
+    .map_err(|_| CommandError {
+        code: crate::models::ErrorCode::InternalError,
+    })
 }
 
 /// ## 処理内容
@@ -261,7 +272,12 @@ pub async fn get_supported_apps(extension: Option<String>) -> Result<Vec<Support
 pub async fn launch_associated_app(
     file_path: String,
     app_path: Option<String>,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
+    if !Path::new(&file_path).exists() {
+        return Err(CommandError {
+            code: crate::models::ErrorCode::PathNotFound,
+        });
+    }
     tauri::async_runtime::spawn_blocking(move || {
         let p = Path::new(&file_path);
         if !p.exists() {
@@ -312,10 +328,12 @@ pub async fn launch_associated_app(
         }
     })
     .await
-    .map_err(|e| {
-        // 定数参照: crate::constants::ERR_TASK_EXECUTION を使用
-        format!("{}: {}", crate::constants::ERR_TASK_EXECUTION, e)
+    .map_err(|_| CommandError {
+        code: crate::models::ErrorCode::InternalError,
     })?
+    .map_err(|_| CommandError {
+        code: crate::models::ErrorCode::AppLaunchFailed,
+    })
 }
 
 /// ## 処理内容
@@ -335,15 +353,15 @@ pub async fn launch_associated_app(
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
 #[tauri::command]
-pub async fn show_open_with_dialog(app: tauri::AppHandle, file_path: String) -> Result<(), String> {
+pub async fn show_open_with_dialog(
+    app: tauri::AppHandle,
+    file_path: String,
+) -> Result<(), CommandError> {
     let p = Path::new(&file_path);
     if !p.exists() {
-        // 定数参照: crate::constants::ERR_FILE_NOT_FOUND を使用
-        return Err(format!(
-            "{}: {}",
-            crate::constants::ERR_FILE_NOT_FOUND,
-            file_path
-        ));
+        return Err(CommandError {
+            code: crate::models::ErrorCode::PathNotFound,
+        });
     }
 
     #[cfg(target_os = "windows")]
@@ -360,10 +378,12 @@ pub async fn show_open_with_dialog(app: tauri::AppHandle, file_path: String) -> 
             Ok(())
         })
         .await
-        .map_err(|e| {
-            // 定数参照: crate::constants::ERR_TASK_EXECUTION を使用
-            format!("{}: {}", crate::constants::ERR_TASK_EXECUTION, e)
+        .map_err(|_| CommandError {
+            code: crate::models::ErrorCode::InternalError,
         })?
+        .map_err(|_| CommandError {
+            code: crate::models::ErrorCode::AppLaunchFailed,
+        })
     }
 
     #[cfg(target_os = "macos")]
@@ -391,10 +411,12 @@ pub async fn show_open_with_dialog(app: tauri::AppHandle, file_path: String) -> 
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
         let _ = app;
-        open::that(&file_path).map_err(|e| {
-            // 定数参照: crate::constants::ERR_APP_LAUNCH を使用
-            format!("{}: {}", crate::constants::ERR_APP_LAUNCH, e)
-        })
+        open::that(&file_path)
+            .map_err(|e| {
+                // 定数参照: crate::constants::ERR_APP_LAUNCH を使用
+                format!("{}: {}", crate::constants::ERR_APP_LAUNCH, e)
+            })
+            .map_err(Into::into)
     }
 }
 
@@ -456,7 +478,12 @@ fn parse_command_to_exe(cmd_str: &str) -> Option<(std::path::PathBuf, String)> {
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
 #[tauri::command]
-pub async fn open_in_folder(file_path: String) -> Result<(), String> {
+pub async fn open_in_folder(file_path: String) -> Result<(), CommandError> {
+    if !Path::new(&file_path).exists() {
+        return Err(CommandError {
+            code: crate::models::ErrorCode::PathNotFound,
+        });
+    }
     tauri::async_runtime::spawn_blocking(move || {
         let path = Path::new(&file_path);
         if !path.exists() {
@@ -510,10 +537,12 @@ pub async fn open_in_folder(file_path: String) -> Result<(), String> {
         }
     })
     .await
-    .map_err(|e| {
-        // 定数参照: crate::constants::ERR_TASK_EXECUTION を使用
-        format!("{}: {}", crate::constants::ERR_TASK_EXECUTION, e)
+    .map_err(|_| CommandError {
+        code: crate::models::ErrorCode::InternalError,
     })?
+    .map_err(|_| CommandError {
+        code: crate::models::ErrorCode::FolderOpenFailed,
+    })
 }
 
 /// ## 処理内容
@@ -532,7 +561,7 @@ pub async fn open_in_folder(file_path: String) -> Result<(), String> {
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
 #[tauri::command]
-pub async fn resolve_dropped_path(path: String) -> Result<String, String> {
+pub async fn resolve_dropped_path(path: String) -> Result<String, CommandError> {
     tauri::async_runtime::spawn_blocking(move || {
         let p = Path::new(&path);
         if !p.exists() {
@@ -554,8 +583,10 @@ pub async fn resolve_dropped_path(path: String) -> Result<String, String> {
         }
     })
     .await
-    .map_err(|e| {
-        // 定数参照: crate::constants::ERR_TASK_EXECUTION を使用
-        format!("{}: {}", crate::constants::ERR_TASK_EXECUTION, e)
+    .map_err(|_| CommandError {
+        code: crate::models::ErrorCode::InternalError,
     })?
+    .map_err(|_| CommandError {
+        code: crate::models::ErrorCode::PathNotFound,
+    })
 }

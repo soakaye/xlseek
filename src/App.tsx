@@ -17,6 +17,7 @@
 
 import React, { useState, useEffect } from "react";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { invoke } from "@tauri-apps/api/core";
 import { WindowFrame } from "./components/layout/WindowFrame";
 import { SearchBar } from "./components/search/SearchBar";
 import { ResultTable } from "./components/results/ResultTable";
@@ -28,8 +29,11 @@ import { MetaInfoCard } from "./components/preview/MetaInfoCard";
 import { StatusBar } from "./components/common/StatusBar";
 import { Toast } from "./components/common/Toast";
 import { AboutDialog } from "./components/about/AboutDialog";
+import { SettingsDialog } from "./components/settings/SettingsDialog";
 import { useSearch } from "./hooks/useSearch";
-import { EVENT_NAMES } from "./constants";
+import { COMMANDS, EVENT_NAMES, retranslateMessage, UI_MESSAGES } from "./constants";
+import { useLocale } from "./hooks/useLocale";
+import { DisplayLanguage } from "./locale-core";
 
 /**
  * Excel Grep アプリケーションのメイン画面コンポーネント
@@ -54,8 +58,20 @@ import { EVENT_NAMES } from "./constants";
  * - v1.3.0 (2026-09-26, AI Agent): システムメニューからのAbout表示要求イベントの購読と状態連動を追加。
  */
 export const App: React.FC = () => {
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toastNotice, setToastNotice] = useState<{ message: string; language: DisplayLanguage } | null>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const { language, preference, selectLanguage } = useLocale();
+  const toastMessage = toastNotice
+    ? retranslateMessage(toastNotice.message, toastNotice.language, language)
+    : null;
+
+  useEffect(() => {
+    void invoke(COMMANDS.SET_MENU_LOCALE, { language }).catch(() => {
+      console.error("[App] Failed to update application menu language");
+      setToastNotice({ message: UI_MESSAGES.MENU_UPDATE_FAILED, language });
+    });
+  }, [language]);
 
   // システムメニューからのAboutダイアログ表示要求イベントの購読
   useEffect(() => {
@@ -75,8 +91,8 @@ export const App: React.FC = () => {
         } else {
           unlisten = u;
         }
-      } catch (err) {
-        console.error("[App] Aboutダイアログイベントリスナー登録エラー:", err);
+      } catch {
+        console.error("[App] Failed to register About dialog event listener");
       }
     };
 
@@ -91,7 +107,7 @@ export const App: React.FC = () => {
   }, []);
 
   const showToast = (msg: string) => {
-    setToastMessage(msg);
+    setToastNotice({ message: msg, language });
   };
 
   const {
@@ -181,6 +197,19 @@ export const App: React.FC = () => {
         items={results}
         onShowToast={showToast}
         onOpenAbout={() => setIsAboutOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        language={language}
+      />
+
+      <SettingsDialog
+        isOpen={isSettingsOpen}
+        preference={preference}
+        language={language}
+        onSelect={async (value) => {
+          const saved = await selectLanguage(value);
+          if (!saved) setToastNotice({ message: UI_MESSAGES.SAVE_FAILED, language });
+        }}
+        onClose={() => setIsSettingsOpen(false)}
       />
 
       {/* アプリ情報・ライセンスモーダル */}
@@ -193,7 +222,7 @@ export const App: React.FC = () => {
       {/* トースト通知 */}
       <Toast
         message={toastMessage}
-        onClose={() => setToastMessage(null)}
+        onClose={() => setToastNotice(null)}
       />
     </WindowFrame>
   );

@@ -68,8 +68,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
         if (isMounted) {
           setSupportedApps(apps || []);
         }
-      } catch (err) {
-        console.error("サポートアプリ一覧の取得に失敗しました:", err);
+      } catch {
+        console.error("[PreviewHeader] Failed to load supported applications");
       }
     };
     fetchApps();
@@ -138,9 +138,9 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
         filePath: selectedMatch.full_path,
         appPath: null,
       });
-    } catch (err) {
+    } catch {
       // 定数参照: UI_MESSAGES.LAUNCH_APP_FAILED
-      onShowToast(`${UI_MESSAGES.LAUNCH_APP_FAILED}: ${err}`);
+      onShowToast(UI_MESSAGES.LAUNCH_APP_FAILED);
     }
   };
 
@@ -153,9 +153,9 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
         filePath: selectedMatch.full_path,
         appPath: app.executable_path,
       });
-    } catch (err) {
+    } catch {
       // 定数参照: UI_MESSAGES.LAUNCH_APP_FAILED
-      onShowToast(`${UI_MESSAGES.LAUNCH_APP_FAILED}: ${err}`);
+      onShowToast(UI_MESSAGES.LAUNCH_APP_FAILED);
     }
   };
 
@@ -167,9 +167,9 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
       await invoke(COMMANDS.SHOW_OPEN_WITH_DIALOG, {
         filePath: selectedMatch.full_path,
       });
-    } catch (err) {
+    } catch {
       // 定数参照: UI_MESSAGES.SHOW_OPEN_WITH_FAILED
-      onShowToast(`${UI_MESSAGES.SHOW_OPEN_WITH_FAILED}: ${err}`);
+      onShowToast(UI_MESSAGES.SHOW_OPEN_WITH_FAILED);
     }
   };
 
@@ -177,9 +177,9 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
     try {
       // 定数参照: COMMANDS.OPEN_IN_FOLDER
       await invoke(COMMANDS.OPEN_IN_FOLDER, { filePath: selectedMatch.full_path });
-    } catch (err) {
+    } catch {
       // 定数参照: UI_MESSAGES.OPEN_FOLDER_FAILED
-      onShowToast(`${UI_MESSAGES.OPEN_FOLDER_FAILED}: ${err}`);
+      onShowToast(UI_MESSAGES.OPEN_FOLDER_FAILED);
     }
   };
 
@@ -191,7 +191,7 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
       onShowToast(UI_MESSAGES.COPIED_FILE_PATH);
       // 定数参照: LAYOUT_CONSTANTS.COPY_FEEDBACK_DURATION_MS
       setTimeout(() => setCopied(false), LAYOUT_CONSTANTS.COPY_FEEDBACK_DURATION_MS);
-    } catch (err) {
+    } catch {
       // 定数参照: UI_MESSAGES.COPY_TO_CLIPBOARD_FAILED
       onShowToast(UI_MESSAGES.COPY_TO_CLIPBOARD_FAILED);
     }
@@ -213,10 +213,10 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
           {/* シート名バッジ */}
           <div
             className="flex items-center gap-1.5 bg-emerald-950/80 text-emerald-300 border border-emerald-700/70 px-2 py-0.5 rounded text-[11px] font-medium flex-shrink-0 shadow-sm"
-            title="検索一致が発生したワークシート"
+            title={UI_MESSAGES.WORKSHEET_TITLE}
           >
             <Layers className="w-3 h-3 text-emerald-400" />
-            <span className="text-zinc-400 font-normal">シート:</span>
+            <span className="text-zinc-400 font-normal">{UI_MESSAGES.LABEL_SHEET}</span>
             <span className="font-bold text-emerald-200">
               {selectedMatch.sheet_name}
             </span>

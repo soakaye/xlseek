@@ -28,7 +28,10 @@ use std::io::Write;
 ///
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化およびClippy対応（`write_record([ ... ])`）。
-pub fn export_to_csv(path: &str, items: &[SearchMatch]) -> Result<(), String> {
+pub fn export_to_csv(path: &str, items: &[SearchMatch], language: &str) -> Result<(), String> {
+    if language != crate::constants::LANGUAGE_JA && language != crate::constants::LANGUAGE_EN {
+        return Err(crate::constants::ERR_INVALID_LANGUAGE.to_string());
+    }
     let file = File::create(path).map_err(|e| {
         // 定数参照: crate::constants::ERR_CSV_RECORD_WRITE を使用
         format!("{}: {}", crate::constants::ERR_CSV_RECORD_WRITE, e)
@@ -44,22 +47,36 @@ pub fn export_to_csv(path: &str, items: &[SearchMatch]) -> Result<(), String> {
     let mut csv_writer = csv::Writer::from_writer(writer);
 
     // ヘッダー行書き込み (Clippy: needless_borrows_for_generic_args 回避のため配列を直接渡す)
-    // 定数参照: crate::constants::CSV_EXPORT_HEADERS を使用
-    csv_writer
-        .write_record(crate::constants::CSV_EXPORT_HEADERS)
-        .map_err(|e| {
-            // 定数参照: crate::constants::ERR_CSV_HEADER_WRITE を使用
-            format!("{}: {}", crate::constants::ERR_CSV_HEADER_WRITE, e)
-        })?;
+    let headers = if language == crate::constants::LANGUAGE_JA {
+        &crate::constants::CSV_EXPORT_HEADERS
+    } else {
+        &crate::constants::CSV_EXPORT_HEADERS_EN
+    };
+    csv_writer.write_record(headers).map_err(|e| {
+        // 定数参照: crate::constants::ERR_CSV_HEADER_WRITE を使用
+        format!("{}: {}", crate::constants::ERR_CSV_HEADER_WRITE, e)
+    })?;
 
     // データ行
     for item in items {
         // 定数参照: crate::constants::LABEL_MATCH_* を使用
-        let match_type_str = match item.match_type {
-            MatchType::CellValue => crate::constants::LABEL_MATCH_CELL_VALUE,
-            MatchType::Formula => crate::constants::LABEL_MATCH_FORMULA,
-            MatchType::Comment => crate::constants::LABEL_MATCH_COMMENT,
-            MatchType::HiddenSheet => crate::constants::LABEL_MATCH_HIDDEN_SHEET,
+        let match_type_str = match (item.match_type, language) {
+            (MatchType::CellValue, crate::constants::LANGUAGE_EN) => {
+                crate::constants::LABEL_MATCH_CELL_VALUE_EN
+            }
+            (MatchType::Formula, crate::constants::LANGUAGE_EN) => {
+                crate::constants::LABEL_MATCH_FORMULA_EN
+            }
+            (MatchType::Comment, crate::constants::LANGUAGE_EN) => {
+                crate::constants::LABEL_MATCH_COMMENT_EN
+            }
+            (MatchType::HiddenSheet, crate::constants::LANGUAGE_EN) => {
+                crate::constants::LABEL_MATCH_HIDDEN_SHEET_EN
+            }
+            (MatchType::CellValue, _) => crate::constants::LABEL_MATCH_CELL_VALUE,
+            (MatchType::Formula, _) => crate::constants::LABEL_MATCH_FORMULA,
+            (MatchType::Comment, _) => crate::constants::LABEL_MATCH_COMMENT,
+            (MatchType::HiddenSheet, _) => crate::constants::LABEL_MATCH_HIDDEN_SHEET,
         };
 
         // Clippy: needless_borrows_for_generic_args 回避のため配列を直接渡す
@@ -85,4 +102,23 @@ pub fn export_to_csv(path: &str, items: &[SearchMatch]) -> Result<(), String> {
         format!("{}: {}", crate::constants::ERR_CSV_RECORD_WRITE, e)
     })?;
     Ok(())
+}
+
+#[cfg(test)]
+mod localization_tests {
+    /// ## 処理内容
+    /// 未対応言語の CSV 出力を、ファイル作成前に拒否する。
+    /// ## 引数・戻り値
+    /// 引数なし。アサーションのみを実行する。
+    /// ## エラー
+    /// 想定外の出力結果でテストが失敗する。
+    /// ## 変更履歴
+    /// - v1.1.0 (2026-09-26, AI Agent): 不正な出力言語の検証を追加。
+    #[test]
+    fn rejects_unsupported_language() {
+        assert_eq!(
+            super::export_to_csv("", &[], "fr"),
+            Err(crate::constants::ERR_INVALID_LANGUAGE.to_string())
+        );
+    }
 }

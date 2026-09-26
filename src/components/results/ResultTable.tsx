@@ -15,7 +15,7 @@ import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ListFilter, Filter, ArrowUp, ArrowDown } from "lucide-react";
 import { SearchMatch, MatchType } from "../../types/search";
-import { LAYOUT_CONSTANTS } from "../../constants";
+import { LAYOUT_CONSTANTS, UI_MESSAGES } from "../../constants";
 
 interface ResultTableProps {
   items: SearchMatch[];
@@ -69,8 +69,8 @@ export const ResultTable: React.FC<ResultTableProps> = ({
     }
 
     return [...result].sort((a, b) => {
-      let valA = a[sortField];
-      let valB = b[sortField];
+      const valA = a[sortField];
+      const valB = b[sortField];
       if (typeof valA === "string" && typeof valB === "string") {
         const cmp = valA.localeCompare(valB, undefined, {
           numeric: true,
@@ -131,25 +131,25 @@ export const ResultTable: React.FC<ResultTableProps> = ({
       case "CellValue":
         return (
           <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-950/80 text-blue-300 border border-blue-800/60">
-            値
+            {UI_MESSAGES.MATCH_TYPE_CELL_VALUE}
           </span>
         );
       case "Formula":
         return (
           <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-950/80 text-purple-300 border border-purple-800/60">
-            数式
+            {UI_MESSAGES.MATCH_TYPE_FORMULA}
           </span>
         );
       case "Comment":
         return (
           <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-950/80 text-amber-300 border border-amber-800/60">
-            メモ
+            {UI_MESSAGES.MATCH_TYPE_COMMENT}
           </span>
         );
       case "HiddenSheet":
         return (
           <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700">
-            非表示
+            {UI_MESSAGES.MATCH_TYPE_HIDDEN_SHEET}
           </span>
         );
     }
@@ -161,9 +161,9 @@ export const ResultTable: React.FC<ResultTableProps> = ({
       <div className="p-2.5 bg-[#18181b] border-b border-zinc-800 flex items-center justify-between text-xs flex-shrink-0">
         <div className="flex items-center gap-2 text-zinc-400">
           <ListFilter className="w-4 h-4 text-zinc-400" />
-          <span className="font-medium text-zinc-200">検索結果リスト</span>
+          <span className="font-medium text-zinc-200">{UI_MESSAGES.RESULTS_TITLE}</span>
           <span className="bg-zinc-800 text-emerald-400 px-2 py-0.2 rounded-full font-mono text-[11px] border border-zinc-700">
-            {filteredItems.length} 件
+            {filteredItems.length} {UI_MESSAGES.RESULT_COUNT_SUFFIX}
           </span>
         </div>
         <div className="flex items-center gap-2">
@@ -173,7 +173,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
               type="text"
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              placeholder="結果内を絞り込み..."
+              placeholder={UI_MESSAGES.FILTER_RESULTS_PLACEHOLDER}
               className="w-44 pl-7 pr-2 py-1 bg-zinc-900 border border-zinc-700 rounded text-xs text-zinc-200 placeholder-zinc-500 focus:outline-none focus:border-zinc-500"
             />
             <Filter className="w-3.5 h-3.5 text-zinc-500 absolute left-2 top-1.5" />
@@ -188,7 +188,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
             onClick={() => handleSort("file_name")}
             className="w-[30%] py-2.5 px-3 flex items-center gap-1 hover:text-zinc-200 transition text-left"
           >
-            <span>ファイル名</span>
+            <span>{UI_MESSAGES.COLUMN_FILE}</span>
             {sortField === "file_name" &&
               (sortOrder === "asc" ? (
                 <ArrowUp className="w-3 h-3 text-emerald-400" />
@@ -200,7 +200,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
             onClick={() => handleSort("sheet_name")}
             className="w-[18%] py-2.5 px-3 flex items-center gap-1 hover:text-zinc-200 transition text-left"
           >
-            <span>シート</span>
+            <span>{UI_MESSAGES.COLUMN_SHEET}</span>
             {sortField === "sheet_name" &&
               (sortOrder === "asc" ? (
                 <ArrowUp className="w-3 h-3 text-emerald-400" />
@@ -212,7 +212,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
             onClick={() => handleSort("cell_address")}
             className="w-[12%] py-2.5 px-3 flex items-center gap-1 hover:text-zinc-200 transition text-left"
           >
-            <span>セル</span>
+            <span>{UI_MESSAGES.COLUMN_CELL}</span>
             {sortField === "cell_address" &&
               (sortOrder === "asc" ? (
                 <ArrowUp className="w-3 h-3 text-emerald-400" />
@@ -224,7 +224,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
             onClick={() => handleSort("match_type")}
             className="w-[15%] py-2.5 px-3 flex items-center gap-1 hover:text-zinc-200 transition text-left"
           >
-            <span>一致種別</span>
+            <span>{UI_MESSAGES.COLUMN_MATCH_TYPE}</span>
             {sortField === "match_type" &&
               (sortOrder === "asc" ? (
                 <ArrowUp className="w-3 h-3 text-emerald-400" />
@@ -232,7 +232,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
                 <ArrowDown className="w-3 h-3 text-emerald-400" />
               ))}
           </button>
-          <div className="w-[25%] py-2.5 px-3 text-left">一致内容 (プレビュー)</div>
+          <div className="w-[25%] py-2.5 px-3 text-left">{UI_MESSAGES.COLUMN_PREVIEW}</div>
         </div>
       </div>
 
@@ -240,7 +240,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
       <div ref={parentRef} className="flex-1 overflow-auto">
         {filteredItems.length === 0 ? (
           <div className="h-full flex items-center justify-center text-xs text-zinc-500">
-            一致する結果がありません
+            {UI_MESSAGES.NO_FILTERED_RESULTS}
           </div>
         ) : (
           <div

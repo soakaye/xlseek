@@ -8,7 +8,7 @@
 //! ## 変更履歴
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化、4要素ヘッダコメント付与。
 
-use crate::models::CellPreviewData;
+use crate::models::{CellPreviewData, CommandError, ErrorCode};
 use crate::search::preview::extract_cell_preview;
 
 /// ## 処理内容
@@ -34,13 +34,15 @@ pub async fn get_cell_preview(
     sheet_name: String,
     row_index: u32,
     col_index: u32,
-) -> Result<CellPreviewData, String> {
+) -> Result<CellPreviewData, CommandError> {
     tauri::async_runtime::spawn_blocking(move || {
         extract_cell_preview(&file_path, &sheet_name, row_index, col_index)
     })
     .await
-    .map_err(|e| {
-        // 定数参照: crate::constants::ERR_TASK_EXECUTION を使用
-        format!("{}: {}", crate::constants::ERR_TASK_EXECUTION, e)
+    .map_err(|_| CommandError {
+        code: ErrorCode::PreviewFailed,
     })?
+    .map_err(|_| CommandError {
+        code: ErrorCode::PreviewFailed,
+    })
 }

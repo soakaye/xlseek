@@ -52,12 +52,15 @@ export interface SearchMatch {
  * スキャン状態列挙型
  */
 export type ScanState = "Scanning" | "Completed" | "Cancelled" | "Error";
+export type ErrorCode = "invalid_regex" | "path_not_found" | "workbook_open_failed" | "preview_failed" | "export_failed" | "app_launch_failed" | "folder_open_failed" | "permission_denied" | "search_failed" | "internal_error";
 
 /**
  * スキャン進捗イベント情報インターフェース
  */
 export interface ScanProgress {
   state: ScanState;
+  phase?: "preparing" | "discovering" | "scanning" | "finished";
+  error_code?: string | null;
   scanned_files: number;
   total_files: number;
   matches_found: number;
@@ -109,8 +112,11 @@ export type ExportFormat = "csv" | "xlsx";
 /**
  * エクスポート要求パラメータインターフェース
  */
+import type { DisplayLanguage } from "../locale-core";
+
 export interface ExportRequest {
   format: ExportFormat;
+  language: DisplayLanguage;
   output_path: string;
   items: SearchMatch[];
 }

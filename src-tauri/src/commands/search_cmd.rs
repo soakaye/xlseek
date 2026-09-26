@@ -8,6 +8,7 @@
 //! ## 変更履歴
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化、4要素ヘッダコメント付与。
 
+use crate::models::CommandError;
 use crate::models::{ScanProgress, ScanState, SearchMatch, SearchQuery};
 use crate::search::engine::SearchEngine;
 use std::sync::Arc;
@@ -44,12 +45,9 @@ pub async fn start_search(
     app: AppHandle,
     query: SearchQuery,
     state: State<'_, AppState>,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     let engine = Arc::clone(&state.engine);
-    println!(
-        "[start_search] 検索リクエスト受信: keyword='{}', target_dir='{}', extensions={:?}",
-        query.keyword, query.target_dir, query.extensions
-    );
+    println!("{}", crate::constants::LOG_SEARCH_STARTED);
 
     tauri::async_runtime::spawn_blocking(move || {
         let app_handle_match = app.clone();
@@ -63,7 +61,8 @@ pub async fn start_search(
                 if let Err(e) =
                     app_handle_match.emit(crate::constants::EVENT_SEARCH_MATCH, search_match)
                 {
-                    eprintln!("[start_search] search-match イベント送信失敗: {}", e);
+                    let _ = e;
+                    eprintln!("{}", crate::constants::LOG_EVENT_EMIT_FAILED);
                 }
             },
             move |progress| {
@@ -71,27 +70,33 @@ pub async fn start_search(
                 if let Err(e) =
                     app_handle_prog.emit(crate::constants::EVENT_SCAN_PROGRESS, &progress)
                 {
-                    eprintln!("[start_search] scan-progress イベント送信失敗: {}", e);
+                    let _ = e;
+                    eprintln!("{}", crate::constants::LOG_EVENT_EMIT_FAILED);
                 }
             },
         ) {
             Ok(final_prog) => {
-                println!(
-                    "[start_search] 検索完了: 走査ファイル数={}件, 一致件数={}件, 経過時間={}ms",
-                    final_prog.scanned_files, final_prog.matches_found, final_prog.elapsed_ms
-                );
+                println!("{}", crate::constants::LOG_SEARCH_COMPLETED);
+                let _ = final_prog;
             }
             Err(err_msg) => {
-                eprintln!("[start_search] 検索エンジンエラー: {}", err_msg);
+                eprintln!("{}", crate::constants::LOG_SEARCH_FAILED);
+                let error_code = if err_msg.contains(crate::constants::ERR_INVALID_REGEX) {
+                    crate::models::ErrorCode::InvalidRegex
+                } else {
+                    crate::models::ErrorCode::SearchFailed
+                };
                 // 定数参照: crate::constants::EVENT_SCAN_PROGRESS を使用
                 let _ = app_handle_err.emit(
                     crate::constants::EVENT_SCAN_PROGRESS,
                     ScanProgress {
                         state: ScanState::Error,
+                        phase: crate::models::ScanPhase::Finished,
+                        error_code: Some(error_code),
                         scanned_files: 0,
                         total_files: 0,
                         matches_found: 0,
-                        current_file: format!("エラー: {}", err_msg),
+                        current_file: String::new(),
                         elapsed_ms: 0,
                     },
                 );
@@ -117,8 +122,8 @@ pub async fn start_search(
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
 #[tauri::command]
-pub fn cancel_search(state: State<'_, AppState>) -> Result<(), String> {
-    println!("[cancel_search] 検索中断要求を受信");
+pub fn cancel_search(state: State<'_, AppState>) -> Result<(), CommandError> {
+    println!("{}", crate::constants::LOG_CANCEL_REQUESTED);
     state.engine.cancel();
     Ok(())
 }

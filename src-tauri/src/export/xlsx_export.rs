@@ -29,13 +29,20 @@ use rust_xlsxwriter::{Color, Format, FormatBorder, Workbook};
 ///
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化（色、シート名、列定義、メッセージ）。
-pub fn export_to_xlsx(path: &str, items: &[SearchMatch]) -> Result<(), String> {
+pub fn export_to_xlsx(path: &str, items: &[SearchMatch], language: &str) -> Result<(), String> {
+    if language != crate::constants::LANGUAGE_JA && language != crate::constants::LANGUAGE_EN {
+        return Err(crate::constants::ERR_INVALID_LANGUAGE.to_string());
+    }
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
 
     // 定数参照: crate::constants::EXPORT_DEFAULT_SHEET_NAME を使用
     worksheet
-        .set_name(crate::constants::EXPORT_DEFAULT_SHEET_NAME)
+        .set_name(if language == crate::constants::LANGUAGE_JA {
+            crate::constants::EXPORT_DEFAULT_SHEET_NAME
+        } else {
+            crate::constants::EXPORT_DEFAULT_SHEET_NAME_EN
+        })
         .map_err(|e| {
             // 定数参照: crate::constants::ERR_XLSX_WORKSHEET を使用
             format!("{}: {}", crate::constants::ERR_XLSX_WORKSHEET, e)
@@ -57,7 +64,12 @@ pub fn export_to_xlsx(path: &str, items: &[SearchMatch]) -> Result<(), String> {
 
     // ヘッダー書き込み
     // 定数参照: crate::constants::XLSX_HEADERS_WITH_WIDTH を使用
-    for (col_idx, (header, width)) in crate::constants::XLSX_HEADERS_WITH_WIDTH.iter().enumerate() {
+    let headers = if language == crate::constants::LANGUAGE_JA {
+        &crate::constants::XLSX_HEADERS_WITH_WIDTH
+    } else {
+        &crate::constants::XLSX_HEADERS_WITH_WIDTH_EN
+    };
+    for (col_idx, (header, width)) in headers.iter().enumerate() {
         worksheet
             .write_string_with_format(0, col_idx as u16, *header, &header_format)
             .map_err(|e| {
@@ -76,11 +88,23 @@ pub fn export_to_xlsx(path: &str, items: &[SearchMatch]) -> Result<(), String> {
     for (row_idx, item) in items.iter().enumerate() {
         let r = (row_idx + 1) as u32;
         // 定数参照: crate::constants::LABEL_MATCH_* を使用
-        let match_type_str = match item.match_type {
-            MatchType::CellValue => crate::constants::LABEL_MATCH_CELL_VALUE,
-            MatchType::Formula => crate::constants::LABEL_MATCH_FORMULA,
-            MatchType::Comment => crate::constants::LABEL_MATCH_COMMENT,
-            MatchType::HiddenSheet => crate::constants::LABEL_MATCH_HIDDEN_SHEET,
+        let match_type_str = match (item.match_type, language) {
+            (MatchType::CellValue, crate::constants::LANGUAGE_EN) => {
+                crate::constants::LABEL_MATCH_CELL_VALUE_EN
+            }
+            (MatchType::Formula, crate::constants::LANGUAGE_EN) => {
+                crate::constants::LABEL_MATCH_FORMULA_EN
+            }
+            (MatchType::Comment, crate::constants::LANGUAGE_EN) => {
+                crate::constants::LABEL_MATCH_COMMENT_EN
+            }
+            (MatchType::HiddenSheet, crate::constants::LANGUAGE_EN) => {
+                crate::constants::LABEL_MATCH_HIDDEN_SHEET_EN
+            }
+            (MatchType::CellValue, _) => crate::constants::LABEL_MATCH_CELL_VALUE,
+            (MatchType::Formula, _) => crate::constants::LABEL_MATCH_FORMULA,
+            (MatchType::Comment, _) => crate::constants::LABEL_MATCH_COMMENT,
+            (MatchType::HiddenSheet, _) => crate::constants::LABEL_MATCH_HIDDEN_SHEET,
         };
 
         worksheet
@@ -147,4 +171,23 @@ pub fn export_to_xlsx(path: &str, items: &[SearchMatch]) -> Result<(), String> {
         format!("{}: {}", crate::constants::ERR_XLSX_SAVE, e)
     })?;
     Ok(())
+}
+
+#[cfg(test)]
+mod localization_tests {
+    /// ## 処理内容
+    /// 未対応言語の Excel 出力を、ブック作成前に拒否する。
+    /// ## 引数・戻り値
+    /// 引数なし。アサーションのみを実行する。
+    /// ## エラー
+    /// 想定外の出力結果でテストが失敗する。
+    /// ## 変更履歴
+    /// - v1.1.0 (2026-09-26, AI Agent): 不正な出力言語の検証を追加。
+    #[test]
+    fn rejects_unsupported_language() {
+        assert_eq!(
+            super::export_to_xlsx("", &[], "fr"),
+            Err(crate::constants::ERR_INVALID_LANGUAGE.to_string())
+        );
+    }
 }

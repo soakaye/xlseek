@@ -115,8 +115,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     path: payload.paths[0],
                   });
                   onChangeQuery({ target_dir: resolvedPath });
-                } catch (err) {
-                  console.error("ドロップパス解決エラー:", err);
+                } catch {
+                  console.error("[SearchBar] Failed to resolve dropped folder path");
                 }
               }
             }
@@ -125,8 +125,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             setIsDragOver(false);
           }
         });
-      } catch (err) {
-        console.warn("Tauri drag-drop listener 初期化エラー:", err);
+      } catch {
+        console.warn("[SearchBar] Failed to initialize native drag and drop listener");
       }
     };
 
@@ -159,7 +159,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const file = e.dataTransfer.files[0];
-      const filePath = (file as any).path;
+      const filePath = (file as File & { path?: string }).path;
       if (filePath) {
         try {
           // 定数参照: COMMANDS.RESOLVE_DROPPED_PATH (ドロップパス解決コマンド)
@@ -167,8 +167,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             path: filePath,
           });
           onChangeQuery({ target_dir: resolvedPath });
-        } catch (err) {
-          console.error("ドロップパス解決エラー:", err);
+        } catch {
+          console.error("[SearchBar] Failed to resolve dropped folder path");
         }
       }
     }
@@ -225,8 +225,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       if (selected && typeof selected === "string") {
         onChangeQuery({ target_dir: selected });
       }
-    } catch (err) {
-      console.error("フォルダ選択エラー:", err);
+    } catch {
+      console.error("[SearchBar] Failed to select folder");
     }
   };
 

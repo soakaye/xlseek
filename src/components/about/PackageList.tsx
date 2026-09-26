@@ -86,9 +86,9 @@ export const PackageList: React.FC<PackageListProps> = ({
         </div>
         <div className="flex justify-between items-center text-[10px] text-zinc-500 mt-2 px-1">
           <span>
-            表示中: {packages.length} / {totalPackageCount} 件
+            {packages.length} / {totalPackageCount} {ABOUT_DIALOG_CONSTANTS.PACKAGE_COUNT_UNIT}
           </span>
-          {searchKeyword && <span>フィルタ適用中</span>}
+          {searchKeyword && <span>{ABOUT_DIALOG_CONSTANTS.FILTER_ACTIVE}</span>}
         </div>
       </div>
 

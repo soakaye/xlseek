@@ -153,7 +153,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                       }`}
                       title={
                         cellInfo?.formula
-                          ? `数式: ${cellInfo.formula}`
+                          ? `${UI_MESSAGES.FORMULA_TOOLTIP_PREFIX} ${cellInfo.formula}`
                           : cellInfo?.value
                       }
                     >

@@ -123,6 +123,67 @@ pub enum ScanState {
 }
 
 /// ## 処理内容
+/// ロケール非依存の進捗段階を表す。
+/// ## 引数・戻り値
+/// 引数なし。シリアライズ可能な段階値を表す。
+/// ## エラー
+/// panic は発生しない。
+/// ## 変更履歴
+/// - v1.1.0 (2026-09-26, AI Agent): UI 文言と進捗段階を分離。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ScanPhase {
+    Preparing,
+    Discovering,
+    Scanning,
+    Finished,
+}
+
+/// ## 処理内容
+/// 利用者向けに翻訳可能な安定した失敗コード。
+/// ## 引数・戻り値
+/// 引数なし。API 契約用のコードを表す。
+/// ## エラー
+/// panic は発生しない。
+/// ## 変更履歴
+/// - v1.1.0 (2026-09-26, AI Agent): エラーコード契約を追加。
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ErrorCode {
+    InvalidRegex,
+    PathNotFound,
+    WorkbookOpenFailed,
+    PreviewFailed,
+    ExportFailed,
+    AppLaunchFailed,
+    FolderOpenFailed,
+    PermissionDenied,
+    SearchFailed,
+    InternalError,
+}
+
+/// ## 処理内容
+/// Tauri コマンドが利用者へ返す構造化エラーを保持する。
+/// ## 引数・戻り値
+/// `ErrorCode` を受け取り、`code` プロパティを持つシリアライズ可能な値を生成する。
+/// ## エラー
+/// 外部ライブラリの文言やユーザーデータは含めない。
+/// ## 変更履歴
+/// - v1.2.0 (2026-09-26, AI Agent): Tauri エラー応答を JSON コード形式に統一。
+#[derive(Debug, Clone, Copy, Serialize)]
+pub struct CommandError {
+    pub code: ErrorCode,
+}
+
+impl From<String> for CommandError {
+    fn from(_: String) -> Self {
+        Self {
+            code: ErrorCode::InternalError,
+        }
+    }
+}
+
+/// ## 処理内容
 /// 検索進捗通知時にTauriイベントペイロードとして送信される情報構造体。
 ///
 /// ## 変更履歴
@@ -130,6 +191,8 @@ pub enum ScanState {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScanProgress {
     pub state: ScanState,
+    pub phase: ScanPhase,
+    pub error_code: Option<ErrorCode>,
     pub scanned_files: usize,
     pub total_files: usize,
     pub matches_found: usize,
@@ -205,8 +268,22 @@ pub enum ExportFormat {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExportRequest {
     pub format: ExportFormat,
+    #[serde(default = "default_export_language")]
+    pub language: String,
     pub output_path: String,
     pub items: Vec<SearchMatch>,
+}
+
+/// ## 処理内容
+/// 旧クライアントからのエクスポート要求に英語設定を補う。
+/// ## 引数・戻り値
+/// 引数なし。`String` の `en` を返す。
+/// ## エラー
+/// panic は発生しない。
+/// ## 変更履歴
+/// - v1.1.0 (2026-09-26, AI Agent): ExportRequest 互換デフォルトを追加。
+fn default_export_language() -> String {
+    crate::constants::DEFAULT_EXPORT_LANGUAGE.to_string()
 }
 
 /// ## 処理内容
@@ -221,4 +298,69 @@ pub struct SupportedApp {
     pub executable_path: String,
     pub is_default: bool,
     pub icon_hint: Option<String>,
+}
+
+#[cfg(test)]
+mod localization_tests {
+    use super::{CommandError, ErrorCode, ExportRequest, ScanPhase, ScanProgress, ScanState};
+
+    /// ## 処理内容
+    /// API 進捗段階とエラーコードがロケール非依存の snake_case で出力されることを確認する。
+    /// ## 引数・戻り値
+    /// 引数なし。アサーションのみを実行する。
+    /// ## エラー
+    /// シリアライズ失敗または期待値不一致でテストが失敗する。
+    /// ## 変更履歴
+    /// - v1.1.0 (2026-09-26, AI Agent): ローカライズ契約テストを追加。
+    #[test]
+    fn serializes_language_neutral_codes() {
+        assert_eq!(
+            serde_json::to_string(&ScanPhase::Discovering).unwrap(),
+            "\"discovering\""
+        );
+        assert_eq!(
+            serde_json::to_string(&ErrorCode::InternalError).unwrap(),
+            "\"internal_error\""
+        );
+        assert_eq!(
+            serde_json::to_string(&CommandError {
+                code: ErrorCode::InternalError
+            })
+            .unwrap(),
+            "{\"code\":\"internal_error\"}"
+        );
+        let progress = ScanProgress {
+            state: ScanState::Scanning,
+            phase: ScanPhase::Discovering,
+            error_code: None,
+            scanned_files: 0,
+            total_files: 0,
+            matches_found: 0,
+            current_file: String::new(),
+            elapsed_ms: 0,
+        };
+        let serialized = serde_json::to_value(progress).unwrap();
+        assert_eq!(serialized["phase"], "discovering");
+        assert_eq!(serialized["current_file"], "");
+        assert!(serialized["error_code"].is_null());
+    }
+
+    /// ## 処理内容
+    /// エクスポート言語コードの明示値と旧要求用デフォルトを検証する。
+    /// ## 引数・戻り値
+    /// 引数なし。JSON 契約のアサーションを実行する。
+    /// ## エラー
+    /// 不正なデータ形状または期待値でテストが失敗する。
+    /// ## 変更履歴
+    /// - v1.2.0 (2026-09-26, AI Agent): 出力言語のシリアライズ契約を追加。
+    #[test]
+    fn export_request_reads_language_and_defaults_legacy_requests_to_english() {
+        let request: ExportRequest =
+            serde_json::from_str(r#"{"format":"csv","output_path":"","items":[],"language":"ja"}"#)
+                .unwrap();
+        assert_eq!(request.language, "ja");
+        let legacy: ExportRequest =
+            serde_json::from_str(r#"{"format":"csv","output_path":"","items":[]}"#).unwrap();
+        assert_eq!(legacy.language, crate::constants::DEFAULT_EXPORT_LANGUAGE);
+    }
 }

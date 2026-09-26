@@ -27,7 +27,7 @@
 import React from "react";
 import { Copy, Check } from "lucide-react";
 import { PackageLicenseRecord } from "../../types/license";
-import { ABOUT_DIALOG_CONSTANTS } from "../../constants";
+import { ABOUT_DIALOG_CONSTANTS, UI_MESSAGES } from "../../constants";
 
 export interface PackageDetailProps {
   package: PackageLicenseRecord | null;
@@ -132,7 +132,7 @@ export const PackageDetail: React.FC<PackageDetailProps> = ({
         <div className="text-[11px] text-zinc-400 font-medium mb-1.5 flex items-center justify-between">
           <span>{ABOUT_DIALOG_CONSTANTS.LICENSE_TEXT_LABEL}</span>
           <span className="text-[10px] text-zinc-500 font-mono">
-            {lineCount} 行
+            {lineCount} {UI_MESSAGES.UNIT_ROWS}
           </span>
         </div>
         <div className="flex-1 overflow-y-auto bg-[#1a1a1d] border border-zinc-800 rounded-lg p-3.5">

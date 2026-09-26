@@ -250,13 +250,15 @@ impl SearchEngine {
 
         // 初期進捗送信 (スキャン未確定時は total_files: 0)
         if let Ok(mut prog) = on_progress.lock() {
-            // 定数参照: crate::constants::MSG_SCAN_STARTING を使用
+            // 固定メッセージは current_file に含めず、phase から画面側で生成する。
             prog(ScanProgress {
                 state: ScanState::Scanning,
+                phase: crate::models::ScanPhase::Discovering,
+                error_code: None,
                 scanned_files: 0,
                 total_files: 0,
                 matches_found: 0,
-                current_file: crate::constants::MSG_SCAN_STARTING.to_string(),
+                current_file: String::new(),
                 elapsed_ms: 0,
             });
         }
@@ -416,6 +418,12 @@ impl SearchEngine {
                     if let Ok(mut prog_cb) = on_progress.lock() {
                         prog_cb(ScanProgress {
                             state: ScanState::Scanning,
+                            phase: if current_total == 0 {
+                                crate::models::ScanPhase::Discovering
+                            } else {
+                                crate::models::ScanPhase::Scanning
+                            },
+                            error_code: None,
                             scanned_files: scanned,
                             total_files: current_total,
                             matches_found: current_matches,
@@ -438,17 +446,15 @@ impl SearchEngine {
         };
         let final_total = discovered_count.load(Ordering::Relaxed);
 
-        // 定数参照: crate::constants::MSG_SCAN_CANCELLED, MSG_SCAN_COMPLETED を使用
+        // phase と state を使って画面側が完了・中断メッセージを生成する。
         let final_progress = ScanProgress {
             state: final_state,
+            phase: crate::models::ScanPhase::Finished,
+            error_code: None,
             scanned_files: scanned_count.load(Ordering::Relaxed),
             total_files: final_total,
             matches_found: match_count.load(Ordering::Relaxed),
-            current_file: if is_cancelled {
-                crate::constants::MSG_SCAN_CANCELLED.to_string()
-            } else {
-                crate::constants::MSG_SCAN_COMPLETED.to_string()
-            },
+            current_file: String::new(),
             elapsed_ms: start_time.elapsed().as_millis() as u64,
         };
 
@@ -545,8 +551,8 @@ mod tests {
         let temp_csv = std::env::temp_dir().join("test_export.csv");
         let temp_xlsx = std::env::temp_dir().join("test_export.xlsx");
 
-        assert!(export_to_csv(temp_csv.to_str().unwrap(), &found).is_ok());
-        assert!(export_to_xlsx(temp_xlsx.to_str().unwrap(), &found).is_ok());
+        assert!(export_to_csv(temp_csv.to_str().unwrap(), &found, "ja").is_ok());
+        assert!(export_to_xlsx(temp_xlsx.to_str().unwrap(), &found, "ja").is_ok());
 
         assert!(temp_csv.exists());
         assert!(temp_xlsx.exists());
