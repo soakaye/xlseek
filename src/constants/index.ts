@@ -13,6 +13,7 @@
  * - v1.3.0 (2026-09-26, AI Agent): 探索中表示、フォルダスキャン、待機中等のUI文言定数を拡充。
  * - v1.4.0 (2026-09-26, AI Agent): Aboutダイアログおよびパッケージライセンス表示定数 (ABOUT_DIALOG_CONSTANTS) を追加。
  * - v1.5.0 (2026-09-26, AI Agent): システムメニュー連携用Aboutダイアログ表示イベント定数 (OPEN_ABOUT_DIALOG) を追加。
+ * - v1.6.0 (2026-09-26, AI Agent): 著作権者表記 (ABOUT_DIALOG_CONSTANTS.COPYRIGHT) を soakaye に更新。
  */
 
 // ==============================================================================
@@ -168,7 +169,7 @@ export const ABOUT_DIALOG_CONSTANTS = {
   APP_NAME: "Excel Grep",
   APP_VERSION: "0.1.0",
   APP_DESCRIPTION: "高速・セキュアなExcel専用ファイル内検索デスクトップアプリケーション",
-  COPYRIGHT: "Copyright © 2026 Excel Grep Contributors",
+  COPYRIGHT: "Copyright © 2026 soakaye",
   APP_LICENSE_LABEL: "配布ライセンス: MIT License",
 
   TAB_ABOUT: "アプリ情報",

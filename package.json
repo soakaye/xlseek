@@ -2,6 +2,7 @@
   "name": "exlgrep",
   "private": true,
   "version": "0.1.0",
+  "author": "soakaye",
   "type": "module",
   "scripts": {
     "dev": "vite",

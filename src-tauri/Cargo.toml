@@ -2,7 +2,7 @@
 name = "exlgrep"
 version = "0.1.0"
 description = "Super fast Excel Grep Desktop Application"
-authors = ["you"]
+authors = ["soakaye"]
 edition = "2021"
 
 [lib]
