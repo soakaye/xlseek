@@ -9,6 +9,7 @@
  *
  * ## 変更履歴
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化および4要素JSDocコメントの付与。
+ * - v1.2.0 (2026-09-26, AI Agent): 検索対象拡張子の空チェックバリデーションを追加。
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -241,6 +242,11 @@ export function useSearch(options?: UseSearchOptions) {
     if (!query.target_dir.trim()) {
       // 定数参照: UI_MESSAGES.SELECT_FOLDER_PROMPT を使用
       options?.onShowToast?.(UI_MESSAGES.SELECT_FOLDER_PROMPT);
+      return;
+    }
+    if (!query.extensions || query.extensions.length === 0) {
+      // 定数参照: UI_MESSAGES.SELECT_EXTENSION_PROMPT を使用
+      options?.onShowToast?.(UI_MESSAGES.SELECT_EXTENSION_PROMPT);
       return;
     }
 

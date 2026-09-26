@@ -63,8 +63,8 @@ auto_commit:
     enabled: false
     message: "[Spec Kit] Add implementation plan"
   after_tasks:
-    enabled: false
-    message: "[Spec Kit] Add tasks"
+    enabled: true
+    message: "[Spec Kit] Add tasks and specifications for UI adjustments (005-ui-adjustments)"
   after_implement:
     enabled: true
     message: "[Spec Kit] Align codebase with project constitution (憲章準拠のプログラム改修)"

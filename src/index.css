@@ -22,9 +22,14 @@
   background: #141416;
 }
 
-/* グリッド線の微細スタイル */
+/* グリッド線の微細スタイル (sticky表示のちらつき防止と固定境界線) */
+.excel-grid {
+  border-collapse: separate;
+  border-spacing: 0;
+}
 .excel-grid td, .excel-grid th {
-  border: 1px solid #333338;
+  border-right: 1px solid #2e2e33;
+  border-bottom: 1px solid #2e2e33;
 }
 
 /* スプレッドシート固定ヘッダー (縦横スクロール時に見出しを固定) */

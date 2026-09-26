@@ -10,6 +10,8 @@
  * ## 変更履歴
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定。
  * - v1.1.0 (2026-09-26, AI Agent): 憲章準拠改修。IPCコマンド名およびUI文言を外部定数化、4要素ヘッダコメントを付与。
+ * - v1.2.0 (2026-09-26, AI Agent): 検索対象拡張子のトグル選択ボタンを実装。
+ * - v1.3.0 (2026-09-26, AI Agent): 検索キーワード入力欄で日本語入力(IME)確定時のEnter誤爆を防止。フォルダ入力欄でのEnter検索は行わず入力中のEnterを無視するよう制御。
  */
 
 import React, { KeyboardEvent, useState, useRef, useEffect } from "react";
@@ -18,7 +20,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { SearchQuery } from "../../types/search";
-import { COMMANDS, UI_MESSAGES } from "../../constants";
+import { COMMANDS, UI_MESSAGES, FILE_EXTENSIONS } from "../../constants";
 
 /**
  * 検索バーコンポーネントのプロパティ定義
@@ -172,9 +174,43 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }
   };
 
+  const isComposingRef = useRef(false);
+  const compositionEndTimeRef = useRef(0);
+
+  const handleCompositionStart = () => {
+    isComposingRef.current = true;
+  };
+
+  const handleCompositionEnd = () => {
+    isComposingRef.current = false;
+    compositionEndTimeRef.current = Date.now();
+  };
+
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    // 日本語入力(IME)確定時のEnterによる誤爆発火を防止 (WebKit/SafariおよびChromium両対応)
+    if (
+      e.nativeEvent.isComposing ||
+      isComposingRef.current ||
+      e.key === "Process" ||
+      e.keyCode === 229
+    ) {
+      return;
+    }
+    if (Date.now() - compositionEndTimeRef.current < 50) {
+      return;
+    }
     if (e.key === "Enter" && !isScanning) {
       onSearch();
+    }
+  };
+
+  const handleFolderKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    // IME変換確定時はIME側の処理に任せ、入力中のEnterキー押下は無視（検索実行は行わない）
+    if (e.nativeEvent.isComposing || e.key === "Process" || e.keyCode === 229) {
+      return;
+    }
+    if (e.key === "Enter") {
+      e.preventDefault();
     }
   };
 
@@ -194,6 +230,25 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }
   };
 
+  const currentExtensions = query.extensions ?? [...FILE_EXTENSIONS.DEFAULT_LIST];
+
+  const handleToggleExtension = (ext: string) => {
+    const isSelected = currentExtensions.includes(ext);
+    if (isSelected) {
+      // 最低1つの拡張子は選択維持
+      if (currentExtensions.length <= 1) {
+        return;
+      }
+      onChangeQuery({
+        extensions: currentExtensions.filter((e) => e !== ext),
+      });
+    } else {
+      onChangeQuery({
+        extensions: [...currentExtensions, ext],
+      });
+    }
+  };
+
   return (
     <header className="bg-[#18181b] border-b border-zinc-800 p-4 shadow-md flex-shrink-0">
       <div className="max-w-[1920px] mx-auto space-y-3">
@@ -209,6 +264,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               value={query.keyword}
               onChange={(e) => onChangeQuery({ keyword: e.target.value })}
               onKeyDown={handleKeyDown}
+              onCompositionStart={handleCompositionStart}
+              onCompositionEnd={handleCompositionEnd}
               /* 定数参照: UI_MESSAGES.KEYWORD_INPUT_PLACEHOLDER */
               placeholder={UI_MESSAGES.KEYWORD_INPUT_PLACEHOLDER}
               className="w-full pl-9 pr-24 py-2 bg-[#202024] border border-zinc-700 rounded-lg text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-excel-light focus:ring-1 focus:ring-excel-light transition"
@@ -255,6 +312,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               type="text"
               value={query.target_dir}
               onChange={(e) => onChangeQuery({ target_dir: e.target.value })}
+              onKeyDown={handleFolderKeyDown}
               /* 定数参照: UI_MESSAGES.FOLDER_DROP_PLACEHOLDER / FOLDER_INPUT_PLACEHOLDER */
               placeholder={isDragOver ? UI_MESSAGES.FOLDER_DROP_PLACEHOLDER : UI_MESSAGES.FOLDER_INPUT_PLACEHOLDER}
               className={`w-full pl-9 pr-10 py-2 border rounded-lg text-sm placeholder-zinc-500 focus:outline-none font-mono text-xs transition ${
@@ -406,19 +464,33 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             </label>
           </div>
 
-          {/* 対象拡張子表示 */}
+          {/* 対象拡張子トグルボタン群 */}
           <div className="flex items-center gap-2 text-zinc-400 text-xs">
             {/* 定数参照: UI_MESSAGES.LABEL_TARGET_EXTENSIONS */}
             <span>{UI_MESSAGES.LABEL_TARGET_EXTENSIONS}</span>
             <div className="flex gap-1">
-              {query.extensions?.map((ext) => (
-                <span
-                  key={ext}
-                  className="bg-zinc-800 px-1.5 py-0.5 rounded text-[11px] font-mono border border-zinc-700 text-zinc-300"
-                >
-                  {ext}
-                </span>
-              ))}
+              {FILE_EXTENSIONS.DEFAULT_LIST.map((ext) => {
+                const isSelected = currentExtensions.includes(ext);
+                return (
+                  <button
+                    key={ext}
+                    type="button"
+                    onClick={() => handleToggleExtension(ext)}
+                    title={`${ext}${
+                      isSelected
+                        ? UI_MESSAGES.EXTENSION_TOGGLE_EXCLUDE_SUFFIX
+                        : UI_MESSAGES.EXTENSION_TOGGLE_INCLUDE_SUFFIX
+                    }`}
+                    className={`px-2 py-0.5 rounded text-[11px] font-mono border transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-emerald-950/60 text-emerald-300 border-emerald-600/80 font-medium"
+                        : "bg-zinc-900/80 hover:bg-zinc-800 text-zinc-500 border-zinc-800 hover:text-zinc-400"
+                    }`}
+                  >
+                    {ext}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>

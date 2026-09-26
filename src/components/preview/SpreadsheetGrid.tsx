@@ -4,11 +4,13 @@
  * ## 処理内容
  * 検索一致セルを中心とする周辺セル（前後3行・前後2列）を仮想スプレッドシートテーブル形式で描画する。
  * 行・列ヘッダーの固定表示（sticky）、一致セルおよび現在選択セルのハイライト、セル選択イベントのハンドリングを行う。
+ * 縦横両方向のスムーズなスクロール（overflow-auto）と、固定見出し（Freeze Panes）の完全対応。
  * 憲章原則I（自然かつ正確な日本語）、原則II（定数の外部抽出とハードコード禁止）、原則III（網羅的なヘッダコメント）に準拠。
  *
  * ## 変更履歴
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定。
  * - v1.1.0 (2026-09-26, AI Agent): 憲章準拠改修。UIメッセージの定数参照化、4要素ヘッダコメントを付与。
+ * - v1.2.0 (2026-09-26, AI Agent): スクロールレイアウト修正。overflow-hiddenによる横スクロール遮断を解消し、縦横スクロールとsticky固定見出しを両立。
  */
 
 import React from "react";
@@ -53,6 +55,7 @@ interface SpreadsheetGridProps {
  * ## 変更履歴
  * - v1.0.0 (2026-09-26, AI Agent): 初版作成。
  * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、定数参照と4要素コメントを追加。
+ * - v1.2.0 (2026-09-26, AI Agent): スクロールレイアウト修正。overflow-hiddenによる横スクロール遮断を解消し、縦横スクロールとsticky固定見出しを両立。
  */
 export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   previewData,
@@ -82,7 +85,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   }
 
   return (
-    <div className="flex-1 p-3.5 pr-5 pb-3 overflow-auto bg-[#141416] flex flex-col">
+    <div className="flex-1 min-h-0 min-w-0 p-3.5 pr-4 pb-2 bg-[#141416] flex flex-col">
       {/* ガイダンスミニバー */}
       <div className="flex items-center justify-between text-[11px] text-zinc-400 mb-2 px-1 select-none flex-shrink-0">
         <div className="flex items-center gap-1.5">
@@ -97,75 +100,73 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
         </div>
       </div>
 
-      {/* テーブルラッパー (右辺境界線が絶対に欠けないように inline-block + pr-2) */}
-      <div className="min-w-full inline-block pb-2 pr-2">
-        <div className="rounded border border-zinc-700/80 bg-[#1a1a1d] shadow-sm overflow-hidden">
-          <table className="excel-grid w-full text-xs border-collapse font-sans">
-            <thead>
-              <tr className="bg-[#242428] text-zinc-400 text-center font-medium">
-                {/* 行番号ヘッダーセル */}
-                <th className="w-12 py-1.5 px-2 bg-[#202024] select-none text-zinc-500 font-mono text-[11px] sticky left-0 top-0 z-30">
-                  #
+      {/* スプレッドシート グリッド スクロールコンテナ (縦横スクロール対応 & 固定見出し) */}
+      <div className="flex-1 min-h-0 min-w-0 overflow-auto rounded border border-zinc-700/80 bg-[#1a1a1d] shadow-sm relative">
+        <table className="excel-grid w-max min-w-full text-xs border-collapse font-sans">
+          <thead className="sticky top-0 z-20">
+            <tr className="bg-[#242428] text-zinc-400 text-center font-medium">
+              {/* 行番号ヘッダーセル */}
+              <th className="w-12 py-1.5 px-2 bg-[#202024] select-none text-zinc-500 font-mono text-[11px] sticky left-0 top-0 z-30">
+                #
+              </th>
+              {/* 列ヘッダーセル群 */}
+              {previewData.columns.map((col) => (
+                <th
+                  key={col.key}
+                  className="py-1.5 px-3 min-w-[120px] bg-[#222226] sticky top-0 z-20 font-mono text-zinc-300 border border-zinc-800"
+                >
+                  {col.label}
                 </th>
-                {/* 列ヘッダーセル群 */}
-                {previewData.columns.map((col) => (
-                  <th
-                    key={col.key}
-                    className="py-1.5 px-3 min-w-[120px] bg-[#222226] sticky top-0 z-20 font-mono text-zinc-300 border border-zinc-800"
-                  >
-                    {col.label}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-800">
-              {previewData.rows.map((row) => (
-                <tr key={row.row_number} className="hover:bg-zinc-800/30 transition">
-                  {/* 行番号見出し (sticky left) */}
-                  <td className="w-12 py-1.5 px-2 bg-[#202024] select-none text-zinc-500 font-mono text-[11px] text-center sticky left-0 z-10 border border-zinc-800">
-                    {row.row_number}
-                  </td>
-                  {/* セル群 */}
-                  {previewData.columns.map((col) => {
-                    const cellInfo = row.cells[col.key];
-                    const address = `${col.label}${row.row_number}`;
-                    const isTarget = cellInfo?.is_target ?? false;
-                    const isCurrentSelected = selectedCell?.address === address;
-
-                    return (
-                      <td
-                        key={col.key}
-                        onClick={() =>
-                          onSelectCell(
-                            address,
-                            cellInfo?.value ?? "",
-                            cellInfo?.formula
-                          )
-                        }
-                        className={`py-1.5 px-2.5 font-mono text-xs cursor-pointer border border-zinc-800/80 transition ${
-                          isTarget
-                            ? "bg-emerald-950/60 text-emerald-200 font-semibold ring-1 ring-emerald-500"
-                            : isCurrentSelected
-                            ? "bg-zinc-800 text-white font-medium ring-1 ring-zinc-500"
-                            : "text-zinc-300 hover:bg-zinc-800/60"
-                        }`}
-                        title={
-                          cellInfo?.formula
-                            ? `数式: ${cellInfo.formula}`
-                            : cellInfo?.value
-                        }
-                      >
-                        <div className="truncate max-w-[200px]">
-                          {cellInfo?.value || "\u00A0"}
-                        </div>
-                      </td>
-                    );
-                  })}
-                </tr>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-zinc-800">
+            {previewData.rows.map((row) => (
+              <tr key={row.row_number} className="hover:bg-zinc-800/30 transition">
+                {/* 行番号見出し (sticky left) */}
+                <td className="w-12 py-1.5 px-2 bg-[#202024] select-none text-zinc-500 font-mono text-[11px] text-center sticky left-0 z-10 border border-zinc-800">
+                  {row.row_number}
+                </td>
+                {/* セル群 */}
+                {previewData.columns.map((col) => {
+                  const cellInfo = row.cells[col.key];
+                  const address = `${col.label}${row.row_number}`;
+                  const isTarget = cellInfo?.is_target ?? false;
+                  const isCurrentSelected = selectedCell?.address === address;
+
+                  return (
+                    <td
+                      key={col.key}
+                      onClick={() =>
+                        onSelectCell(
+                          address,
+                          cellInfo?.value ?? "",
+                          cellInfo?.formula
+                        )
+                      }
+                      className={`py-1.5 px-2.5 font-mono text-xs cursor-pointer border border-zinc-800/80 transition ${
+                        isTarget
+                          ? "bg-emerald-950/60 text-emerald-200 font-semibold ring-1 ring-emerald-500"
+                          : isCurrentSelected
+                          ? "bg-zinc-800 text-white font-medium ring-1 ring-zinc-500"
+                          : "text-zinc-300 hover:bg-zinc-800/60"
+                      }`}
+                      title={
+                        cellInfo?.formula
+                          ? `数式: ${cellInfo.formula}`
+                          : cellInfo?.value
+                      }
+                    >
+                      <div className="truncate max-w-[200px]">
+                        {cellInfo?.value || "\u00A0"}
+                      </div>
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

@@ -92,7 +92,7 @@ export const App: React.FC = () => {
         />
 
         {/* 右ペイン: セル & スプレッドシート プレビュー */}
-        <div className="flex-1 flex flex-col bg-[#161618] min-w-0">
+        <div className="flex-1 flex flex-col bg-[#161618] min-w-0 min-h-0">
           {/* プレビュー上部ヘッダー & アクションバー */}
           <PreviewHeader
             selectedMatch={selectedMatch}
@@ -115,7 +115,7 @@ export const App: React.FC = () => {
 
           {/* Excel風シートタブバー */}
           {previewData && (
-            <div className="px-3.5 pb-1 bg-[#141416]">
+            <div className="px-3.5 pb-1 bg-[#141416] flex-shrink-0">
               <SheetTabs
                 sheets={previewData.sheets_in_workbook}
                 activeSheet={activeSheet}
@@ -126,7 +126,7 @@ export const App: React.FC = () => {
 
           {/* プレビュー下部：セルメタ情報カード */}
           {selectedMatch && (
-            <div className="px-3.5 pb-3.5 bg-[#141416]">
+            <div className="px-3.5 pb-3.5 bg-[#141416] flex-shrink-0">
               <MetaInfoCard match={selectedMatch} />
             </div>
           )}

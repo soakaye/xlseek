@@ -9,6 +9,7 @@
  * ## 変更履歴
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定。全定数の集約とJSDocドキュメンテーションの付与。
  * - v1.1.0 (2026-09-26, AI Agent): UI文言・レイアウト・スクロール寸法の定数を拡充。
+ * - v1.2.0 (2026-09-26, AI Agent): 拡張子トグル選択機能のUI文言定数を追加。
  */
 
 // ==============================================================================
@@ -104,6 +105,9 @@ export const UI_MESSAGES = {
   OPTION_INCLUDE_COMMENT: "コメント / メモ",
   OPTION_INCLUDE_HIDDEN: "非表示シート",
   LABEL_TARGET_EXTENSIONS: "対象拡張子:",
+  SELECT_EXTENSION_PROMPT: "検索対象の拡張子を1つ以上選択してください",
+  EXTENSION_TOGGLE_EXCLUDE_SUFFIX: " を検索対象から除外",
+  EXTENSION_TOGGLE_INCLUDE_SUFFIX: " を検索対象に追加",
   PREVIEW_LOADING: "プレビュー読み込み中...",
   PREVIEW_EMPTY: "プレビューデータがありません",
   PREVIEW_GUIDANCE: "周辺セルプレビュー (前後3行・前後2列)",
