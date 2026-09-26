@@ -89,7 +89,6 @@ ehthumbs_vista.db
 
 # Orca ADE (Agent Development Environment) & AI Agents
 .orca/
-.agents/
 .worktrees/
 worktrees/
 .cache/
