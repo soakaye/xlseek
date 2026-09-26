@@ -64,7 +64,7 @@ auto_commit:
     message: "[Spec Kit] Add implementation plan"
   after_tasks:
     enabled: true
-    message: "[Spec Kit] Add tasks and specifications for About dialog and package licenses (006-about-dialog-licenses)"
+    message: "[Spec Kit] Add tasks and specifications for parallel scan search (007-parallel-scan-search)"
   after_implement:
     enabled: true
     message: "[Spec Kit] Implement About dialog and package licenses (006-about-dialog-licenses)"
