@@ -12,9 +12,11 @@
  * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、4要素ヘッダコメントを追加。
  * - v1.2.0 (2026-09-26, AI Agent): Aboutダイアログ表示状態 (isAboutOpen) を追加し、StatusBarにonOpenAboutを連携。
  * - v1.3.0 (2026-09-26, AI Agent): AboutDialogコンポーネントをマウントし、開閉連動を統合。
+ * - v1.4.0 (2026-09-26, AI Agent): システムメニュー (macOS) からのAboutダイアログ表示イベント (EVENT_NAMES.OPEN_ABOUT_DIALOG) のリッスン処理を追加。
  */
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { WindowFrame } from "./components/layout/WindowFrame";
 import { SearchBar } from "./components/search/SearchBar";
 import { ResultTable } from "./components/results/ResultTable";
@@ -27,6 +29,7 @@ import { StatusBar } from "./components/common/StatusBar";
 import { Toast } from "./components/common/Toast";
 import { AboutDialog } from "./components/about/AboutDialog";
 import { useSearch } from "./hooks/useSearch";
+import { EVENT_NAMES } from "./constants";
 
 /**
  * Excel Grep アプリケーションのメイン画面コンポーネント
@@ -48,10 +51,44 @@ import { useSearch } from "./hooks/useSearch";
  * - v1.0.0 (2026-09-26, AI Agent): 初版作成。
  * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、4要素コメントを追加。
  * - v1.2.0 (2026-09-26, AI Agent): isAboutOpen 状態管理とStatusBar連携を追加。
+ * - v1.3.0 (2026-09-26, AI Agent): システムメニューからのAbout表示要求イベントの購読と状態連動を追加。
  */
 export const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+
+  // システムメニューからのAboutダイアログ表示要求イベントの購読
+  useEffect(() => {
+    let unlisten: UnlistenFn | undefined;
+    let isCancelled = false;
+
+    const setupListener = async () => {
+      try {
+        // 定数参照: EVENT_NAMES.OPEN_ABOUT_DIALOG を使用
+        const u = await listen(EVENT_NAMES.OPEN_ABOUT_DIALOG, () => {
+          if (isCancelled) return;
+          setIsAboutOpen(true);
+        });
+
+        if (isCancelled) {
+          u();
+        } else {
+          unlisten = u;
+        }
+      } catch (err) {
+        console.error("[App] Aboutダイアログイベントリスナー登録エラー:", err);
+      }
+    };
+
+    setupListener();
+
+    return () => {
+      isCancelled = true;
+      if (unlisten) {
+        unlisten();
+      }
+    };
+  }, []);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);

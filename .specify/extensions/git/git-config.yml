@@ -82,7 +82,7 @@ auto_commit:
     message: "[Spec Kit] Assess bug"
   after_bug_fix:
     enabled: true
-    message: "[Spec Kit] Fix bug: window drag issue"
+    message: "[Spec Kit] Fix bug: about-dialog-system-menu"
   after_bug_test:
     enabled: true
-    message: "[Spec Kit] Verify bug fix: window drag issue"
+    message: "[Spec Kit] Verify bug fix: about-dialog-system-menu"

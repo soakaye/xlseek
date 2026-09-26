@@ -7,6 +7,7 @@
 //!
 //! ## 変更履歴
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。全定数の外部化および整合性テストの実装。
+//! - v1.1.0 (2026-09-26, AI Agent): Aboutダイアログメニューおよびイベント定数の追加。
 
 // ==============================================================================
 // 1. ファイル拡張子定数 (File Extensions)
@@ -59,7 +60,7 @@ pub const PREVIEW_ROW_RADIUS: u32 = 3;
 pub const PREVIEW_COL_RADIUS: u32 = 2;
 
 // ==============================================================================
-// 4. Tauri イベント名定数 (Event Names)
+// 4. Tauri イベント名およびメニュー定数 (Events & Menus)
 // ==============================================================================
 
 /// 検索一致通知イベント名
@@ -67,6 +68,30 @@ pub const EVENT_SEARCH_MATCH: &str = "search-match";
 
 /// 検索進捗通知イベント名
 pub const EVENT_SCAN_PROGRESS: &str = "scan-progress";
+
+/// Aboutダイアログ表示イベント名
+pub const EVENT_OPEN_ABOUT_DIALOG: &str = "open-about-dialog";
+
+/// メニュー項目ID: Aboutダイアログ
+pub const MENU_ITEM_ABOUT_ID: &str = "open_about";
+
+/// メニュー項目表示テキスト: Aboutダイアログ
+pub const MENU_ITEM_ABOUT_TEXT: &str = "Excel Grep について";
+
+/// メニューサブメニュー表示名: File
+pub const MENU_SUBMENU_FILE: &str = "File";
+
+/// メニューサブメニュー表示名: Edit
+pub const MENU_SUBMENU_EDIT: &str = "Edit";
+
+/// メニューサブメニュー表示名: View
+pub const MENU_SUBMENU_VIEW: &str = "View";
+
+/// メニューサブメニュー表示名: Window
+pub const MENU_SUBMENU_WINDOW: &str = "Window";
+
+/// メニューサブメニュー表示名: Help
+pub const MENU_SUBMENU_HELP: &str = "Help";
 
 // ==============================================================================
 // 5. エクスポート設定定数 (Export Settings)
@@ -228,5 +253,31 @@ mod tests {
         assert!(!ERR_INVALID_REGEX.is_empty());
         assert!(!ERR_FILE_NOT_FOUND.is_empty());
         assert!(!ERR_LOCK_FAILED.is_empty());
+    }
+
+    /// ## 処理内容
+    /// メニューおよびイベント関連定数が空でなく想定通りの値であることを検証する。
+    ///
+    /// ## 引数
+    /// なし
+    ///
+    /// ## 戻り値
+    /// なし
+    ///
+    /// ## エラー / 例外発生条件
+    /// アサーション失敗時にpanic
+    ///
+    /// ## 変更履歴
+    /// - v1.1.0 (2026-09-26, AI Agent): Aboutダイアログメニューおよびイベント定数のテスト追加
+    #[test]
+    fn test_menu_and_event_constants() {
+        assert_eq!(EVENT_OPEN_ABOUT_DIALOG, "open-about-dialog");
+        assert_eq!(MENU_ITEM_ABOUT_ID, "open_about");
+        assert_eq!(MENU_ITEM_ABOUT_TEXT, "Excel Grep について");
+        assert_eq!(MENU_SUBMENU_FILE, "File");
+        assert_eq!(MENU_SUBMENU_EDIT, "Edit");
+        assert_eq!(MENU_SUBMENU_VIEW, "View");
+        assert_eq!(MENU_SUBMENU_WINDOW, "Window");
+        assert_eq!(MENU_SUBMENU_HELP, "Help");
     }
 }

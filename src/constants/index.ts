@@ -12,6 +12,7 @@
  * - v1.2.0 (2026-09-26, AI Agent): 拡張子トグル選択機能のUI文言定数を追加。
  * - v1.3.0 (2026-09-26, AI Agent): 探索中表示、フォルダスキャン、待機中等のUI文言定数を拡充。
  * - v1.4.0 (2026-09-26, AI Agent): Aboutダイアログおよびパッケージライセンス表示定数 (ABOUT_DIALOG_CONSTANTS) を追加。
+ * - v1.5.0 (2026-09-26, AI Agent): システムメニュー連携用Aboutダイアログ表示イベント定数 (OPEN_ABOUT_DIALOG) を追加。
  */
 
 // ==============================================================================
@@ -20,6 +21,7 @@
 export const EVENT_NAMES = {
   SEARCH_MATCH: "search-match",
   SCAN_PROGRESS: "scan-progress",
+  OPEN_ABOUT_DIALOG: "open-about-dialog",
 } as const;
 
 // ==============================================================================
