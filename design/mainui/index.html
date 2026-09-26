@@ -37,6 +37,9 @@
      * - v2.5.0 (2026-09-26, AI Agent): デザインレビューフィードバック対応。
      *   1) 検索キーワード入力欄にて日本語入力(IME)確定時のEnterによる誤爆発火を防止（WebKit/Safari・Chromium両対応）。フォルダ入力欄はEnterによる検索実行を排除し、入力中のEnterキーを無視（それ以外はデフォルト動作）。
      *   2) 周辺セルプレビューグリッドのサンプルデータ行を大幅拡充（30行以上確保）し、縦スクロールおよび行列固定見出し（Freeze Panes）の動作確認を可能に改善。
+     * - v2.6.0 (2026-09-26, AI Agent): アプリ情報・オープンソースライセンス閲覧モーダル (About Dialog) を追加同期。
+     *   ステータスバー最右端にInfoアイコンボタンを配置し、アプリ基本情報表示および左右2ペインの
+     *   マスター／ディテールライセンス一覧（リアルタイム検索・ライセンス本文ワンクリックコピー）を完全シミュレート。
      */
   -->
   <meta charset="UTF-8">
@@ -543,6 +546,14 @@
           <i data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-500"></i>
           <span>Excel 出力</span>
         </button>
+        <div class="h-4 w-px bg-zinc-800 mx-0.5"></div>
+        <button 
+          id="aboutDialogBtn" 
+          type="button"
+          title="アプリについて"
+          class="p-1 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 rounded border border-transparent hover:border-zinc-700 transition cursor-pointer">
+          <i data-lucide="info" class="w-3.5 h-3.5"></i>
+        </button>
       </div>
     </footer>
 
@@ -553,6 +564,199 @@
       <button id="toastCloseBtn" class="ml-2 text-zinc-400 hover:text-zinc-200 p-0.5 rounded transition">
         <i data-lucide="x" class="w-3.5 h-3.5"></i>
       </button>
+    </div>
+
+    <!-- ==================== アプリ情報・ライセンスダイアログ (AboutDialog.tsx) ==================== -->
+    <div id="aboutModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm select-none p-4 hidden">
+      <!-- モーダルウィンドウ本体 -->
+      <div id="aboutModalWindow" class="w-full max-w-4xl h-[620px] bg-[#18181b] border border-zinc-700/80 rounded-xl shadow-2xl flex flex-col overflow-hidden text-zinc-100">
+        <!-- モーダル上部ヘッダーバー -->
+        <div class="h-14 px-5 bg-[#141416] border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-lg bg-excel/20 border border-excel/40 flex items-center justify-center text-excel-light">
+              <i data-lucide="shield-check" class="w-5 h-5"></i>
+            </div>
+            <div>
+              <h2 class="text-base font-semibold text-zinc-100 flex items-center gap-2">
+                アプリについて
+                <span class="text-[11px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
+                  v0.1.0
+                </span>
+              </h2>
+            </div>
+          </div>
+
+          <!-- タブ切り替えボタン -->
+          <div class="flex items-center gap-1 bg-[#202024] p-1 rounded-lg border border-zinc-800">
+            <button
+              id="tabAboutBtn"
+              type="button"
+              class="px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60"
+            >
+              アプリ情報
+            </button>
+            <button
+              id="tabLicensesBtn"
+              type="button"
+              class="px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer flex items-center gap-1.5 text-zinc-400 hover:text-zinc-200"
+            >
+              <i data-lucide="file-code-2" class="w-3.5 h-3.5"></i>
+              <span>オープンソースライセンス</span>
+              <span id="aboutPackageCountBadge" class="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-zinc-700/80 text-zinc-300">
+                12
+              </span>
+            </button>
+          </div>
+
+          <!-- 閉じるボタン (✕) -->
+          <button
+            id="aboutCloseBtn"
+            type="button"
+            title="閉じる"
+            class="p-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition cursor-pointer"
+          >
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </div>
+
+        <!-- モーダルコンテンツ領域 -->
+        <div class="flex-1 overflow-hidden flex flex-col bg-[#161618]">
+          <!-- タブ 1: アプリケーション基本情報 -->
+          <div id="tabAboutContent" class="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center text-center">
+            <div class="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-excel/10 border border-emerald-500/30 flex items-center justify-center mb-5 shadow-lg shadow-emerald-950/20">
+              <i data-lucide="shield-check" class="w-10 h-10 text-emerald-400"></i>
+            </div>
+
+            <h3 class="text-2xl font-bold text-zinc-100 mb-1">Excel Grep</h3>
+            <p class="text-xs font-mono text-zinc-400 mb-4 bg-zinc-900/80 px-3 py-1 rounded-full border border-zinc-800">
+              Version 0.1.0
+            </p>
+
+            <p class="text-sm text-zinc-300 max-w-lg mb-6 leading-relaxed">
+              高速・軽量なローカルExcelファイル全文検索・閲覧デスクトップアプリケーション。数式・セル値・セル内改行を高速に横断検索します。
+            </p>
+
+            <div class="w-full max-w-md bg-[#1c1c20] border border-zinc-800 rounded-lg p-4 text-xs text-zinc-400 space-y-2 mb-6">
+              <div class="flex justify-between items-center py-1 border-b border-zinc-800/80">
+                <span class="text-zinc-500">著作権:</span>
+                <span class="font-mono text-zinc-300">© 2026 soakaye. All rights reserved.</span>
+              </div>
+              <div class="flex justify-between items-center py-1 border-b border-zinc-800/80">
+                <span class="text-zinc-500">ライセンス:</span>
+                <span class="font-medium text-emerald-400">MIT License</span>
+              </div>
+              <div class="flex justify-between items-center py-1">
+                <span class="text-zinc-500">サードパーティパッケージ:</span>
+                <span id="aboutThirdPartyCountText" class="font-mono text-zinc-300">12 件</span>
+              </div>
+            </div>
+
+            <button
+              id="btnGoLicensesTab"
+              type="button"
+              class="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded-lg border border-zinc-700 text-xs font-medium transition flex items-center gap-2 cursor-pointer"
+            >
+              <i data-lucide="file-code-2" class="w-4 h-4 text-emerald-400"></i>
+              <span>オープンソースライセンス一覧を確認する</span>
+            </button>
+          </div>
+
+          <!-- タブ 2: オープンソースライセンス一覧 (2ペイン Master-Detail) -->
+          <div id="tabLicensesContent" class="flex-1 flex overflow-hidden min-h-0 hidden">
+            <!-- 左ペイン: 検索バー + パッケージ一覧 -->
+            <div class="w-[340px] flex-shrink-0 border-r border-zinc-800 flex flex-col bg-[#141416]">
+              <!-- 検索入力バー -->
+              <div class="p-3 border-b border-zinc-800 flex-shrink-0">
+                <div class="relative">
+                  <input
+                    id="aboutSearchInput"
+                    type="text"
+                    placeholder="パッケージ名・ライセンスで検索..."
+                    class="w-full pl-3 pr-8 py-1.5 bg-[#202024] border border-zinc-700/80 rounded-md text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-excel-light"
+                  />
+                  <button
+                    id="aboutSearchClearBtn"
+                    type="button"
+                    title="検索キーワードをクリア"
+                    class="absolute inset-y-0 right-1 px-1.5 text-zinc-400 hover:text-zinc-200 flex items-center cursor-pointer hidden"
+                  >
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                  </button>
+                </div>
+                <div class="flex justify-between items-center text-[10px] text-zinc-500 mt-2 px-1">
+                  <span id="aboutSearchCountText">表示中: 12 / 12 件</span>
+                  <span id="aboutSearchFilteringIndicator" class="hidden">フィルタ適用中</span>
+                </div>
+              </div>
+
+              <!-- パッケージリスト -->
+              <div id="aboutPackageList" class="flex-1 overflow-y-auto divide-y divide-zinc-800/60">
+                <!-- 動的に生成 -->
+              </div>
+            </div>
+
+            <!-- 右ペイン: 選択パッケージの詳細表示 -->
+            <div id="aboutPackageDetail" class="flex-1 flex flex-col bg-[#18181b] min-w-0 overflow-hidden">
+              <!-- 詳細ヘッダー -->
+              <div class="p-4 border-b border-zinc-800 flex-shrink-0 bg-[#161618]">
+                <div class="flex items-start justify-between gap-3 mb-2">
+                  <div>
+                    <div class="flex items-center gap-2">
+                      <h4 id="detailPkgName" class="text-base font-semibold text-zinc-100">calamine</h4>
+                      <span id="detailPkgVersion" class="text-xs font-mono text-zinc-400 bg-zinc-800 px-2 py-0.5 rounded border border-zinc-700">v0.26.1</span>
+                      <span id="detailPkgLicense" class="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-950/60 text-emerald-300 border border-emerald-800">MIT</span>
+                    </div>
+                  </div>
+
+                  <!-- コピーボタン -->
+                  <button
+                    id="detailCopyLicenseBtn"
+                    type="button"
+                    class="px-3 py-1.5 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition cursor-pointer flex-shrink-0 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white border-zinc-700"
+                  >
+                    <i id="detailCopyIcon" data-lucide="copy" class="w-3.5 h-3.5 text-zinc-400"></i>
+                    <span id="detailCopyText">ライセンス本文をコピー</span>
+                  </button>
+                </div>
+
+                <!-- メタ情報（著作者・リポジトリ） -->
+                <div class="space-y-1 text-xs text-zinc-400">
+                  <div id="detailPkgAuthorRow" class="flex items-baseline gap-2">
+                    <span class="text-zinc-500 font-medium w-28 flex-shrink-0">著作者 / 開発者:</span>
+                    <span id="detailPkgAuthor" class="text-zinc-300 truncate">Geoffroy Couprie</span>
+                  </div>
+                  <div id="detailPkgRepoRow" class="flex items-baseline gap-2">
+                    <span class="text-zinc-500 font-medium w-28 flex-shrink-0">リポジトリ:</span>
+                    <span id="detailPkgRepo" class="text-zinc-300 font-mono text-[11px] truncate flex items-center gap-1">https://github.com/tauri-apps/calamine</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ライセンス本文スクロールビュー -->
+              <div class="flex-1 flex flex-col p-4 min-h-0 bg-[#141416]">
+                <div class="text-[11px] text-zinc-400 font-medium mb-1.5 flex items-center justify-between">
+                  <span>正規ライセンス全文 (Verbatim)</span>
+                  <span id="detailLicenseLineCount" class="text-[10px] text-zinc-500 font-mono">22 行</span>
+                </div>
+                <div class="flex-1 overflow-y-auto bg-[#1a1a1d] border border-zinc-800 rounded-lg p-3.5">
+                  <pre id="detailLicenseText" class="font-mono text-xs text-zinc-300 whitespace-pre-wrap leading-relaxed select-text"></pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- モーダル下部フッター -->
+        <div class="h-12 px-5 bg-[#141416] border-t border-zinc-800 flex items-center justify-end flex-shrink-0">
+          <button
+            id="aboutFooterCloseBtn"
+            type="button"
+            class="px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white text-xs font-medium rounded-lg border border-zinc-700 transition cursor-pointer"
+          >
+            閉じる
+          </button>
+        </div>
+      </div>
     </div>
 
   </div>
@@ -8124,6 +8328,132 @@
       lucide.createIcons();
     }
 
+    /**
+     * Aboutダイアログ用オープンソースライセンスモックデータ
+     */
+    const mockLicenses = [
+      {
+        id: "calamine@0.26.1",
+        name: "calamine",
+        version: "0.26.1",
+        source: "rust",
+        license: "MIT",
+        author: "Geoffroy Couprie <geo.couprie@gmail.com>",
+        repository: "https://github.com/tauri-apps/calamine",
+        license_text: `MIT License\n\nCopyright (c) 2016 Geoffroy Couprie\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the "Software"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.\n\nTHE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\nFITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\nAUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE.`
+      },
+      {
+        id: "crossbeam-channel@0.5.14",
+        name: "crossbeam-channel",
+        version: "0.5.14",
+        source: "rust",
+        license: "MIT OR Apache-2.0",
+        author: "The Crossbeam Project Developers",
+        repository: "https://github.com/crossbeam-rs/crossbeam",
+        license_text: `Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/\n\nTERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION\n\nLicensed under the Apache License, Version 2.0 (the "License");\nyou may not use this file except in compliance with the License.\nYou may obtain a copy of the License at\n\n    http://www.apache.org/licenses/LICENSE-2.0\n\nUnless required by applicable law or agreed to in writing, software\ndistributed under the License is distributed on an "AS IS" BASIS,\nWITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\nSee the License for the specific language governing permissions and\nlimitations under the License.`
+      },
+      {
+        id: "lucide-react@0.468.0",
+        name: "lucide-react",
+        version: "0.468.0",
+        source: "npm",
+        license: "ISC",
+        author: "Lucide Contributors",
+        repository: "https://github.com/lucide-icons/lucide",
+        license_text: `ISC License\n\nCopyright (c) for portions of Lucide are held by Cole Bemis 2013-2022 as part of Feather (MIT). All other copyright (c) for Lucide are held by Lucide Contributors 2022.\n\nPermission to use, copy, modify, and/or distribute this software for any\npurpose with or without fee is hereby granted, provided that the above\ncopyright notice and this permission notice appear in all copies.\n\nTHE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES\nWITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF\nMERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR\nANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES\nWHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN\nACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF\nOR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.`
+      },
+      {
+        id: "rayon@1.10.0",
+        name: "rayon",
+        version: "1.10.0",
+        source: "rust",
+        license: "MIT OR Apache-2.0",
+        author: "Niko Matsakis <niko@alum.mit.edu>, Josh Stone <cuviper@gmail.com>",
+        repository: "https://github.com/rayon-rs/rayon",
+        license_text: `Permission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the "Software"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.`
+      },
+      {
+        id: "react@18.3.1",
+        name: "react",
+        version: "18.3.1",
+        source: "npm",
+        license: "MIT",
+        author: "Meta Platforms, Inc. and affiliates.",
+        repository: "https://github.com/facebook/react",
+        license_text: `MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the "Software"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.`
+      },
+      {
+        id: "react-dom@18.3.1",
+        name: "react-dom",
+        version: "18.3.1",
+        source: "npm",
+        license: "MIT",
+        author: "Meta Platforms, Inc. and affiliates.",
+        repository: "https://github.com/facebook/react",
+        license_text: `MIT License\n\nCopyright (c) Meta Platforms, Inc. and affiliates.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the "Software"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.`
+      },
+      {
+        id: "regex@1.11.1",
+        name: "regex",
+        version: "1.11.1",
+        source: "rust",
+        license: "MIT OR Apache-2.0",
+        author: "The Rust Project Developers",
+        repository: "https://github.com/rust-lang/regex",
+        license_text: `Copyright (c) 2014 The Rust Project Developers\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the "Software"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.`
+      },
+      {
+        id: "serde@1.0.217",
+        name: "serde",
+        version: "1.0.217",
+        source: "rust",
+        license: "MIT OR Apache-2.0",
+        author: "Erick Tryzelaar <erick.tryzelaar@gmail.com>, David Tolnay <dtolnay@gmail.com>",
+        repository: "https://github.com/serde-rs/serde",
+        license_text: `Apache License\nVersion 2.0, January 2004\nhttp://www.apache.org/licenses/\n\nTERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION`
+      },
+      {
+        id: "tailwindcss@3.4.17",
+        name: "tailwindcss",
+        version: "3.4.17",
+        source: "npm",
+        license: "MIT",
+        author: "Adam Wathan <adam.wathan@gmail.com>",
+        repository: "https://github.com/tailwindlabs/tailwindcss",
+        license_text: `MIT License\n\nCopyright (c) Tailwind Labs, Inc.\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the "Software"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.`
+      },
+      {
+        id: "tauri@2.1.1",
+        name: "tauri",
+        version: "2.1.1",
+        source: "rust",
+        license: "Apache-2.0 OR MIT",
+        author: "Tauri Programme within The Commons Conservancy",
+        repository: "https://github.com/tauri-apps/tauri",
+        license_text: `Copyright 2019-2024 Tauri Programme within The Commons Conservancy\nSPDX-License-Identifier: Apache-2.0 OR MIT`
+      },
+      {
+        id: "tokio@1.42.0",
+        name: "tokio",
+        version: "1.42.0",
+        source: "rust",
+        license: "MIT",
+        author: "Tokio Contributors <team@tokio.rs>",
+        repository: "https://github.com/tokio-rs/tokio",
+        license_text: `Copyright (c) 2024 Tokio Contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the "Software"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.`
+      },
+      {
+        id: "vite@5.4.11",
+        name: "vite",
+        version: "5.4.11",
+        source: "npm",
+        license: "MIT",
+        author: "Evan You",
+        repository: "https://github.com/vitejs/vite",
+        license_text: `MIT License\n\nCopyright (c) 2019-present, Yuxi (Evan) You and Vite contributors\n\nPermission is hereby granted, free of charge, to any person obtaining a copy\nof this software and associated documentation files (the "Software"), to deal\nin the Software without restriction, including without limitation the rights\nto use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies of the Software, and to permit persons to whom the Software is\nfurnished to do so, subject to the following conditions:\n\nThe above copyright notice and this permission notice shall be included in all\ncopies or substantial portions of the Software.`
+      }
+    ];
+
     // 初期化およびイベントリスナー登録
     document.addEventListener("DOMContentLoaded", () => {
       lucide.createIcons();
@@ -8451,6 +8781,233 @@
         const toast = document.getElementById("toast");
         toast.classList.add("translate-y-20", "opacity-0", "pointer-events-none");
         toast.classList.remove("translate-y-0", "opacity-100");
+      });
+
+      // ==========================================
+      // Aboutダイアログ インタラクティブロジック (AboutDialog.tsx)
+      // ==========================================
+      const aboutModal = document.getElementById("aboutModal");
+      const aboutDialogBtn = document.getElementById("aboutDialogBtn");
+      const aboutCloseBtn = document.getElementById("aboutCloseBtn");
+      const aboutFooterCloseBtn = document.getElementById("aboutFooterCloseBtn");
+      const tabAboutBtn = document.getElementById("tabAboutBtn");
+      const tabLicensesBtn = document.getElementById("tabLicensesBtn");
+      const tabAboutContent = document.getElementById("tabAboutContent");
+      const tabLicensesContent = document.getElementById("tabLicensesContent");
+      const btnGoLicensesTab = document.getElementById("btnGoLicensesTab");
+
+      const aboutSearchInput = document.getElementById("aboutSearchInput");
+      const aboutSearchClearBtn = document.getElementById("aboutSearchClearBtn");
+      const aboutSearchCountText = document.getElementById("aboutSearchCountText");
+      const aboutSearchFilteringIndicator = document.getElementById("aboutSearchFilteringIndicator");
+      const aboutPackageList = document.getElementById("aboutPackageList");
+
+      const detailPkgName = document.getElementById("detailPkgName");
+      const detailPkgVersion = document.getElementById("detailPkgVersion");
+      const detailPkgLicense = document.getElementById("detailPkgLicense");
+      const detailPkgAuthor = document.getElementById("detailPkgAuthor");
+      const detailPkgAuthorRow = document.getElementById("detailPkgAuthorRow");
+      const detailPkgRepo = document.getElementById("detailPkgRepo");
+      const detailPkgRepoRow = document.getElementById("detailPkgRepoRow");
+      const detailLicenseLineCount = document.getElementById("detailLicenseLineCount");
+      const detailLicenseText = document.getElementById("detailLicenseText");
+      const detailCopyLicenseBtn = document.getElementById("detailCopyLicenseBtn");
+      const detailCopyIcon = document.getElementById("detailCopyIcon");
+      const detailCopyText = document.getElementById("detailCopyText");
+      const aboutPackageDetail = document.getElementById("aboutPackageDetail");
+
+      let currentSelectedLicenseId = mockLicenses[0].id;
+      let currentLicenseKeyword = "";
+
+      const openAboutDialog = () => {
+        aboutModal.classList.remove("hidden");
+        lucide.createIcons();
+      };
+
+      const closeAboutDialog = () => {
+        aboutModal.classList.add("hidden");
+      };
+
+      aboutDialogBtn.addEventListener("click", openAboutDialog);
+      aboutCloseBtn.addEventListener("click", closeAboutDialog);
+      aboutFooterCloseBtn.addEventListener("click", closeAboutDialog);
+      aboutModal.addEventListener("click", (e) => {
+        if (e.target === aboutModal) closeAboutDialog();
+      });
+
+      // ESCキーで閉じる
+      window.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && !aboutModal.classList.contains("hidden")) {
+          closeAboutDialog();
+        }
+      });
+
+      // タブ切り替え
+      const switchAboutTab = (tab) => {
+        if (tab === "about") {
+          tabAboutBtn.className = "px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60";
+          tabLicensesBtn.className = "px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer flex items-center gap-1.5 text-zinc-400 hover:text-zinc-200";
+          tabAboutContent.classList.remove("hidden");
+          tabLicensesContent.classList.add("hidden");
+        } else {
+          tabAboutBtn.className = "px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer text-zinc-400 hover:text-zinc-200";
+          tabLicensesBtn.className = "px-3 py-1 text-xs font-medium rounded-md transition-all cursor-pointer flex items-center gap-1.5 bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700/60";
+          tabAboutContent.classList.add("hidden");
+          tabLicensesContent.classList.remove("hidden");
+          renderLicenseList();
+        }
+        lucide.createIcons();
+      };
+
+      tabAboutBtn.addEventListener("click", () => switchAboutTab("about"));
+      tabLicensesBtn.addEventListener("click", () => switchAboutTab("licenses"));
+      btnGoLicensesTab.addEventListener("click", () => switchAboutTab("licenses"));
+
+      // ライセンス詳細のレンダリング
+      const renderLicenseDetail = (pkg) => {
+        if (!pkg) {
+          aboutPackageDetail.innerHTML = `
+            <div class="flex-1 flex items-center justify-center p-8 text-center text-xs text-zinc-500 bg-[#18181b]">
+              左の一覧からパッケージを選択すると、詳細情報と正規ライセンス本文が表示されます
+            </div>
+          `;
+          return;
+        }
+        detailPkgName.textContent = pkg.name;
+        detailPkgVersion.textContent = `v${pkg.version}`;
+        detailPkgLicense.textContent = pkg.license;
+        if (pkg.author) {
+          detailPkgAuthor.textContent = pkg.author;
+          detailPkgAuthorRow.classList.remove("hidden");
+        } else {
+          detailPkgAuthorRow.classList.add("hidden");
+        }
+        if (pkg.repository) {
+          detailPkgRepo.textContent = pkg.repository;
+          detailPkgRepoRow.classList.remove("hidden");
+        } else {
+          detailPkgRepoRow.classList.add("hidden");
+        }
+        const lines = pkg.license_text.split("\n").length;
+        detailLicenseLineCount.textContent = `${lines} 行`;
+        detailLicenseText.textContent = pkg.license_text;
+      };
+
+      // パッケージリストのレンダリング
+      const renderLicenseList = () => {
+        const kw = currentLicenseKeyword.trim().toLowerCase();
+        const filtered = mockLicenses.filter(pkg => {
+          if (!kw) return true;
+          return pkg.name.toLowerCase().includes(kw) ||
+                 pkg.license.toLowerCase().includes(kw) ||
+                 pkg.version.toLowerCase().includes(kw);
+        });
+
+        aboutSearchCountText.textContent = `表示中: ${filtered.length} / ${mockLicenses.length} 件`;
+        if (kw) {
+          aboutSearchFilteringIndicator.classList.remove("hidden");
+          aboutSearchClearBtn.classList.remove("hidden");
+        } else {
+          aboutSearchFilteringIndicator.classList.add("hidden");
+          aboutSearchClearBtn.classList.add("hidden");
+        }
+
+        if (filtered.length > 0) {
+          if (!filtered.some(p => p.id === currentSelectedLicenseId)) {
+            currentSelectedLicenseId = filtered[0].id;
+          }
+          const selPkg = filtered.find(p => p.id === currentSelectedLicenseId) || filtered[0];
+          renderLicenseDetail(selPkg);
+        } else {
+          currentSelectedLicenseId = null;
+          renderLicenseDetail(null);
+        }
+
+        if (filtered.length === 0) {
+          aboutPackageList.innerHTML = `
+            <div class="p-6 text-center text-xs text-zinc-500">
+              該当するパッケージが見つかりませんでした
+            </div>
+          `;
+          return;
+        }
+
+        aboutPackageList.innerHTML = filtered.map(pkg => {
+          const isSelected = pkg.id === currentSelectedLicenseId;
+          return `
+            <div
+              data-pkg-id="${pkg.id}"
+              class="pkg-item p-3 text-left transition cursor-pointer ${
+                isSelected
+                  ? "bg-zinc-800/90 border-l-2 border-l-emerald-400"
+                  : "hover:bg-zinc-800/40"
+              }"
+            >
+              <div class="flex items-center justify-between gap-1 mb-1">
+                <span class="text-xs font-medium truncate ${
+                  isSelected ? "text-emerald-300 font-semibold" : "text-zinc-200"
+                }">
+                  ${pkg.name}
+                </span>
+                <span class="text-[10px] font-mono px-1.5 py-0.2 rounded bg-zinc-900 border border-zinc-800 text-zinc-400 flex-shrink-0">
+                  v${pkg.version}
+                </span>
+              </div>
+              <div class="flex items-center gap-1.5 text-[10px]">
+                <span class="px-1.5 py-0.2 rounded bg-emerald-950/40 text-emerald-400 border border-emerald-900/60 font-medium">
+                  ${pkg.license}
+                </span>
+                <span class="text-zinc-500 font-mono">
+                  ${pkg.source === "rust" ? "crate" : "npm"}
+                </span>
+              </div>
+            </div>
+          `;
+        }).join("");
+
+        aboutPackageList.querySelectorAll(".pkg-item").forEach(item => {
+          item.addEventListener("click", () => {
+            const id = item.getAttribute("data-pkg-id");
+            currentSelectedLicenseId = id;
+            renderLicenseList();
+          });
+        });
+      };
+
+      // 検索入力イベント
+      aboutSearchInput.addEventListener("input", (e) => {
+        currentLicenseKeyword = e.target.value;
+        renderLicenseList();
+      });
+
+      aboutSearchClearBtn.addEventListener("click", () => {
+        aboutSearchInput.value = "";
+        currentLicenseKeyword = "";
+        renderLicenseList();
+      });
+
+      // ライセンスコピーボタン
+      detailCopyLicenseBtn.addEventListener("click", () => {
+        const pkg = mockLicenses.find(p => p.id === currentSelectedLicenseId);
+        if (pkg && pkg.license_text) {
+          navigator.clipboard.writeText(pkg.license_text).catch(() => {});
+          detailCopyIcon.setAttribute("data-lucide", "check");
+          detailCopyIcon.classList.add("text-emerald-400");
+          detailCopyText.textContent = "コピー完了";
+          detailCopyLicenseBtn.classList.add("bg-emerald-950", "text-emerald-300", "border-emerald-600");
+          detailCopyLicenseBtn.classList.remove("bg-zinc-800", "text-zinc-200", "border-zinc-700");
+          lucide.createIcons();
+          showToast(`${pkg.name} のライセンス本文をコピーしました`);
+
+          setTimeout(() => {
+            detailCopyIcon.setAttribute("data-lucide", "copy");
+            detailCopyIcon.classList.remove("text-emerald-400");
+            detailCopyText.textContent = "ライセンス本文をコピー";
+            detailCopyLicenseBtn.classList.remove("bg-emerald-950", "text-emerald-300", "border-emerald-600");
+            detailCopyLicenseBtn.classList.add("bg-zinc-800", "text-zinc-200", "border-zinc-700");
+            lucide.createIcons();
+          }, 2000);
+        }
       });
     });
   </script>

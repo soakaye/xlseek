@@ -7,22 +7,25 @@
  * 憲章原則I（日本語表示）、原則II（定数参照）、原則III（ヘッダコメント）に準拠。
  *
  * ## 変更履歴
+ * ## 変更履歴
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化（COMMANDS.EXPORT_RESULTS）およびJSDoc付与。
  * - v1.1.0 (2026-09-26, AI Agent): デザイン改善フィードバック対応。プログレスバーをメッセージ前（固定幅 w-44）へ配置変更し、ファイル読み込み前のフォルダスキャン中表示（対象フォルダ名表示）を導入。
  * - v1.2.0 (2026-09-26, AI Agent): デザインフィードバック対応。フッター右側のCalamine Engineバッジ表示を削除。
+ * - v1.3.0 (2026-09-26, AI Agent): 最右端にAboutダイアログ起動ボタン（Infoアイコン）を追加。
  */
 
 import React from "react";
-import { FileText, FileSpreadsheet } from "lucide-react";
+import { FileText, FileSpreadsheet, Info } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { ScanProgress, SearchMatch, ExportRequest } from "../../types/search";
-import { COMMANDS, UI_MESSAGES } from "../../constants";
+import { COMMANDS, UI_MESSAGES, ABOUT_DIALOG_CONSTANTS } from "../../constants";
 
 interface StatusBarProps {
   progress: ScanProgress | null;
   items: SearchMatch[];
   onShowToast: (msg: string) => void;
+  onOpenAbout: () => void;
 }
 
 /**
@@ -30,7 +33,7 @@ interface StatusBarProps {
  * アプリケーションの最下部ステータスバーを表示するコンポーネント。
  *
  * ## 引数
- * @param props - 進捗情報、検索結果一覧、トースト通知コールバック
+ * @param props - 進捗情報、検索結果一覧、トースト通知コールバック、Aboutダイアログ表示ハンドラ
  *
  * ## 戻り値
  * @returns レンダリング要素
@@ -40,11 +43,13 @@ interface StatusBarProps {
  *
  * ## 変更履歴
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
+ * - v1.3.0 (2026-09-26, AI Agent): onOpenAbout プロパティの追加。
  */
 export const StatusBar: React.FC<StatusBarProps> = ({
   progress,
   items,
   onShowToast,
+  onOpenAbout,
 }) => {
   const percent =
     progress && progress.total_files > 0
@@ -199,6 +204,20 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         >
           <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
           <span>Excel 出力</span>
+        </button>
+
+        {/* 縦仕切り線 */}
+        <div className="h-3.5 w-px bg-zinc-800 flex-shrink-0" />
+
+        {/* Aboutダイアログ起動ボタン */}
+        <button
+          type="button"
+          onClick={onOpenAbout}
+          /* 定数参照: ABOUT_DIALOG_CONSTANTS.BUTTON_ABOUT_TOOLTIP */
+          title={ABOUT_DIALOG_CONSTANTS.BUTTON_ABOUT_TOOLTIP}
+          className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded border border-zinc-700/60 transition flex items-center justify-center cursor-pointer"
+        >
+          <Info className="w-3.5 h-3.5" />
         </button>
       </div>
     </footer>

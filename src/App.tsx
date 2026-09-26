@@ -10,6 +10,8 @@
  * ## 変更履歴
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定。
  * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、4要素ヘッダコメントを追加。
+ * - v1.2.0 (2026-09-26, AI Agent): Aboutダイアログ表示状態 (isAboutOpen) を追加し、StatusBarにonOpenAboutを連携。
+ * - v1.3.0 (2026-09-26, AI Agent): AboutDialogコンポーネントをマウントし、開閉連動を統合。
  */
 
 import React, { useState } from "react";
@@ -23,6 +25,7 @@ import { SheetTabs } from "./components/preview/SheetTabs";
 import { MetaInfoCard } from "./components/preview/MetaInfoCard";
 import { StatusBar } from "./components/common/StatusBar";
 import { Toast } from "./components/common/Toast";
+import { AboutDialog } from "./components/about/AboutDialog";
 import { useSearch } from "./hooks/useSearch";
 
 /**
@@ -30,7 +33,7 @@ import { useSearch } from "./hooks/useSearch";
  *
  * ## 処理詳細
  * 状態管理フック `useSearch` を初期化し、トースト通知および各サブコンポーネントへの
- * データバインディングとイベントハンドラの受け渡しを行う。
+ * データバインディングとイベントハンドラの受け渡しを行う。Aboutダイアログの表示状態も一元管理する。
  *
  * ## 引数
  * - なし (ルートコンポーネント)
@@ -44,9 +47,11 @@ import { useSearch } from "./hooks/useSearch";
  * ## 変更履歴
  * - v1.0.0 (2026-09-26, AI Agent): 初版作成。
  * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、4要素コメントを追加。
+ * - v1.2.0 (2026-09-26, AI Agent): isAboutOpen 状態管理とStatusBar連携を追加。
  */
 export const App: React.FC = () => {
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [isAboutOpen, setIsAboutOpen] = useState(false);
 
   const showToast = (msg: string) => {
     setToastMessage(msg);
@@ -137,6 +142,14 @@ export const App: React.FC = () => {
       <StatusBar
         progress={progress}
         items={results}
+        onShowToast={showToast}
+        onOpenAbout={() => setIsAboutOpen(true)}
+      />
+
+      {/* アプリ情報・ライセンスモーダル */}
+      <AboutDialog
+        isOpen={isAboutOpen}
+        onClose={() => setIsAboutOpen(false)}
         onShowToast={showToast}
       />
 

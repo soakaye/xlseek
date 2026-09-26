@@ -11,6 +11,7 @@
  * - v1.1.0 (2026-09-26, AI Agent): UI文言・レイアウト・スクロール寸法の定数を拡充。
  * - v1.2.0 (2026-09-26, AI Agent): 拡張子トグル選択機能のUI文言定数を追加。
  * - v1.3.0 (2026-09-26, AI Agent): 探索中表示、フォルダスキャン、待機中等のUI文言定数を拡充。
+ * - v1.4.0 (2026-09-26, AI Agent): Aboutダイアログおよびパッケージライセンス表示定数 (ABOUT_DIALOG_CONSTANTS) を追加。
  */
 
 // ==============================================================================
@@ -155,4 +156,41 @@ export const UI_MESSAGES = {
   NEXT_SHEET_TOOLTIP: "次のシートへ",
   SHEET_TABS_BADGE: "Sheet Tabs",
   ROOT_ELEMENT_ID: "root",
+} as const;
+
+// ==============================================================================
+// 7. Aboutダイアログおよびライセンス表示定数 (About Dialog & Package Licenses)
+// ==============================================================================
+export const ABOUT_DIALOG_CONSTANTS = {
+  TITLE: "Excel Grep について",
+  APP_NAME: "Excel Grep",
+  APP_VERSION: "0.1.0",
+  APP_DESCRIPTION: "高速・セキュアなExcel専用ファイル内検索デスクトップアプリケーション",
+  COPYRIGHT: "Copyright © 2026 Excel Grep Contributors",
+  APP_LICENSE_LABEL: "配布ライセンス: MIT License",
+
+  TAB_ABOUT: "アプリ情報",
+  TAB_LICENSES: "オープンソースライセンス",
+
+  SEARCH_PLACEHOLDER: "パッケージ名・ライセンスで検索...",
+  SEARCH_CLEAR_TOOLTIP: "検索キーワードをクリア",
+  NO_PACKAGES_FOUND: "一致するパッケージが見つかりません",
+  PACKAGE_COUNT_SUFFIX: " 件のパッケージ",
+
+  BUTTON_COPY_LICENSE: "ライセンス本文をコピー",
+  BUTTON_COPIED: "コピー完了",
+  BUTTON_CLOSE: "閉じる",
+  BUTTON_ABOUT_TOOLTIP: "Excel Grep について",
+
+  AUTHOR_LABEL: "著作者 / 著作権表記:",
+  LICENSE_TYPE_LABEL: "ライセンス種別:",
+  REPOSITORY_LABEL: "リポジトリ / 公式サイト:",
+  SOURCE_RUST_LABEL: "Rust (バックエンド)",
+  SOURCE_NPM_LABEL: "npm (フロントエンド)",
+  LICENSE_TEXT_LABEL: "ライセンス条項全文:",
+  SELECT_PACKAGE_PROMPT: "左側の一覧からパッケージを選択するとライセンス詳細が表示されます",
+
+  TOAST_COPIED_PREFIX: "",
+  TOAST_COPIED_SUFFIX: " のライセンス本文をクリップボードにコピーしました",
+  TOAST_COPY_FAILED: "クリップボードへのコピーに失敗しました",
 } as const;

@@ -64,10 +64,10 @@ auto_commit:
     message: "[Spec Kit] Add implementation plan"
   after_tasks:
     enabled: true
-    message: "[Spec Kit] Add tasks and specifications for UI adjustments (005-ui-adjustments)"
+    message: "[Spec Kit] Add tasks and specifications for About dialog and package licenses (006-about-dialog-licenses)"
   after_implement:
     enabled: true
-    message: "[Spec Kit] Implement UI adjustments (005-ui-adjustments)"
+    message: "[Spec Kit] Implement About dialog and package licenses (006-about-dialog-licenses)"
   after_checklist:
     enabled: false
     message: "[Spec Kit] Add checklist"
