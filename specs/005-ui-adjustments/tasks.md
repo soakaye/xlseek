@@ -33,9 +33,9 @@ description: "Task list for UI adjustments feature implementation"
 
 **Purpose**: 共通定数、型定義、および検証環境の基盤整備
 
-- [ ] T001 定数定義ファイル `src/constants/index.ts` にUI文言（探索中表示、フォルダスキャン）、拡張子定義、およびレイアウト定数を定義・整理
-- [ ] T002 [P] TypeScript型定義ファイル `src/types/index.ts` に検索進行フェーズ（`SearchPhase`）、探索状態、およびプレビュー用モデルの型を定義
-- [ ] T003 [P] 検証環境の健全性確認（`npm run build`, `cargo test --manifest-path src-tauri/Cargo.toml`）
+- [X] T001 定数定義ファイル `src/constants/index.ts` にUI文言（探索中表示、フォルダスキャン）、拡張子定義、およびレイアウト定数を定義・整理
+- [X] T002 [P] TypeScript型定義ファイル `src/types/index.ts` に検索進行フェーズ（`SearchPhase`）、探索状態、およびプレビュー用モデルの型を定義
+- [X] T003 [P] 検証環境の健全性確認（`npm run build`, `cargo test --manifest-path src-tauri/Cargo.toml`）
 
 ---
 
@@ -45,8 +45,8 @@ description: "Task list for UI adjustments feature implementation"
 
 **⚠️ CRITICAL**: 共通ステートフックおよびモック基礎定義が完了するまで、ユーザーストーリーの個別実装には着手しないこと
 
-- [ ] T004 `src/hooks/useSearch.ts` の状態管理にフォルダ走査フェーズ（`scanning`）および探索中フォルダパスの保持ロジックを追加
-- [ ] T005 [P] `design/mainui/index.html` に共通状態変数（`currentPhase`, `targetDir`, `isComposing`, `compositionEndTime`）の管理機構を定義
+- [X] T004 `src/hooks/useSearch.ts` の状態管理にフォルダ走査フェーズ（`scanning`）および探索中フォルダパスの保持ロジックを追加
+- [X] T005 [P] `design/mainui/index.html` に共通状態変数（`currentPhase`, `targetDir`, `isComposing`, `compositionEndTime`）の管理機構を定義
 
 **Checkpoint**: 共通ステート・定数基盤が整い、各ユーザーストーリーの実装へ並行して着手可能
 
@@ -63,11 +63,11 @@ description: "Task list for UI adjustments feature implementation"
 
 ### Implementation for User Story 1
 
-- [ ] T006 [P] [US1] `src/components/search/SearchBar.tsx` に日本語IME変換確定時のEnter誤爆防止ガード（`isComposing`, `keyCode === 229`, `compositionEndTime` < 50ms）を実装
-- [ ] T007 [P] [US1] `src/components/search/SearchBar.tsx` のフォルダ入力欄（`#folderInput`）においてEnterキー押下時の検索実行を抑止し、フォーカスを維持するイベントハンドラを実装
-- [ ] T008 [US1] `src/components/search/SearchBar.tsx` に対象拡張子トグルボタン（`.xlsx`, `.xlsm`, `.xlsb`, `.xls`）の選択・解除ロジックおよび全解除防止ガード（最低1つ選択維持）を実装
-- [ ] T009 [US1] `design/mainui/index.html` において検索キーワード欄のIME確定保護、フォルダ欄のEnter抑止、および拡張子トグル制御を1:1で同期実装（[contracts/search-bar-events.md](file:///Users/soakaye/Develop/Projects/workspaces/exgrep/fixui/specs/005-ui-adjustments/contracts/search-bar-events.md) 準拠）
-- [ ] T010 [US1] [quickstart.md](file:///Users/soakaye/Develop/Projects/workspaces/exgrep/fixui/specs/005-ui-adjustments/quickstart.md) のシナリオ1、2、3に基づき、ブラウザおよびTauri環境でキー入力および拡張子トグル動作を手動検証
+- [X] T006 [P] [US1] `src/components/search/SearchBar.tsx` に日本語IME変換確定時のEnter誤爆防止ガード（`isComposing`, `keyCode === 229`, `compositionEndTime` < 50ms）を実装
+- [X] T007 [P] [US1] `src/components/search/SearchBar.tsx` のフォルダ入力欄（`#folderInput`）においてEnterキー押下時の検索実行を抑止し、フォーカスを維持するイベントハンドラを実装
+- [X] T008 [US1] `src/components/search/SearchBar.tsx` に対象拡張子トグルボタン（`.xlsx`, `.xlsm`, `.xlsb`, `.xls`）の選択・解除ロジックおよび全解除防止ガード（最低1つ選択維持）を実装
+- [X] T009 [US1] `design/mainui/index.html` において検索キーワード欄のIME確定保護、フォルダ欄のEnter抑止、および拡張子トグル制御を1:1で同期実装（[contracts/search-bar-events.md](file:///Users/soakaye/Develop/Projects/workspaces/exgrep/fixui/specs/005-ui-adjustments/contracts/search-bar-events.md) 準拠）
+- [X] T010 [US1] [quickstart.md](file:///Users/soakaye/Develop/Projects/workspaces/exgrep/fixui/specs/005-ui-adjustments/quickstart.md) のシナリオ1、2、3に基づき、ブラウザおよびTauri環境でキー入力および拡張子トグル動作を手動検証
 
 **Checkpoint**: 検索バーおよびフォルダ入力欄のキー入力制御・拡張子選択が独立して動作し、誤爆率0%を達成（MVP完成）
 
@@ -82,10 +82,10 @@ description: "Task list for UI adjustments feature implementation"
 
 ### Implementation for User Story 2
 
-- [ ] T011 [P] [US2] `src/components/common/StatusBar.tsx` においてプログレスバーをメッセージの手前に固定幅（`w-44`）で配置し、フォルダ探索中（`scanning`）フェーズのアニメーション表示とパス表示を実装
-- [ ] T012 [P] [US2] `src/components/common/StatusBar.tsx` から内部エンジン名称（Calamine Engine）の固定テキストを削除し、ステータス領域を整理
-- [ ] T013 [US2] `design/mainui/index.html` のステータスバー表示ロジックを更新し、プログレスバーの固定幅配置（`w-44`）、フォルダスキャン中フェーズのアニメーション、および内部エンジン表記の削除を1:1同期
-- [ ] T014 [US2] [quickstart.md](file:///Users/soakaye/Develop/Projects/workspaces/exgrep/fixui/specs/005-ui-adjustments/quickstart.md) のシナリオ4に基づき、検索ライフサイクルを通じたステータスバー表示の変化を手動検証
+- [X] T011 [P] [US2] `src/components/common/StatusBar.tsx` においてプログレスバーをメッセージの手前に固定幅（`w-44`）で配置し、フォルダ探索中（`scanning`）フェーズのアニメーション表示とパス表示を実装
+- [X] T012 [P] [US2] `src/components/common/StatusBar.tsx` から内部エンジン名称（Calamine Engine）の固定テキストを削除し、ステータス領域を整理
+- [X] T013 [US2] `design/mainui/index.html` のステータスバー表示ロジックを更新し、プログレスバーの固定幅配置（`w-44`）、フォルダスキャン中フェーズのアニメーション、および内部エンジン表記の削除を1:1同期
+- [X] T014 [US2] [quickstart.md](file:///Users/soakaye/Develop/Projects/workspaces/exgrep/fixui/specs/005-ui-adjustments/quickstart.md) のシナリオ4に基づき、検索ライフサイクルを通じたステータスバー表示の変化を手動検証
 
 **Checkpoint**: ステータスバーの進捗表示とフォルダ探索中フェーズが独立して機能し、視覚的フィードバックが向上
 
@@ -100,10 +100,10 @@ description: "Task list for UI adjustments feature implementation"
 
 ### Implementation for User Story 3
 
-- [ ] T015 [P] [US3] `src/components/preview/SpreadsheetGrid.tsx` においてフリーズペイン（Freeze Panes）スタイル（`sticky top-0 z-20`, `sticky left-0 z-10`, `sticky left-0 top-0 z-30`）を適用し、縦横両スクロールコンテナを整備（[contracts/spreadsheet-grid-layout.md](file:///Users/soakaye/Develop/Projects/workspaces/exgrep/fixui/specs/005-ui-adjustments/contracts/spreadsheet-grid-layout.md) 準拠）
-- [ ] T016 [P] [US3] `src/components/preview/SpreadsheetGrid.tsx` および `src/components/preview/FormulaBar.tsx` においてスクロール中のセルクリック・選択状態・番地/数式連動表示を維持
-- [ ] T017 [US3] `design/mainui/index.html` においてプレビューグリッドのサンプル行を30行以上（行8〜40）に拡充し、フリーズペイン固定見出しおよびスクロール動作を1:1同期
-- [ ] T018 [US3] [quickstart.md](file:///Users/soakaye/Develop/Projects/workspaces/exgrep/fixui/specs/005-ui-adjustments/quickstart.md) のシナリオ5に基づき、30行以上の縦横スクロールと固定見出しの挙動を手動検証
+- [X] T015 [P] [US3] `src/components/preview/SpreadsheetGrid.tsx` においてフリーズペイン（Freeze Panes）スタイル（`sticky top-0 z-20`, `sticky left-0 z-10`, `sticky left-0 top-0 z-30`）を適用し、縦横両スクロールコンテナを整備（[contracts/spreadsheet-grid-layout.md](file:///Users/soakaye/Develop/Projects/workspaces/exgrep/fixui/specs/005-ui-adjustments/contracts/spreadsheet-grid-layout.md) 準拠）
+- [X] T016 [P] [US3] `src/components/preview/SpreadsheetGrid.tsx` および `src/components/preview/FormulaBar.tsx` においてスクロール中のセルクリック・選択状態・番地/数式連動表示を維持
+- [X] T017 [US3] `design/mainui/index.html` においてプレビューグリッドのサンプル行を30行以上（行8〜40）に拡充し、フリーズペイン固定見出しおよびスクロール動作を1:1同期
+- [X] T018 [US3] [quickstart.md](file:///Users/soakaye/Develop/Projects/workspaces/exgrep/fixui/specs/005-ui-adjustments/quickstart.md) のシナリオ5に基づき、30行以上の縦横スクロールと固定見出しの挙動を手動検証
 
 **Checkpoint**: 縦横双方向スクロールと固定見出しが完全動作し、大規模データでも見出しを見失わずにプレビュー可能
 
@@ -113,10 +113,10 @@ description: "Task list for UI adjustments feature implementation"
 
 **Purpose**: コード品質、憲章準拠、モック同期（Iron Law）、および自動テストの総合検証
 
-- [ ] T019 [P] `design/mainui/index.html` の構文およびDOM整合性を `python3 -c "import html.parser; ..."` で自動検証
-- [ ] T020 [P] TypeScript型チェックおよびViteビルド（`npm run build`）、Rustバックエンドテスト（`cargo test --manifest-path src-tauri/Cargo.toml`）を実行してエラーゼロを確認
-- [ ] T021 [quickstart.md](file:///Users/soakaye/Develop/Projects/workspaces/exgrep/fixui/specs/005-ui-adjustments/quickstart.md) に記載の全5シナリオのエンドツーエンド総合検証を実施
-- [ ] T022 変更対象ファイル（`SearchBar.tsx`, `StatusBar.tsx`, `SpreadsheetGrid.tsx`, `index.html`）のヘッダコメント（目的・構成・例外・変更履歴）が憲章原則IIIに準拠していることを監査
+- [X] T019 [P] `design/mainui/index.html` の構文およびDOM整合性を `python3 -c "import html.parser; ..."` で自動検証
+- [X] T020 [P] TypeScript型チェックおよびViteビルド（`npm run build`）、Rustバックエンドテスト（`cargo test --manifest-path src-tauri/Cargo.toml`）を実行してエラーゼロを確認
+- [X] T021 [quickstart.md](file:///Users/soakaye/Develop/Projects/workspaces/exgrep/fixui/specs/005-ui-adjustments/quickstart.md) に記載の全5シナリオのエンドツーエンド総合検証を実施
+- [X] T022 変更対象ファイル（`SearchBar.tsx`, `StatusBar.tsx`, `SpreadsheetGrid.tsx`, `index.html`）のヘッダコメント（目的・構成・例外・変更履歴）が憲章原則IIIに準拠していることを監査
 
 ---
 

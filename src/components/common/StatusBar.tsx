@@ -17,7 +17,7 @@ import { FileText, FileSpreadsheet } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { ScanProgress, SearchMatch, ExportRequest } from "../../types/search";
-import { COMMANDS } from "../../constants";
+import { COMMANDS, UI_MESSAGES } from "../../constants";
 
 interface StatusBarProps {
   progress: ScanProgress | null;
@@ -103,21 +103,23 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
   const statusText = (() => {
     if (!progress) {
-      return "検索待機中";
+      // 定数参照: UI_MESSAGES.STATUS_IDLE
+      return UI_MESSAGES.STATUS_IDLE;
     }
     const elapsedSec = (progress.elapsed_ms / 1000).toFixed(2);
     switch (progress.state) {
       case "Scanning":
         if (progress.scanned_files === 0) {
-          return `フォルダスキャン中: ${progress.current_file || "対象フォルダを探索しています..."}`;
+          // 定数参照: UI_MESSAGES.FOLDER_SCANNING_PREFIX / FOLDER_SEARCHING_DEFAULT
+          return `${UI_MESSAGES.FOLDER_SCANNING_PREFIX}${progress.current_file || UI_MESSAGES.FOLDER_SEARCHING_DEFAULT}`;
         }
         return `スキャン中: ${progress.scanned_files}/${progress.total_files} ファイル (${progress.matches_found} 件一致, ${elapsedSec}s) - ${progress.current_file}`;
       case "Completed":
         return `完了: ${progress.matches_found} 件一致 (${progress.scanned_files} ファイル, ${elapsedSec}s)`;
       case "Cancelled":
-        return `検索中断: ${progress.matches_found} 件一致 (${progress.scanned_files} ファイル走査済)`;
+        return `${UI_MESSAGES.CANCELLED}: ${progress.matches_found} 件一致 (${progress.scanned_files} ファイル走査済)`;
       case "Error":
-        return "エラーが発生しました";
+        return `${UI_MESSAGES.ERROR}が発生しました`;
     }
   })();
 
@@ -159,10 +161,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           </div>
           <span className="text-[11px] text-zinc-400 font-mono flex-shrink-0">
             {isScanning && progress?.scanned_files === 0
-              ? "探索中"
+              ? UI_MESSAGES.SEARCHING_DIR
               : progress
               ? `${percent}% (${progress.scanned_files}/${progress.total_files})`
-              : "待機中"}
+              : UI_MESSAGES.STATUS_WAITING}
           </span>
         </div>
 

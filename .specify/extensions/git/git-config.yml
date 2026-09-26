@@ -67,7 +67,7 @@ auto_commit:
     message: "[Spec Kit] Add tasks and specifications for UI adjustments (005-ui-adjustments)"
   after_implement:
     enabled: true
-    message: "[Spec Kit] Align codebase with project constitution (憲章準拠のプログラム改修)"
+    message: "[Spec Kit] Implement UI adjustments (005-ui-adjustments)"
   after_checklist:
     enabled: false
     message: "[Spec Kit] Add checklist"

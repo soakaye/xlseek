@@ -10,6 +10,7 @@
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定。全定数の集約とJSDocドキュメンテーションの付与。
  * - v1.1.0 (2026-09-26, AI Agent): UI文言・レイアウト・スクロール寸法の定数を拡充。
  * - v1.2.0 (2026-09-26, AI Agent): 拡張子トグル選択機能のUI文言定数を追加。
+ * - v1.3.0 (2026-09-26, AI Agent): 探索中表示、フォルダスキャン、待機中等のUI文言定数を拡充。
  */
 
 // ==============================================================================
@@ -83,6 +84,13 @@ export const FILE_EXTENSIONS = {
 export const UI_MESSAGES = {
   APP_TITLE: "Excel Grep",
   SEARCHING: "検索中...",
+  SEARCHING_DIR: "探索中",
+  STATUS_IDLE: "検索待機中",
+  STATUS_WAITING: "待機中",
+  STATUS_SCAN_PREPARING: "スキャン開始準備中...",
+  FOLDER_SCANNING_PREFIX: "フォルダスキャン中: ",
+  FOLDER_SEARCHING_DEFAULT: "対象フォルダを探索しています...",
+  SCAN_CANCELLED_MSG: "スキャンが中断されました",
   COMPLETED: "検索完了",
   CANCELLED: "検索中断",
   ERROR: "エラー",

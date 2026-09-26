@@ -10,6 +10,7 @@
  * ## 変更履歴
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化および4要素JSDocコメントの付与。
  * - v1.2.0 (2026-09-26, AI Agent): 検索対象拡張子の空チェックバリデーションを追加。
+ * - v1.3.0 (2026-09-26, AI Agent): 探索中フェーズおよび中断メッセージの定数参照化。
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -259,12 +260,13 @@ export function useSearch(options?: UseSearchOptions) {
     setSelectedCell(null);
     setFormulaOrValue("");
 
+    // 定数参照: UI_MESSAGES.STATUS_SCAN_PREPARING を使用
     setProgress({
       state: "Scanning",
       scanned_files: 0,
       total_files: 0,
       matches_found: 0,
-      current_file: "スキャン開始準備中...",
+      current_file: UI_MESSAGES.STATUS_SCAN_PREPARING,
       elapsed_ms: 0,
     });
 
@@ -293,19 +295,20 @@ export function useSearch(options?: UseSearchOptions) {
       isCancellingRef.current = true;
 
       // ユーザーへの即時フィードバック: 中断状態へ切り替えてボタンを即座にSEARCHに戻す
+      // 定数参照: UI_MESSAGES.SCAN_CANCELLED_MSG を使用
       setProgress((prev) =>
         prev
           ? {
               ...prev,
               state: "Cancelled",
-              current_file: "スキャンが中断されました",
+              current_file: UI_MESSAGES.SCAN_CANCELLED_MSG,
             }
           : {
               state: "Cancelled",
               scanned_files: 0,
               total_files: 0,
               matches_found: 0,
-              current_file: "スキャンが中断されました",
+              current_file: UI_MESSAGES.SCAN_CANCELLED_MSG,
               elapsed_ms: 0,
             }
       );
