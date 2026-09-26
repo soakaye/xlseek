@@ -1,12 +1,12 @@
 [package]
-name = "exgrep"
+name = "exlgrep"
 version = "0.1.0"
 description = "Super fast Excel Grep Desktop Application"
 authors = ["you"]
 edition = "2021"
 
 [lib]
-name = "exgrep_lib"
+name = "exlgrep_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

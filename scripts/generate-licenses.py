@@ -244,7 +244,7 @@ def collect_rust_licenses(repo_root: Path) -> List[Dict[str, Any]]:
         name = pkg.get("name", "")
         version = pkg.get("version", "")
         # ルートクレート自身は除外
-        if name == "exgrep":
+        if name in ("exgrep", "exlgrep"):
             continue
 
         license_spdx = pkg.get("license") or "MIT OR Apache-2.0"
@@ -305,7 +305,7 @@ def collect_npm_licenses(repo_root: Path) -> List[Dict[str, Any]]:
 
     for key, val in data.items():
         # key 形式: "name@version" または "@scope/name@version"
-        if key.startswith("exgrep@"):
+        if key.startswith("exgrep@") or key.startswith("exlgrep@"):
             continue
 
         # 最後の '@' で分割して name と version を分離

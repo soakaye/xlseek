@@ -6,6 +6,9 @@
 //!
 //! ## 変更履歴
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。憲章原則III準拠ヘッダコメントの付与。
+//! - v1.0.1 (2026-09-26, AI Agent): クレート名変更 (exgrep -> exlgrep) に伴いコアライブラリ参照を exlgrep_lib に更新。
+//!
+//! コアライブラリ `exlgrep_lib::run()` を呼び出してGUIイベントループを開始する。
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -24,5 +27,5 @@
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
 fn main() {
-    exgrep_lib::run();
+    exlgrep_lib::run();
 }

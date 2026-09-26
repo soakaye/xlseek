@@ -43,7 +43,7 @@ Rust と Tauri で構築された、超高速かつ軽量な **MS-Excel 専用 G
 ## 📂 プロジェクト構成 (Directory Structure)
 
 ```text
-exgrep/
+exlgrep/
 ├── src/                # フロントエンドソースコード (UI / 状態管理)
 │   ├── assets/         # アイコン・静的ファイル
 │   ├── components/     # UI コンポーネント (検索フォーム, 結果テーブル, プレビュー等)
@@ -74,7 +74,7 @@ exgrep/
 1. **リポジトリのクローン**
    ```bash
    git clone <リポジトリURL>
-   cd exgrep
+   cd exlgrep
    ```
 
 2. **フロントエンド依存パッケージのインストール**
