@@ -1,28 +1,16 @@
-<!--
-# Sync Impact Report
-- Version change: Unversioned (Initial draft) → 1.0.0
-- List of modified principles:
-  - [PRINCIPLE_1_NAME] → I. 自然かつ正確な日本語出力（Japanese-First & Quality）
-  - [PRINCIPLE_2_NAME] → II. 定数の外部抽出とハードコードの禁止（No Hardcoded Constants）
-  - [PRINCIPLE_3_NAME] → III. 厳格なヘッダコメントとドキュメンテーション（Comprehensive Header Comments）
-  - [PRINCIPLE_4_NAME] → IV. 責務に応じたモジュール分割と標準スタイル準拠（Modular Design & Code Standards）
-  - [PRINCIPLE_5_NAME] → V. 堅牢なエラーハンドリングとテスト検証（Robust Error Handling & Testing）
-- Added sections:
-  - 技術制約および品質基準（Technical Constraints & Quality Standards）
-  - 開発ワークフローと品質ゲート（Development Workflow & Quality Gates）
-- Removed sections:
-  - None
-- Follow-up TODOs:
-  - None
--->
-
 # Excel Grep Constitution
 
 ## Core Principles
 
-### I. 自然かつ正確な日本語出力（Japanese-First & Quality）
-AIエージェントのすべての出力、ユーザーへの回答、および生成ドキュメントは自然かつ正確な日本語で作成しなければならない（MUST）。英語などの他言語テキストを扱う場合、利用者に提示する内容は自然な日本語へ翻訳しなければならない（MUST）。成果物を提出する前に、文字化けや `<PAD>`、`<pad>` 等の不要または不明な特殊トークンが含まれていないことを検証し、検出時は自然な日本語へ補正しなければならない（MUST）。
-- **根拠**: 日本語を主要言語とする利用環境において、誤訳や不自然な表現、不要トークン混入による混乱・誤動作を防ぎ、成果物の信頼性とユーザー体験を最高水準に保つため。
+### I. 指定言語の優先と自然な出力（Language-Directed Quality）
+ユーザーへの回答、生成ドキュメント、製品の画面文言、エラーメッセージ、およびログは、
+利用者の指示または承認済みの仕様で言語が明示されている場合、その言語で作成しなければならない（MUST）。
+言語が明示されていないユーザーへの回答と生成ドキュメントは、自然かつ正確な日本語で作成しなければならない（MUST）。
+指定言語が日本語以外の場合、日本語への翻訳を強制してはならない（MUST NOT）。
+成果物を提出する前に、文字化けや `<PAD>`、`<pad>` 等の不要または不明な特殊トークンが含まれていないことを検査し、
+検出時は指定言語に合う自然な表現へ補正しなければならない（MUST）。
+- **根拠**: 日本語を既定とする開発体験を維持しつつ、英語表示や英語ログなど明示された要件を守り、
+  誤訳や不要トークンによる混乱を防ぐため。
 
 ### II. 定数の外部抽出とハードコードの禁止（No Hardcoded Constants）
 `0` と空文字列（`""`）を除き、定数値（数値、マジックナンバー、固定文字列等）をコードへ直接ハードコードしてはならない（MUST NOT）。すべての定数値は `src/constants.rs` 等の定数定義ファイルへ抽出し、利用箇所には該当定数を参照している旨のコメントを明記しなければならない（MUST）。自動生成されたコードであっても、同様に定数抽出および定数参照コメントを適用しなければならない（MUST）。
@@ -88,4 +76,4 @@ AIエージェントのすべての出力、ユーザーへの回答、および
   - **PATCH**: 文言の明確化、表記ゆれ・タイポの修正、意味を変えない説明の補足
 - **実行時ガイダンス**: 開発および仕様策定時には `.specify/` 配下の仕様ファイルおよび本憲章を常時参照し、プロジェクト全体の一貫性を維持しなければならない（MUST）。
 
-**Version**: 1.0.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-25
+**Version**: 2.0.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-26
