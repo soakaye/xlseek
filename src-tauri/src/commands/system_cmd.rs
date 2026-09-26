@@ -8,6 +8,7 @@
 //!
 //! ## 変更履歴
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。Clippy指摘修正（sort_by_key）、定数参照化、4要素ヘッダコメント付与。
+//! - v1.0.1 (2026-09-27, AI Agent): 変数名修正（ext_normalized）、spawn_blocking の戻り値アノテーション補完、Clippy（manual-strip）対応。
 
 use crate::models::{CommandError, SupportedApp};
 use std::path::Path;
@@ -74,7 +75,7 @@ pub async fn get_supported_apps(
     tauri::async_runtime::spawn_blocking(move || -> Result<Vec<SupportedApp>, String> {
         // 定数参照: crate::constants::EXT_XLSX を使用
         let ext = extension.unwrap_or_else(|| crate::constants::EXT_XLSX.to_string());
-        let _ext_normalized = if ext.starts_with('.') {
+        let ext_normalized = if ext.starts_with('.') {
             ext
         } else {
             format!(".{}", ext)
@@ -367,7 +368,7 @@ pub async fn show_open_with_dialog(
     #[cfg(target_os = "windows")]
     {
         let _ = app;
-        tauri::async_runtime::spawn_blocking(move || {
+        tauri::async_runtime::spawn_blocking(move || -> Result<(), String> {
             std::process::Command::new("rundll32.exe")
                 .args(["shell32.dll,OpenAs_RunDLL", &file_path])
                 .spawn()
@@ -437,8 +438,7 @@ pub async fn show_open_with_dialog(
 #[cfg(target_os = "windows")]
 fn parse_command_to_exe(cmd_str: &str) -> Option<(std::path::PathBuf, String)> {
     let trimmed = cmd_str.trim();
-    let exe_path_str = if trimmed.starts_with('"') {
-        let after_first = &trimmed[1..];
+    let exe_path_str = if let Some(after_first) = trimmed.strip_prefix('"') {
         if let Some(end_idx) = after_first.find('"') {
             &after_first[..end_idx]
         } else {

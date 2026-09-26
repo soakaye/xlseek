@@ -18,6 +18,7 @@ pub mod search;
 use commands::AppState;
 use search::engine::SearchEngine;
 use std::sync::Arc;
+#[cfg(target_os = "macos")]
 use tauri_plugin_i18n::PluginI18nExt;
 
 /// ## 処理内容
@@ -167,6 +168,7 @@ fn create_app_menu<R: tauri::Runtime>(
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
 /// - v1.1.0 (2026-09-26, AI Agent): カスタムAboutメニューの登録とメニューイベントハンドラ (on_menu_event) の追加。
+/// - v1.1.1 (2026-09-27, AI Agent): non-macOS向けに PluginI18nExt の import をスコープ化、setup クロージャの unused variable を解消。
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let engine = Arc::new(SearchEngine::new());
@@ -176,11 +178,11 @@ pub fn run() {
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_i18n::init(None))
-        .setup(|app| {
+        .setup(|_app| {
             #[cfg(target_os = "macos")]
             {
-                let menu = create_app_menu(app.handle(), "en")?;
-                app.set_menu(menu)?;
+                let menu = create_app_menu(_app.handle(), "en")?;
+                _app.set_menu(menu)?;
             }
             Ok(())
         })
