@@ -125,10 +125,12 @@ impl SearchEngine {
     /// ## 処理内容
     /// 対象ディレクトリ配下を再帰的に走査し、指定拡張子に合致するファイルパス一覧を収集する。
     /// Excelの一時ファイル（~$で始まるロックファイル等）は除外する。
+    /// 中断フラグが指定された場合は、反復ごとに中断状態を検査し、中断時は直ちに走査を打ち切る。
     ///
     /// ## 引数
     /// - `target_dir`: `&str` - 探索対象ディレクトリパス
     /// - `extensions`: `&[String]` - 検索対象とする拡張子一覧（ドット付き）
+    /// - `cancel_flag`: `Option<&AtomicBool>` - 中断指示を監視するアトミックフラグ（None時は中断検査なし）
     ///
     /// ## 戻り値
     /// - `Vec<PathBuf>`: 収集されたファイルパス一覧
@@ -138,7 +140,12 @@ impl SearchEngine {
     ///
     /// ## 変更履歴
     /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
-    pub fn collect_files(target_dir: &str, extensions: &[String]) -> Vec<PathBuf> {
+    /// - v1.1.0 (2026-09-26, AI Agent): cancel_flag による即時中断対応。
+    pub fn collect_files(
+        target_dir: &str,
+        extensions: &[String],
+        cancel_flag: Option<&AtomicBool>,
+    ) -> Vec<PathBuf> {
         let mut files = Vec::new();
         let exts_lower: Vec<String> = extensions.iter().map(|e| e.to_lowercase()).collect();
 
@@ -147,6 +154,12 @@ impl SearchEngine {
             .into_iter()
             .filter_map(|e| e.ok())
         {
+            if let Some(flag) = cancel_flag {
+                if flag.load(Ordering::Relaxed) {
+                    break;
+                }
+            }
+
             if entry.file_type().is_file() {
                 let path = entry.path();
                 // 一時ファイル（~$で始まるExcelロックファイル等）は除外
@@ -170,7 +183,8 @@ impl SearchEngine {
     }
 
     /// ## 処理内容
-    /// 指定された検索クエリに基づき、マルチスレッド並列処理でExcelブックをパース・走査する。
+    /// 指定された検索クエリに基づき、有界同期チャネルを用いたプロデューサー・コンシューマー・パイプライン並行処理で
+    /// Excelブックの検出とセル走査を同時並行で実行する。
     /// 一致セルが見つかるごとにコールバックを実行し、進捗状況を一定間隔（50ms以上）で通知する。
     ///
     /// ## 引数
@@ -187,6 +201,7 @@ impl SearchEngine {
     ///
     /// ## 変更履歴
     /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化および日本語メッセージ統合。
+    /// - v1.1.0 (2026-09-26, AI Agent): 有界同期チャネルによるパイプライン並行化および高速キャンセル対応。
     pub fn execute_search<FMatch, FProgress>(
         &self,
         query: SearchQuery,
@@ -225,23 +240,21 @@ impl SearchEngine {
             ));
         }
 
-        // ファイルリスト収集
-        let file_list = Self::collect_files(&query.target_dir, &query.extensions);
-        let total_files = file_list.len();
-
         let scanned_count = Arc::new(AtomicUsize::new(0));
         let match_count = Arc::new(AtomicUsize::new(0));
+        let discovered_count = Arc::new(AtomicUsize::new(0));
+        let scan_completed = Arc::new(AtomicBool::new(false));
 
         let on_match = Arc::new(std::sync::Mutex::new(on_match));
         let on_progress = Arc::new(std::sync::Mutex::new(on_progress));
 
-        // 初期進捗送信
+        // 初期進捗送信 (スキャン未確定時は total_files: 0)
         if let Ok(mut prog) = on_progress.lock() {
             // 定数参照: crate::constants::MSG_SCAN_STARTING を使用
             prog(ScanProgress {
                 state: ScanState::Scanning,
                 scanned_files: 0,
-                total_files,
+                total_files: 0,
                 matches_found: 0,
                 current_file: crate::constants::MSG_SCAN_STARTING.to_string(),
                 elapsed_ms: 0,
@@ -258,82 +271,164 @@ impl SearchEngine {
 
         let last_notify_ms = Arc::new(std::sync::atomic::AtomicU64::new(0));
 
-        // rayon によるマルチスレッド並列走査
-        file_list.par_iter().for_each(|file_path| {
-            if cancel_flag.load(Ordering::Relaxed) {
-                return;
-            }
+        // 定数参照: crate::constants::CHANNEL_BUFFER_SIZE を使用
+        let (tx, rx) =
+            std::sync::mpsc::sync_channel::<PathBuf>(crate::constants::CHANNEL_BUFFER_SIZE);
+        let rx = Arc::new(std::sync::Mutex::new(rx));
 
-            let file_name = file_path
-                .file_name()
-                .map(|f| f.to_string_lossy().to_string())
-                .unwrap_or_default();
+        // プロデューサー: ディレクトリスキャンを別スレッドで並行実行
+        let target_dir = query.target_dir.clone();
+        let extensions = query.extensions.clone();
+        let cancel_flag_scanner = Arc::clone(&cancel_flag);
+        let discovered_count_clone = Arc::clone(&discovered_count);
+        let scan_completed_clone = Arc::clone(&scan_completed);
 
-            // Excelファイルパース (破損ファイルやcalamineパニックは安全にスキップして全体を停止させない)
-            let cancel_flag_ref = Arc::clone(&cancel_flag);
-            let parse_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                parse_and_search_file(
-                    file_path,
-                    &query,
-                    regex_obj.as_ref(),
-                    Some(&cancel_flag_ref),
-                )
-            }));
+        let scanner_handle = std::thread::spawn(move || {
+            let exts_lower: Vec<String> = extensions.iter().map(|e| e.to_lowercase()).collect();
 
-            if cancel_flag.load(Ordering::Relaxed) {
-                return;
-            }
+            for entry in WalkDir::new(&target_dir)
+                .follow_links(false)
+                .into_iter()
+                .filter_map(|e| e.ok())
+            {
+                if cancel_flag_scanner.load(Ordering::Relaxed) {
+                    break;
+                }
 
-            match parse_result {
-                Ok(Ok(matches)) => {
-                    let m_count = matches.len();
-                    if m_count > 0 {
-                        match_count.fetch_add(m_count, Ordering::Relaxed);
-                        if let Ok(mut match_cb) = on_match.lock() {
-                            for m in matches {
-                                match_cb(m);
+                if entry.file_type().is_file() {
+                    let path = entry.path();
+                    // 一時ファイル（~$で始まるExcelロックファイル等）は除外
+                    if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
+                        // 定数参照: crate::constants::EXCEL_TEMP_FILE_PREFIX を使用
+                        if file_name.starts_with(crate::constants::EXCEL_TEMP_FILE_PREFIX) {
+                            continue;
+                        }
+                    }
+
+                    if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
+                        let ext_with_dot = format!(".{}", ext.to_lowercase());
+                        if exts_lower.contains(&ext_with_dot) {
+                            discovered_count_clone.fetch_add(1, Ordering::Relaxed);
+                            if tx.send(path.to_path_buf()).is_err() {
+                                // 受信側がクローズされた（中断または完了）ため脱出
+                                break;
                             }
                         }
                     }
                 }
-                Ok(Err(_err_msg)) => {
-                    // 破損・読み込み不可ファイルはスキップして継続
-                }
-                Err(_) => {
-                    // calamine 内部などのパニックから安全に回復
-                }
             }
 
-            let scanned = scanned_count.fetch_add(1, Ordering::Relaxed) + 1;
-            let current_matches = match_count.load(Ordering::Relaxed);
-            let elapsed = start_time.elapsed().as_millis() as u64;
-
-            // 中断要求後は Scanning 状態の進捗通知を送信しない
-            if cancel_flag.load(Ordering::Relaxed) {
-                return;
+            if !cancel_flag_scanner.load(Ordering::Relaxed) {
+                scan_completed_clone.store(true, Ordering::Relaxed);
             }
+            // tx はここでドロップされ、受信側チャネルがクローズされる
+        });
 
-            // 1件目、全完了、または前回通知から50ms以上経過した時に進捗通知
-            let last = last_notify_ms.load(Ordering::Relaxed);
-            // 定数参照: crate::constants::PROGRESS_NOTIFY_INTERVAL_MS を使用
-            let should_notify = scanned == 1
-                || scanned == total_files
-                || (elapsed.saturating_sub(last) >= crate::constants::PROGRESS_NOTIFY_INTERVAL_MS);
+        // コンシューマー: rayon によるマルチスレッド並列処理で受信パスを即時走査
+        let num_threads = rayon::current_num_threads();
+        (0..num_threads).into_par_iter().for_each(|_| {
+            loop {
+                if cancel_flag.load(Ordering::Relaxed) {
+                    break;
+                }
 
-            if should_notify {
-                last_notify_ms.store(elapsed, Ordering::Relaxed);
-                if let Ok(mut prog_cb) = on_progress.lock() {
-                    prog_cb(ScanProgress {
-                        state: ScanState::Scanning,
-                        scanned_files: scanned,
-                        total_files,
-                        matches_found: current_matches,
-                        current_file: file_name,
-                        elapsed_ms: elapsed,
-                    });
+                let file_path = {
+                    let Ok(rx_guard) = rx.lock() else {
+                        break;
+                    };
+                    match rx_guard.recv() {
+                        Ok(p) => p,
+                        Err(_) => break, // 全パス取得完了かつキュー消化完了
+                    }
+                };
+
+                if cancel_flag.load(Ordering::Relaxed) {
+                    break;
+                }
+
+                let file_name = file_path
+                    .file_name()
+                    .map(|f| f.to_string_lossy().to_string())
+                    .unwrap_or_default();
+
+                // Excelファイルパース (破損ファイルやcalamineパニックは安全にスキップして全体を停止させない)
+                let cancel_flag_ref = Arc::clone(&cancel_flag);
+                let parse_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    parse_and_search_file(
+                        &file_path,
+                        &query,
+                        regex_obj.as_ref(),
+                        Some(&cancel_flag_ref),
+                    )
+                }));
+
+                if cancel_flag.load(Ordering::Relaxed) {
+                    break;
+                }
+
+                match parse_result {
+                    Ok(Ok(matches)) => {
+                        let m_count = matches.len();
+                        if m_count > 0 {
+                            match_count.fetch_add(m_count, Ordering::Relaxed);
+                            if let Ok(mut match_cb) = on_match.lock() {
+                                for m in matches {
+                                    match_cb(m);
+                                }
+                            }
+                        }
+                    }
+                    Ok(Err(_err_msg)) => {
+                        // 破損・読み込み不可ファイルはスキップして継続
+                    }
+                    Err(_) => {
+                        // calamine 内部などのパニックから安全に回復
+                    }
+                }
+
+                let scanned = scanned_count.fetch_add(1, Ordering::Relaxed) + 1;
+                let current_matches = match_count.load(Ordering::Relaxed);
+                let elapsed = start_time.elapsed().as_millis() as u64;
+
+                // 中断要求後は Scanning 状態の進捗通知を送信しない
+                if cancel_flag.load(Ordering::Relaxed) {
+                    break;
+                }
+
+                // スキャン完了前は total_files = 0, 完了後は確定件数
+                let is_scan_done = scan_completed.load(Ordering::Relaxed);
+                let current_total = if is_scan_done {
+                    discovered_count.load(Ordering::Relaxed)
+                } else {
+                    0
+                };
+
+                // 1件目、全完了、または前回通知から50ms以上経過した時に進捗通知
+                let last = last_notify_ms.load(Ordering::Relaxed);
+                // 定数参照: crate::constants::PROGRESS_NOTIFY_INTERVAL_MS を使用
+                let should_notify = scanned == 1
+                    || (is_scan_done && scanned == current_total)
+                    || (elapsed.saturating_sub(last)
+                        >= crate::constants::PROGRESS_NOTIFY_INTERVAL_MS);
+
+                if should_notify {
+                    last_notify_ms.store(elapsed, Ordering::Relaxed);
+                    if let Ok(mut prog_cb) = on_progress.lock() {
+                        prog_cb(ScanProgress {
+                            state: ScanState::Scanning,
+                            scanned_files: scanned,
+                            total_files: current_total,
+                            matches_found: current_matches,
+                            current_file: file_name,
+                            elapsed_ms: elapsed,
+                        });
+                    }
                 }
             }
         });
+
+        // スキャナースレッドの終了待機
+        let _ = scanner_handle.join();
 
         let is_cancelled = cancel_flag.load(Ordering::Relaxed);
         let final_state = if is_cancelled {
@@ -341,12 +436,13 @@ impl SearchEngine {
         } else {
             ScanState::Completed
         };
+        let final_total = discovered_count.load(Ordering::Relaxed);
 
         // 定数参照: crate::constants::MSG_SCAN_CANCELLED, MSG_SCAN_COMPLETED を使用
         let final_progress = ScanProgress {
             state: final_state,
             scanned_files: scanned_count.load(Ordering::Relaxed),
-            total_files,
+            total_files: final_total,
             matches_found: match_count.load(Ordering::Relaxed),
             current_file: if is_cancelled {
                 crate::constants::MSG_SCAN_CANCELLED.to_string()
@@ -555,6 +651,170 @@ mod tests {
                 engine_clone.cancel();
             },
             |_| {},
+        );
+
+        assert!(result.is_ok());
+        let final_prog = result.unwrap();
+        assert_eq!(final_prog.state, ScanState::Cancelled);
+    }
+
+    /// ## 処理内容
+    /// collect_files において、中断フラグが true に設定された際に
+    /// 直ちに走査が打ち切られて空または最小限のファイル一覧が返却されることを検証する。
+    ///
+    /// ## 引数
+    /// なし
+    ///
+    /// ## 戻り値
+    /// なし
+    ///
+    /// ## エラー / 例外発生条件
+    /// アサーション失敗時にpanic
+    ///
+    /// ## 変更履歴
+    /// - v1.1.0 (2026-09-26, AI Agent): 初版策定。
+    #[test]
+    fn test_collect_files_cancellation() {
+        let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("tests")
+            .join("fixtures");
+
+        assert!(
+            fixtures_dir.exists(),
+            "Fixtures dir should exist: {:?}",
+            fixtures_dir
+        );
+
+        let extensions = vec![".xlsx".to_string()];
+
+        // 1. キャンセルフラグなし (None): ファイルが収集されること
+        let all_files =
+            SearchEngine::collect_files(fixtures_dir.to_str().unwrap(), &extensions, None);
+        assert!(!all_files.is_empty(), "Fixtures files should be collected");
+
+        // 2. 開始時点で既にキャンセルされている場合: 直ちに打ち切られて0件であること
+        let cancelled_flag = AtomicBool::new(true);
+        let cancelled_files = SearchEngine::collect_files(
+            fixtures_dir.to_str().unwrap(),
+            &extensions,
+            Some(&cancelled_flag),
+        );
+        assert_eq!(
+            cancelled_files.len(),
+            0,
+            "When cancelled at start, collected files must be empty"
+        );
+    }
+
+    /// ## 処理内容
+    /// 有界同期チャネルを用いたパイプライン並行検索が正常に動作し、
+    /// 全ファイルの検出・解析が完了して整合性のある結果が返却されることを検証する。
+    ///
+    /// ## 引数
+    /// なし
+    ///
+    /// ## 戻り値
+    /// なし
+    ///
+    /// ## エラー / 例外発生条件
+    /// アサーション失敗時にpanic
+    ///
+    /// ## 変更履歴
+    /// - v1.1.0 (2026-09-26, AI Agent): 初版策定。
+    #[test]
+    fn test_search_engine_parallel_pipeline() {
+        let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("tests")
+            .join("fixtures");
+
+        let engine = SearchEngine::new();
+        let query = SearchQuery {
+            keyword: "Total".to_string(),
+            target_dir: fixtures_dir.to_str().unwrap().to_string(),
+            match_case: false,
+            use_regex: false,
+            include_formula: true,
+            include_comment: true,
+            include_hidden: false,
+            extensions: vec![".xlsx".to_string()],
+        };
+
+        let matches = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let matches_clone = Arc::clone(&matches);
+        let progress_events = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let progress_clone = Arc::clone(&progress_events);
+
+        let result = engine.execute_search(
+            query,
+            move |m| {
+                matches_clone.lock().unwrap().push(m);
+            },
+            move |p| {
+                progress_clone.lock().unwrap().push(p);
+            },
+        );
+
+        assert!(result.is_ok(), "Parallel pipeline search must succeed");
+        let final_prog = result.unwrap();
+        assert_eq!(final_prog.state, ScanState::Completed);
+        assert!(final_prog.total_files > 0);
+        assert_eq!(final_prog.scanned_files, final_prog.total_files);
+        assert_eq!(final_prog.matches_found, matches.lock().unwrap().len());
+
+        let events = progress_events.lock().unwrap();
+        assert!(!events.is_empty(), "Progress events should be emitted");
+        // 初期進捗イベントでは total_files が 0 であることを検証 (未確定状態)
+        assert_eq!(events[0].total_files, 0);
+    }
+
+    /// ## 処理内容
+    /// ディレクトリスキャン進行中の段階でキャンセル要求が発行された際、
+    /// 1秒未満で安全に走査・検索が停止し、最終状態が Cancelled となることを検証する。
+    ///
+    /// ## 引数
+    /// なし
+    ///
+    /// ## 戻り値
+    /// なし
+    ///
+    /// ## エラー / 例外発生条件
+    /// アサーション失敗時にpanic
+    ///
+    /// ## 変更履歴
+    /// - v1.1.0 (2026-09-26, AI Agent): 初版策定。
+    #[test]
+    fn test_search_engine_cancellation_during_scan() {
+        let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .parent()
+            .unwrap()
+            .join("tests")
+            .join("fixtures");
+
+        let engine = Arc::new(SearchEngine::new());
+        let engine_clone = Arc::clone(&engine);
+
+        let query = SearchQuery {
+            keyword: "a".to_string(),
+            target_dir: fixtures_dir.to_str().unwrap().to_string(),
+            match_case: false,
+            use_regex: false,
+            include_formula: true,
+            include_comment: true,
+            include_hidden: false,
+            extensions: vec![".xlsx".to_string()],
+        };
+
+        // 初期進捗通知を受け取った直後（スキャン開始直後）に即時キャンセル
+        let result = engine.execute_search(
+            query,
+            |_| {},
+            move |_p| {
+                engine_clone.cancel();
+            },
         );
 
         assert!(result.is_ok());

@@ -40,6 +40,7 @@
      * - v2.6.0 (2026-09-26, AI Agent): アプリ情報・オープンソースライセンス閲覧モーダル (About Dialog) を追加同期。
      *   ステータスバー最右端にInfoアイコンボタンを配置し、アプリ基本情報表示および左右2ペインの
      *   マスター／ディテールライセンス一覧（リアルタイム検索・ライセンス本文ワンクリックコピー）を完全シミュレート。
+     * - v2.7.0 (2026-09-26, AI Agent): 並行ファイル走査・即時検索パイプライン対応。ステータスバーにおける未確定時アニメーションパルスおよび検出・走査中ファイル数表示、進捗フェーズ遷移ロジックを同期。
      */
   -->
   <meta charset="UTF-8">
@@ -8473,6 +8474,7 @@
       const folderInput = document.getElementById("folderInput");
       let searchTimeout1 = null;
       let searchTimeout2 = null;
+      let searchTimeout3 = null;
 
       function startSearchSimulation() {
         if (isScanning) {
@@ -8480,13 +8482,15 @@
           isScanning = false;
           if (searchTimeout1) clearTimeout(searchTimeout1);
           if (searchTimeout2) clearTimeout(searchTimeout2);
+          if (searchTimeout3) clearTimeout(searchTimeout3);
           searchBtn.className = "w-full py-2 px-4 bg-excel hover:bg-excel-hover active:scale-[0.99] text-white font-semibold text-sm rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition";
           searchBtnText.textContent = "SEARCH";
           searchBtnIcon.setAttribute("data-lucide", "search");
           searchBtnIcon.classList.remove("fill-white");
           statusIndicatorDot.className = "w-2 h-2 rounded-full flex-shrink-0 bg-red-400";
           progressBarFill.className = "bg-zinc-600 h-full rounded-full transition-all duration-300";
-          progressPercentText.textContent = "中断";
+          progressBarFill.style.width = "40%";
+          progressPercentText.textContent = "検索中断";
           statusText.textContent = "検索中断: 3 件一致 (3 ファイル走査済)";
           statusText.title = statusText.textContent;
           showToast("検索を中断しました");
@@ -8506,30 +8510,40 @@
         searchBtnIcon.setAttribute("data-lucide", "square");
         searchBtnIcon.classList.add("fill-white");
 
-        // フェーズ1: フォルダスキャン中 (ファイル読み込み前の探索動作を明示)
+        // フェーズ1: フォルダ探索中 (ファイル読み込み前・未確定時: total_files: 0, scanned_files: 0)
         const targetDir = folderInput.value.trim() || "/Users/soakaye/Documents/Reports/Q3_Data/";
         statusIndicatorDot.className = "w-2 h-2 rounded-full flex-shrink-0 bg-amber-400 animate-pulse";
         progressBarFill.className = "bg-amber-500 h-full rounded-full animate-pulse transition-all duration-300";
         progressBarFill.style.width = "25%";
         progressPercentText.textContent = "探索中";
-        statusText.textContent = `フォルダスキャン中: ${targetDir} (対象ファイルを探索しています...)`;
+        statusText.textContent = `フォルダスキャン中: ${targetDir} (対象フォルダを探索しています...)`;
         statusText.title = statusText.textContent;
         lucide.createIcons();
 
-        // フェーズ2: ファイル解析・セル走査中 (350ms後)
+        // フェーズ2: 並行ファイル走査・即時検索中 (未確定時: total_files: 0, scanned_files > 0, 200ms後)
         searchTimeout1 = setTimeout(() => {
+          if (!isScanning) return;
+          progressBarFill.className = "bg-amber-500 h-full rounded-full animate-pulse transition-all duration-300";
+          progressBarFill.style.width = "25%";
+          progressPercentText.textContent = "検出・走査中 (3)";
+          statusText.textContent = "検出・走査中: 3 ファイル (2 件一致, 0.18s) - Financial_Q3.xlsx";
+          statusText.title = statusText.textContent;
+        }, 200);
+
+        // フェーズ3: ディレクトリ走査完了・確定進捗表示 (450ms後)
+        searchTimeout2 = setTimeout(() => {
           if (!isScanning) return;
           progressBarFill.className = "bg-excel h-full rounded-full transition-all duration-300";
           progressBarFill.style.width = "60%";
           const targetTotal = currentFilteredMatches.length;
           const midCount = Math.max(1, Math.round(targetTotal * 0.6));
           progressPercentText.textContent = `60% (${midCount}/${targetTotal})`;
-          statusText.textContent = `ファイル解析中: ${midCount}/${targetTotal} ファイル (${midCount} 件一致, 0.22s) - Auditing_2026.xlsm`;
+          statusText.textContent = `スキャン中: ${midCount}/${targetTotal} ファイル (${midCount} 件一致, 0.28s) - Auditing_2026.xlsm`;
           statusText.title = statusText.textContent;
-        }, 350);
+        }, 450);
 
-        // フェーズ3: 完了 (750ms後)
-        searchTimeout2 = setTimeout(() => {
+        // フェーズ4: 検索完了 (800ms後)
+        searchTimeout3 = setTimeout(() => {
           if (!isScanning) return;
           isScanning = false;
           searchBtn.className = "w-full py-2 px-4 bg-excel hover:bg-excel-hover active:scale-[0.99] text-white font-semibold text-sm rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition";
@@ -8545,7 +8559,7 @@
           statusText.title = statusText.textContent;
           showToast(`検索完了: ${matchedCount} 件がヒットしました (0.42秒)`);
           lucide.createIcons();
-        }, 750);
+        }, 800);
       }
 
       searchBtn.addEventListener("click", startSearchSimulation);

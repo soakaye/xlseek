@@ -3,7 +3,7 @@
 **Feature Branch**: `007-parallel-scan-search`  
 **Date**: 2026-09-26  
 **Spec**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md)  
-**Status**: Ready for Implementation  
+**Status**: Completed  
 
 ---
 
@@ -11,8 +11,8 @@
 
 **Purpose**: バックエンドおよびフロントエンドにおける定数定義の整備と一元管理
 
-- [ ] T001 [P] バックエンド定数の定義追加と単体テスト作成 in `src-tauri/src/constants.rs` (`CHANNEL_BUFFER_SIZE: usize = 1024`, `MSG_SCAN_DISCOVERING`, `MSG_FILES_DISCOVERING_PREFIX` 等の定数追加および単体テスト `test_pipeline_constants` の追加。憲章原則II, III準拠)
-- [ ] T002 [P] フロントエンド定数セットの追加 in `src/constants/index.ts` (`STATUS_DISCOVERING_FILES`, `STATUS_DISCOVERING_PREFIX` 等のUI定数定義を追加し、ハードコードを排除。憲章原則I, II準拠)
+- [X] T001 [P] バックエンド定数の定義追加と単体テスト作成 in `src-tauri/src/constants.rs` (`CHANNEL_BUFFER_SIZE: usize = 1024`, `MSG_SCAN_DISCOVERING`, `MSG_FILES_DISCOVERING_PREFIX` 等の定数追加および単体テスト `test_pipeline_constants` の追加。憲章原則II, III準拠)
+- [X] T002 [P] フロントエンド定数セットの追加 in `src/constants/index.ts` (`STATUS_DISCOVERING_FILES`, `STATUS_DISCOVERING_PREFIX` 等のUI定数定義を追加し、ハードコードを排除。憲章原則I, II準拠)
 
 ---
 
@@ -22,8 +22,8 @@
 
 **⚠️ CRITICAL**: ユーザーストーリーの実装開始前に本フェーズの共通基盤が完了している必要があります。
 
-- [ ] T003 `SearchEngine::collect_files` のシグネチャ拡張と即時中断ロジックの実装 in `src-tauri/src/search/engine.rs` (`cancel_flag: Option<&AtomicBool>` を引数に追加し、`WalkDir` 反復ループ内で毎エントリ `flag.load(Ordering::Relaxed)` を評価して `true` 時に即座に `break` する処理を追加。一時ファイル除外の維持。憲章原則III準拠の4要素ヘッダコメント更新)
-- [ ] T004 [P] `collect_files` のキャンセル即時中断単体テストの追加 in `src-tauri/src/search/engine.rs` (`test_collect_files_cancellation` を追加し、キャンセルフラグがセットされた際に直ちに走査が打ち切られることを検証)
+- [X] T003 `SearchEngine::collect_files` のシグネチャ拡張と即時中断ロジックの実装 in `src-tauri/src/search/engine.rs` (`cancel_flag: Option<&AtomicBool>` を引数に追加し、`WalkDir` 反復ループ内で毎エントリ `flag.load(Ordering::Relaxed)` を評価して `true` 時に即座に `break` する処理を追加。一時ファイル除外の維持。憲章原則III準拠の4要素ヘッダコメント更新)
+- [X] T004 [P] `collect_files` のキャンセル即時中断単体テストの追加 in `src-tauri/src/search/engine.rs` (`test_collect_files_cancellation` を追加し、キャンセルフラグがセットされた際に直ちに走査が打ち切られることを検証)
 
 **Checkpoint**: 共通基盤完了 - 各ユーザーストーリーの独立実装を開始可能
 
@@ -37,8 +37,8 @@
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] `SearchEngine::execute_search` へのプロデューサー・コンシューマー・パイプライン並行処理の実装 in `src-tauri/src/search/engine.rs` (`std::sync::mpsc::sync_channel(CHANNEL_BUFFER_SIZE)` を生成し、スキャナースレッドを起動して検出パスを順次送信。Rayon 並列ワーカー群が `Arc<Mutex<Receiver<PathBuf>>>` からパスを取得して即座に `parse_and_search_file` を実行。スキャン完了フラグ `scan_completed` と `total_discovered` の管理。憲章原則III準拠の4要素ヘッダコメント更新)
-- [ ] T006 [US1] パイプライン並行検索エンジンの単体テスト追加 in `src-tauri/src/search/engine.rs` (`test_search_engine_parallel_pipeline` を追加。検出と検索が並行動作し、全結果が欠損や重複なく正しく取得できることを検証)
+- [X] T005 [US1] `SearchEngine::execute_search` へのプロデューサー・コンシューマー・パイプライン並行処理の実装 in `src-tauri/src/search/engine.rs` (`std::sync::mpsc::sync_channel(CHANNEL_BUFFER_SIZE)` を生成し、スキャナースレッドを起動して検出パスを順次送信。Rayon 並列ワーカー群が `Arc<Mutex<Receiver<PathBuf>>>` からパスを取得して即座に `parse_and_search_file` を実行。スキャン完了フラグ `scan_completed` と `total_discovered` の管理。憲章原則III準拠の4要素ヘッダコメント更新)
+- [X] T006 [US1] パイプライン並行検索エンジンの単体テスト追加 in `src-tauri/src/search/engine.rs` (`test_search_engine_parallel_pipeline` を追加。検出と検索が並行動作し、全結果が欠損や重複なく正しく取得できることを検証)
 
 **Checkpoint**: User Story 1 が独立して機能し、MVPとしてテスト可能
 
@@ -52,8 +52,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T007 [US2] パイプライン並行処理におけるスキャナーおよびワーカーの即時中断協調の実装 in `src-tauri/src/search/engine.rs` (スキャナースレッドでのチャネル送信エラー時の即時脱出、ワーカー側での受信待機中キャンセル検知と早期終了、および `ScanState::Cancelled` 状態の正確な返却。憲章原則III準拠の4要素ヘッダコメント更新)
-- [ ] T008 [US2] ディレクトリスキャン進行中の即時中断単体テストの追加 in `src-tauri/src/search/engine.rs` (`test_search_engine_cancellation_during_scan` を追加。検索開始直後にキャンセルを発行し、即座に安全に停止して `ScanState::Cancelled` が返ることを検証)
+- [X] T007 [US2] パイプライン並行処理におけるスキャナーおよびワーカーの即時中断協調の実装 in `src-tauri/src/search/engine.rs` (スキャナースレッドでのチャネル送信エラー時の即時脱出、ワーカー側での受信待機中キャンセル検知と早期終了、および `ScanState::Cancelled` 状態の正確な返却。憲章原則III準拠の4要素ヘッダコメント更新)
+- [X] T008 [US2] ディレクトリスキャン進行中の即時中断単体テストの追加 in `src-tauri/src/search/engine.rs` (`test_search_engine_cancellation_during_scan` を追加。検索開始直後にキャンセルを発行し、即座に安全に停止して `ScanState::Cancelled` が返ることを検証)
 
 **Checkpoint**: User Story 1 と User Story 2 が共に独立して機能し、テスト可能
 
@@ -67,8 +67,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T009 [US3] バックエンドでの未確定時および確定時進捗イベント通知ロジックの実装 in `src-tauri/src/search/engine.rs` (`scan_completed` が `false` の間は `total_files: 0` を送信し、スキャン完了時に確定した総ファイル数で進捗通知を送信。最終完了通知の統合。憲章原則III準拠の4要素ヘッダコメント更新)
-- [ ] T010 [US3] ステータスバーUIでの未確定時アニメーション表示と確定時プログレスバー切り替えの実装 in `src/components/common/StatusBar.tsx` (`isScanning && (progress.total_files === 0 || progress.scanned_files === 0)` 時のパルスアニメーション表示、テキスト表示 `検出・走査中 (${progress.scanned_files} ファイル)` の追加、および確定後のパーセンテージ計算連携。定数参照化。憲章原則I, II, III準拠の4要素ヘッダコメント更新)
+- [X] T009 [US3] バックエンドでの未確定時および確定時進捗イベント通知ロジックの実装 in `src-tauri/src/search/engine.rs` (`scan_completed` が `false` の間は `total_files: 0` を送信し、スキャン完了時に確定した総ファイル数で進捗通知を送信。最終完了通知の統合。憲章原則III準拠の4要素ヘッダコメント更新)
+- [X] T010 [US3] ステータスバーUIでの未確定時アニメーション表示と確定時プログレスバー切り替えの実装 in `src/components/common/StatusBar.tsx` (`isScanning && (progress.total_files === 0 || progress.scanned_files === 0)` 時のパルスアニメーション表示、テキスト表示 `検出・走査中 (${progress.scanned_files} ファイル)` の追加、および確定後のパーセンテージ計算連携。定数参照化。憲章原則I, II, III準拠の4要素ヘッダコメント更新)
 
 **Checkpoint**: すべてのユーザーストーリー（US1, US2, US3）が完全に統合され機能する
 
@@ -78,9 +78,9 @@
 
 **Purpose**: スタンドアローンHTMLモック（`design/mainui/index.html`）との完全同期およびコード品質・静的解析の検証
 
-- [ ] T011 スタンドアローンHTMLプロトタイプへのステータスバー未確定時アニメーション・テキスト表示の完全同期 in `design/mainui/index.html` (スキル `syncing-mainui-mock`（Iron Law）に基づき、スキャン中の検出中パルス表示およびファイル数表示ロジックを同期実装)
-- [ ] T012 [P] クイックスタート検証ガイドの全シナリオ実行 in `specs/007-parallel-scan-search/quickstart.md` (単体テスト検証、大規模走査・TTFR検証、即時キャンセル検証、空フォルダ検証)
-- [ ] T013 [P] バックエンドおよびフロントエンドの品質ゲート検証 in `src-tauri/Cargo.toml`, `package.json` (`cargo test`, `cargo clippy --all-targets -- -D warnings`, `cargo fmt --check`, `npm run build` を実行し、全テストパスおよびエラー・警告ゼロを確認。定数外部抽出・ヘッダコメントの網羅性を検証)
+- [X] T011 スタンドアローンHTMLプロトタイプへのステータスバー未確定時アニメーション・テキスト表示の完全同期 in `design/mainui/index.html` (スキル `syncing-mainui-mock`（Iron Law）に基づき、スキャン中の検出中パルス表示およびファイル数表示ロジックを同期実装)
+- [X] T012 [P] クイックスタート検証ガイドの全シナリオ実行 in `specs/007-parallel-scan-search/quickstart.md` (単体テスト検証、大規模走査・TTFR検証、即時キャンセル検証、空フォルダ検証)
+- [X] T013 [P] バックエンドおよびフロントエンドの品質ゲート検証 in `src-tauri/Cargo.toml`, `package.json` (`cargo test`, `cargo clippy --all-targets -- -D warnings`, `cargo fmt --check`, `npm run build` を実行し、全テストパスおよびエラー・警告ゼロを確認。定数外部抽出・ヘッダコメントの網羅性を検証)
 
 ---
 

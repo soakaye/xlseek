@@ -8,6 +8,7 @@
 //! ## 変更履歴
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。全定数の外部化および整合性テストの実装。
 //! - v1.1.0 (2026-09-26, AI Agent): Aboutダイアログメニューおよびイベント定数の追加。
+//! - v1.2.0 (2026-09-26, AI Agent): 並行パイプライン用バッファ定数および検出中メッセージ定数の追加。
 
 // ==============================================================================
 // 1. ファイル拡張子定数 (File Extensions)
@@ -44,8 +45,13 @@ pub const DEFAULT_MATCH_ID_START: u64 = 1;
 /// Excelの一時ロックファイルプレフィックス（除外対象）
 pub const EXCEL_TEMP_FILE_PREFIX: &str = "~$";
 
+/// パイプライン並行処理における有界同期チャネルのバッファ容量
+pub const CHANNEL_BUFFER_SIZE: usize = 1024;
+
 /// スキャン状態メッセージ定数
 pub const MSG_SCAN_STARTING: &str = "スキャン開始中...";
+pub const MSG_SCAN_DISCOVERING: &str = "ファイルを検出・走査中...";
+pub const MSG_FILES_DISCOVERING_PREFIX: &str = "検出・走査中";
 pub const MSG_SCAN_COMPLETED: &str = "スキャン完了";
 pub const MSG_SCAN_CANCELLED: &str = "スキャンが中断されました";
 
@@ -279,5 +285,26 @@ mod tests {
         assert_eq!(MENU_SUBMENU_VIEW, "View");
         assert_eq!(MENU_SUBMENU_WINDOW, "Window");
         assert_eq!(MENU_SUBMENU_HELP, "Help");
+    }
+
+    /// ## 処理内容
+    /// パイプライン並行処理用のバッファ定数およびメッセージ定数が適切に定義されていることを検証する。
+    ///
+    /// ## 引数
+    /// なし
+    ///
+    /// ## 戻り値
+    /// なし
+    ///
+    /// ## エラー / 例外発生条件
+    /// アサーション失敗時にpanic
+    ///
+    /// ## 変更履歴
+    /// - v1.2.0 (2026-09-26, AI Agent): 初版作成
+    #[test]
+    fn test_pipeline_constants() {
+        assert_eq!(CHANNEL_BUFFER_SIZE, 1024);
+        assert!(!MSG_SCAN_DISCOVERING.is_empty());
+        assert!(!MSG_FILES_DISCOVERING_PREFIX.is_empty());
     }
 }

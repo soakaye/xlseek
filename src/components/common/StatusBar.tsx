@@ -12,6 +12,7 @@
  * - v1.1.0 (2026-09-26, AI Agent): デザイン改善フィードバック対応。プログレスバーをメッセージ前（固定幅 w-44）へ配置変更し、ファイル読み込み前のフォルダスキャン中表示（対象フォルダ名表示）を導入。
  * - v1.2.0 (2026-09-26, AI Agent): デザインフィードバック対応。フッター右側のCalamine Engineバッジ表示を削除。
  * - v1.3.0 (2026-09-26, AI Agent): 最右端にAboutダイアログ起動ボタン（Infoアイコン）を追加。
+ * - v1.4.0 (2026-09-26, AI Agent): 並行ファイル走査・即時検索パイプライン対応。総数未確定時のパルス表示および検出・走査中ファイル数表示の実装、定数参照の拡充。
  */
 
 import React from "react";
@@ -44,6 +45,7 @@ interface StatusBarProps {
  * ## 変更履歴
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
  * - v1.3.0 (2026-09-26, AI Agent): onOpenAbout プロパティの追加。
+ * - v1.4.0 (2026-09-26, AI Agent): パイプライン並行化に伴う未確定時アニメーション・文言切り替えの追加。
  */
 export const StatusBar: React.FC<StatusBarProps> = ({
   progress,
@@ -51,8 +53,11 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   onShowToast,
   onOpenAbout,
 }) => {
+  const isScanning = progress?.state === "Scanning";
+  const isDetermined = !!(progress && progress.total_files > 0);
+
   const percent =
-    progress && progress.total_files > 0
+    isDetermined && progress
       ? progress.state === "Completed"
         ? 100
         : Math.min(
@@ -68,19 +73,25 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
   const handleExport = async (format: "csv" | "xlsx") => {
     if (items.length === 0) {
-      onShowToast("エクスポート対象の結果がありません");
+      // 定数参照: UI_MESSAGES.EXPORT_NO_RESULTS_MSG
+      onShowToast(UI_MESSAGES.EXPORT_NO_RESULTS_MSG);
       return;
     }
 
     try {
-      const defaultFilename = `ExcelGrep_Results_${new Date()
+      // 定数参照: UI_MESSAGES.EXPORT_DEFAULT_FILENAME_PREFIX
+      const defaultFilename = `${UI_MESSAGES.EXPORT_DEFAULT_FILENAME_PREFIX}${new Date()
         .toISOString()
         .slice(0, 10)}.${format}`;
 
       const selectedPath = await save({
         filters: [
           {
-            name: format === "csv" ? "CSVファイル" : "Excelブック",
+            // 定数参照: UI_MESSAGES.EXPORT_CSV_FILTER_NAME / UI_MESSAGES.EXPORT_XLSX_FILTER_NAME
+            name:
+              format === "csv"
+                ? UI_MESSAGES.EXPORT_CSV_FILTER_NAME
+                : UI_MESSAGES.EXPORT_XLSX_FILTER_NAME,
             extensions: [format],
           },
         ],
@@ -97,12 +108,14 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
       // 定数参照: COMMANDS.EXPORT_RESULTS を使用
       await invoke(COMMANDS.EXPORT_RESULTS, { request: req });
+      // 定数参照: UI_MESSAGES.EXPORT_SAVED_PREFIX
       onShowToast(
-        `${format.toUpperCase()}ファイルを保存しました: ${selectedPath}`
+        `${format.toUpperCase()}${UI_MESSAGES.EXPORT_SAVED_PREFIX}${selectedPath}`
       );
     } catch (err) {
       console.error("エクスポートエラー:", err);
-      onShowToast(`エクスポート失敗: ${err}`);
+      // 定数参照: UI_MESSAGES.EXPORT_ERROR_PREFIX
+      onShowToast(`${UI_MESSAGES.EXPORT_ERROR_PREFIX}${err}`);
     }
   };
 
@@ -114,21 +127,25 @@ export const StatusBar: React.FC<StatusBarProps> = ({
     const elapsedSec = (progress.elapsed_ms / 1000).toFixed(2);
     switch (progress.state) {
       case "Scanning":
-        if (progress.scanned_files === 0) {
-          // 定数参照: UI_MESSAGES.FOLDER_SCANNING_PREFIX / FOLDER_SEARCHING_DEFAULT
-          return `${UI_MESSAGES.FOLDER_SCANNING_PREFIX}${progress.current_file || UI_MESSAGES.FOLDER_SEARCHING_DEFAULT}`;
+        if (!isDetermined) {
+          if (progress.scanned_files === 0) {
+            // 定数参照: UI_MESSAGES.FOLDER_SCANNING_PREFIX / FOLDER_SEARCHING_DEFAULT
+            return `${UI_MESSAGES.FOLDER_SCANNING_PREFIX}${progress.current_file || UI_MESSAGES.FOLDER_SEARCHING_DEFAULT}`;
+          }
+          // 定数参照: UI_MESSAGES.STATUS_DISCOVERING_PREFIX
+          return `${UI_MESSAGES.STATUS_DISCOVERING_PREFIX}: ${progress.scanned_files} ファイル (${progress.matches_found} 件一致, ${elapsedSec}s) - ${progress.current_file}`;
         }
-        return `スキャン中: ${progress.scanned_files}/${progress.total_files} ファイル (${progress.matches_found} 件一致, ${elapsedSec}s) - ${progress.current_file}`;
+        // 定数参照: UI_MESSAGES.STATUS_SCANNING_PREFIX
+        return `${UI_MESSAGES.STATUS_SCANNING_PREFIX}${progress.scanned_files}/${progress.total_files} ファイル (${progress.matches_found} 件一致, ${elapsedSec}s) - ${progress.current_file}`;
       case "Completed":
-        return `完了: ${progress.matches_found} 件一致 (${progress.scanned_files} ファイル, ${elapsedSec}s)`;
+        // 定数参照: UI_MESSAGES.STATUS_COMPLETED_PREFIX
+        return `${UI_MESSAGES.STATUS_COMPLETED_PREFIX}${progress.matches_found} 件一致 (${progress.scanned_files} ファイル, ${elapsedSec}s)`;
       case "Cancelled":
         return `${UI_MESSAGES.CANCELLED}: ${progress.matches_found} 件一致 (${progress.scanned_files} ファイル走査済)`;
       case "Error":
         return `${UI_MESSAGES.ERROR}が発生しました`;
     }
   })();
-
-  const isScanning = progress?.state === "Scanning";
 
   return (
     <footer className="h-10 bg-[#18181b] border-t border-zinc-800 px-4 flex items-center justify-between text-xs text-zinc-400 flex-shrink-0 select-none">
@@ -152,21 +169,23 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <div className="w-24 bg-zinc-800 h-1.5 rounded-full overflow-hidden border border-zinc-700/50 flex-shrink-0">
             <div
               className={`h-full rounded-full transition-all duration-300 ${
-                isScanning && progress?.scanned_files === 0
+                isScanning && !isDetermined
                   ? "bg-amber-500 animate-pulse w-1/4"
                   : "bg-excel"
               }`}
               style={{
                 width:
-                  isScanning && progress?.scanned_files === 0
+                  isScanning && !isDetermined
                     ? undefined
                     : `${percent}%`,
               }}
             />
           </div>
           <span className="text-[11px] text-zinc-400 font-mono flex-shrink-0">
-            {isScanning && progress?.scanned_files === 0
-              ? UI_MESSAGES.SEARCHING_DIR
+            {isScanning && !isDetermined
+              ? progress.scanned_files === 0
+                ? UI_MESSAGES.SEARCHING_DIR
+                : `${UI_MESSAGES.STATUS_DISCOVERING_PREFIX} (${progress.scanned_files})`
               : progress
               ? `${percent}% (${progress.scanned_files}/${progress.total_files})`
               : UI_MESSAGES.STATUS_WAITING}

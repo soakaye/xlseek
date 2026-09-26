@@ -14,6 +14,7 @@
  * - v1.4.0 (2026-09-26, AI Agent): Aboutダイアログおよびパッケージライセンス表示定数 (ABOUT_DIALOG_CONSTANTS) を追加。
  * - v1.5.0 (2026-09-26, AI Agent): システムメニュー連携用Aboutダイアログ表示イベント定数 (OPEN_ABOUT_DIALOG) を追加。
  * - v1.6.0 (2026-09-26, AI Agent): 著作権者表記 (ABOUT_DIALOG_CONSTANTS.COPYRIGHT) を soakaye に更新。
+ * - v1.7.0 (2026-09-26, AI Agent): 並行パイプライン用検出・走査中メッセージ定数およびステータス・エクスポート用定数を追加。
  */
 
 // ==============================================================================
@@ -92,9 +93,19 @@ export const UI_MESSAGES = {
   STATUS_IDLE: "検索待機中",
   STATUS_WAITING: "待機中",
   STATUS_SCAN_PREPARING: "スキャン開始準備中...",
+  STATUS_DISCOVERING_FILES: "ファイルを検出・走査中...",
+  STATUS_DISCOVERING_PREFIX: "検出・走査中",
+  STATUS_SCANNING_PREFIX: "スキャン中: ",
+  STATUS_COMPLETED_PREFIX: "完了: ",
   FOLDER_SCANNING_PREFIX: "フォルダスキャン中: ",
   FOLDER_SEARCHING_DEFAULT: "対象フォルダを探索しています...",
   SCAN_CANCELLED_MSG: "スキャンが中断されました",
+  EXPORT_NO_RESULTS_MSG: "エクスポート対象の結果がありません",
+  EXPORT_ERROR_PREFIX: "エクスポート失敗: ",
+  EXPORT_SAVED_PREFIX: "ファイルを保存しました: ",
+  EXPORT_CSV_FILTER_NAME: "CSVファイル",
+  EXPORT_XLSX_FILTER_NAME: "Excelブック",
+  EXPORT_DEFAULT_FILENAME_PREFIX: "ExcelGrep_Results_",
   COMPLETED: "検索完了",
   CANCELLED: "検索中断",
   ERROR: "エラー",
