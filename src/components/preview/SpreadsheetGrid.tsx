@@ -16,7 +16,8 @@
 import React from "react";
 import { Move } from "lucide-react";
 import { CellPreviewData } from "../../types/search";
-import { UI_MESSAGES } from "../../constants";
+import { useTranslation } from "../../i18n";
+
 
 /**
  * 周辺セルプレビューグリッドコンポーネントのプロパティ定義
@@ -63,13 +64,14 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   selectedCell,
   onSelectCell,
 }) => {
+  const t = useTranslation();
   if (isLoading) {
     return (
       <div className="flex-1 p-6 flex items-center justify-center text-xs text-zinc-500">
         <div className="flex items-center gap-2">
           <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin"></div>
-          {/* 定数参照: UI_MESSAGES.PREVIEW_LOADING */}
-          <span>{UI_MESSAGES.PREVIEW_LOADING}</span>
+          {/* 定数参照: t("ui.PREVIEW_LOADING") */}
+          <span>{t("ui.PREVIEW_LOADING")}</span>
         </div>
       </div>
     );
@@ -78,8 +80,8 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
   if (!previewData || previewData.rows.length === 0) {
     return (
       <div className="flex-1 p-6 flex items-center justify-center text-xs text-zinc-500">
-        {/* 定数参照: UI_MESSAGES.PREVIEW_EMPTY */}
-        {UI_MESSAGES.PREVIEW_EMPTY}
+        {/* 定数参照: t("ui.PREVIEW_EMPTY") */}
+        {t("ui.PREVIEW_EMPTY")}
       </div>
     );
   }
@@ -90,13 +92,13 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
       <div className="flex items-center justify-between text-[11px] text-zinc-400 mb-2 px-1 select-none flex-shrink-0">
         <div className="flex items-center gap-1.5">
           <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-          {/* 定数参照: UI_MESSAGES.PREVIEW_GUIDANCE */}
-          <span className="font-medium text-zinc-300">{UI_MESSAGES.PREVIEW_GUIDANCE}</span>
+          {/* 定数参照: t("ui.PREVIEW_GUIDANCE") */}
+          <span className="font-medium text-zinc-300">{t("ui.PREVIEW_GUIDANCE")}</span>
         </div>
         <div className="flex items-center gap-1 text-zinc-500 bg-zinc-900/90 px-2 py-0.5 rounded border border-zinc-800 text-[10px]">
           <Move className="w-2.5 h-2.5 text-zinc-400" />
-          {/* 定数参照: UI_MESSAGES.PREVIEW_SCROLL_GUIDANCE */}
-          <span>{UI_MESSAGES.PREVIEW_SCROLL_GUIDANCE}</span>
+          {/* 定数参照: t("ui.PREVIEW_SCROLL_GUIDANCE") */}
+          <span>{t("ui.PREVIEW_SCROLL_GUIDANCE")}</span>
         </div>
       </div>
 
@@ -153,7 +155,7 @@ export const SpreadsheetGrid: React.FC<SpreadsheetGridProps> = ({
                       }`}
                       title={
                         cellInfo?.formula
-                          ? `${UI_MESSAGES.FORMULA_TOOLTIP_PREFIX} ${cellInfo.formula}`
+                          ? `${t("ui.FORMULA_TOOLTIP_PREFIX")} ${cellInfo.formula}`
                           : cellInfo?.value
                       }
                     >

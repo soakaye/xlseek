@@ -17,6 +17,8 @@
     "@tauri-apps/api": "^2.0.0",
     "@tauri-apps/plugin-dialog": "^2.0.0",
     "@tauri-apps/plugin-os": "^2.0.0",
+    "@razein97/tauri-plugin-i18n": "2.0.1",
+    "yaml": "^2.4.2",
     "lucide-react": "^0.441.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"

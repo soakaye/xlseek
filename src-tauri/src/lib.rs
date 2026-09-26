@@ -1,7 +1,7 @@
 //! # Excel Grep コアライブラリ (lib.rs)
 //!
 //! ## 処理内容
-//! Tauriデスクトップアプリケーションの初期化、プラグイン（dialog, shell）の登録、
+//! Tauriデスクトップアプリケーションの初期化、プラグイン（dialog, shell, i18n）の登録、
 //! 各種IPCコマンドハンドラの登録、およびアプリケーション実行ループを管理する。
 //!
 //! ## 変更履歴
@@ -11,12 +11,14 @@
 pub mod commands;
 pub mod constants;
 pub mod export;
+pub mod i18n;
 pub mod models;
 pub mod search;
 
 use commands::AppState;
 use search::engine::SearchEngine;
 use std::sync::Arc;
+use tauri_plugin_i18n::PluginI18nExt;
 
 /// ## 処理内容
 /// macOS向けのアプリケーションメニューを構築する。
@@ -40,23 +42,29 @@ fn create_app_menu<R: tauri::Runtime>(
     language: &str,
 ) -> tauri::Result<tauri::menu::Menu<R>> {
     use constants::{
-        MENU_ITEM_ABOUT_ID, MENU_ITEM_ABOUT_TEXT, MENU_SUBMENU_EDIT, MENU_SUBMENU_FILE,
-        MENU_SUBMENU_HELP, MENU_SUBMENU_VIEW, MENU_SUBMENU_WINDOW,
+        MENU_ITEM_ABOUT_ID, MENU_KEY_ABOUT, MENU_KEY_EDIT, MENU_KEY_FILE, MENU_KEY_HELP,
+        MENU_KEY_VIEW, MENU_KEY_WINDOW,
     };
     use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 
     let pkg_name = app_handle.package_info().name.clone();
+    let catalogs = app_handle.i18n().get_translations_data();
+    let menu_text = |key| -> tauri::Result<String> {
+        crate::i18n::resolve_catalog_text(&catalogs, language, key).ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::NotFound,
+                crate::constants::ERR_TRANSLATION_MISSING,
+            )
+            .into()
+        })
+    };
 
     // 1. アプリケーションサブメニュー (App Submenu)
-    // 定数参照: constants::MENU_ITEM_ABOUT_ID, constants::MENU_ITEM_ABOUT_TEXT
+    // 定数参照: constants::MENU_ITEM_ABOUT_ID と MENU_KEY_ABOUT
     let about_item = MenuItem::with_id(
         app_handle,
         MENU_ITEM_ABOUT_ID,
-        if language == crate::constants::LANGUAGE_JA {
-            MENU_ITEM_ABOUT_TEXT
-        } else {
-            constants::MENU_ITEM_ABOUT_TEXT_EN
-        },
+        menu_text(MENU_KEY_ABOUT)?,
         true,
         None::<&str>,
     )?;
@@ -78,27 +86,19 @@ fn create_app_menu<R: tauri::Runtime>(
     )?;
 
     // 2. ファイルサブメニュー (File Submenu)
-    // 定数参照: constants::MENU_SUBMENU_FILE
+    // 定数参照: constants::MENU_KEY_FILE
     let file_submenu = Submenu::with_items(
         app_handle,
-        if language == crate::constants::LANGUAGE_JA {
-            constants::MENU_SUBMENU_FILE_JA
-        } else {
-            MENU_SUBMENU_FILE
-        },
+        menu_text(MENU_KEY_FILE)?,
         true,
         &[&PredefinedMenuItem::close_window(app_handle, None)?],
     )?;
 
     // 3. 編集サブメニュー (Edit Submenu)
-    // 定数参照: constants::MENU_SUBMENU_EDIT
+    // 定数参照: constants::MENU_KEY_EDIT
     let edit_submenu = Submenu::with_items(
         app_handle,
-        if language == crate::constants::LANGUAGE_JA {
-            constants::MENU_SUBMENU_EDIT_JA
-        } else {
-            MENU_SUBMENU_EDIT
-        },
+        menu_text(MENU_KEY_EDIT)?,
         true,
         &[
             &PredefinedMenuItem::undo(app_handle, None)?,
@@ -112,27 +112,19 @@ fn create_app_menu<R: tauri::Runtime>(
     )?;
 
     // 4. 表示サブメニュー (View Submenu)
-    // 定数参照: constants::MENU_SUBMENU_VIEW
+    // 定数参照: constants::MENU_KEY_VIEW
     let view_submenu = Submenu::with_items(
         app_handle,
-        if language == crate::constants::LANGUAGE_JA {
-            constants::MENU_SUBMENU_VIEW_JA
-        } else {
-            MENU_SUBMENU_VIEW
-        },
+        menu_text(MENU_KEY_VIEW)?,
         true,
         &[&PredefinedMenuItem::fullscreen(app_handle, None)?],
     )?;
 
     // 5. ウィンドウサブメニュー (Window Submenu)
-    // 定数参照: constants::MENU_SUBMENU_WINDOW
+    // 定数参照: constants::MENU_KEY_WINDOW
     let window_submenu = Submenu::with_items(
         app_handle,
-        if language == crate::constants::LANGUAGE_JA {
-            constants::MENU_SUBMENU_WINDOW_JA
-        } else {
-            MENU_SUBMENU_WINDOW
-        },
+        menu_text(MENU_KEY_WINDOW)?,
         true,
         &[
             &PredefinedMenuItem::minimize(app_handle, None)?,
@@ -143,17 +135,8 @@ fn create_app_menu<R: tauri::Runtime>(
     )?;
 
     // 6. ヘルプサブメニュー (Help Submenu)
-    // 定数参照: constants::MENU_SUBMENU_HELP
-    let help_submenu = Submenu::with_items(
-        app_handle,
-        if language == crate::constants::LANGUAGE_JA {
-            constants::MENU_SUBMENU_HELP_JA
-        } else {
-            MENU_SUBMENU_HELP
-        },
-        true,
-        &[],
-    )?;
+    // 定数参照: constants::MENU_KEY_HELP
+    let help_submenu = Submenu::with_items(app_handle, menu_text(MENU_KEY_HELP)?, true, &[])?;
 
     Menu::with_items(
         app_handle,
@@ -192,6 +175,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_i18n::init(None))
         .setup(|app| {
             #[cfg(target_os = "macos")]
             {

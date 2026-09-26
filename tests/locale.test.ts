@@ -6,7 +6,7 @@ import {
   resolveLanguage,
   saveLanguagePreference,
 } from "../src/locale-core";
-import { retranslateMessage, resolveTranslation, translate, UI_MESSAGES } from "../src/constants";
+import { resolveTranslation } from "../src/i18n";
 
 describe("locale selection", () => {
   beforeEach(() => {
@@ -51,18 +51,19 @@ describe("locale selection", () => {
     expect(saveLanguagePreference("en")).toBe(false);
   });
 
-  it("falls back per message to English", () => {
-    expect(translate("en", "APP_TITLE")).toBe("Excel Grep");
-    expect(resolveTranslation("ja", "missing", {}, { missing: "English fallback" })).toBe("English fallback");
+  it("falls back per missing message to English and interpolates values", () => {
+    const english = {
+      "common.translationUnavailable": "Some text could not be translated.",
+      "ui.greeting": "Hello, {name}.",
+    };
+    expect(resolveTranslation("ja", "ui.greeting", "ui.greeting", english, { name: "Ada" }, "ja"))
+      .toBe("Hello, Ada.");
+    expect(resolveTranslation("ja", "ui.unknown", "ui.unknown", english, {}, "ja"))
+      .toBe("Some text could not be translated.");
   });
 
-  it("defines English text for every UI message", async () => {
-    const missing = Object.keys(UI_MESSAGES).filter((key) => translate("en", key) === key);
-    expect(missing).toEqual([]);
-  });
-
-  it("retranslates an open toast and preserves interpolated user data", () => {
-    const original = `${translate("ja", "EXPORT_SAVED_PREFIX")}/tmp/結果.xlsx`;
-    expect(retranslateMessage(original, "ja", "en")).toBe("Saved file: /tmp/結果.xlsx");
+  it("does not reuse a stale plugin locale after a switch failure", () => {
+    const english = { "ui.title": "Search", "common.translationUnavailable": "Some text could not be translated." };
+    expect(resolveTranslation("en", "ui.title", "検索", english, {}, "ja")).toBe("Search");
   });
 });

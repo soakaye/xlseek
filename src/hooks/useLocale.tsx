@@ -11,7 +11,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { locale } from "@tauri-apps/plugin-os";
 import { DisplayLanguage, LanguagePreference, readLanguagePreference, resolveLanguage, saveLanguagePreference } from "../locale-core";
-import { DISPLAY_LANGUAGES, LANGUAGE_PREFERENCES, setActiveLanguage } from "../constants";
+import { DISPLAY_LANGUAGES, LANGUAGE_PREFERENCES } from "../constants";
+import { initializeI18n, setI18nLocale } from "../i18n";
 
 /**
  * ## 処理内容
@@ -26,6 +27,7 @@ import { DISPLAY_LANGUAGES, LANGUAGE_PREFERENCES, setActiveLanguage } from "../c
 export const useLocale = () => {
   const [preference, setPreference] = useState<LanguagePreference>(LANGUAGE_PREFERENCES.DEFAULT);
   const [language, setLanguage] = useState<DisplayLanguage>(DISPLAY_LANGUAGES.EN);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -33,26 +35,28 @@ export const useLocale = () => {
       const stored = readLanguagePreference();
       let systemLanguage: string = DISPLAY_LANGUAGES.EN;
       try { systemLanguage = (await locale()) ?? DISPLAY_LANGUAGES.EN; } catch { /* Continue with English. */ }
+      const resolvedLanguage = stored === LANGUAGE_PREFERENCES.DEFAULT ? resolveLanguage(systemLanguage) : stored;
+      await initializeI18n(resolvedLanguage);
       if (!cancelled) {
         setPreference(stored);
-        setLanguage(stored === LANGUAGE_PREFERENCES.DEFAULT ? resolveLanguage(systemLanguage) : stored);
+        setLanguage(resolvedLanguage);
+        setReady(true);
       }
     };
     void initialize();
     return () => { cancelled = true; };
   }, []);
 
-  setActiveLanguage(language);
   const selectLanguage = useCallback(async (selected: LanguagePreference) => {
     let nextLanguage: DisplayLanguage = selected === LANGUAGE_PREFERENCES.DEFAULT ? DISPLAY_LANGUAGES.EN : selected;
     if (selected === LANGUAGE_PREFERENCES.DEFAULT) {
       try { nextLanguage = resolveLanguage(await locale()); } catch { nextLanguage = DISPLAY_LANGUAGES.EN; }
     }
+    await setI18nLocale(nextLanguage);
     setPreference(selected);
     setLanguage(nextLanguage);
-    setActiveLanguage(nextLanguage);
     return saveLanguagePreference(selected);
   }, []);
 
-  return { language, preference, selectLanguage };
+  return { language, preference, selectLanguage, ready };
 };

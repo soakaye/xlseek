@@ -19,6 +19,8 @@ pub const DEFAULT_EXTENSIONS: [&str; 4] = [".xlsx", ".xlsm", ".xlsb", ".xls"];
 pub const DEFAULT_EXPORT_LANGUAGE: &str = "en";
 pub const LANGUAGE_JA: &str = "ja";
 pub const LANGUAGE_EN: &str = "en";
+pub const TRANSLATION_UNAVAILABLE_KEY: &str = "common.translationUnavailable";
+pub const ERR_TRANSLATION_MISSING: &str = "A required translation is missing";
 
 /// 個別拡張子定数
 pub const EXT_XLSX: &str = ".xlsx";
@@ -77,59 +79,16 @@ pub const EVENT_OPEN_ABOUT_DIALOG: &str = "open-about-dialog";
 /// メニュー項目ID: Aboutダイアログ
 pub const MENU_ITEM_ABOUT_ID: &str = "open_about";
 
-/// メニュー項目表示テキスト: Aboutダイアログ
-pub const MENU_ITEM_ABOUT_TEXT: &str = "Excel Grep について";
-pub const MENU_ITEM_ABOUT_TEXT_EN: &str = "About Excel Grep";
-
-/// メニューサブメニュー表示名: File
-pub const MENU_SUBMENU_FILE: &str = "File";
-
-/// メニューサブメニュー表示名: Edit
-pub const MENU_SUBMENU_EDIT: &str = "Edit";
-
-/// メニューサブメニュー表示名: View
-pub const MENU_SUBMENU_VIEW: &str = "View";
-
-/// メニューサブメニュー表示名: Window
-pub const MENU_SUBMENU_WINDOW: &str = "Window";
-
-/// メニューサブメニュー表示名: Help
-pub const MENU_SUBMENU_HELP: &str = "Help";
-pub const MENU_SUBMENU_FILE_JA: &str = "ファイル";
-pub const MENU_SUBMENU_EDIT_JA: &str = "編集";
-pub const MENU_SUBMENU_VIEW_JA: &str = "表示";
-pub const MENU_SUBMENU_WINDOW_JA: &str = "ウィンドウ";
-pub const MENU_SUBMENU_HELP_JA: &str = "ヘルプ";
+pub const MENU_KEY_ABOUT: &str = "menu.about";
+pub const MENU_KEY_FILE: &str = "menu.file";
+pub const MENU_KEY_EDIT: &str = "menu.edit";
+pub const MENU_KEY_VIEW: &str = "menu.view";
+pub const MENU_KEY_WINDOW: &str = "menu.window";
+pub const MENU_KEY_HELP: &str = "menu.help";
 
 // ==============================================================================
 // 5. エクスポート設定定数 (Export Settings)
 // ==============================================================================
-
-/// CSVエクスポートヘッダー列名一覧
-pub const CSV_EXPORT_HEADERS: [&str; 8] = [
-    "ID",
-    "ファイル名",
-    "フルパス",
-    "シート名",
-    "セル位置",
-    "一致種別",
-    "一致内容",
-    "数式",
-];
-pub const CSV_EXPORT_HEADERS_EN: [&str; 8] = [
-    "ID",
-    "File name",
-    "Full path",
-    "Sheet name",
-    "Cell",
-    "Match type",
-    "Matched content",
-    "Formula",
-];
-
-/// Excelエクスポートのデフォルトシート名
-pub const EXPORT_DEFAULT_SHEET_NAME: &str = "検索結果";
-pub const EXPORT_DEFAULT_SHEET_NAME_EN: &str = "Search Results";
 
 /// Excelエクスポート時のヘッダ背景色 (Teal 700)
 pub const XLSX_HEADER_BG_COLOR: u32 = 0x000F_766E;
@@ -137,38 +96,24 @@ pub const XLSX_HEADER_BG_COLOR: u32 = 0x000F_766E;
 /// Excelエクスポート時のヘッダ文字色 (White)
 pub const XLSX_HEADER_FG_COLOR: u32 = 0x00FF_FFFF;
 
-/// Excelエクスポート時のヘッダー定義と列幅
-pub const XLSX_HEADERS_WITH_WIDTH: [(&str, f64); 8] = [
-    ("ID", 8.0),
-    ("ファイル名", 25.0),
-    ("フルパス", 40.0),
-    ("シート名", 20.0),
-    ("セル位置", 12.0),
-    ("一致種別", 14.0),
-    ("一致内容", 45.0),
-    ("数式", 30.0),
-];
-pub const XLSX_HEADERS_WITH_WIDTH_EN: [(&str, f64); 8] = [
-    ("ID", 8.0),
-    ("File name", 25.0),
-    ("Full path", 40.0),
-    ("Sheet name", 20.0),
-    ("Cell", 12.0),
-    ("Match type", 14.0),
-    ("Matched content", 45.0),
-    ("Formula", 30.0),
-];
-
-/// 一致種別の日本語ラベル定数
-pub const LABEL_MATCH_CELL_VALUE: &str = "値";
-pub const LABEL_MATCH_FORMULA: &str = "数式";
-pub const LABEL_MATCH_COMMENT: &str = "コメント";
-pub const LABEL_MATCH_HIDDEN_SHEET: &str = "非表示シート";
-pub const LABEL_MATCH_CELL_VALUE_EN: &str = "Value";
-pub const LABEL_MATCH_FORMULA_EN: &str = "Formula";
-pub const LABEL_MATCH_COMMENT_EN: &str = "Comment";
-pub const LABEL_MATCH_HIDDEN_SHEET_EN: &str = "Hidden sheet";
+/// エクスポート列幅。翻訳見出しは共有カタログから取得する。
+pub const XLSX_COLUMN_WIDTHS: [f64; 8] = [8.0, 25.0, 40.0, 20.0, 12.0, 14.0, 45.0, 30.0];
 pub const ERR_INVALID_LANGUAGE: &str = "Unsupported export language";
+pub const EXPORT_HEADER_KEYS: [&str; 8] = [
+    "export.header.id",
+    "export.header.fileName",
+    "export.header.fullPath",
+    "export.header.sheetName",
+    "export.header.cell",
+    "export.header.matchType",
+    "export.header.matchedContent",
+    "export.header.formula",
+];
+pub const EXPORT_SHEET_NAME_KEY: &str = "export.sheetName";
+pub const EXPORT_MATCH_VALUE_KEY: &str = "export.match.value";
+pub const EXPORT_MATCH_FORMULA_KEY: &str = "export.match.formula";
+pub const EXPORT_MATCH_COMMENT_KEY: &str = "export.match.comment";
+pub const EXPORT_MATCH_HIDDEN_SHEET_KEY: &str = "export.match.hiddenSheet";
 
 // ==============================================================================
 // 6. アプリケーション識別子・表示名定数 (Supported Apps)
@@ -264,15 +209,12 @@ mod tests {
     /// - v1.0.0 (2026-09-26, AI Agent): 初版作成
     #[test]
     fn test_csv_export_headers() {
-        assert_eq!(CSV_EXPORT_HEADERS.len(), 8);
-        assert_eq!(CSV_EXPORT_HEADERS[0], "ID");
-        assert_eq!(CSV_EXPORT_HEADERS[1], "ファイル名");
-        assert_eq!(CSV_EXPORT_HEADERS[7], "数式");
-        assert_eq!(CSV_EXPORT_HEADERS_EN[1], "File name");
-        assert_eq!(CSV_EXPORT_HEADERS_EN[7], "Formula");
-        assert_eq!(LABEL_MATCH_HIDDEN_SHEET_EN, "Hidden sheet");
-        assert_eq!(XLSX_HEADERS_WITH_WIDTH_EN[6].0, "Matched content");
-        assert_eq!(EXPORT_DEFAULT_SHEET_NAME_EN, "Search Results");
+        assert_eq!(EXPORT_HEADER_KEYS.len(), XLSX_COLUMN_WIDTHS.len());
+        assert_eq!(EXPORT_HEADER_KEYS[0], "export.header.id");
+        assert_eq!(EXPORT_HEADER_KEYS[1], "export.header.fileName");
+        assert_eq!(EXPORT_HEADER_KEYS[7], "export.header.formula");
+        assert_eq!(EXPORT_SHEET_NAME_KEY, "export.sheetName");
+        assert_eq!(EXPORT_MATCH_HIDDEN_SHEET_KEY, "export.match.hiddenSheet");
     }
 
     /// ## 処理内容
@@ -316,12 +258,12 @@ mod tests {
     fn test_menu_and_event_constants() {
         assert_eq!(EVENT_OPEN_ABOUT_DIALOG, "open-about-dialog");
         assert_eq!(MENU_ITEM_ABOUT_ID, "open_about");
-        assert_eq!(MENU_ITEM_ABOUT_TEXT, "Excel Grep について");
-        assert_eq!(MENU_SUBMENU_FILE, "File");
-        assert_eq!(MENU_SUBMENU_EDIT, "Edit");
-        assert_eq!(MENU_SUBMENU_VIEW, "View");
-        assert_eq!(MENU_SUBMENU_WINDOW, "Window");
-        assert_eq!(MENU_SUBMENU_HELP, "Help");
+        assert_eq!(MENU_KEY_ABOUT, "menu.about");
+        assert_eq!(MENU_KEY_FILE, "menu.file");
+        assert_eq!(MENU_KEY_EDIT, "menu.edit");
+        assert_eq!(MENU_KEY_VIEW, "menu.view");
+        assert_eq!(MENU_KEY_WINDOW, "menu.window");
+        assert_eq!(MENU_KEY_HELP, "menu.help");
     }
 
     /// ## 処理内容

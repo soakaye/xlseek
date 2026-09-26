@@ -15,10 +15,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./index.css";
-import { UI_MESSAGES } from "./constants";
+import { APP_CONSTANTS } from "./constants";
 
-// 定数参照: UI_MESSAGES.ROOT_ELEMENT_ID ("root")
-const rootElement = document.getElementById(UI_MESSAGES.ROOT_ELEMENT_ID);
+// 定数参照: APP_CONSTANTS.ROOT_ELEMENT_ID ("root")
+const rootElement = document.getElementById(APP_CONSTANTS.ROOT_ELEMENT_ID);
 
 if (rootElement) {
   ReactDOM.createRoot(rootElement).render(

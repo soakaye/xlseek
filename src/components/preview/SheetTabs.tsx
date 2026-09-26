@@ -13,7 +13,8 @@
 
 import React, { useRef } from "react";
 import { ChevronLeft, ChevronRight, FileSpreadsheet } from "lucide-react";
-import { LAYOUT_CONSTANTS, UI_MESSAGES } from "../../constants";
+import { LAYOUT_CONSTANTS } from "../../constants";
+import { useTranslation } from "../../i18n";
 
 /**
  * シートタブコンポーネントのプロパティ定義
@@ -53,6 +54,7 @@ export const SheetTabs: React.FC<SheetTabsProps> = ({
   activeSheet,
   onSelectSheet,
 }) => {
+  const t = useTranslation();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const scrollLeft = () => {
@@ -82,8 +84,8 @@ export const SheetTabs: React.FC<SheetTabsProps> = ({
             type="button"
             onClick={scrollLeft}
             className="p-1 hover:text-zinc-300 hover:bg-zinc-800 rounded transition"
-            /* 定数参照: UI_MESSAGES.PREV_SHEET_TOOLTIP */
-            title={UI_MESSAGES.PREV_SHEET_TOOLTIP}
+            /* 定数参照: t("ui.PREV_SHEET_TOOLTIP") */
+            title={t("ui.PREV_SHEET_TOOLTIP")}
           >
             <ChevronLeft className="w-3.5 h-3.5" />
           </button>
@@ -91,8 +93,8 @@ export const SheetTabs: React.FC<SheetTabsProps> = ({
             type="button"
             onClick={scrollRight}
             className="p-1 hover:text-zinc-300 hover:bg-zinc-800 rounded transition"
-            /* 定数参照: UI_MESSAGES.NEXT_SHEET_TOOLTIP */
-            title={UI_MESSAGES.NEXT_SHEET_TOOLTIP}
+            /* 定数参照: t("ui.NEXT_SHEET_TOOLTIP") */
+            title={t("ui.NEXT_SHEET_TOOLTIP")}
           >
             <ChevronRight className="w-3.5 h-3.5" />
           </button>
@@ -126,8 +128,8 @@ export const SheetTabs: React.FC<SheetTabsProps> = ({
 
       <div className="text-[10px] text-zinc-500 flex items-center gap-1 pl-2 flex-shrink-0">
         <span className="bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700 font-mono text-[10px] text-zinc-400">
-          {/* 定数参照: UI_MESSAGES.SHEET_TABS_BADGE */}
-          {UI_MESSAGES.SHEET_TABS_BADGE}
+          {/* 定数参照: t("ui.SHEET_TABS_BADGE") */}
+          {t("ui.SHEET_TABS_BADGE")}
         </span>
       </div>
     </div>

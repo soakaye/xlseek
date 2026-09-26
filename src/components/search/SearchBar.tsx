@@ -20,7 +20,8 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { SearchQuery } from "../../types/search";
-import { COMMANDS, UI_MESSAGES, FILE_EXTENSIONS } from "../../constants";
+import { COMMANDS, FILE_EXTENSIONS } from "../../constants";
+import { useTranslation } from "../../i18n";
 
 /**
  * 検索バーコンポーネントのプロパティ定義
@@ -67,6 +68,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onCancel,
   isScanning,
 }) => {
+  const t = useTranslation();
   const [isDragOver, setIsDragOver] = useState(false);
   const folderInputRef = useRef<HTMLDivElement>(null);
 
@@ -216,11 +218,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
   const handleBrowseFolder = async () => {
     try {
-      // 定数参照: UI_MESSAGES.SELECT_FOLDER_DIALOG_TITLE (ダイアログタイトル)
+      // 定数参照: t("ui.SELECT_FOLDER_DIALOG_TITLE") (ダイアログタイトル)
       const selected = await open({
         directory: true,
         multiple: false,
-        title: UI_MESSAGES.SELECT_FOLDER_DIALOG_TITLE,
+        title: t("ui.SELECT_FOLDER_DIALOG_TITLE"),
       });
       if (selected && typeof selected === "string") {
         onChangeQuery({ target_dir: selected });
@@ -266,8 +268,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               onKeyDown={handleKeyDown}
               onCompositionStart={handleCompositionStart}
               onCompositionEnd={handleCompositionEnd}
-              /* 定数参照: UI_MESSAGES.KEYWORD_INPUT_PLACEHOLDER */
-              placeholder={UI_MESSAGES.KEYWORD_INPUT_PLACEHOLDER}
+              /* 定数参照: t("ui.KEYWORD_INPUT_PLACEHOLDER") */
+              placeholder={t("ui.KEYWORD_INPUT_PLACEHOLDER")}
               className="w-full pl-9 pr-24 py-2 bg-[#202024] border border-zinc-700 rounded-lg text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-excel-light focus:ring-1 focus:ring-excel-light transition"
             />
             <div className="absolute inset-y-0 right-1 flex items-center gap-1 pr-1.5">
@@ -275,8 +277,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 <button
                   type="button"
                   onClick={() => onChangeQuery({ keyword: "" })}
-                  /* 定数参照: UI_MESSAGES.CLEAR_TOOLTIP */
-                  title={UI_MESSAGES.CLEAR_TOOLTIP}
+                  /* 定数参照: t("ui.CLEAR_TOOLTIP") */
+                  title={t("ui.CLEAR_TOOLTIP")}
                   className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -313,8 +315,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               value={query.target_dir}
               onChange={(e) => onChangeQuery({ target_dir: e.target.value })}
               onKeyDown={handleFolderKeyDown}
-              /* 定数参照: UI_MESSAGES.FOLDER_DROP_PLACEHOLDER / FOLDER_INPUT_PLACEHOLDER */
-              placeholder={isDragOver ? UI_MESSAGES.FOLDER_DROP_PLACEHOLDER : UI_MESSAGES.FOLDER_INPUT_PLACEHOLDER}
+              /* 定数参照: t("ui.FOLDER_DROP_PLACEHOLDER") / FOLDER_INPUT_PLACEHOLDER */
+              placeholder={isDragOver ? t("ui.FOLDER_DROP_PLACEHOLDER") : t("ui.FOLDER_INPUT_PLACEHOLDER")}
               className={`w-full pl-9 pr-10 py-2 border rounded-lg text-sm placeholder-zinc-500 focus:outline-none font-mono text-xs transition ${
                 isDragOver
                   ? "bg-emerald-950/30 border-emerald-500 text-emerald-200 border-dashed"
@@ -324,15 +326,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             {isDragOver && (
               <div className="absolute inset-0 flex items-center justify-center bg-emerald-900/80 border-2 border-dashed border-emerald-400 rounded-lg pointer-events-none text-xs font-medium text-emerald-100 gap-2 z-10 backdrop-blur-[1px]">
                 <ArrowDownToLine className="w-4 h-4 text-emerald-300 animate-bounce" />
-                {/* 定数参照: UI_MESSAGES.FOLDER_DROP_PROMPT */}
-                <span>{UI_MESSAGES.FOLDER_DROP_PROMPT}</span>
+                {/* 定数参照: t("ui.FOLDER_DROP_PROMPT") */}
+                <span>{t("ui.FOLDER_DROP_PROMPT")}</span>
               </div>
             )}
             <button
               type="button"
               onClick={handleBrowseFolder}
-              /* 定数参照: UI_MESSAGES.SELECT_FOLDER_TOOLTIP */
-              title={UI_MESSAGES.SELECT_FOLDER_TOOLTIP}
+              /* 定数参照: t("ui.SELECT_FOLDER_TOOLTIP") */
+              title={t("ui.SELECT_FOLDER_TOOLTIP")}
               className="absolute inset-y-1 right-1 px-2.5 flex items-center justify-center bg-zinc-700 hover:bg-zinc-600 rounded text-zinc-200 transition z-0"
             >
               <FolderOpen className="w-4 h-4" />
@@ -348,8 +350,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 className="w-full py-2 px-4 bg-red-600 hover:bg-red-500 active:scale-[0.99] text-white font-semibold text-sm rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-red-950/40 transition"
               >
                 <Square className="w-4 h-4 fill-white" />
-                {/* 定数参照: UI_MESSAGES.BUTTON_CANCEL */}
-                <span>{UI_MESSAGES.BUTTON_CANCEL}</span>
+                {/* 定数参照: t("ui.BUTTON_CANCEL") */}
+                <span>{t("ui.BUTTON_CANCEL")}</span>
               </button>
             ) : (
               <button
@@ -358,8 +360,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 className="w-full py-2 px-4 bg-excel hover:bg-excel-hover active:scale-[0.99] text-white font-semibold text-sm rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition"
               >
                 <Search className="w-4 h-4" />
-                {/* 定数参照: UI_MESSAGES.BUTTON_SEARCH */}
-                <span>{UI_MESSAGES.BUTTON_SEARCH}</span>
+                {/* 定数参照: t("ui.BUTTON_SEARCH") */}
+                <span>{t("ui.BUTTON_SEARCH")}</span>
               </button>
             )}
           </div>
@@ -369,8 +371,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs select-none">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-zinc-400 mr-1 font-medium flex items-center gap-1">
-              {/* 定数参照: UI_MESSAGES.OPTIONS_LABEL */}
-              <SlidersHorizontal className="w-3.5 h-3.5" /> {UI_MESSAGES.OPTIONS_LABEL}
+              {/* 定数参照: t("ui.OPTIONS_LABEL") */}
+              <SlidersHorizontal className="w-3.5 h-3.5" /> {t("ui.OPTIONS_LABEL")}
             </span>
 
             {/* 大文字/小文字 */}
@@ -387,8 +389,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onChange={(e) => onChangeQuery({ match_case: e.target.checked })}
                 className="accent-excel rounded cursor-pointer"
               />
-              {/* 定数参照: UI_MESSAGES.OPTION_MATCH_CASE */}
-              <span>{UI_MESSAGES.OPTION_MATCH_CASE}</span>
+              {/* 定数参照: t("ui.OPTION_MATCH_CASE") */}
+              <span>{t("ui.OPTION_MATCH_CASE")}</span>
             </label>
 
             {/* 正規表現 */}
@@ -405,8 +407,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onChange={(e) => onChangeQuery({ use_regex: e.target.checked })}
                 className="accent-emerald-500 rounded cursor-pointer"
               />
-              {/* 定数参照: UI_MESSAGES.OPTION_USE_REGEX */}
-              <span>{UI_MESSAGES.OPTION_USE_REGEX}</span>
+              {/* 定数参照: t("ui.OPTION_USE_REGEX") */}
+              <span>{t("ui.OPTION_USE_REGEX")}</span>
             </label>
 
             {/* 数式 */}
@@ -423,8 +425,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onChange={(e) => onChangeQuery({ include_formula: e.target.checked })}
                 className="accent-excel rounded cursor-pointer"
               />
-              {/* 定数参照: UI_MESSAGES.OPTION_INCLUDE_FORMULA */}
-              <span>{UI_MESSAGES.OPTION_INCLUDE_FORMULA}</span>
+              {/* 定数参照: t("ui.OPTION_INCLUDE_FORMULA") */}
+              <span>{t("ui.OPTION_INCLUDE_FORMULA")}</span>
             </label>
 
             {/* コメント */}
@@ -441,8 +443,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onChange={(e) => onChangeQuery({ include_comment: e.target.checked })}
                 className="accent-excel rounded cursor-pointer"
               />
-              {/* 定数参照: UI_MESSAGES.OPTION_INCLUDE_COMMENT */}
-              <span>{UI_MESSAGES.OPTION_INCLUDE_COMMENT}</span>
+              {/* 定数参照: t("ui.OPTION_INCLUDE_COMMENT") */}
+              <span>{t("ui.OPTION_INCLUDE_COMMENT")}</span>
             </label>
 
             {/* 非表示シート */}
@@ -459,15 +461,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onChange={(e) => onChangeQuery({ include_hidden: e.target.checked })}
                 className="accent-excel rounded cursor-pointer"
               />
-              {/* 定数参照: UI_MESSAGES.OPTION_INCLUDE_HIDDEN */}
-              <span>{UI_MESSAGES.OPTION_INCLUDE_HIDDEN}</span>
+              {/* 定数参照: t("ui.OPTION_INCLUDE_HIDDEN") */}
+              <span>{t("ui.OPTION_INCLUDE_HIDDEN")}</span>
             </label>
           </div>
 
           {/* 対象拡張子トグルボタン群 */}
           <div className="flex items-center gap-2 text-zinc-400 text-xs">
-            {/* 定数参照: UI_MESSAGES.LABEL_TARGET_EXTENSIONS */}
-            <span>{UI_MESSAGES.LABEL_TARGET_EXTENSIONS}</span>
+            {/* 定数参照: t("ui.LABEL_TARGET_EXTENSIONS") */}
+            <span>{t("ui.LABEL_TARGET_EXTENSIONS")}</span>
             <div className="flex gap-1">
               {FILE_EXTENSIONS.DEFAULT_LIST.map((ext) => {
                 const isSelected = currentExtensions.includes(ext);
@@ -478,8 +480,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                     onClick={() => handleToggleExtension(ext)}
                     title={`${ext}${
                       isSelected
-                        ? UI_MESSAGES.EXTENSION_TOGGLE_EXCLUDE_SUFFIX
-                        : UI_MESSAGES.EXTENSION_TOGGLE_INCLUDE_SUFFIX
+                        ? t("ui.EXTENSION_TOGGLE_EXCLUDE_SUFFIX")
+                        : t("ui.EXTENSION_TOGGLE_INCLUDE_SUFFIX")
                     }`}
                     className={`px-2 py-0.5 rounded text-[11px] font-mono border transition-all cursor-pointer ${
                       isSelected

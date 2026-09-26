@@ -27,7 +27,8 @@
 import React from "react";
 import { Copy, Check } from "lucide-react";
 import { PackageLicenseRecord } from "../../types/license";
-import { ABOUT_DIALOG_CONSTANTS, UI_MESSAGES } from "../../constants";
+import { useTranslation } from "../../i18n";
+
 
 export interface PackageDetailProps {
   package: PackageLicenseRecord | null;
@@ -53,10 +54,11 @@ export const PackageDetail: React.FC<PackageDetailProps> = ({
   onCopyLicense,
   isCopied,
 }) => {
+  const t = useTranslation();
   if (!pkg) {
     return (
       <div className="flex-1 flex items-center justify-center p-8 text-center text-xs text-zinc-500 bg-[#18181b]">
-        {ABOUT_DIALOG_CONSTANTS.SELECT_PACKAGE_PROMPT}
+        {t("about.SELECT_PACKAGE_PROMPT")}
       </div>
     );
   }
@@ -93,12 +95,12 @@ export const PackageDetail: React.FC<PackageDetailProps> = ({
             {isCopied ? (
               <>
                 <Check className="w-3.5 h-3.5 text-emerald-400" />
-                <span>{ABOUT_DIALOG_CONSTANTS.BUTTON_COPIED}</span>
+                <span>{t("about.BUTTON_COPIED")}</span>
               </>
             ) : (
               <>
                 <Copy className="w-3.5 h-3.5 text-zinc-400" />
-                <span>{ABOUT_DIALOG_CONSTANTS.BUTTON_COPY_LICENSE}</span>
+                <span>{t("about.BUTTON_COPY_LICENSE")}</span>
               </>
             )}
           </button>
@@ -109,7 +111,7 @@ export const PackageDetail: React.FC<PackageDetailProps> = ({
           {pkg.author && (
             <div className="flex items-baseline gap-2">
               <span className="text-zinc-500 font-medium w-28 flex-shrink-0">
-                {ABOUT_DIALOG_CONSTANTS.AUTHOR_LABEL}
+                {t("about.AUTHOR_LABEL")}
               </span>
               <span className="text-zinc-300 truncate">{pkg.author}</span>
             </div>
@@ -117,7 +119,7 @@ export const PackageDetail: React.FC<PackageDetailProps> = ({
           {pkg.repository && (
             <div className="flex items-baseline gap-2">
               <span className="text-zinc-500 font-medium w-28 flex-shrink-0">
-                {ABOUT_DIALOG_CONSTANTS.REPOSITORY_LABEL}
+                {t("about.REPOSITORY_LABEL")}
               </span>
               <span className="text-zinc-300 font-mono text-[11px] truncate flex items-center gap-1">
                 {pkg.repository}
@@ -130,9 +132,9 @@ export const PackageDetail: React.FC<PackageDetailProps> = ({
       {/* ライセンス本文スクロールビュー */}
       <div className="flex-1 flex flex-col p-4 min-h-0 bg-[#141416]">
         <div className="text-[11px] text-zinc-400 font-medium mb-1.5 flex items-center justify-between">
-          <span>{ABOUT_DIALOG_CONSTANTS.LICENSE_TEXT_LABEL}</span>
+          <span>{t("about.LICENSE_TEXT_LABEL")}</span>
           <span className="text-[10px] text-zinc-500 font-mono">
-            {lineCount} {UI_MESSAGES.UNIT_ROWS}
+            {lineCount} {t("ui.UNIT_ROWS")}
           </span>
         </div>
         <div className="flex-1 overflow-y-auto bg-[#1a1a1d] border border-zinc-800 rounded-lg p-3.5">

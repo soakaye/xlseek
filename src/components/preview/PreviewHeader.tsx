@@ -15,7 +15,8 @@ import React, { useState, useEffect, useRef } from "react";
 import { FileSpreadsheet, Layers, Folder, Copy, Check, ChevronDown, ExternalLink, BarChart2, Table } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { SearchMatch, SupportedApp } from "../../types/search";
-import { COMMANDS, LAYOUT_CONSTANTS, UI_MESSAGES } from "../../constants";
+import { COMMANDS, LAYOUT_CONSTANTS } from "../../constants";
+import { useTranslation } from "../../i18n";
 
 /**
  * プレビューヘッダーコンポーネントのプロパティ定義
@@ -26,7 +27,7 @@ import { COMMANDS, LAYOUT_CONSTANTS, UI_MESSAGES } from "../../constants";
  */
 interface PreviewHeaderProps {
   selectedMatch: SearchMatch | null;
-  onShowToast: (msg: string) => void;
+  onShowToast: (key: import("../../i18n").TranslationKey) => void;
 }
 
 /**
@@ -53,6 +54,7 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
   selectedMatch,
   onShowToast,
 }) => {
+  const t = useTranslation();
   const [copied, setCopied] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [supportedApps, setSupportedApps] = useState<SupportedApp[]>([]);
@@ -105,8 +107,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
   if (!selectedMatch) {
     return (
       <div className="p-3 bg-[#1c1c1f] border-b border-zinc-800 text-xs text-zinc-500">
-        {/* 定数参照: UI_MESSAGES.PREVIEW_SELECT_ITEM_PROMPT */}
-        {UI_MESSAGES.PREVIEW_SELECT_ITEM_PROMPT}
+        {/* 定数参照: t("ui.PREVIEW_SELECT_ITEM_PROMPT") */}
+        {t("ui.PREVIEW_SELECT_ITEM_PROMPT")}
       </div>
     );
   }
@@ -114,8 +116,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
   // OS 既定アプリ名を取得（ツールチップ表示用）
   const defaultApp = supportedApps.find((app) => app.is_default);
   const defaultAppTooltip = defaultApp
-    ? `${defaultApp.name}${UI_MESSAGES.OPEN_WITH_SPECIFIC_APP_PREFIX}`
-    : UI_MESSAGES.OPEN_IN_APP_DEFAULT;
+    ? `${defaultApp.name}${t("ui.OPEN_WITH_SPECIFIC_APP_PREFIX")}`
+    : t("ui.OPEN_IN_APP_DEFAULT");
 
   const renderAppIcon = (iconHint?: string | null, className?: string) => {
     switch (iconHint) {
@@ -139,8 +141,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
         appPath: null,
       });
     } catch {
-      // 定数参照: UI_MESSAGES.LAUNCH_APP_FAILED
-      onShowToast(UI_MESSAGES.LAUNCH_APP_FAILED);
+      // 定数参照: t("ui.LAUNCH_APP_FAILED")
+      onShowToast("ui.LAUNCH_APP_FAILED");
     }
   };
 
@@ -154,8 +156,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
         appPath: app.executable_path,
       });
     } catch {
-      // 定数参照: UI_MESSAGES.LAUNCH_APP_FAILED
-      onShowToast(UI_MESSAGES.LAUNCH_APP_FAILED);
+      // 定数参照: t("ui.LAUNCH_APP_FAILED")
+      onShowToast("ui.LAUNCH_APP_FAILED");
     }
   };
 
@@ -168,8 +170,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
         filePath: selectedMatch.full_path,
       });
     } catch {
-      // 定数参照: UI_MESSAGES.SHOW_OPEN_WITH_FAILED
-      onShowToast(UI_MESSAGES.SHOW_OPEN_WITH_FAILED);
+      // 定数参照: t("ui.SHOW_OPEN_WITH_FAILED")
+      onShowToast("ui.SHOW_OPEN_WITH_FAILED");
     }
   };
 
@@ -178,8 +180,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
       // 定数参照: COMMANDS.OPEN_IN_FOLDER
       await invoke(COMMANDS.OPEN_IN_FOLDER, { filePath: selectedMatch.full_path });
     } catch {
-      // 定数参照: UI_MESSAGES.OPEN_FOLDER_FAILED
-      onShowToast(UI_MESSAGES.OPEN_FOLDER_FAILED);
+      // 定数参照: t("ui.OPEN_FOLDER_FAILED")
+      onShowToast("ui.OPEN_FOLDER_FAILED");
     }
   };
 
@@ -187,13 +189,13 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
     try {
       await navigator.clipboard.writeText(selectedMatch.full_path);
       setCopied(true);
-      // 定数参照: UI_MESSAGES.COPIED_FILE_PATH
-      onShowToast(UI_MESSAGES.COPIED_FILE_PATH);
+      // 定数参照: t("ui.COPIED_FILE_PATH")
+      onShowToast("ui.COPIED_FILE_PATH");
       // 定数参照: LAYOUT_CONSTANTS.COPY_FEEDBACK_DURATION_MS
       setTimeout(() => setCopied(false), LAYOUT_CONSTANTS.COPY_FEEDBACK_DURATION_MS);
     } catch {
-      // 定数参照: UI_MESSAGES.COPY_TO_CLIPBOARD_FAILED
-      onShowToast(UI_MESSAGES.COPY_TO_CLIPBOARD_FAILED);
+      // 定数参照: t("ui.COPY_TO_CLIPBOARD_FAILED")
+      onShowToast("ui.COPY_TO_CLIPBOARD_FAILED");
     }
   };
 
@@ -213,10 +215,10 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
           {/* シート名バッジ */}
           <div
             className="flex items-center gap-1.5 bg-emerald-950/80 text-emerald-300 border border-emerald-700/70 px-2 py-0.5 rounded text-[11px] font-medium flex-shrink-0 shadow-sm"
-            title={UI_MESSAGES.WORKSHEET_TITLE}
+            title={t("ui.WORKSHEET_TITLE")}
           >
             <Layers className="w-3 h-3 text-emerald-400" />
-            <span className="text-zinc-400 font-normal">{UI_MESSAGES.LABEL_SHEET}</span>
+            <span className="text-zinc-400 font-normal">{t("ui.LABEL_SHEET")}</span>
             <span className="font-bold text-emerald-200">
               {selectedMatch.sheet_name}
             </span>
@@ -233,13 +235,13 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
               className="px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white text-xs font-medium rounded-l flex items-center gap-1.5 transition flex-shrink-0"
             >
               {renderAppIcon(defaultApp?.icon_hint, "w-3.5 h-3.5 text-white")}
-              {/* 定数参照: UI_MESSAGES.OPEN_IN_APP_DEFAULT */}
-              <span>{UI_MESSAGES.OPEN_IN_APP_DEFAULT}</span>
+              {/* 定数参照: t("ui.OPEN_IN_APP_DEFAULT") */}
+              <span>{t("ui.OPEN_IN_APP_DEFAULT")}</span>
             </button>
             <button
               onClick={() => setIsMenuOpen((prev) => !prev)}
-              /* 定数参照: UI_MESSAGES.OPEN_WITH_APP_TOOLTIP */
-              title={UI_MESSAGES.OPEN_WITH_APP_TOOLTIP}
+              /* 定数参照: t("ui.OPEN_WITH_APP_TOOLTIP") */
+              title={t("ui.OPEN_WITH_APP_TOOLTIP")}
               aria-expanded={isMenuOpen}
               aria-haspopup="true"
               className="px-1.5 py-1.5 bg-emerald-700 hover:bg-emerald-600 active:scale-[0.98] text-white rounded-r border-l border-emerald-800 transition flex items-center justify-center flex-shrink-0"
@@ -267,8 +269,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
                         </div>
                         {app.is_default && (
                           <span className="text-[10px] bg-emerald-950 text-emerald-400 border border-emerald-700/60 px-1.5 py-0.5 rounded flex-shrink-0 font-medium">
-                            {/* 定数参照: UI_MESSAGES.DEFAULT_APP_LABEL */}
-                            {UI_MESSAGES.DEFAULT_APP_LABEL}
+                            {/* 定数参照: t("ui.DEFAULT_APP_LABEL") */}
+                            {t("ui.DEFAULT_APP_LABEL")}
                           </span>
                         )}
                       </button>
@@ -276,8 +278,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
                   </div>
                 ) : (
                   <div className="px-3 py-2 text-[11px] text-zinc-500 select-none">
-                    {/* 定数参照: UI_MESSAGES.NO_SUPPORTED_APPS */}
-                    {UI_MESSAGES.NO_SUPPORTED_APPS}
+                    {/* 定数参照: t("ui.NO_SUPPORTED_APPS") */}
+                    {t("ui.NO_SUPPORTED_APPS")}
                   </div>
                 )}
 
@@ -290,8 +292,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
                   className="w-full text-left px-3 py-2 hover:bg-zinc-800 text-zinc-300 hover:text-white flex items-center gap-2 transition"
                 >
                   <ExternalLink className="w-3.5 h-3.5 text-zinc-400 flex-shrink-0" />
-                  {/* 定数参照: UI_MESSAGES.OPEN_WITH_OTHER_APP */}
-                  <span>{UI_MESSAGES.OPEN_WITH_OTHER_APP}</span>
+                  {/* 定数参照: t("ui.OPEN_WITH_OTHER_APP") */}
+                  <span>{t("ui.OPEN_WITH_OTHER_APP")}</span>
                 </button>
               </div>
             )}
@@ -299,8 +301,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
 
           <button
             onClick={handleOpenFolder}
-            /* 定数参照: UI_MESSAGES.OPEN_LOCATION_TOOLTIP */
-            title={UI_MESSAGES.OPEN_LOCATION_TOOLTIP}
+            /* 定数参照: t("ui.OPEN_LOCATION_TOOLTIP") */
+            title={t("ui.OPEN_LOCATION_TOOLTIP")}
             className="p-1.5 bg-zinc-800 hover:bg-zinc-700 active:scale-[0.98] text-zinc-300 hover:text-white rounded border border-zinc-700 transition flex-shrink-0"
           >
             <Folder className="w-3.5 h-3.5" />
@@ -311,8 +313,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
       {/* 2行目: ファイルパス専用行 (独立行 + 右端マージン) */}
       <div className="flex items-center gap-1.5 text-[10px] text-zinc-400 font-mono bg-zinc-900/80 px-2.5 py-1 rounded border border-zinc-800/80 min-w-0 mr-1">
         <Folder className="w-3 h-3 text-zinc-500 flex-shrink-0" />
-        {/* 定数参照: UI_MESSAGES.LOCATION_LABEL */}
-        <span className="text-zinc-500 select-none flex-shrink-0">{UI_MESSAGES.LOCATION_LABEL}</span>
+        {/* 定数参照: t("ui.LOCATION_LABEL") */}
+        <span className="text-zinc-500 select-none flex-shrink-0">{t("ui.LOCATION_LABEL")}</span>
         <span
           className="text-zinc-400 truncate select-text flex-1"
           title={selectedMatch.full_path}
@@ -321,8 +323,8 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
         </span>
         <button
           onClick={handleCopyPath}
-          /* 定数参照: UI_MESSAGES.COPY_PATH_TOOLTIP */
-          title={UI_MESSAGES.COPY_PATH_TOOLTIP}
+          /* 定数参照: t("ui.COPY_PATH_TOOLTIP") */
+          title={t("ui.COPY_PATH_TOOLTIP")}
           className="p-0.5 hover:text-zinc-200 text-zinc-500 rounded flex-shrink-0 transition"
         >
           {copied ? (

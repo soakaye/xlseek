@@ -29,7 +29,8 @@
 import React from "react";
 import { X } from "lucide-react";
 import { PackageLicenseRecord } from "../../types/license";
-import { ABOUT_DIALOG_CONSTANTS } from "../../constants";
+import { useTranslation } from "../../i18n";
+
 
 export interface PackageListProps {
   packages: PackageLicenseRecord[];
@@ -61,6 +62,7 @@ export const PackageList: React.FC<PackageListProps> = ({
   searchKeyword,
   onSearchChange,
 }) => {
+  const t = useTranslation();
   return (
     <div className="w-[340px] flex-shrink-0 border-r border-zinc-800 flex flex-col bg-[#141416]">
       {/* 検索入力バー */}
@@ -70,14 +72,14 @@ export const PackageList: React.FC<PackageListProps> = ({
             type="text"
             value={searchKeyword}
             onChange={(e) => onSearchChange(e.target.value)}
-            placeholder={ABOUT_DIALOG_CONSTANTS.SEARCH_PLACEHOLDER}
+            placeholder={t("about.SEARCH_PLACEHOLDER")}
             className="w-full pl-3 pr-8 py-1.5 bg-[#202024] border border-zinc-700/80 rounded-md text-xs text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-excel-light"
           />
           {searchKeyword && (
             <button
               type="button"
               onClick={() => onSearchChange("")}
-              title={ABOUT_DIALOG_CONSTANTS.SEARCH_CLEAR_TOOLTIP}
+              title={t("about.SEARCH_CLEAR_TOOLTIP")}
               className="absolute inset-y-0 right-1 px-1.5 text-zinc-400 hover:text-zinc-200 flex items-center cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
@@ -86,9 +88,9 @@ export const PackageList: React.FC<PackageListProps> = ({
         </div>
         <div className="flex justify-between items-center text-[10px] text-zinc-500 mt-2 px-1">
           <span>
-            {packages.length} / {totalPackageCount} {ABOUT_DIALOG_CONSTANTS.PACKAGE_COUNT_UNIT}
+            {packages.length} / {totalPackageCount} {t("about.PACKAGE_COUNT_UNIT")}
           </span>
-          {searchKeyword && <span>{ABOUT_DIALOG_CONSTANTS.FILTER_ACTIVE}</span>}
+          {searchKeyword && <span>{t("about.FILTER_ACTIVE")}</span>}
         </div>
       </div>
 
@@ -96,7 +98,7 @@ export const PackageList: React.FC<PackageListProps> = ({
       <div className="flex-1 overflow-y-auto divide-y divide-zinc-800/60">
         {packages.length === 0 ? (
           <div className="p-6 text-center text-xs text-zinc-500">
-            {ABOUT_DIALOG_CONSTANTS.NO_PACKAGES_FOUND}
+            {t("about.NO_PACKAGES_FOUND")}
           </div>
         ) : (
           packages.map((pkg) => {

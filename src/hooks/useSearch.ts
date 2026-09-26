@@ -27,11 +27,11 @@ import {
   EVENT_NAMES,
   FILE_EXTENSIONS,
   TIMING_CONSTANTS,
-  UI_MESSAGES,
 } from "../constants";
+import { TranslationKey } from "../i18n";
 
 interface UseSearchOptions {
-  onShowToast?: (message: string) => void;
+  onShowToast?: (key: TranslationKey) => void;
 }
 
 /**
@@ -198,7 +198,7 @@ export function useSearch(options?: UseSearchOptions) {
         setFormulaOrValue(match.formula || match.full_content);
       } catch {
         console.error("[useSearch] Failed to load cell preview");
-        options?.onShowToast?.(UI_MESSAGES.PREVIEW_LOAD_ERROR);
+        options?.onShowToast?.("ui.PREVIEW_LOAD_ERROR");
         setPreviewData(null);
       } finally {
         setLoadingPreview(false);
@@ -237,18 +237,18 @@ export function useSearch(options?: UseSearchOptions) {
   // 検索開始
   const startSearch = useCallback(async () => {
     if (!query.keyword.trim()) {
-      // 定数参照: UI_MESSAGES.KEYWORD_PLACEHOLDER を使用
-      options?.onShowToast?.(UI_MESSAGES.TOAST_SEARCH_KEYWORD);
+      // 翻訳参照: ui.KEYWORD_PLACEHOLDER を使用
+      options?.onShowToast?.("ui.TOAST_SEARCH_KEYWORD");
       return;
     }
     if (!query.target_dir.trim()) {
-      // 定数参照: UI_MESSAGES.SELECT_FOLDER_PROMPT を使用
-      options?.onShowToast?.(UI_MESSAGES.SELECT_FOLDER_PROMPT);
+      // 翻訳参照: ui.SELECT_FOLDER_PROMPT を使用
+      options?.onShowToast?.("ui.SELECT_FOLDER_PROMPT");
       return;
     }
     if (!query.extensions || query.extensions.length === 0) {
-      // 定数参照: UI_MESSAGES.SELECT_EXTENSION_PROMPT を使用
-      options?.onShowToast?.(UI_MESSAGES.SELECT_EXTENSION_PROMPT);
+      // 翻訳参照: ui.SELECT_EXTENSION_PROMPT を使用
+      options?.onShowToast?.("ui.SELECT_EXTENSION_PROMPT");
       return;
     }
 
@@ -261,7 +261,7 @@ export function useSearch(options?: UseSearchOptions) {
     setSelectedCell(null);
     setFormulaOrValue("");
 
-    // 定数参照: UI_MESSAGES.STATUS_SCAN_PREPARING を使用
+    // 翻訳参照: ui.STATUS_SCAN_PREPARING を使用
     setProgress({
       state: "Scanning",
       phase: "preparing",
@@ -278,7 +278,7 @@ export function useSearch(options?: UseSearchOptions) {
       await invoke(COMMANDS.START_SEARCH, { query });
     } catch {
       console.error("[useSearch] Failed to start search");
-      options?.onShowToast?.(UI_MESSAGES.SEARCH_START_ERROR);
+      options?.onShowToast?.("ui.SEARCH_START_ERROR");
       setProgress({
         state: "Error",
         phase: "finished",
@@ -299,7 +299,7 @@ export function useSearch(options?: UseSearchOptions) {
       isCancellingRef.current = true;
 
       // ユーザーへの即時フィードバック: 中断状態へ切り替えてボタンを即座にSEARCHに戻す
-      // 定数参照: UI_MESSAGES.SCAN_CANCELLED_MSG を使用
+      // 翻訳参照: ui.SCAN_CANCELLED_MSG を使用
       setProgress((prev) =>
         prev
           ? {

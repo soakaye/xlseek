@@ -472,6 +472,7 @@ mod tests {
     use super::*;
     use crate::export::{export_to_csv, export_to_xlsx};
     use crate::search::preview::extract_cell_preview;
+    use std::collections::BTreeMap;
     use std::path::PathBuf;
 
     /// ## 処理内容
@@ -550,9 +551,27 @@ mod tests {
         // エクスポートのテスト
         let temp_csv = std::env::temp_dir().join("test_export.csv");
         let temp_xlsx = std::env::temp_dir().join("test_export.xlsx");
+        let test_keys = crate::constants::EXPORT_HEADER_KEYS.iter().copied().chain([
+            crate::constants::EXPORT_SHEET_NAME_KEY,
+            crate::constants::EXPORT_MATCH_VALUE_KEY,
+            crate::constants::EXPORT_MATCH_FORMULA_KEY,
+            crate::constants::EXPORT_MATCH_COMMENT_KEY,
+            crate::constants::EXPORT_MATCH_HIDDEN_SHEET_KEY,
+            crate::constants::TRANSLATION_UNAVAILABLE_KEY,
+        ]);
+        let test_catalog = test_keys
+            .map(|key| (key.to_string(), key.to_string()))
+            .collect::<BTreeMap<_, _>>();
+        let test_catalogs = BTreeMap::from([
+            (
+                crate::constants::LANGUAGE_EN.to_string(),
+                test_catalog.clone(),
+            ),
+            (crate::constants::LANGUAGE_JA.to_string(), test_catalog),
+        ]);
 
-        assert!(export_to_csv(temp_csv.to_str().unwrap(), &found, "ja").is_ok());
-        assert!(export_to_xlsx(temp_xlsx.to_str().unwrap(), &found, "ja").is_ok());
+        assert!(export_to_csv(temp_csv.to_str().unwrap(), &found, "ja", &test_catalogs).is_ok());
+        assert!(export_to_xlsx(temp_xlsx.to_str().unwrap(), &found, "ja", &test_catalogs).is_ok());
 
         assert!(temp_csv.exists());
         assert!(temp_xlsx.exists());

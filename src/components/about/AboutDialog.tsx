@@ -28,15 +28,16 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { X, FileCode2, ShieldCheck } from "lucide-react";
 import { PackageLicenseRecord, AboutTabType } from "../../types/license";
-import { ABOUT_DIALOG_CONSTANTS, LAYOUT_CONSTANTS } from "../../constants";
+import { LAYOUT_CONSTANTS } from "../../constants";
 import defaultLicensesJson from "../../constants/licenses.json";
 import { PackageList } from "./PackageList";
 import { PackageDetail } from "./PackageDetail";
+import { useTranslation } from "../../i18n";
 
 export interface AboutDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onShowToast: (message: string) => void;
+  onShowToast: (key: import("../../i18n").TranslationKey, values?: import("../../i18n").TranslationValues) => void;
   licenses?: PackageLicenseRecord[];
 }
 
@@ -59,6 +60,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
   onShowToast,
   licenses = defaultLicensesJson as PackageLicenseRecord[],
 }) => {
+  const t = useTranslation();
   const [activeTab, setActiveTab] = useState<AboutTabType>("about");
   const [searchKeyword, setSearchKeyword] = useState<string>("");
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
@@ -123,13 +125,13 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
         await navigator.clipboard.writeText(text);
         setCopyFeedback(true);
         const pkgName = selectedPackage ? selectedPackage.name : "";
-        onShowToast(`${pkgName}${ABOUT_DIALOG_CONSTANTS.TOAST_COPIED_SUFFIX}`);
+        onShowToast("about.TOAST_COPIED", { packageName: pkgName });
         setTimeout(() => {
           setCopyFeedback(false);
         }, LAYOUT_CONSTANTS.COPY_FEEDBACK_DURATION_MS);
       } catch {
         console.error("[AboutDialog] Failed to copy license text");
-        onShowToast(ABOUT_DIALOG_CONSTANTS.TOAST_COPY_FAILED);
+        onShowToast("about.TOAST_COPY_FAILED");
       }
     },
     [onShowToast, selectedPackage]
@@ -155,9 +157,9 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
             </div>
             <div>
               <h2 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
-                {ABOUT_DIALOG_CONSTANTS.TITLE}
+                {t("about.TITLE")}
                 <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
-                  v{ABOUT_DIALOG_CONSTANTS.APP_VERSION}
+                  v{t("about.APP_VERSION")}
                 </span>
               </h2>
             </div>
@@ -174,7 +176,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
                   : "text-zinc-400 hover:text-zinc-200"
               }`}
             >
-              {ABOUT_DIALOG_CONSTANTS.TAB_ABOUT}
+              {t("about.TAB_ABOUT")}
             </button>
             <button
               type="button"
@@ -186,7 +188,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
               }`}
             >
               <FileCode2 className="w-3.5 h-3.5" />
-              <span>{ABOUT_DIALOG_CONSTANTS.TAB_LICENSES}</span>
+              <span>{t("about.TAB_LICENSES")}</span>
               <span className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-zinc-700/80 text-zinc-300">
                 {licenses.length}
               </span>
@@ -197,7 +199,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
           <button
             type="button"
             onClick={onClose}
-            title={ABOUT_DIALOG_CONSTANTS.BUTTON_CLOSE}
+            title={t("about.BUTTON_CLOSE")}
             className="p-1.5 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800 rounded-lg transition cursor-pointer"
           >
             <X className="w-5 h-5" />
@@ -214,30 +216,30 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
               </div>
 
               <h3 className="text-2xl font-bold text-zinc-100 mb-1">
-                {ABOUT_DIALOG_CONSTANTS.APP_NAME}
+                {t("about.APP_NAME")}
               </h3>
               <p className="text-xs font-mono text-zinc-400 mb-4 bg-zinc-900/80 px-3 py-1 rounded-full border border-zinc-800">
-                Version {ABOUT_DIALOG_CONSTANTS.APP_VERSION}
+                Version {t("about.APP_VERSION")}
               </p>
 
               <p className="text-sm text-zinc-300 max-w-lg mb-6 leading-relaxed">
-                {ABOUT_DIALOG_CONSTANTS.APP_DESCRIPTION}
+                {t("about.APP_DESCRIPTION")}
               </p>
 
               <div className="w-full max-w-md bg-[#1c1c20] border border-zinc-800 rounded-lg p-4 text-xs text-zinc-400 space-y-2 mb-6">
                 <div className="flex justify-between items-center py-1 border-b border-zinc-800/80">
-                  <span className="text-zinc-500">{ABOUT_DIALOG_CONSTANTS.COPYRIGHT_LABEL}</span>
-                  <span className="font-mono text-zinc-300">{ABOUT_DIALOG_CONSTANTS.COPYRIGHT}</span>
+                  <span className="text-zinc-500">{t("about.COPYRIGHT_LABEL")}</span>
+                  <span className="font-mono text-zinc-300">{t("about.COPYRIGHT")}</span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-zinc-800/80">
-                  <span className="text-zinc-500">{ABOUT_DIALOG_CONSTANTS.LICENSE_LABEL}</span>
-                  <span className="font-medium text-emerald-400">{ABOUT_DIALOG_CONSTANTS.APP_LICENSE_LABEL}</span>
+                  <span className="text-zinc-500">{t("about.LICENSE_LABEL")}</span>
+                  <span className="font-medium text-emerald-400">{t("about.APP_LICENSE_LABEL")}</span>
                 </div>
                 <div className="flex justify-between items-center py-1">
-                  <span className="text-zinc-500">{ABOUT_DIALOG_CONSTANTS.THIRD_PARTY_LABEL}</span>
+                  <span className="text-zinc-500">{t("about.THIRD_PARTY_LABEL")}</span>
                   <span className="font-mono text-zinc-300">
                     {licenses.length}
-                    {ABOUT_DIALOG_CONSTANTS.PACKAGE_COUNT_SUFFIX}
+                    {t("about.PACKAGE_COUNT_SUFFIX")}
                   </span>
                 </div>
               </div>
@@ -248,7 +250,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
                 className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded-lg border border-zinc-700 text-xs font-medium transition flex items-center gap-2 cursor-pointer"
               >
                 <FileCode2 className="w-4 h-4 text-emerald-400" />
-                <span>{ABOUT_DIALOG_CONSTANTS.PACKAGE_LIST_LINK}</span>
+                <span>{t("about.PACKAGE_LIST_LINK")}</span>
               </button>
             </div>
           ) : (
@@ -278,7 +280,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
             onClick={onClose}
             className="px-4 py-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white text-xs font-medium rounded-lg border border-zinc-700 transition cursor-pointer"
           >
-            {ABOUT_DIALOG_CONSTANTS.BUTTON_CLOSE}
+            {t("about.BUTTON_CLOSE")}
           </button>
         </div>
       </div>

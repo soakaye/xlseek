@@ -1,0 +1,7 @@
+# Workspace manifest for the Tauri package; the i18n plugin scans this root and bundles src-tauri/locales.
+# Inputs: the src-tauri Rust package; output: a shared Cargo workspace and root Cargo.lock.
+# Errors: Cargo reports missing or invalid member manifests during metadata/build commands.
+# History: v1.0.0 (2026-09-26, Codex): create workspace for locale bundling.
+[workspace]
+members = ["src-tauri"]
+resolver = "2"

@@ -14,7 +14,8 @@
 import React from "react";
 import { Info } from "lucide-react";
 import { SearchMatch } from "../../types/search";
-import { UI_MESSAGES } from "../../constants";
+import { useTranslation } from "../../i18n";
+
 
 /**
  * 検索一致詳細メタ情報カードコンポーネントのプロパティ定義
@@ -46,22 +47,23 @@ interface MetaInfoCardProps {
  * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、定数参照と4要素コメントを追加。
  */
 export const MetaInfoCard: React.FC<MetaInfoCardProps> = ({ match }) => {
+  const t = useTranslation();
   if (!match) return null;
 
   const matchTypeLabel = (() => {
     switch (match.match_type) {
       case "CellValue":
-        // 定数参照: UI_MESSAGES.MATCH_TYPE_CELL_VALUE
-        return UI_MESSAGES.MATCH_TYPE_CELL_VALUE;
+        // 定数参照: t("ui.MATCH_TYPE_CELL_VALUE")
+        return t("ui.MATCH_TYPE_CELL_VALUE");
       case "Formula":
-        // 定数参照: UI_MESSAGES.MATCH_TYPE_FORMULA
-        return UI_MESSAGES.MATCH_TYPE_FORMULA;
+        // 定数参照: t("ui.MATCH_TYPE_FORMULA")
+        return t("ui.MATCH_TYPE_FORMULA");
       case "Comment":
-        // 定数参照: UI_MESSAGES.MATCH_TYPE_COMMENT
-        return UI_MESSAGES.MATCH_TYPE_COMMENT;
+        // 定数参照: t("ui.MATCH_TYPE_COMMENT")
+        return t("ui.MATCH_TYPE_COMMENT");
       case "HiddenSheet":
-        // 定数参照: UI_MESSAGES.MATCH_TYPE_HIDDEN_SHEET
-        return UI_MESSAGES.MATCH_TYPE_HIDDEN_SHEET;
+        // 定数参照: t("ui.MATCH_TYPE_HIDDEN_SHEET")
+        return t("ui.MATCH_TYPE_HIDDEN_SHEET");
     }
   })();
 
@@ -69,37 +71,37 @@ export const MetaInfoCard: React.FC<MetaInfoCardProps> = ({ match }) => {
     <div className="mt-3 p-3 bg-zinc-900/90 rounded-lg border border-zinc-800 text-xs space-y-2 mr-2 flex-shrink-0">
       <div className="flex items-center justify-between text-zinc-400">
         <span className="font-medium text-zinc-300 flex items-center gap-1.5">
-          {/* 定数参照: UI_MESSAGES.MATCH_DETAIL_TITLE */}
-          <Info className="w-3.5 h-3.5 text-emerald-400" /> {UI_MESSAGES.MATCH_DETAIL_TITLE}
+          {/* 定数参照: t("ui.MATCH_DETAIL_TITLE") */}
+          <Info className="w-3.5 h-3.5 text-emerald-400" /> {t("ui.MATCH_DETAIL_TITLE")}
         </span>
         <span className="text-[11px] text-zinc-500">
-          {/* 定数参照: UI_MESSAGES.TYPE_LABEL */}
-          {UI_MESSAGES.TYPE_LABEL} <strong className="text-zinc-300">{matchTypeLabel}</strong>
+          {/* 定数参照: t("ui.TYPE_LABEL") */}
+          {t("ui.TYPE_LABEL")} <strong className="text-zinc-300">{matchTypeLabel}</strong>
         </span>
       </div>
 
       <div className="text-zinc-300 bg-zinc-950/80 p-2 rounded border border-zinc-800/80 font-mono text-[11px] select-text break-words">
-        {/* 定数参照: UI_MESSAGES.EMPTY_CONTENT */}
-        {match.full_content || UI_MESSAGES.EMPTY_CONTENT}
+        {/* 定数参照: t("ui.EMPTY_CONTENT") */}
+        {match.full_content || t("ui.EMPTY_CONTENT")}
       </div>
 
       <div className="flex items-center gap-4 text-[11px] text-zinc-400 pt-1">
         <span>
-          {/* 定数参照: UI_MESSAGES.ROW_NUMBER_LABEL */}
-          {UI_MESSAGES.ROW_NUMBER_LABEL} <strong className="text-zinc-200">{match.row_index}</strong>
+          {/* 定数参照: t("ui.ROW_NUMBER_LABEL") */}
+          {t("ui.ROW_NUMBER_LABEL")} <strong className="text-zinc-200">{match.row_index}</strong>
         </span>
         <span>
-          {/* 定数参照: UI_MESSAGES.COL_NUMBER_LABEL */}
-          {UI_MESSAGES.COL_NUMBER_LABEL}{" "}
+          {/* 定数参照: t("ui.COL_NUMBER_LABEL") */}
+          {t("ui.COL_NUMBER_LABEL")}{" "}
           <strong className="text-zinc-200">
             {match.col_index} ({match.col_name})
           </strong>
         </span>
         <span>
-          {/* 定数参照: UI_MESSAGES.HIDDEN_STATUS_LABEL, STATUS_HIDDEN, STATUS_VISIBLE */}
-          {UI_MESSAGES.HIDDEN_STATUS_LABEL}{" "}
+          {/* 定数参照: t("ui.HIDDEN_STATUS_LABEL"), STATUS_HIDDEN, STATUS_VISIBLE */}
+          {t("ui.HIDDEN_STATUS_LABEL")}{" "}
           <strong className="text-zinc-200">
-            {match.match_type === "HiddenSheet" ? UI_MESSAGES.STATUS_HIDDEN : UI_MESSAGES.STATUS_VISIBLE}
+            {match.match_type === "HiddenSheet" ? t("ui.STATUS_HIDDEN") : t("ui.STATUS_VISIBLE")}
           </strong>
         </span>
       </div>

@@ -15,7 +15,7 @@
  * - v1.4.0 (2026-09-26, AI Agent): システムメニュー (macOS) からのAboutダイアログ表示イベント (EVENT_NAMES.OPEN_ABOUT_DIALOG) のリッスン処理を追加。
  */
 
-import React, { useState, useEffect } from "react";
+import React, { Suspense, lazy, useState, useEffect } from "react";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { invoke } from "@tauri-apps/api/core";
 import { WindowFrame } from "./components/layout/WindowFrame";
@@ -28,12 +28,13 @@ import { SheetTabs } from "./components/preview/SheetTabs";
 import { MetaInfoCard } from "./components/preview/MetaInfoCard";
 import { StatusBar } from "./components/common/StatusBar";
 import { Toast } from "./components/common/Toast";
-import { AboutDialog } from "./components/about/AboutDialog";
 import { SettingsDialog } from "./components/settings/SettingsDialog";
 import { useSearch } from "./hooks/useSearch";
-import { COMMANDS, EVENT_NAMES, retranslateMessage, UI_MESSAGES } from "./constants";
+import { APP_LOGS, COMMANDS, EVENT_NAMES } from "./constants";
 import { useLocale } from "./hooks/useLocale";
-import { DisplayLanguage } from "./locale-core";
+import { LocaleProvider, t, TranslationKey, TranslationValues } from "./i18n";
+
+const AboutDialog = lazy(() => import("./components/about/AboutDialog").then((module) => ({ default: module.AboutDialog })));
 
 /**
  * Excel Grep アプリケーションのメイン画面コンポーネント
@@ -58,20 +59,21 @@ import { DisplayLanguage } from "./locale-core";
  * - v1.3.0 (2026-09-26, AI Agent): システムメニューからのAbout表示要求イベントの購読と状態連動を追加。
  */
 export const App: React.FC = () => {
-  const [toastNotice, setToastNotice] = useState<{ message: string; language: DisplayLanguage } | null>(null);
+  const [toastNotice, setToastNotice] = useState<{ key: TranslationKey; values?: TranslationValues } | null>(null);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const { language, preference, selectLanguage } = useLocale();
+  const { language, preference, selectLanguage, ready } = useLocale();
   const toastMessage = toastNotice
-    ? retranslateMessage(toastNotice.message, toastNotice.language, language)
+    ? t(language, toastNotice.key, toastNotice.values)
     : null;
 
   useEffect(() => {
+    if (!ready) return;
     void invoke(COMMANDS.SET_MENU_LOCALE, { language }).catch(() => {
-      console.error("[App] Failed to update application menu language");
-      setToastNotice({ message: UI_MESSAGES.MENU_UPDATE_FAILED, language });
+      console.error(APP_LOGS.MENU_UPDATE_FAILED);
+      setToastNotice({ key: "ui.MENU_UPDATE_FAILED" });
     });
-  }, [language]);
+  }, [language, ready]);
 
   // システムメニューからのAboutダイアログ表示要求イベントの購読
   useEffect(() => {
@@ -92,7 +94,7 @@ export const App: React.FC = () => {
           unlisten = u;
         }
       } catch {
-        console.error("[App] Failed to register About dialog event listener");
+        console.error(APP_LOGS.ABOUT_LISTENER_FAILED);
       }
     };
 
@@ -106,8 +108,8 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  const showToast = (msg: string) => {
-    setToastNotice({ message: msg, language });
+  const showToast = (key: TranslationKey, values?: TranslationValues) => {
+    setToastNotice({ key, values });
   };
 
   const {
@@ -129,7 +131,10 @@ export const App: React.FC = () => {
     cancelSearch,
   } = useSearch({ onShowToast: showToast });
 
+  if (!ready) return null;
+
   return (
+    <LocaleProvider value={language}>
     <WindowFrame>
       {/* 検索入力 & 設定コントロールパネル */}
       <SearchBar
@@ -207,17 +212,19 @@ export const App: React.FC = () => {
         language={language}
         onSelect={async (value) => {
           const saved = await selectLanguage(value);
-          if (!saved) setToastNotice({ message: UI_MESSAGES.SAVE_FAILED, language });
+          if (!saved) setToastNotice({ key: "ui.SAVE_FAILED" });
         }}
         onClose={() => setIsSettingsOpen(false)}
       />
 
       {/* アプリ情報・ライセンスモーダル */}
-      <AboutDialog
-        isOpen={isAboutOpen}
-        onClose={() => setIsAboutOpen(false)}
-        onShowToast={showToast}
-      />
+      <Suspense fallback={null}>
+        {isAboutOpen && <AboutDialog
+          isOpen={isAboutOpen}
+          onClose={() => setIsAboutOpen(false)}
+          onShowToast={showToast}
+        />}
+      </Suspense>
 
       {/* トースト通知 */}
       <Toast
@@ -225,6 +232,7 @@ export const App: React.FC = () => {
         onClose={() => setToastNotice(null)}
       />
     </WindowFrame>
+    </LocaleProvider>
   );
 };
 
