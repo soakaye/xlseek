@@ -60,6 +60,7 @@ export function useSearch(options?: UseSearchOptions) {
     match_case: false,
     use_regex: false,
     include_formula: true,
+    include_shape: true,
     include_comment: true,
     include_hidden: false,
     extensions: [...FILE_EXTENSIONS.DEFAULT_LIST],
@@ -213,6 +214,14 @@ export function useSearch(options?: UseSearchOptions) {
   const handleSelectItem = useCallback(
     (item: SearchMatch) => {
       setSelectedMatch(item);
+      if (item.match_type === "Shape") {
+        setPreviewData(null);
+        setLoadingPreview(false);
+        setActiveSheet(item.sheet_name);
+        setSelectedCell(null);
+        setFormulaOrValue(item.full_content);
+        return;
+      }
       loadPreview(item);
     },
     [loadPreview]
@@ -222,6 +231,10 @@ export function useSearch(options?: UseSearchOptions) {
   const handleSelectSheet = useCallback(
     (sheetName: string) => {
       if (!selectedMatch) return;
+      if (selectedMatch.match_type === "Shape") {
+        setActiveSheet(sheetName);
+        return;
+      }
       loadPreview(selectedMatch, sheetName);
     },
     [selectedMatch, loadPreview]

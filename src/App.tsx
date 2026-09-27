@@ -168,22 +168,26 @@ export const App: React.FC = () => {
             onShowToast={showToast}
           />
 
-          {/* Excel 数式バー */}
-          <FormulaBar
-            cellAddress={selectedCell?.address || selectedMatch?.cell_address || ""}
-            formulaOrValue={formulaOrValue}
-          />
+          {selectedMatch?.match_type !== "Shape" && (
+            <>
+              {/* Excel 数式バー */}
+              <FormulaBar
+                cellAddress={selectedCell?.address || selectedMatch?.cell_address || ""}
+                formulaOrValue={formulaOrValue}
+              />
 
-          {/* スプレッドシート領域 */}
-          <SpreadsheetGrid
-            previewData={previewData}
-            isLoading={loadingPreview}
-            selectedCell={selectedCell}
-            onSelectCell={handleSelectCell}
-          />
+              {/* スプレッドシート領域 */}
+              <SpreadsheetGrid
+                previewData={previewData}
+                isLoading={loadingPreview}
+                selectedCell={selectedCell}
+                onSelectCell={handleSelectCell}
+              />
+            </>
+          )}
 
           {/* Excel風シートタブバー */}
-          {previewData && (
+          {previewData && selectedMatch?.match_type !== "Shape" && (
             <div className="px-3.5 pb-1 bg-[#141416] flex-shrink-0">
               <SheetTabs
                 sheets={previewData.sheets_in_workbook}

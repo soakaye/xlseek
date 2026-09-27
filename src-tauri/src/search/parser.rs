@@ -1,15 +1,16 @@
 //! # Excelファイル解析・検索モジュール (search/parser.rs)
 //!
 //! ## 処理内容
-//! calamineを用いて単一のExcelブックを開き、セル値および数式を走査して検索条件に一致するセルを抽出する。
-//! UTF-8文字境界を考慮した安全なスニペット生成およびセル番地変換機能を提供する。
+//! calamineを用いて単一のExcelブックを開き、セル値・数式・任意の Shape テキストを検索する。
+//! UTF-8境界補正・HTMLエスケープ済みスニペットと、実シート可視状態・アンカー情報も扱う。
 //! 憲章原則I（日本語エラー）、原則II（定数参照）、原則III（ヘッダコメント）、原則IV（Clippy完全準拠）に準拠。
 //!
 //! ## 変更履歴
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化、Clippy指摘修正（is_some_and）、日本語エラー化、4要素ヘッダコメント付与。
+//! - v1.3.0 (2026-09-28, Codex): Shape 抽出・検索、シート可視状態、HTML 安全化を追加。
 
 use crate::models::{MatchType, SearchMatch, SearchQuery};
-use calamine::{open_workbook_auto, Data, Reader, Sheets};
+use calamine::{open_workbook_auto, Data, Reader, SheetVisible, Sheets};
 use regex::Regex;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -66,8 +67,35 @@ pub fn format_cell_address(row_idx: u32, col_idx: u32) -> (String, String) {
 }
 
 /// ## 処理内容
-/// ヒットした文字列の前後にコンテキストを付与し、ハイライト表示用HTMLマークアップを含む
-/// UTF-8文字境界安全なスニペット文字列を生成する。
+/// 検索条件に応じた部分一致または正規表現一致のバイト範囲を得る。
+/// ## 引数・戻り値
+/// `text` は対象文字列、`query` は検索条件、`regex_opt` は任意の正規表現、戻り値は一致範囲。
+/// ## エラー / 例外発生条件
+/// 正規表現は事前コンパイル済みのためエラーを返さず、一致しない場合は `None`。
+/// ## 変更履歴
+/// - v1.0.0 (2026-09-28, Codex): 値・数式・Shape 共通の一致判定を追加。
+fn find_match_position(
+    text: &str,
+    query: &SearchQuery,
+    regex_opt: Option<&Regex>,
+) -> Option<(usize, usize)> {
+    if let Some(regex) = regex_opt {
+        regex.find(text).map(|found| (found.start(), found.end()))
+    } else if query.match_case {
+        text.find(&query.keyword)
+            .map(|index| (index, index + query.keyword.len()))
+    } else {
+        let lower_text = text.to_lowercase();
+        let lower_keyword = query.keyword.to_lowercase();
+        lower_text
+            .find(&lower_keyword)
+            .map(|index| (index, index + lower_keyword.len()))
+    }
+}
+
+/// ## 処理内容
+/// ヒットした文字列の前後にコンテキストを付与し、未信頼文字列をHTMLエスケープした
+/// ハイライト表示用スニペットを生成する。
 ///
 /// ## 引数
 /// - `text`: `&str` - 対象セルの全体テキスト
@@ -78,14 +106,23 @@ pub fn format_cell_address(row_idx: u32, col_idx: u32) -> (String, String) {
 /// - `String`: `<mark>` タグ付きハイライトスニペット文字列
 ///
 /// ## エラー / 例外発生条件
-/// 不正なバイト境界指定時にもパニックせず安全にスライス範囲を算出する。
+/// 範囲外または UTF-8 文字境界外の位置は安全な境界へ補正する。
 ///
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
+/// - v1.3.0 (2026-09-28, Codex): スニペットに未信頼文字列の HTML エスケープを追加。
 pub fn make_snippet(text: &str, mat_start: usize, mat_end: usize) -> String {
-    let before_str = &text[..mat_start];
-    let matched = &text[mat_start..mat_end];
-    let after_str = &text[mat_end..];
+    let mut start = mat_start.min(text.len());
+    while !text.is_char_boundary(start) {
+        start -= 1;
+    }
+    let mut end = mat_end.min(text.len()).max(start);
+    while !text.is_char_boundary(end) {
+        end += 1;
+    }
+    let before_str = &text[..start];
+    let matched = &text[start..end];
+    let after_str = &text[end..];
 
     // 定数参照: crate::constants::SNIPPET_CONTEXT_CHARS を使用
     let before_chars_count = crate::constants::SNIPPET_CONTEXT_CHARS;
@@ -113,14 +150,32 @@ pub fn make_snippet(text: &str, mat_start: usize, mat_end: usize) -> String {
         None => (after_str, ""),
     };
 
+    // 定数参照: crate::constants::HTML_ESCAPE_* を使用し、検索対象由来の HTML を無効化する。
+    let escape_html = |value: &str| {
+        value
+            .replace('&', crate::constants::HTML_ESCAPE_AMPERSAND)
+            .replace('<', crate::constants::HTML_ESCAPE_LESS_THAN)
+            .replace('>', crate::constants::HTML_ESCAPE_GREATER_THAN)
+            .replace('"', crate::constants::HTML_ESCAPE_DOUBLE_QUOTE)
+            .replace('\'', crate::constants::HTML_ESCAPE_APOSTROPHE)
+    };
+
+    // 定数参照: crate::constants::SNIPPET_MARK_OPEN/CLOSE を使用。
     format!(
-        "{}{}<mark class='bg-yellow-500/30 text-yellow-300 px-0.5 rounded font-semibold'>{}</mark>{}{}",
-        prefix, before, matched, after, suffix
+        "{}{}{}{}{}{}{}",
+        prefix,
+        escape_html(before),
+        crate::constants::SNIPPET_MARK_OPEN,
+        escape_html(matched),
+        crate::constants::SNIPPET_MARK_CLOSE,
+        escape_html(after),
+        suffix
     )
 }
 
 /// ## 処理内容
 /// 指定された単一のExcelファイルを開き、シートごとのセル値および数式を走査して検索クエリに一致するセルを抽出する。
+/// 有効時は Shape テキストも検索し、Shape 結果をセルプレビュー向けの形式で返す。
 /// キャンセル通知フラグを定期的に確認し、要求があれば速やかに処理を中断する。
 ///
 /// ## 引数
@@ -138,6 +193,7 @@ pub fn make_snippet(text: &str, mat_start: usize, mat_end: usize) -> String {
 ///
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化、Clippy指摘修正（is_some_and）。
+/// - v1.3.0 (2026-09-28, Codex): Shape 検索と実シート可視状態を追加。
 pub fn parse_and_search_file<P: AsRef<Path>>(
     path: P,
     query: &SearchQuery,
@@ -166,15 +222,26 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
     })?;
 
     let sheet_names = workbook.sheet_names().to_vec();
+    let sheet_visibility = workbook
+        .sheets_metadata()
+        .iter()
+        .map(|sheet| (sheet.name.clone(), sheet.visible != SheetVisible::Visible))
+        .collect::<std::collections::HashMap<_, _>>();
     let mut matches = Vec::new();
+    let shape_texts = if query.include_shape {
+        crate::search::shape::extract_shapes(path_ref, &sheet_names, cancel_flag)
+            .unwrap_or_default()
+    } else {
+        Vec::new()
+    };
 
     for sheet_name in &sheet_names {
         if cancel_flag.is_some_and(|f| f.load(Ordering::Relaxed)) {
             return Ok(matches);
         }
 
-        // 非表示シート判定 (calamine の sheet メタデータ)
-        let is_hidden_sheet = sheet_name.to_lowercase().contains("hidden");
+        // 定数参照: SheetVisible メタデータで Hidden / VeryHidden を判定する。
+        let is_hidden_sheet = sheet_visibility.get(sheet_name).copied().unwrap_or(false);
 
         if is_hidden_sheet && !query.include_hidden {
             continue;
@@ -208,19 +275,7 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
                     }
 
                     // 一致判定 (正規表現 or テキスト部分一致)
-                    let match_pos = if let Some(re) = regex_opt {
-                        re.find(&cell_str).map(|m| (m.start(), m.end()))
-                    } else if query.match_case {
-                        cell_str
-                            .find(&query.keyword)
-                            .map(|idx| (idx, idx + query.keyword.len()))
-                    } else {
-                        let lower_text = cell_str.to_lowercase();
-                        let lower_key = query.keyword.to_lowercase();
-                        lower_text
-                            .find(&lower_key)
-                            .map(|idx| (idx, idx + lower_key.len()))
-                    };
+                    let match_pos = find_match_position(&cell_str, query, regex_opt);
 
                     if let Some((start, end)) = match_pos {
                         let (address, col_name) =
@@ -243,6 +298,8 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
                             col_index: (col_idx + 1) as u32,
                             col_name,
                             match_type,
+                            shape_name: None,
+                            sheet_hidden: is_hidden_sheet,
                             snippet,
                             full_content: cell_str.clone(),
                             formula: None,
@@ -268,19 +325,7 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
                             continue;
                         }
 
-                        let match_pos = if let Some(re) = regex_opt {
-                            re.find(formula_str).map(|m| (m.start(), m.end()))
-                        } else if query.match_case {
-                            formula_str
-                                .find(&query.keyword)
-                                .map(|idx| (idx, idx + query.keyword.len()))
-                        } else {
-                            let lower_text = formula_str.to_lowercase();
-                            let lower_key = query.keyword.to_lowercase();
-                            lower_text
-                                .find(&lower_key)
-                                .map(|idx| (idx, idx + lower_key.len()))
-                        };
+                        let match_pos = find_match_position(formula_str, query, regex_opt);
 
                         if let Some((start, end)) = match_pos {
                             let (address, col_name) =
@@ -298,6 +343,8 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
                                 col_index: (col_idx + 1) as u32,
                                 col_name,
                                 match_type: MatchType::Formula,
+                                shape_name: None,
+                                sheet_hidden: is_hidden_sheet,
                                 snippet,
                                 full_content: formula_str.clone(),
                                 formula: Some(formula_str.clone()),
@@ -308,7 +355,68 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
                 }
             }
         }
+
+        for shape in shape_texts
+            .iter()
+            .filter(|shape| shape.sheet_name == *sheet_name)
+        {
+            if cancel_flag.is_some_and(|flag| flag.load(Ordering::Relaxed)) {
+                return Ok(matches);
+            }
+            if shape.text.is_empty() {
+                continue;
+            }
+            if let Some((start, end)) = find_match_position(&shape.text, query, regex_opt) {
+                let (cell_address, row_index, col_index, col_name) = match shape.anchor {
+                    Some((row, col)) if row > 0 && col > 0 => {
+                        let (address, name) = format_cell_address(row - 1, col - 1);
+                        (address, row, col, name)
+                    }
+                    _ => (String::new(), 0, 0, String::new()),
+                };
+                matches.push(SearchMatch {
+                    id: MATCH_ID_COUNTER.fetch_add(1, Ordering::Relaxed),
+                    file_name: file_name.clone(),
+                    full_path: full_path.clone(),
+                    sheet_name: shape.sheet_name.clone(),
+                    cell_address,
+                    row_index,
+                    col_index,
+                    col_name,
+                    match_type: MatchType::Shape,
+                    shape_name: Some(shape.shape_name.clone()),
+                    sheet_hidden: is_hidden_sheet,
+                    snippet: make_snippet(&shape.text, start, end),
+                    full_content: shape.text.clone(),
+                    formula: None,
+                    sheets_in_workbook: sheet_names.clone(),
+                });
+            }
+        }
     }
 
     Ok(matches)
+}
+
+#[cfg(test)]
+mod snippet_tests {
+    use super::make_snippet;
+
+    /// ## 処理内容
+    /// スニペットへ渡す未信頼 HTML がエスケープされ、無効な UTF-8 範囲も安全に処理されることを確認する。
+    /// ## 引数・戻り値
+    /// 引数なし。アサーションが失敗した場合にテストが失敗する。
+    /// ## エラー / 例外発生条件
+    /// 関数は panic せず、期待した文字列でない場合にテストが失敗する。
+    /// ## 変更履歴
+    /// - v1.0.0 (2026-09-28, Codex): 未信頼文字列のエスケープ確認を追加。
+    #[test]
+    fn escapes_html_and_repairs_invalid_utf8_ranges() {
+        let snippet = make_snippet("<img src=x>&'\"needle", 14, 20);
+        assert!(snippet.contains("&lt;img src=x&gt;&amp;&#39;&quot;"));
+        assert!(snippet.contains("<mark"));
+        let safe = make_snippet("猫needle", 1, 99);
+        assert!(safe.contains("<mark"));
+        assert!(safe.contains("needle"));
+    }
 }

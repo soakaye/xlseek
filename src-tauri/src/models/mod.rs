@@ -13,9 +13,15 @@ use std::collections::HashMap;
 
 /// ## 処理内容
 /// 検索実行時の検索条件を保持するクエリ構造体。
+/// ## 引数・戻り値
+/// キーワード、対象フォルダ、検索オプション、対象拡張子を保持する。
+/// `include_shape` は Shape テキスト検索の有効状態を表し、既定値は true。
+/// ## エラー / 例外発生条件
+/// Serde のデシリアライズで必須キーワードまたは対象フォルダが欠けると失敗する。
 ///
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
+/// - v1.3.0 (2026-09-28, Codex): Shape 検索条件を追加。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchQuery {
     pub keyword: String,
@@ -28,6 +34,8 @@ pub struct SearchQuery {
     pub include_formula: bool,
     #[serde(default = "default_true")]
     pub include_comment: bool,
+    #[serde(default = "default_true")]
+    pub include_shape: bool,
     #[serde(default)]
     pub include_hidden: bool,
     #[serde(default = "default_extensions")]
@@ -76,22 +84,34 @@ fn default_extensions() -> Vec<String> {
 
 /// ## 処理内容
 /// 検索結果がヒットしたセルの要素種別を表す列挙型。
+/// ## 引数・戻り値
+/// バリアントは `SearchMatch.match_type` に保存され、Serde で IPC JSON へ直列化される。
+/// ## エラー / 例外発生条件
+/// 既知バリアント以外をデシリアライズすると失敗する。
 ///
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// - v1.3.0 (2026-09-28, Codex): Shape バリアントを追加。
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MatchType {
     CellValue,
     Formula,
     Comment,
     HiddenSheet,
+    Shape,
 }
 
 /// ## 処理内容
-/// 検索に一致した単一セル/行の検索結果アイテム構造体。
+/// 検索に一致したセルまたは Shape の結果を格納する構造体。
+/// ## 引数・戻り値
+/// Shape は `shape_name` を持ち、`sheet_hidden` がシート可視状態を表す。
+/// 未知アンカーではセル番地が空、内部行列が 0、数式は `None` となる。
+/// ## エラー / 例外発生条件
+/// 値保持と Serde 変換のみで、変換不能な型やデータの場合にエラーとなる。
 ///
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// - v1.3.0 (2026-09-28, Codex): Shape 名とシート可視状態を追加。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchMatch {
     pub id: u64,
@@ -103,6 +123,8 @@ pub struct SearchMatch {
     pub col_index: u32,
     pub col_name: String,
     pub match_type: MatchType,
+    pub shape_name: Option<String>,
+    pub sheet_hidden: bool,
     pub snippet: String,
     pub full_content: String,
     pub formula: Option<String>,

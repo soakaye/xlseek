@@ -512,6 +512,7 @@ mod tests {
             use_regex: false,
             include_formula: true,
             include_comment: true,
+            include_shape: true,
             include_hidden: false,
             extensions: vec![".xlsx".to_string()],
         };
@@ -664,6 +665,7 @@ mod tests {
             use_regex: false,
             include_formula: true,
             include_comment: true,
+            include_shape: true,
             include_hidden: false,
             extensions: vec![".xlsx".to_string()],
         };
@@ -764,6 +766,7 @@ mod tests {
             use_regex: false,
             include_formula: true,
             include_comment: true,
+            include_shape: true,
             include_hidden: false,
             extensions: vec![".xlsx".to_string()],
         };
@@ -829,6 +832,7 @@ mod tests {
             use_regex: false,
             include_formula: true,
             include_comment: true,
+            include_shape: true,
             include_hidden: false,
             extensions: vec![".xlsx".to_string()],
         };

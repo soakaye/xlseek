@@ -106,6 +106,7 @@ pub fn export_to_xlsx(
             MatchType::Formula => crate::constants::EXPORT_MATCH_FORMULA_KEY,
             MatchType::Comment => crate::constants::EXPORT_MATCH_COMMENT_KEY,
             MatchType::HiddenSheet => crate::constants::EXPORT_MATCH_HIDDEN_SHEET_KEY,
+            MatchType::Shape => crate::constants::EXPORT_MATCH_SHAPE_KEY,
         };
         let match_type_str = crate::i18n::resolve_catalog_text(catalogs, language, match_key)
             .ok_or_else(|| crate::constants::ERR_TRANSLATION_MISSING.to_string())?;
@@ -141,19 +142,25 @@ pub fn export_to_xlsx(
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
         worksheet
-            .write_string_with_format(r, 5, &match_type_str, &cell_format)
+            .write_string_with_format(r, 5, item.shape_name.as_deref().unwrap_or(""), &cell_format)
             .map_err(|e| {
                 // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
         worksheet
-            .write_string_with_format(r, 6, &item.full_content, &cell_format)
+            .write_string_with_format(r, 6, &match_type_str, &cell_format)
             .map_err(|e| {
                 // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
         worksheet
-            .write_string_with_format(r, 7, item.formula.as_deref().unwrap_or(""), &cell_format)
+            .write_string_with_format(r, 7, &item.full_content, &cell_format)
+            .map_err(|e| {
+                // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
+                format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
+            })?;
+        worksheet
+            .write_string_with_format(r, 8, item.formula.as_deref().unwrap_or(""), &cell_format)
             .map_err(|e| {
                 // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
@@ -163,7 +170,7 @@ pub fn export_to_xlsx(
     // オートフィルター有効化（データが存在する場合）
     if !items.is_empty() {
         let last_row = items.len() as u32;
-        worksheet.autofilter(0, 0, last_row, 7).map_err(|e| {
+        worksheet.autofilter(0, 0, last_row, 8).map_err(|e| {
             // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
             format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
         })?;

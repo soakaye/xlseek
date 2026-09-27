@@ -141,6 +141,8 @@ describe("localized application UI", () => {
     { locale: "ja" as const, matchType: "Comment" as const, label: "コメント / メモ", detail: "コメント / メモ", header: "一致種別", detailHeading: "一致の詳細情報" },
     { locale: "en" as const, matchType: "HiddenSheet" as const, label: "Hidden sheet match", detail: "Hidden sheet match", header: "Match type", detailHeading: "Match details" },
     { locale: "ja" as const, matchType: "HiddenSheet" as const, label: "非表示シート一致", detail: "非表示シート一致", header: "一致種別", detailHeading: "一致の詳細情報" },
+    { locale: "en" as const, matchType: "Shape" as const, label: "Shape", detail: "Shape", header: "Match type", detailHeading: "Match details" },
+    { locale: "ja" as const, matchType: "Shape" as const, label: "Shape", detail: "Shape", header: "一致種別", detailHeading: "一致の詳細情報" },
   ])("shows the $locale $matchType label in results and preserves its detail label", async ({ locale, matchType, label, detail, header, detailHeading }) => {
     plugin.language = locale;
     await setI18nLocale(locale);
@@ -154,6 +156,8 @@ describe("localized application UI", () => {
       col_index: 1,
       col_name: "A",
       match_type: matchType,
+      shape_name: null,
+      sheet_hidden: false,
       snippet: "match",
       full_content: "match",
       formula: null,

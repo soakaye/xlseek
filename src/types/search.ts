@@ -13,7 +13,7 @@
 /**
  * 一致箇所の種別
  */
-export type MatchType = "CellValue" | "Formula" | "Comment" | "HiddenSheet";
+export type MatchType = "CellValue" | "Formula" | "Comment" | "HiddenSheet" | "Shape";
 
 /**
  * 検索条件パラメータインターフェース
@@ -25,6 +25,7 @@ export interface SearchQuery {
   use_regex?: boolean;
   include_formula?: boolean;
   include_comment?: boolean;
+  include_shape?: boolean;
   include_hidden?: boolean;
   extensions?: string[];
 }
@@ -42,6 +43,8 @@ export interface SearchMatch {
   col_index: number;
   col_name: string;
   match_type: MatchType;
+  shape_name: string | null;
+  sheet_hidden: boolean;
   snippet: string;
   full_content: string;
   formula: string | null;

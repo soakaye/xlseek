@@ -43,6 +43,10 @@ ui.OPTIONS_LABEL: "Options:"
 ui.OPTION_MATCH_CASE: Match case
 ui.OPTION_USE_REGEX: Regular expression (Regex)
 ui.OPTION_INCLUDE_FORMULA: Formula
+ui.OPTION_INCLUDE_SHAPE: Shape text
+ui.MATCH_TYPE_SHAPE: Shape
+ui.RESULT_MATCH_TYPE_SHAPE: Shape
+ui.SHAPE_NAME_LABEL: Shape name
 ui.OPTION_INCLUDE_COMMENT: Comments / Notes
 ui.OPTION_INCLUDE_HIDDEN: Hidden sheets
 ui.LABEL_TARGET_EXTENSIONS: "File types:"
@@ -178,6 +182,7 @@ export.header.fileName: File name
 export.header.fullPath: Full path
 export.header.sheetName: Sheet name
 export.header.cell: Cell
+export.header.shapeName: Shape name
 export.header.matchType: Match type
 export.header.matchedContent: Matched content
 export.header.formula: Formula
@@ -186,3 +191,4 @@ export.match.value: Value
 export.match.formula: Formula
 export.match.comment: Comment
 export.match.hiddenSheet: Hidden sheet
+export.match.shape: Shape
