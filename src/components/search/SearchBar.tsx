@@ -13,6 +13,8 @@
  * - v1.2.0 (2026-09-26, AI Agent): 検索対象拡張子のトグル選択ボタンを実装。
  * - v1.3.0 (2026-09-26, AI Agent): 検索キーワード入力欄で日本語入力(IME)確定時のEnter誤爆を防止。フォルダ入力欄でのEnter検索は行わず入力中のEnterを無視するよう制御。
  * - v1.4.0 (2026-09-27, Codex): 検索履歴・ディレクトリ補完 UI を追加。
+ * - v1.5.0 (2026-09-27, Codex): フォーカス離脱時に履歴・候補を閉じる。
+ * - v1.5.1 (2026-09-27, Codex): フォルダ選択ダイアログを開く際にも履歴・候補を閉じる。
  */
 
 import React, { KeyboardEvent, useState, useRef, useEffect } from "react";
@@ -75,11 +77,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 }) => {
   const t = useTranslation();
   const [isDragOver, setIsDragOver] = useState(false);
+  const keywordInputRef = useRef<HTMLDivElement>(null);
   const folderInputRef = useRef<HTMLDivElement>(null);
   const [openList, setOpenList] = useState<"keyword" | "directory" | "directory-history" | null>(null);
   const [directorySuggestions, setDirectorySuggestions] = useState<string[]>([]);
   const [activeOption, setActiveOption] = useState<number | null>(null);
   const [completionDismissed, setCompletionDismissed] = useState(false);
+  const [directoryFocused, setDirectoryFocused] = useState(false);
   const completionRequestRef = useRef(0);
 
   /**
@@ -89,7 +93,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   */
   useEffect(() => {
     const request = ++completionRequestRef.current;
-    if (completionDismissed || !query.target_dir) return;
+    if (!directoryFocused || completionDismissed || !query.target_dir) return;
     const timer = window.setTimeout(async () => {
       try {
         // 定数参照: COMMANDS.COMPLETE_DIRECTORY_PATH
@@ -103,7 +107,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       }
     }, PATH_COMPLETION_CONSTANTS.DEBOUNCE_MS);
     return () => window.clearTimeout(timer);
-  }, [query.target_dir, completionDismissed]);
+  }, [query.target_dir, completionDismissed, directoryFocused]);
 
   /**
    * 履歴または補完リストを閉じる。
@@ -111,6 +115,39 @@ export const SearchBar: React.FC<SearchBarProps> = ({
    * 変更履歴: v1.0.0 (2026-09-27, Codex): リスト操作を追加。
    */
   const closeList = () => { setOpenList(null); setActiveOption(null); };
+
+  /**
+   * 処理内容: 入力欄と対応する履歴・候補の操作領域からフォーカスが外れた時に一覧を閉じる。
+   * 引数・戻り値: フォーカスイベントと対象欄を受け、void を返す。
+   * エラー: 領域内の項目への移動は閉じず、補完の未完了応答は無効化する。
+   * 変更履歴: v1.0.0 (2026-09-27, Codex): フォーカス離脱の処理を追加。
+   */
+  const handleFieldBlur = (event: React.FocusEvent<HTMLDivElement>, field: "keyword" | "directory") => {
+    if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
+    completionRequestRef.current++;
+    if (field === "directory") setDirectoryFocused(false);
+    closeList();
+  };
+
+  /**
+   * 処理内容: フォーカスが移らない領域へのクリックでも一覧と待機中の補完を閉じる。
+   * 引数・戻り値: なし。イベント購読の解除関数を返す。
+   * エラー: 操作領域内のクリックは無視し、フォーカス状態を維持する。
+   * 変更履歴: v1.0.0 (2026-09-27, Codex): 領域外クリックの処理を追加。
+   */
+  useEffect(() => {
+    if (!openList && !directoryFocused) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      const region = openList === "keyword" ? keywordInputRef.current : folderInputRef.current;
+      if (region?.contains(event.target as Node)) return;
+      completionRequestRef.current++;
+      setDirectoryFocused(false);
+      setOpenList(null);
+      setActiveOption(null);
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    return () => document.removeEventListener("pointerdown", handlePointerDown);
+  }, [openList, directoryFocused]);
 
   /**
    * 表示中リストの項目を選択する。
@@ -151,6 +188,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   /** 履歴表示を切り替える。引数は対象欄、戻り値は void。例外は発生しない。変更履歴: v1.0.0 (2026-09-27, Codex)。 */
   const toggleHistory = (field: "keyword" | "directory") => {
     completionRequestRef.current += 1;
+    if (field === "directory") setCompletionDismissed(true);
     setOpenList(field === "directory" ? (openList === "directory-history" ? null : "directory-history") : (openList === field ? null : field));
     setActiveOption(null);
   };
@@ -301,7 +339,17 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }
   };
 
+  /**
+   * 処理内容: 履歴・補完を閉じてフォルダ選択ダイアログを開き、選択されたパスを反映する。
+   * 引数・戻り値: 引数なし。Promise<void> を返す。
+   * エラー: ダイアログの失敗はログへ記録し、キャンセル時は検索条件を変更しない。
+   * 変更履歴: v1.1.0 (2026-09-27, Codex): ダイアログ表示前に一覧と補完要求を閉じる。
+   */
   const handleBrowseFolder = async () => {
+    completionRequestRef.current++;
+    setCompletionDismissed(true);
+    setDirectoryFocused(false);
+    closeList();
     try {
       // 定数参照: t("ui.SELECT_FOLDER_DIALOG_TITLE") (ダイアログタイトル)
       const selected = await open({
@@ -342,7 +390,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         {/* 上段: 検索キーワード入力 & フォルダ選択 & 検索実行/中断ボタン */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
           {/* 検索キーワード入力 */}
-          <div className="lg:col-span-6 relative">
+          <div ref={keywordInputRef} onBlur={(event) => handleFieldBlur(event, "keyword")} className="lg:col-span-6 relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
               <Search className="w-4 h-4" />
             </div>
@@ -388,6 +436,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           {/* フォルダパス選択 & DnD ドロップゾーン */}
           <div
             ref={folderInputRef}
+            onFocus={() => setDirectoryFocused(true)}
+            onBlur={(event) => handleFieldBlur(event, "directory")}
             onDragOver={handleHtmlDragOver}
             onDragEnter={handleHtmlDragOver}
             onDragLeave={handleHtmlDragLeave}
