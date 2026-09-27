@@ -9,6 +9,7 @@
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。全定数の外部化および整合性テストの実装。
 //! - v1.1.0 (2026-09-26, AI Agent): Aboutダイアログメニューおよびイベント定数の追加。
 //! - v1.2.0 (2026-09-26, AI Agent): 並行パイプライン用バッファ定数および検出中メッセージ定数の追加。
+//! - v1.3.0 (2026-09-27, Codex): ホーム省略表記とパス補完上限の定数を追加。
 
 // ==============================================================================
 // 1. ファイル拡張子定数 (File Extensions)
@@ -155,6 +156,12 @@ pub const ERR_PATH_NOT_DIR: &str = "Path is not a directory";
 pub const LOG_SEARCH_STARTED: &str = "[start_search] Search request received";
 pub const LOG_SEARCH_COMPLETED: &str = "[start_search] Search completed";
 pub const LOG_SEARCH_FAILED: &str = "[start_search] Search engine failed";
+/// 定数参照: ホーム省略表記のパス接頭辞。
+pub const HOME_PATH_PREFIX_UNIX: &str = "~/";
+/// 定数参照: Windows のホーム省略表記のパス接頭辞。
+pub const HOME_PATH_PREFIX_WINDOWS: &str = "~\\";
+/// 定数参照: ディレクトリ補完で返す候補の上限。
+pub const MAX_PATH_COMPLETION_RESULTS: usize = 10;
 pub const LOG_EVENT_EMIT_FAILED: &str = "Failed to emit Tauri event";
 pub const LOG_CANCEL_REQUESTED: &str = "[cancel_search] Cancellation requested";
 

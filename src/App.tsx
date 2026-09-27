@@ -13,6 +13,7 @@
  * - v1.2.0 (2026-09-26, AI Agent): Aboutダイアログ表示状態 (isAboutOpen) を追加し、StatusBarにonOpenAboutを連携。
  * - v1.3.0 (2026-09-26, AI Agent): AboutDialogコンポーネントをマウントし、開閉連動を統合。
  * - v1.4.0 (2026-09-26, AI Agent): システムメニュー (macOS) からのAboutダイアログ表示イベント (EVENT_NAMES.OPEN_ABOUT_DIALOG) のリッスン処理を追加。
+ * - v1.5.0 (2026-09-27, Codex): 検索履歴と保存件数設定を検索・設定画面へ接続。
  */
 
 import React, { Suspense, lazy, useState, useEffect } from "react";
@@ -30,6 +31,7 @@ import { StatusBar } from "./components/common/StatusBar";
 import { Toast } from "./components/common/Toast";
 import { SettingsDialog } from "./components/settings/SettingsDialog";
 import { useSearch } from "./hooks/useSearch";
+import { useSearchHistory } from "./hooks/useSearchHistory";
 import { APP_LOGS, COMMANDS, EVENT_NAMES } from "./constants";
 import { useLocale } from "./hooks/useLocale";
 import { LocaleProvider, t, TranslationKey, TranslationValues } from "./i18n";
@@ -112,6 +114,8 @@ export const App: React.FC = () => {
     setToastNotice({ key, values });
   };
 
+  const { maxEntries, keywords, directories, addSearch, setMaxEntries } = useSearchHistory(() => showToast("ui.SAVE_FAILED"));
+
   const {
     query,
     updateQuery,
@@ -129,7 +133,7 @@ export const App: React.FC = () => {
     handleSelectCell,
     startSearch,
     cancelSearch,
-  } = useSearch({ onShowToast: showToast });
+  } = useSearch({ onShowToast: showToast, onSearchAccepted: (acceptedQuery) => addSearch(acceptedQuery.keyword, acceptedQuery.target_dir) });
 
   if (!ready) return null;
 
@@ -143,6 +147,8 @@ export const App: React.FC = () => {
         onSearch={startSearch}
         onCancel={cancelSearch}
         isScanning={isScanning}
+        history={{ keywords, directories }}
+        onSelectHistory={(field, value) => updateQuery(field === "keyword" ? { keyword: value } : { target_dir: value })}
       />
 
       {/* メイン作業エリア (2ペイン分割: 左58%, 右42%) */}
@@ -210,6 +216,8 @@ export const App: React.FC = () => {
         isOpen={isSettingsOpen}
         preference={preference}
         language={language}
+        maxEntries={maxEntries}
+        onSetMaxEntries={(value) => { if (!setMaxEntries(value)) showToast("ui.SAVE_FAILED"); }}
         onSelect={async (value) => {
           const saved = await selectLanguage(value);
           if (!saved) setToastNotice({ key: "ui.SAVE_FAILED" });

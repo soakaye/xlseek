@@ -1,7 +1,7 @@
 # 処理内容: Excel Grep の画面・メニュー・出力に使う翻訳カタログ。
 # 入力・出力: dotted key と文字列を入力し、プラグイン用 locale を出力する。
 # エラー: 不正な YAML はプラグイン読込時に失敗し、英語カタログへフォールバックする。
-# 変更履歴: v1.0.0 (2026-09-26, Codex): tauri-plugin-i18n 移行用に作成。
+# 変更履歴: v1.0.0 (2026-09-26, Codex): tauri-plugin-i18n 移行用に作成。v1.1.0 (2026-09-27, Codex): 検索履歴・パス補完の文言を追加。
 _version: 1
 ui.APP_TITLE: Excel Grep
 ui.SEARCHING: Searching...
@@ -90,14 +90,22 @@ ui.PREV_SHEET_TOOLTIP: Previous sheet
 ui.NEXT_SHEET_TOOLTIP: Next sheet
 ui.SHEET_TABS_BADGE: Sheet Tabs
 ui.SETTINGS: Settings
-ui.SETTINGS_TITLE: Language Settings
+ui.SETTINGS_TITLE: Settings
 ui.DISPLAY_LANGUAGE: Display language
 ui.LANGUAGE_DEFAULT: Default
 ui.LANGUAGE_JA: 日本語
 ui.LANGUAGE_EN: English
 ui.SAVE_FAILED: Could not save settings. The saved preference will be used next time.
 ui.CURRENT_LANGUAGE: Current display language
-ui.SETTINGS_DESCRIPTION: Choose a language. Default follows the system language.
+ui.SETTINGS_DESCRIPTION: Configure the display language and search history.
+ui.KEYWORD_HISTORY_TOOLTIP: Search text history
+ui.DIRECTORY_HISTORY_TOOLTIP: Search directory history
+ui.HISTORY_EMPTY: No history
+ui.DIRECTORY_SUGGESTIONS: Directory suggestions
+ui.HISTORY_LIMIT_LABEL: Search history limit
+ui.HISTORY_LIMIT_DESCRIPTION: 0–50 entries. Set to 0 to disable history.
+ui.HISTORY_LIMIT_SAVE: Save limit
+ui.INVALID_REGEX: The regular expression is invalid
 ui.EXPORT_CSV_BUTTON: Export CSV
 ui.EXPORT_XLSX_BUTTON: Export Excel
 ui.RESULTS_TITLE: Search results

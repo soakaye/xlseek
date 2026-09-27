@@ -169,6 +169,7 @@ fn create_app_menu<R: tauri::Runtime>(
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
 /// - v1.1.0 (2026-09-26, AI Agent): カスタムAboutメニューの登録とメニューイベントハンドラ (on_menu_event) の追加。
 /// - v1.1.1 (2026-09-27, AI Agent): non-macOS向けに PluginI18nExt の import をスコープ化、setup クロージャの unused variable を解消。
+/// - v1.2.0 (2026-09-27, Codex): ディレクトリ補完コマンドを invoke handler に登録。
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let engine = Arc::new(SearchEngine::new());
@@ -199,6 +200,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             set_menu_locale,
             commands::start_search,
+            commands::complete_directory_path,
             commands::cancel_search,
             commands::get_cell_preview,
             commands::open_in_excel,

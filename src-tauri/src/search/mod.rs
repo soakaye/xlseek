@@ -9,4 +9,5 @@
 
 pub mod engine;
 pub mod parser;
+pub mod path;
 pub mod preview;
