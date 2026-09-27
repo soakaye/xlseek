@@ -54,20 +54,20 @@ auto_commit:
     enabled: false
     message: "[Spec Kit] Add project constitution"
   after_specify:
-    enabled: true
+    enabled: false
     message: "[Spec Kit] Add specification"
   after_clarify:
-    enabled: true
+    enabled: false
     message: "[Spec Kit] Clarify specification"
   after_plan:
     enabled: false
     message: "[Spec Kit] Add implementation plan"
   after_tasks:
-    enabled: true
-    message: "[Spec Kit] Add tasks and specifications for parallel scan search (007-parallel-scan-search)"
+    enabled: false
+    message: "[Spec Kit] Add tasks"
   after_implement:
-    enabled: true
-    message: "[Spec Kit] Implement parallel scan search and fast cancellation (007-parallel-scan-search)"
+    enabled: false
+    message: "[Spec Kit] Implementation progress"
   after_checklist:
     enabled: false
     message: "[Spec Kit] Add checklist"
@@ -77,12 +77,3 @@ auto_commit:
   after_taskstoissues:
     enabled: false
     message: "[Spec Kit] Sync tasks to issues"
-  after_bug_assess:
-    enabled: true
-    message: "[Spec Kit] Assess bug"
-  after_bug_fix:
-    enabled: true
-    message: "[Spec Kit] Fix bug: about-dialog-system-menu"
-  after_bug_test:
-    enabled: true
-    message: "[Spec Kit] Verify bug fix: about-dialog-system-menu"
