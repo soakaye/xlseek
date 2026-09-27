@@ -43,6 +43,8 @@
      * - v2.7.0 (2026-09-26, AI Agent): 並行ファイル走査・即時検索パイプライン対応。ステータスバーにおける未確定時アニメーションパルスおよび検出・走査中ファイル数表示、進捗フェーズ遷移ロジックを同期。
      * - v2.9.0 (2026-09-26, Codex): 設定モックで既定言語をブラウザーのシステム言語に合わせる。
      * - v2.10.0 (2026-09-27, Codex): 検索履歴・ディレクトリ補完・保存件数設定 UI を追加。
+     * - v2.11.0 (2026-09-27, Codex): 履歴・補完のフォーカス離脱時の非表示を同期。
+     * - v2.11.1 (2026-09-27, Codex): フォルダ参照時の履歴・補完の非表示を同期。
      * - v3.0.0 (2026-09-27, Codex): 検索結果タイプバッジを折り返さず、省略表示するよう同期。
      * - v3.1.0 (2026-09-27, Codex): 検索結果一覧の一致種別ラベルを詳細情報から分け、短い表示名へ同期。
      * - v3.2.0 (2026-09-27, Codex): 進捗欄の件数表示を短縮し、固定幅内での省略を同期。
@@ -138,7 +140,7 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
           
           <!-- 検索キーワード入力 (lg:col-span-6) -->
-          <div class="lg:col-span-6 relative">
+          <div id="keywordControl" class="lg:col-span-6 relative">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
               <i data-lucide="search" class="w-4 h-4"></i>
             </div>
@@ -156,6 +158,7 @@
               <button id="keywordHistoryBtn" type="button" title="検索テキストの履歴" aria-label="検索テキストの履歴" class="p-1 hover:bg-zinc-700 text-zinc-400 rounded"><i data-lucide="history" class="w-3.5 h-3.5"></i></button>
               <span class="text-[10px] text-zinc-400 font-mono bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">Enter</span>
             </div>
+            <div id="keywordHistoryPopup" class="hidden absolute z-20 top-full mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 p-1 shadow-xl"></div>
           </div>
 
           <!-- フォルダパス選択 & DnD ドロップゾーン (lg:col-span-4) -->
@@ -8511,12 +8514,18 @@
       const progressBarFill = document.getElementById("progressBarFill");
       const progressPercentText = document.getElementById("progressPercentText");
       const folderInput = document.getElementById("folderInput");
+      const keywordControl = document.getElementById("keywordControl");
+      const folderDropZone = document.getElementById("folderDropZone");
+      const keywordHistoryPopup = document.getElementById("keywordHistoryPopup");
       const historyPopup = document.getElementById("historyPopup");
       const keywordHistory = ["Financial Report Q3", "Revenue", "顧客一覧"];
       const directoryHistory = ["/Users/soakaye/Documents/Reports/", "/Users/soakaye/Documents/Books/"];
       let completionTimer;
+      // 処理内容: 対応する入力欄の履歴または候補を表示する。引数・戻り値: 候補配列と欄の種類を受け、戻り値なし。エラー: 候補が空なら空状態を表示。変更履歴: v1.1.0 (2026-09-27, Codex): 欄ごとの表示に変更。
       const showHistory = (values, field) => {
-        historyPopup.replaceChildren();
+        const popup = field === "keyword" ? keywordHistoryPopup : historyPopup;
+        (field === "keyword" ? historyPopup : keywordHistoryPopup).classList.add("hidden");
+        popup.replaceChildren();
         values.forEach((value) => {
           const option = document.createElement("button");
           option.type = "button";
@@ -8524,12 +8533,12 @@
           option.textContent = value;
           option.addEventListener("click", () => {
             (field === "keyword" ? searchInput : folderInput).value = value;
-            historyPopup.classList.add("hidden");
+            popup.classList.add("hidden");
           });
-          historyPopup.append(option);
+          popup.append(option);
         });
-        if (!values.length) historyPopup.textContent = "履歴はありません";
-        historyPopup.classList.remove("hidden");
+        if (!values.length) popup.textContent = "履歴はありません";
+        popup.classList.remove("hidden");
       };
       let searchTimeout1 = null;
       let searchTimeout2 = null;
@@ -8666,10 +8675,26 @@
       });
       document.getElementById("keywordHistoryBtn").addEventListener("click", () => showHistory(keywordHistory, "keyword"));
       document.getElementById("directoryHistoryBtn").addEventListener("click", () => showHistory(directoryHistory, "directory"));
+      keywordControl.addEventListener("focusout", (event) => {
+        if (!keywordControl.contains(event.relatedTarget)) keywordHistoryPopup.classList.add("hidden");
+      });
+      folderDropZone.addEventListener("focusout", (event) => {
+        if (!folderDropZone.contains(event.relatedTarget)) {
+          clearTimeout(completionTimer);
+          historyPopup.classList.add("hidden");
+        }
+      });
+      document.addEventListener("pointerdown", (event) => {
+        if (!keywordControl.contains(event.target)) keywordHistoryPopup.classList.add("hidden");
+        if (!folderDropZone.contains(event.target)) {
+          clearTimeout(completionTimer);
+          historyPopup.classList.add("hidden");
+        }
+      });
       folderInput.addEventListener("input", () => {
         clearTimeout(completionTimer);
         completionTimer = setTimeout(() => {
-          if (folderInput.value.startsWith("/") && !folderInput.value.endsWith("/")) showHistory([`${folderInput.value.split("/").slice(0, -1).join("/")}/Archive/`, `${folderInput.value.split("/").slice(0, -1).join("/")}/資料/`], "directory");
+          if (folderDropZone.contains(document.activeElement) && folderInput.value.startsWith("/") && !folderInput.value.endsWith("/")) showHistory([`${folderInput.value.split("/").slice(0, -1).join("/")}/Archive/`, `${folderInput.value.split("/").slice(0, -1).join("/")}/資料/`], "directory");
         }, 200);
       });
       document.getElementById("saveHistoryLimit").addEventListener("click", () => {
@@ -8682,11 +8707,12 @@
 
       // フォルダ参照ボタン
       document.getElementById("browseBtn").addEventListener("click", () => {
+        clearTimeout(completionTimer);
+        historyPopup.classList.add("hidden");
         showToast("フォルダ選択ダイアログを表示しました (Tauri dialog)");
       });
 
       // フォルダDnDシミュレーション (ドラッグ＆ドロップ)
-      const folderDropZone = document.getElementById("folderDropZone");
       const dropOverlay = document.getElementById("dropOverlay");
 
       folderDropZone.addEventListener("dragover", (e) => {
