@@ -44,6 +44,7 @@
      * - v2.9.0 (2026-09-26, Codex): 設定モックで既定言語をブラウザーのシステム言語に合わせる。
      * - v3.0.0 (2026-09-27, Codex): 検索結果タイプバッジを折り返さず、省略表示するよう同期。
      * - v3.1.0 (2026-09-27, Codex): 検索結果一覧の一致種別ラベルを詳細情報から分け、短い表示名へ同期。
+     * - v3.2.0 (2026-09-27, Codex): 進捗欄の件数表示を短縮し、固定幅内での省略を同期。
      */
   -->
   <meta charset="UTF-8">
@@ -522,7 +523,7 @@
           <div class="w-24 bg-zinc-800 h-1.5 rounded-full overflow-hidden border border-zinc-700/50 flex-shrink-0">
             <div id="progressBarFill" class="bg-excel h-full rounded-full transition-all duration-300" style="width: 100%;"></div>
           </div>
-          <span id="progressPercentText" class="text-[11px] text-zinc-400 font-mono flex-shrink-0">100% (16/16)</span>
+          <span id="progressPercentText" class="text-[11px] text-zinc-400 font-mono min-w-0 flex-1 truncate">100% (16/16)</span>
         </div>
 
         <!-- 縦仕切り線 -->
@@ -8555,7 +8556,7 @@
           if (!isScanning) return;
           progressBarFill.className = "bg-amber-500 h-full rounded-full animate-pulse transition-all duration-300";
           progressBarFill.style.width = "25%";
-          progressPercentText.textContent = "検出・走査中 (3)";
+          progressPercentText.textContent = "3";
           statusText.textContent = "検出・走査中: 3 ファイル (2 件一致, 0.18s) - Financial_Q3.xlsx";
           statusText.title = statusText.textContent;
         }, 200);

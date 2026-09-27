@@ -13,6 +13,7 @@
  * - v1.2.0 (2026-09-26, AI Agent): デザインフィードバック対応。フッター右側のCalamine Engineバッジ表示を削除。
  * - v1.3.0 (2026-09-26, AI Agent): 最右端にAboutダイアログ起動ボタン（Infoアイコン）を追加。
  * - v1.4.0 (2026-09-26, AI Agent): 並行ファイル走査・即時検索パイプライン対応。総数未確定時のパルス表示および検出・走査中ファイル数表示の実装、定数参照の拡充。
+ * - v1.5.0 (2026-09-27, Codex): 固定幅の進捗欄を短い件数表示にし、文字のはみ出しを防止。
  */
 
 import React from "react";
@@ -50,6 +51,7 @@ interface StatusBarProps {
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
  * - v1.3.0 (2026-09-26, AI Agent): onOpenAbout プロパティの追加。
  * - v1.4.0 (2026-09-26, AI Agent): パイプライン並行化に伴う未確定時アニメーション・文言切り替えの追加。
+ * - v1.5.0 (2026-09-27, Codex): 進捗欄の短縮表示と省略制約を追加。
  */
 export const StatusBar: React.FC<StatusBarProps> = ({
   progress,
@@ -191,11 +193,11 @@ export const StatusBar: React.FC<StatusBarProps> = ({
               }}
             />
           </div>
-          <span className="text-[11px] text-zinc-400 font-mono flex-shrink-0">
+          <span className="text-[11px] text-zinc-400 font-mono min-w-0 flex-1 truncate">
             {isScanning && !isDetermined
               ? progress.scanned_files === 0
                 ? t("ui.SEARCHING_DIR")
-                : `${t("ui.STATUS_DISCOVERING_DETAIL")} (${progress.scanned_files})`
+                : progress.scanned_files
               : progress
               ? `${percent}% (${progress.scanned_files}/${progress.total_files})`
               : t("ui.STATUS_WAITING")}
