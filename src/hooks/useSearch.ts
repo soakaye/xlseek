@@ -11,6 +11,7 @@
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化および4要素JSDocコメントの付与。
  * - v1.2.0 (2026-09-26, AI Agent): 検索対象拡張子の空チェックバリデーションを追加。
  * - v1.3.0 (2026-09-26, AI Agent): 探索中フェーズおよび中断メッセージの定数参照化。
+ * - v1.4.0 (2026-09-27, Codex): 受付成功後の履歴通知と正規表現エラー表示を追加。
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -32,6 +33,7 @@ import { TranslationKey } from "../i18n";
 
 interface UseSearchOptions {
   onShowToast?: (key: TranslationKey) => void;
+  onSearchAccepted?: (query: SearchQuery) => void;
 }
 
 /**
@@ -276,9 +278,15 @@ export function useSearch(options?: UseSearchOptions) {
     try {
       // 定数参照: COMMANDS.START_SEARCH を使用
       await invoke(COMMANDS.START_SEARCH, { query });
-    } catch {
+      options?.onSearchAccepted?.(query);
+    } catch (error: unknown) {
       console.error("[useSearch] Failed to start search");
-      options?.onShowToast?.("ui.SEARCH_START_ERROR");
+      const isInvalidRegex =
+        typeof error === "object" &&
+        error !== null &&
+        "code" in error &&
+        error.code === "invalid_regex";
+      options?.onShowToast?.(isInvalidRegex ? "ui.INVALID_REGEX" : "ui.SEARCH_START_ERROR");
       setProgress({
         state: "Error",
         phase: "finished",

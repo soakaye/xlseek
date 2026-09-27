@@ -12,15 +12,16 @@
  * - v1.1.0 (2026-09-26, AI Agent): 憲章準拠改修。IPCコマンド名およびUI文言を外部定数化、4要素ヘッダコメントを付与。
  * - v1.2.0 (2026-09-26, AI Agent): 検索対象拡張子のトグル選択ボタンを実装。
  * - v1.3.0 (2026-09-26, AI Agent): 検索キーワード入力欄で日本語入力(IME)確定時のEnter誤爆を防止。フォルダ入力欄でのEnter検索は行わず入力中のEnterを無視するよう制御。
+ * - v1.4.0 (2026-09-27, Codex): 検索履歴・ディレクトリ補完 UI を追加。
  */
 
 import React, { KeyboardEvent, useState, useRef, useEffect } from "react";
-import { Search, X, Folder, FolderOpen, SlidersHorizontal, Square, ArrowDownToLine } from "lucide-react";
+import { Search, X, Folder, FolderOpen, SlidersHorizontal, Square, ArrowDownToLine, History } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { SearchQuery } from "../../types/search";
-import { COMMANDS, FILE_EXTENSIONS } from "../../constants";
+import { COMMANDS, FILE_EXTENSIONS, PATH_COMPLETION_CONSTANTS } from "../../constants";
 import { useTranslation } from "../../i18n";
 
 /**
@@ -39,6 +40,8 @@ interface SearchBarProps {
   onSearch: () => void;
   onCancel: () => void;
   isScanning: boolean;
+  history: { keywords: string[]; directories: string[] };
+  onSelectHistory: (field: "keyword" | "directory", value: string) => void;
 }
 
 /**
@@ -67,10 +70,90 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   onSearch,
   onCancel,
   isScanning,
+  history,
+  onSelectHistory,
 }) => {
   const t = useTranslation();
   const [isDragOver, setIsDragOver] = useState(false);
   const folderInputRef = useRef<HTMLDivElement>(null);
+  const [openList, setOpenList] = useState<"keyword" | "directory" | "directory-history" | null>(null);
+  const [directorySuggestions, setDirectorySuggestions] = useState<string[]>([]);
+  const [activeOption, setActiveOption] = useState<number | null>(null);
+  const [completionDismissed, setCompletionDismissed] = useState(false);
+  const completionRequestRef = useRef(0);
+
+  /**
+   * ディレクトリ入力の補完候補を取得する。
+   * 引数はなく、戻り値は void。IPC 失敗時は候補を空にし、古い要求結果は破棄する。
+   * 変更履歴: v1.0.0 (2026-09-27, Codex): 入力補完を追加。
+  */
+  useEffect(() => {
+    const request = ++completionRequestRef.current;
+    if (completionDismissed || !query.target_dir) return;
+    const timer = window.setTimeout(async () => {
+      try {
+        // 定数参照: COMMANDS.COMPLETE_DIRECTORY_PATH
+        const values = await invoke<string[]>(COMMANDS.COMPLETE_DIRECTORY_PATH, { pathInput: query.target_dir });
+        if (request === completionRequestRef.current) {
+          setDirectorySuggestions(values);
+          if (values.length) setOpenList("directory");
+        }
+      } catch {
+        if (request === completionRequestRef.current) setDirectorySuggestions([]);
+      }
+    }, PATH_COMPLETION_CONSTANTS.DEBOUNCE_MS);
+    return () => window.clearTimeout(timer);
+  }, [query.target_dir, completionDismissed]);
+
+  /**
+   * 履歴または補完リストを閉じる。
+   * 引数はなく、戻り値は void。例外は発生しない。
+   * 変更履歴: v1.0.0 (2026-09-27, Codex): リスト操作を追加。
+   */
+  const closeList = () => { setOpenList(null); setActiveOption(null); };
+
+  /**
+   * 表示中リストの項目を選択する。
+   * 引数は項目インデックス、戻り値は void。範囲外は何もせず、履歴選択は検索を開始しない。
+   * 変更履歴: v1.0.0 (2026-09-27, Codex): リスト選択を追加。
+   */
+  const selectOption = (index: number) => {
+    const values = openList === "keyword" ? history.keywords : openList === "directory-history" ? history.directories : openList === "directory" ? directorySuggestions : [];
+    const value = values[index];
+    if (!value || !openList) return;
+    completionRequestRef.current += 1;
+    onSelectHistory(openList === "keyword" ? "keyword" : "directory", value);
+    if (openList !== "keyword") setCompletionDismissed(true);
+    closeList();
+  };
+
+  /**
+   * 開いている候補リストのキーボード操作を処理する。
+   * 引数はキーボードイベント、戻り値は処理済みかを示す boolean。リスト外では false。
+   * 変更履歴: v1.0.0 (2026-09-27, Codex): アクセシブルなキー操作を追加。
+   */
+  const handleListKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (!openList) return false;
+    const values = openList === "keyword" ? history.keywords : openList === "directory-history" ? history.directories : directorySuggestions;
+    if (e.key === "Escape") { e.preventDefault(); closeList(); return true; }
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault();
+      if (!values.length) return true;
+      const delta = e.key === "ArrowDown" ? PATH_COMPLETION_CONSTANTS.KEYBOARD_STEP : -PATH_COMPLETION_CONSTANTS.KEYBOARD_STEP;
+      const current = activeOption === null ? (delta > 0 ? -1 : values.length) : activeOption;
+      setActiveOption(Math.max(0, Math.min(values.length - 1, current + delta)));
+      return true;
+    }
+    if (e.key === "Enter" && activeOption !== null) { e.preventDefault(); selectOption(activeOption); return true; }
+    return false;
+  };
+
+  /** 履歴表示を切り替える。引数は対象欄、戻り値は void。例外は発生しない。変更履歴: v1.0.0 (2026-09-27, Codex)。 */
+  const toggleHistory = (field: "keyword" | "directory") => {
+    completionRequestRef.current += 1;
+    setOpenList(field === "directory" ? (openList === "directory-history" ? null : "directory-history") : (openList === field ? null : field));
+    setActiveOption(null);
+  };
 
   // Tauri ネイティブのドラッグ＆ドロップイベントの購読
   useEffect(() => {
@@ -201,6 +284,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     if (Date.now() - compositionEndTimeRef.current < 50) {
       return;
     }
+    if (handleListKeyDown(e)) return;
     if (e.key === "Enter" && !isScanning) {
       onSearch();
     }
@@ -211,6 +295,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     if (e.nativeEvent.isComposing || e.key === "Process" || e.keyCode === 229) {
       return;
     }
+    if (handleListKeyDown(e)) return;
     if (e.key === "Enter") {
       e.preventDefault();
     }
@@ -284,10 +369,20 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
+              <button type="button" onClick={() => toggleHistory("keyword")} title={t("ui.KEYWORD_HISTORY_TOOLTIP")} aria-label={t("ui.KEYWORD_HISTORY_TOOLTIP")} className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded">
+                <History className="w-3.5 h-3.5" />
+              </button>
               <span className="text-[10px] text-zinc-400 font-mono bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">
                 Enter
               </span>
             </div>
+            {openList === "keyword" && (
+              <div role="listbox" className="absolute z-20 top-full mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 p-1 shadow-xl">
+                {history.keywords.length ? history.keywords.map((value, index) => (
+                  <button key={value} type="button" role="option" aria-selected={activeOption === index} onMouseDown={(e) => e.preventDefault()} onClick={() => selectOption(index)} className="block w-full rounded px-2 py-1.5 text-left text-sm text-zinc-200 hover:bg-zinc-800">{value}</button>
+                )) : <div className="px-2 py-1.5 text-sm text-zinc-500">{t("ui.HISTORY_EMPTY")}</div>}
+              </div>
+            )}
           </div>
 
           {/* フォルダパス選択 & DnD ドロップゾーン */}
@@ -313,11 +408,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             <input
               type="text"
               value={query.target_dir}
-              onChange={(e) => onChangeQuery({ target_dir: e.target.value })}
+              onChange={(e) => { setCompletionDismissed(false); setOpenList(null); onChangeQuery({ target_dir: e.target.value }); }}
               onKeyDown={handleFolderKeyDown}
               /* 定数参照: t("ui.FOLDER_DROP_PLACEHOLDER") / FOLDER_INPUT_PLACEHOLDER */
               placeholder={isDragOver ? t("ui.FOLDER_DROP_PLACEHOLDER") : t("ui.FOLDER_INPUT_PLACEHOLDER")}
-              className={`w-full pl-9 pr-10 py-2 border rounded-lg text-sm placeholder-zinc-500 focus:outline-none font-mono text-xs transition ${
+              className={`w-full pl-9 pr-20 py-2 border rounded-lg text-sm placeholder-zinc-500 focus:outline-none font-mono text-xs transition ${
                 isDragOver
                   ? "bg-emerald-950/30 border-emerald-500 text-emerald-200 border-dashed"
                   : "bg-[#202024] border-zinc-700 text-zinc-300 focus:border-excel-light"
@@ -339,6 +434,16 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             >
               <FolderOpen className="w-4 h-4" />
             </button>
+            <button type="button" onClick={() => toggleHistory("directory")} title={t("ui.DIRECTORY_HISTORY_TOOLTIP")} aria-label={t("ui.DIRECTORY_HISTORY_TOOLTIP")} className="absolute inset-y-1 right-10 px-2 flex items-center justify-center bg-zinc-700 hover:bg-zinc-600 rounded text-zinc-200 transition z-0">
+              <History className="w-4 h-4" />
+            </button>
+            {(openList === "directory" || openList === "directory-history") && (
+              <div role="listbox" aria-label={t("ui.DIRECTORY_SUGGESTIONS")} className="absolute z-20 top-full mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 p-1 shadow-xl">
+                {(openList === "directory-history" ? history.directories : directorySuggestions).length ? (openList === "directory-history" ? history.directories : directorySuggestions).map((value, index) => (
+                  <button key={value} type="button" role="option" aria-selected={activeOption === index} onMouseDown={(e) => e.preventDefault()} onClick={() => selectOption(index)} className="block w-full truncate rounded px-2 py-1.5 text-left text-xs font-mono text-zinc-200 hover:bg-zinc-800">{value}</button>
+                )) : <div className="px-2 py-1.5 text-sm text-zinc-500">{t("ui.HISTORY_EMPTY")}</div>}
+              </div>
+            )}
           </div>
 
           {/* 検索開始 / 中断ボタン */}

@@ -2,7 +2,7 @@
  * 処理内容: 翻訳済み UI と進捗表示の回帰テスト。
  * 引数・戻り値: Vitest がテストケースを実行する。公開引数・戻り値はない。
  * エラー: 期待する表示やレイアウト制約が欠けるとテストが失敗する。
- * 変更履歴: v1.1.0 (2026-09-27, Codex): ステータスバーの表示重なり回帰テストを追加。
+ * 変更履歴: v1.1.0 (2026-09-27, Codex): ステータスバーの表示重なり回帰テストを追加。v1.2.0 (2026-09-27, Codex): 設定ダイアログへ履歴件数を追加。
  */
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -56,6 +56,8 @@ describe("localized application UI", () => {
         onSearch={() => undefined}
         onCancel={() => undefined}
         isScanning={false}
+        history={{ keywords: [], directories: [] }}
+        onSelectHistory={() => undefined}
       /></LocaleProvider>);
     expect(screen.getByPlaceholderText("Enter text or a regular expression... (Enter to search)")).toBeTruthy();
     expect(screen.getByText("SEARCH")).toBeTruthy();
@@ -120,8 +122,8 @@ describe("localized application UI", () => {
   it("renders settings and About labels from the Japanese plugin catalog", async () => {
     plugin.language = "ja";
     await setI18nLocale("ja");
-    render(<LocaleProvider value="ja"><SettingsDialog isOpen preference="default" language="ja" onSelect={() => undefined} onClose={() => undefined} /></LocaleProvider>);
-    expect(screen.getByRole("dialog", { name: "言語設定" })).toBeTruthy();
+    render(<LocaleProvider value="ja"><SettingsDialog isOpen preference="default" language="ja" onSelect={() => undefined} onClose={() => undefined} maxEntries={20} onSetMaxEntries={() => undefined} /></LocaleProvider>);
+    expect(screen.getByRole("dialog", { name: "設定" })).toBeTruthy();
     expect(screen.getByRole("radio", { name: "日本語" })).toBeTruthy();
     cleanup();
 
