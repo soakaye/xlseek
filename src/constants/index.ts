@@ -16,6 +16,7 @@
  * - v1.6.0 (2026-09-26, AI Agent): 著作権者表記 (ABOUT_DIALOG_CONSTANTS.COPYRIGHT) を soakaye に更新。
  * - v1.9.0 (2026-09-26, Codex): 翻訳文言をプラグインカタログへ移し、定数モジュールから日英辞書と Proxy を削除。
  * - v1.10.0 (2026-09-27, Codex): 検索履歴・パス補完の設定値と IPC 名を追加。
+ * - v1.11.0 (2026-09-27, Codex): 履歴操作で使うキー名を追加。
  */
 
 // ==============================================================================
@@ -78,6 +79,17 @@ export const PATH_COMPLETION_CONSTANTS = {
   DEBOUNCE_MS: 200,
   MAX_RESULTS: 10,
   KEYBOARD_STEP: 1,
+} as const;
+
+// 定数参照: 履歴一覧のキー操作で使用するキー名を一元管理する。
+export const KEYBOARD_KEYS = {
+  ARROW_DOWN: "ArrowDown",
+  ARROW_UP: "ArrowUp",
+  ENTER: "Enter",
+  ESCAPE: "Escape",
+  IME_COMPOSITION: "Process",
+  IME_COMPOSITION_KEY_CODE: 229,
+  TAB: "Tab",
 } as const;
 
 // ==============================================================================

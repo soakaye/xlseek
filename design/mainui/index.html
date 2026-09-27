@@ -48,6 +48,9 @@
      * - v3.0.0 (2026-09-27, Codex): 検索結果タイプバッジを折り返さず、省略表示するよう同期。
      * - v3.1.0 (2026-09-27, Codex): 検索結果一覧の一致種別ラベルを詳細情報から分け、短い表示名へ同期。
      * - v3.2.0 (2026-09-27, Codex): 進捗欄の件数表示を短縮し、固定幅内での省略を同期。
+     * - v3.3.0 (2026-09-27, Codex): 履歴リストのキー操作をアプリに同期。
+     * - v3.4.0 (2026-09-27, Codex): 入力欄にフォーカスが残る場合の下矢印移動を同期。
+     * - v3.5.0 (2026-09-27, Codex): 履歴クリック後のフォーカスをボタンへ同期。
      */
   -->
   <meta charset="UTF-8">
@@ -8521,16 +8524,36 @@
       const keywordHistory = ["Financial Report Q3", "Revenue", "顧客一覧"];
       const directoryHistory = ["/Users/soakaye/Documents/Reports/", "/Users/soakaye/Documents/Books/"];
       let completionTimer;
-      // 処理内容: 対応する入力欄の履歴または候補を表示する。引数・戻り値: 候補配列と欄の種類を受け、戻り値なし。エラー: 候補が空なら空状態を表示。変更履歴: v1.1.0 (2026-09-27, Codex): 欄ごとの表示に変更。
-      const showHistory = (values, field) => {
+      // 処理内容: 対応する入力欄の履歴または候補を表示する。引数・戻り値: 候補配列、欄の種類、履歴かどうかを受け、戻り値なし。エラー: 候補が空なら空状態を表示。変更履歴: v1.2.0 (2026-09-27, Codex): 履歴のキー移動と取消しを追加。
+      const showHistory = (values, field, isHistory = true) => {
         const popup = field === "keyword" ? keywordHistoryPopup : historyPopup;
         (field === "keyword" ? historyPopup : keywordHistoryPopup).classList.add("hidden");
         popup.replaceChildren();
         values.forEach((value) => {
           const option = document.createElement("button");
           option.type = "button";
-          option.className = "block w-full rounded px-2 py-1.5 text-left text-sm text-zinc-200 hover:bg-zinc-800";
+          option.setAttribute("role", "option");
+          option.setAttribute("aria-selected", "false");
+          option.dataset.historyOption = String(isHistory);
+          option.className = "block w-full rounded px-2 py-1.5 text-left text-sm text-zinc-200 hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-excel-light";
           option.textContent = value;
+          option.addEventListener("focus", () => {
+            popup.querySelectorAll('[role="option"]').forEach((item) => item.setAttribute("aria-selected", String(item === option)));
+          });
+          option.addEventListener("keydown", (event) => {
+            if (!isHistory || event.isComposing || event.key === "Process" || event.keyCode === 229) return;
+            const options = [...popup.querySelectorAll('[role="option"]')];
+            const index = options.indexOf(option);
+            let next = -1;
+            if (event.key === "ArrowDown") next = Math.min(options.length - 1, index + 1);
+            else if (event.key === "ArrowUp") next = Math.max(0, index - 1);
+            else if (event.key === "Tab" && !event.shiftKey) next = (index + 1) % options.length;
+            else if (event.key === "Enter") { event.preventDefault(); option.click(); return; }
+            else if (event.key === "Escape") { event.preventDefault(); popup.classList.add("hidden"); (field === "keyword" ? searchInput : folderInput).focus(); return; }
+            else return;
+            event.preventDefault();
+            options[next]?.focus();
+          });
           option.addEventListener("click", () => {
             (field === "keyword" ? searchInput : folderInput).value = value;
             popup.classList.add("hidden");
@@ -8652,6 +8675,10 @@
         if (Date.now() - lastSearchCompositionEndTime < 50) {
           return;
         }
+        if (e.key === "ArrowDown" && !keywordHistoryPopup.classList.contains("hidden")) {
+          const firstOption = keywordHistoryPopup.querySelector('[data-history-option="true"]');
+          if (firstOption) { e.preventDefault(); firstOption.focus(); return; }
+        }
         if (e.key === "Enter") {
           startSearchSimulation();
         }
@@ -8663,6 +8690,10 @@
         if (e.isComposing || e.keyCode === 229) {
           return;
         }
+        if (e.key === "ArrowDown" && !historyPopup.classList.contains("hidden")) {
+          const firstOption = historyPopup.querySelector('[data-history-option="true"]');
+          if (firstOption) { e.preventDefault(); firstOption.focus(); return; }
+        }
         // 入力中のEnterキー押下は無視（検索実行は行わずデフォルト動作のみ）
         if (e.key === "Enter") {
           e.preventDefault();
@@ -8673,8 +8704,18 @@
         searchInput.value = "";
         searchInput.focus();
       });
-      document.getElementById("keywordHistoryBtn").addEventListener("click", () => showHistory(keywordHistory, "keyword"));
-      document.getElementById("directoryHistoryBtn").addEventListener("click", () => showHistory(directoryHistory, "directory"));
+      document.getElementById("keywordHistoryBtn").addEventListener("keydown", (event) => {
+        if (!(["Tab", "ArrowDown"].includes(event.key)) || keywordHistoryPopup.classList.contains("hidden")) return;
+        const first = keywordHistoryPopup.querySelector('[role="option"]');
+        if (first) { event.preventDefault(); first.focus(); }
+      });
+      document.getElementById("directoryHistoryBtn").addEventListener("keydown", (event) => {
+        if (!(["Tab", "ArrowDown"].includes(event.key)) || historyPopup.classList.contains("hidden")) return;
+        const first = historyPopup.querySelector('[role="option"]');
+        if (first) { event.preventDefault(); first.focus(); }
+      });
+      document.getElementById("keywordHistoryBtn").addEventListener("click", (event) => { event.currentTarget.focus(); showHistory(keywordHistory, "keyword"); });
+      document.getElementById("directoryHistoryBtn").addEventListener("click", (event) => { event.currentTarget.focus(); showHistory(directoryHistory, "directory"); });
       keywordControl.addEventListener("focusout", (event) => {
         if (!keywordControl.contains(event.relatedTarget)) keywordHistoryPopup.classList.add("hidden");
       });
@@ -8694,7 +8735,7 @@
       folderInput.addEventListener("input", () => {
         clearTimeout(completionTimer);
         completionTimer = setTimeout(() => {
-          if (folderDropZone.contains(document.activeElement) && folderInput.value.startsWith("/") && !folderInput.value.endsWith("/")) showHistory([`${folderInput.value.split("/").slice(0, -1).join("/")}/Archive/`, `${folderInput.value.split("/").slice(0, -1).join("/")}/資料/`], "directory");
+          if (folderDropZone.contains(document.activeElement) && folderInput.value.startsWith("/") && !folderInput.value.endsWith("/")) showHistory([`${folderInput.value.split("/").slice(0, -1).join("/")}/Archive/`, `${folderInput.value.split("/").slice(0, -1).join("/")}/資料/`], "directory", false);
         }, 200);
       });
       document.getElementById("saveHistoryLimit").addEventListener("click", () => {
