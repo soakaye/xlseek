@@ -9,6 +9,7 @@
 //! ## 変更履歴
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。Clippy指摘修正（sort_by_key）、定数参照化、4要素ヘッダコメント付与。
 //! - v1.0.1 (2026-09-27, AI Agent): 変数名修正（ext_normalized）、spawn_blocking の戻り値アノテーション補完、Clippy（manual-strip）対応。
+//! - v1.0.2 (2026-09-27, Codex): macOS で未使用の拡張子値を明示的に破棄し、警告を解消。
 
 use crate::models::{CommandError, SupportedApp};
 use std::path::Path;
@@ -68,6 +69,7 @@ pub async fn open_in_excel(file_path: String) -> Result<(), CommandError> {
 ///
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。Clippy指摘修正（sort_by_key）、定数参照化。
+/// - v1.0.1 (2026-09-27, Codex): macOS の未使用変数警告を解消。
 #[tauri::command]
 pub async fn get_supported_apps(
     extension: Option<String>,
@@ -182,6 +184,7 @@ pub async fn get_supported_apps(
 
         #[cfg(target_os = "macos")]
         {
+            let _ = ext_normalized;
             let mut apps = Vec::new();
             // 代表的なスプレッドシートアプリのチェック
             // 定数参照: crate::constants::MAC_BUNDLE_* を使用

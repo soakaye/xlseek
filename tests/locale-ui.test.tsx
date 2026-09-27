@@ -1,3 +1,9 @@
+/**
+ * 処理内容: 翻訳済み UI と進捗表示の回帰テスト。
+ * 引数・戻り値: Vitest がテストケースを実行する。公開引数・戻り値はない。
+ * エラー: 期待する表示やレイアウト制約が欠けるとテストが失敗する。
+ * 変更履歴: v1.1.0 (2026-09-27, Codex): ステータスバーの表示重なり回帰テストを追加。
+ */
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parse } from "yaml";
@@ -74,6 +80,41 @@ describe("localized application UI", () => {
 
     render(<LocaleProvider value="en"><Toast message="Original cell value: 値" onClose={() => undefined} duration={10000} /></LocaleProvider>);
     expect(screen.getByText("Original cell value: 値")).toBeTruthy();
+  });
+
+  /**
+   * 処理内容: 総数未確定・確定・待機時の進捗欄が短い表示と省略制約を持つことを検証する。
+   * 引数・戻り値: locale は表示言語。戻り値はない。
+   * エラー: 進捗欄の文字が冗長、または縮小・省略できなければ失敗する。
+   * 変更履歴: v1.0.0 (2026-09-27, Codex): ステータスバー重なり防止用に追加。
+   */
+  it.each(["en", "ja"] as const)("keeps %s progress inside its fixed slot", async (locale) => {
+    plugin.language = locale;
+    await setI18nLocale(locale);
+    const props = {
+      items: [],
+      onShowToast: () => undefined,
+      onOpenAbout: () => undefined,
+      onOpenSettings: () => undefined,
+      language: locale,
+    };
+    const { rerender } = render(<LocaleProvider value={locale}><StatusBar
+      {...props}
+      progress={{ state: "Scanning", phase: "discovering", scanned_files: 28, total_files: 0, matches_found: 116, current_file: "audit_2026.xlsx", elapsed_ms: 6690 }}
+    /></LocaleProvider>);
+    const count = screen.getByText("28");
+    expect(count.className).toContain("min-w-0");
+    expect(count.className).toContain("truncate");
+    expect(screen.getByTitle(/audit_2026\.xlsx/)).toBeTruthy();
+
+    rerender(<LocaleProvider value={locale}><StatusBar
+      {...props}
+      progress={{ state: "Scanning", phase: "scanning", scanned_files: 28, total_files: 100, matches_found: 116, current_file: "audit_2026.xlsx", elapsed_ms: 6690 }}
+    /></LocaleProvider>);
+    expect(screen.getByText("28% (28/100)").className).toContain("truncate");
+
+    rerender(<LocaleProvider value={locale}><StatusBar {...props} progress={null} /></LocaleProvider>);
+    expect(screen.getByText(plugin.catalogs[locale]["ui.STATUS_WAITING"]).className).toContain("truncate");
   });
 
   it("renders settings and About labels from the Japanese plugin catalog", async () => {
