@@ -15,6 +15,9 @@
  * - v1.4.0 (2026-09-27, Codex): 検索履歴・ディレクトリ補完 UI を追加。
  * - v1.5.0 (2026-09-27, Codex): フォーカス離脱時に履歴・候補を閉じる。
  * - v1.5.1 (2026-09-27, Codex): フォルダ選択ダイアログを開く際にも履歴・候補を閉じる。
+ * - v1.6.0 (2026-09-27, Codex): 履歴ボタンと項目のキー移動・循環・取消しを追加。
+ * - v1.7.0 (2026-09-27, Codex): 入力欄から下矢印で履歴先頭へ移動できるよう修正。
+ * - v1.8.0 (2026-09-27, Codex): クリック後に履歴ボタンへフォーカスを明示する。
  */
 
 import React, { KeyboardEvent, useState, useRef, useEffect } from "react";
@@ -23,7 +26,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { SearchQuery } from "../../types/search";
-import { COMMANDS, FILE_EXTENSIONS, PATH_COMPLETION_CONSTANTS } from "../../constants";
+import { COMMANDS, FILE_EXTENSIONS, KEYBOARD_KEYS, PATH_COMPLETION_CONSTANTS } from "../../constants";
 import { useTranslation } from "../../i18n";
 
 /**
@@ -165,23 +168,94 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   /**
+   * 履歴ボタンからキーボードで最初の項目へ移動する。
+   * 引数はキーイベントと対象欄、戻り値は void。履歴が空または未表示なら既定の Tab 動作を保つ。
+   * エラー: 対象項目が見つからない場合はフォーカスを変更しない。
+   * 変更履歴: v1.0.0 (2026-09-27, Codex): 履歴一覧へのキー移動を追加。
+   */
+  // 定数参照: KEYBOARD_KEYS.TAB / KEYBOARD_KEYS.ARROW_DOWN
+  const handleHistoryButtonKeyDown = (event: KeyboardEvent<HTMLButtonElement>, field: "keyword" | "directory") => {
+    const isOpen = field === "keyword" ? openList === "keyword" : openList === "directory-history";
+    if (!isOpen || (event.key !== KEYBOARD_KEYS.TAB && event.key !== KEYBOARD_KEYS.ARROW_DOWN)) return;
+    const values = field === "keyword" ? history.keywords : history.directories;
+    if (!values.length) return;
+    const region = field === "keyword" ? keywordInputRef.current : folderInputRef.current;
+    const firstOption = region?.querySelector<HTMLButtonElement>(`[role="option"]`);
+    if (!firstOption) return;
+    event.preventDefault();
+    firstOption.focus();
+  };
+
+  /**
+   * 履歴項目の矢印・Tab・Enter・Escape 操作を処理する。
+   * 引数はキーイベント、項目位置、対象欄。戻り値は void。選択は既存の selectOption を使う。
+   * エラー: IME 変換中、一覧外、範囲外の項目では操作しない。
+   * 変更履歴: v1.0.0 (2026-09-27, Codex): 履歴項目のキー操作を追加。
+   */
+  const handleHistoryOptionKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number, field: "keyword" | "directory") => {
+    const isOpen = field === "keyword" ? openList === "keyword" : openList === "directory-history";
+    if (!isOpen) return;
+    // 定数参照: KEYBOARD_KEYS.IME_COMPOSITION / KEYBOARD_KEYS.IME_COMPOSITION_KEY_CODE
+    if (event.nativeEvent.isComposing || event.key === KEYBOARD_KEYS.IME_COMPOSITION || event.keyCode === KEYBOARD_KEYS.IME_COMPOSITION_KEY_CODE) {
+      if (event.key === KEYBOARD_KEYS.ENTER) event.preventDefault();
+      return;
+    }
+    const values = field === "keyword" ? history.keywords : history.directories;
+    if (index < 0 || index >= values.length) return;
+    const region = field === "keyword" ? keywordInputRef.current : folderInputRef.current;
+    const options = region?.querySelectorAll<HTMLButtonElement>(`[role="option"]`);
+    if (!options?.length) return;
+
+    let nextIndex: number | null = null;
+    if (event.key === KEYBOARD_KEYS.ARROW_DOWN) {
+      nextIndex = Math.min(values.length - PATH_COMPLETION_CONSTANTS.KEYBOARD_STEP, index + PATH_COMPLETION_CONSTANTS.KEYBOARD_STEP);
+    } else if (event.key === KEYBOARD_KEYS.ARROW_UP) {
+      nextIndex = Math.max(0, index - PATH_COMPLETION_CONSTANTS.KEYBOARD_STEP);
+    } else if (event.key === KEYBOARD_KEYS.TAB && !event.shiftKey) {
+      nextIndex = (index + PATH_COMPLETION_CONSTANTS.KEYBOARD_STEP) % values.length;
+    } else if (event.key === KEYBOARD_KEYS.ENTER) {
+      event.preventDefault();
+      selectOption(index);
+      return;
+    } else if (event.key === KEYBOARD_KEYS.ESCAPE) {
+      event.preventDefault();
+      closeList();
+      region?.querySelector<HTMLInputElement>(`input`)?.focus();
+      return;
+    } else {
+      return;
+    }
+
+    event.preventDefault();
+    setActiveOption(nextIndex);
+    options[nextIndex]?.focus();
+  };
+
+  /**
    * 開いている候補リストのキーボード操作を処理する。
    * 引数はキーボードイベント、戻り値は処理済みかを示す boolean。リスト外では false。
+   * エラー: 空の一覧では既定の移動や確定を行わず false または true を返して安全に終了する。
    * 変更履歴: v1.0.0 (2026-09-27, Codex): アクセシブルなキー操作を追加。
    */
   const handleListKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (!openList) return false;
     const values = openList === "keyword" ? history.keywords : openList === "directory-history" ? history.directories : directorySuggestions;
-    if (e.key === "Escape") { e.preventDefault(); closeList(); return true; }
-    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+    // 定数参照: KEYBOARD_KEYS.ESCAPE / ARROW_DOWN / ARROW_UP / ENTER
+    if (e.key === KEYBOARD_KEYS.ESCAPE) { e.preventDefault(); closeList(); return true; }
+    if (e.key === KEYBOARD_KEYS.ARROW_DOWN || e.key === KEYBOARD_KEYS.ARROW_UP) {
       e.preventDefault();
       if (!values.length) return true;
-      const delta = e.key === "ArrowDown" ? PATH_COMPLETION_CONSTANTS.KEYBOARD_STEP : -PATH_COMPLETION_CONSTANTS.KEYBOARD_STEP;
+      if (e.key === KEYBOARD_KEYS.ARROW_DOWN && activeOption === null && (openList === "keyword" || openList === "directory-history")) {
+        const region = openList === "keyword" ? keywordInputRef.current : folderInputRef.current;
+        region?.querySelector<HTMLButtonElement>(`[role="option"]`)?.focus();
+        return true;
+      }
+      const delta = e.key === KEYBOARD_KEYS.ARROW_DOWN ? PATH_COMPLETION_CONSTANTS.KEYBOARD_STEP : -PATH_COMPLETION_CONSTANTS.KEYBOARD_STEP;
       const current = activeOption === null ? (delta > 0 ? -1 : values.length) : activeOption;
       setActiveOption(Math.max(0, Math.min(values.length - 1, current + delta)));
       return true;
     }
-    if (e.key === "Enter" && activeOption !== null) { e.preventDefault(); selectOption(activeOption); return true; }
+    if (e.key === KEYBOARD_KEYS.ENTER && activeOption !== null) { e.preventDefault(); selectOption(activeOption); return true; }
     return false;
   };
 
@@ -417,7 +491,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
-              <button type="button" onClick={() => toggleHistory("keyword")} title={t("ui.KEYWORD_HISTORY_TOOLTIP")} aria-label={t("ui.KEYWORD_HISTORY_TOOLTIP")} className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded">
+              <button type="button" onClick={(event) => { event.currentTarget.focus(); toggleHistory("keyword"); }} onKeyDown={(event) => handleHistoryButtonKeyDown(event, "keyword")} title={t("ui.KEYWORD_HISTORY_TOOLTIP")} aria-label={t("ui.KEYWORD_HISTORY_TOOLTIP")} className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded">
                 <History className="w-3.5 h-3.5" />
               </button>
               <span className="text-[10px] text-zinc-400 font-mono bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">
@@ -427,7 +501,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             {openList === "keyword" && (
               <div role="listbox" className="absolute z-20 top-full mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 p-1 shadow-xl">
                 {history.keywords.length ? history.keywords.map((value, index) => (
-                  <button key={value} type="button" role="option" aria-selected={activeOption === index} onMouseDown={(e) => e.preventDefault()} onClick={() => selectOption(index)} className="block w-full rounded px-2 py-1.5 text-left text-sm text-zinc-200 hover:bg-zinc-800">{value}</button>
+                  <button key={value} type="button" role="option" aria-selected={activeOption === index} onFocus={() => setActiveOption(index)} onKeyDown={(event) => handleHistoryOptionKeyDown(event, index, "keyword")} onMouseDown={(e) => e.preventDefault()} onClick={() => selectOption(index)} className="block w-full rounded px-2 py-1.5 text-left text-sm text-zinc-200 hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-excel-light">{value}</button>
                 )) : <div className="px-2 py-1.5 text-sm text-zinc-500">{t("ui.HISTORY_EMPTY")}</div>}
               </div>
             )}
@@ -484,13 +558,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             >
               <FolderOpen className="w-4 h-4" />
             </button>
-            <button type="button" onClick={() => toggleHistory("directory")} title={t("ui.DIRECTORY_HISTORY_TOOLTIP")} aria-label={t("ui.DIRECTORY_HISTORY_TOOLTIP")} className="absolute inset-y-1 right-10 px-2 flex items-center justify-center bg-zinc-700 hover:bg-zinc-600 rounded text-zinc-200 transition z-0">
+            <button type="button" onClick={(event) => { event.currentTarget.focus(); toggleHistory("directory"); }} onKeyDown={(event) => handleHistoryButtonKeyDown(event, "directory")} title={t("ui.DIRECTORY_HISTORY_TOOLTIP")} aria-label={t("ui.DIRECTORY_HISTORY_TOOLTIP")} className="absolute inset-y-1 right-10 px-2 flex items-center justify-center bg-zinc-700 hover:bg-zinc-600 rounded text-zinc-200 transition z-0">
               <History className="w-4 h-4" />
             </button>
             {(openList === "directory" || openList === "directory-history") && (
               <div role="listbox" aria-label={t("ui.DIRECTORY_SUGGESTIONS")} className="absolute z-20 top-full mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 p-1 shadow-xl">
                 {(openList === "directory-history" ? history.directories : directorySuggestions).length ? (openList === "directory-history" ? history.directories : directorySuggestions).map((value, index) => (
-                  <button key={value} type="button" role="option" aria-selected={activeOption === index} onMouseDown={(e) => e.preventDefault()} onClick={() => selectOption(index)} className="block w-full truncate rounded px-2 py-1.5 text-left text-xs font-mono text-zinc-200 hover:bg-zinc-800">{value}</button>
+                  <button key={value} type="button" role="option" aria-selected={activeOption === index} onFocus={openList === "directory-history" ? () => setActiveOption(index) : undefined} onKeyDown={openList === "directory-history" ? (event) => handleHistoryOptionKeyDown(event, index, "directory") : undefined} onMouseDown={(e) => e.preventDefault()} onClick={() => selectOption(index)} className="block w-full truncate rounded px-2 py-1.5 text-left text-xs font-mono text-zinc-200 hover:bg-zinc-800 focus-visible:outline focus-visible:outline-2 focus-visible:outline-excel-light">{value}</button>
                 )) : <div className="px-2 py-1.5 text-sm text-zinc-500">{t("ui.HISTORY_EMPTY")}</div>}
               </div>
             )}

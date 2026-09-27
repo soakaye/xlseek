@@ -5,10 +5,14 @@
  * 変更履歴: v1.0.0 (2026-09-27, Codex): 履歴・補完 UI テストを追加。
  * 変更履歴: v1.1.0 (2026-09-27, Codex): フォーカス離脱と遅延補完の回帰テストを追加。
  * 変更履歴: v1.2.0 (2026-09-27, Codex): フォルダ選択時の履歴非表示を検証する。
+ * 変更履歴: v1.3.0 (2026-09-27, Codex): 両履歴のキー移動、循環、20件選択を追加。
+ * 変更履歴: v1.4.0 (2026-09-27, Codex): 履歴項目の取消しと IME ガードを検証する。
+ * 変更履歴: v1.5.0 (2026-09-27, Codex): クリック後の入力欄フォーカスから下矢印で履歴へ移動する回帰テストを追加。
  */
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { open } from "@tauri-apps/plugin-dialog";
+import { KEYBOARD_KEYS, SEARCH_HISTORY_CONSTANTS } from "../src/constants";
 import { SearchBar } from "../src/components/search/SearchBar";
 
 const mocks = vi.hoisted(() => ({ invoke: vi.fn() }));
@@ -66,6 +70,123 @@ describe("SearchBar history and path completion", () => {
     expect(onSelectHistory).toHaveBeenCalledWith("keyword", "invoice");
     fireEvent.keyDown(screen.getAllByRole("textbox")[0], { key: "Enter", isComposing: true });
     expect(onSearch).not.toHaveBeenCalled();
+  });
+
+  it("moves from both history buttons through options and selects without searching", () => {
+    const onSearch = vi.fn();
+    const onSelectHistory = vi.fn();
+    render(<SearchBar query={query} onChangeQuery={() => undefined} onSearch={onSearch} onCancel={() => undefined} isScanning={false} history={{ keywords: ["invoice", "customer"], directories: ["/reports", "/archive"] }} onSelectHistory={onSelectHistory} />);
+
+    const keywordButton = screen.getByRole("button", { name: "ui.KEYWORD_HISTORY_TOOLTIP" });
+    fireEvent.click(keywordButton);
+    fireEvent.keyDown(keywordButton, { key: KEYBOARD_KEYS.TAB });
+    const keywordOptions = screen.getAllByRole("option");
+    expect(document.activeElement).toBe(keywordOptions[0]);
+    expect(keywordOptions[0].getAttribute("aria-selected")).toBe("true");
+    expect(keywordOptions[0].className).toContain("focus-visible:outline");
+    fireEvent.keyDown(keywordOptions[0], { key: KEYBOARD_KEYS.ARROW_DOWN });
+    expect(document.activeElement).toBe(keywordOptions[1]);
+    expect(keywordOptions[0].getAttribute("aria-selected")).toBe("false");
+    expect(keywordOptions[1].getAttribute("aria-selected")).toBe("true");
+    fireEvent.keyDown(keywordOptions[0], { key: KEYBOARD_KEYS.ARROW_UP });
+    expect(document.activeElement).toBe(keywordOptions[0]);
+    fireEvent.keyDown(keywordOptions[0], { key: KEYBOARD_KEYS.ARROW_UP });
+    expect(document.activeElement).toBe(keywordOptions[0]);
+    fireEvent.keyDown(keywordOptions[1], { key: KEYBOARD_KEYS.TAB });
+    expect(document.activeElement).toBe(keywordOptions[0]);
+    fireEvent.keyDown(keywordOptions[0], { key: KEYBOARD_KEYS.ENTER });
+    expect(onSelectHistory).toHaveBeenLastCalledWith("keyword", "invoice");
+
+    const directoryButton = screen.getByRole("button", { name: "ui.DIRECTORY_HISTORY_TOOLTIP" });
+    fireEvent.click(directoryButton);
+    fireEvent.keyDown(directoryButton, { key: KEYBOARD_KEYS.ARROW_DOWN });
+    const directoryOptions = screen.getAllByRole("option");
+    expect(document.activeElement).toBe(directoryOptions[0]);
+    fireEvent.keyDown(directoryOptions[0], { key: KEYBOARD_KEYS.ARROW_DOWN });
+    fireEvent.keyDown(directoryOptions[1], { key: KEYBOARD_KEYS.ENTER });
+    expect(onSelectHistory).toHaveBeenLastCalledWith("directory", "/archive");
+    expect(onSearch).not.toHaveBeenCalled();
+  });
+
+  it("focuses the history button on click so ArrowDown reliably reaches the first option", () => {
+    render(<SearchBar query={query} onChangeQuery={() => undefined} onSearch={() => undefined} onCancel={() => undefined} isScanning={false} history={{ keywords: ["invoice"], directories: ["/saved"] }} onSelectHistory={() => undefined} />);
+    const cases = [
+      { button: "ui.KEYWORD_HISTORY_TOOLTIP", input: 0, value: "invoice" },
+      { button: "ui.DIRECTORY_HISTORY_TOOLTIP", input: 1, value: "/saved" },
+    ];
+    for (const item of cases) {
+      const input = screen.getAllByRole("textbox")[item.input];
+      input.focus();
+      const button = screen.getByRole("button", { name: item.button });
+      fireEvent.click(button);
+      expect(document.activeElement).toBe(button);
+      fireEvent.keyDown(button, { key: KEYBOARD_KEYS.ARROW_DOWN });
+      expect(document.activeElement).toBe(screen.getByRole("option", { name: item.value }));
+    }
+  });
+
+  it("reaches and selects every item in a 20-entry keyboard history", () => {
+    const onSelectHistory = vi.fn();
+    const values = Array.from({ length: SEARCH_HISTORY_CONSTANTS.DEFAULT_MAX_ENTRIES }, (_, index) => `Entry ${index + SEARCH_HISTORY_CONSTANTS.STEP}`);
+    render(<SearchBar query={query} onChangeQuery={() => undefined} onSearch={() => undefined} onCancel={() => undefined} isScanning={false} history={{ keywords: values, directories: [] }} onSelectHistory={onSelectHistory} />);
+
+    const button = screen.getByRole("button", { name: "ui.KEYWORD_HISTORY_TOOLTIP" });
+    fireEvent.click(button);
+    fireEvent.keyDown(button, { key: KEYBOARD_KEYS.TAB });
+    for (const value of values) {
+      const option = screen.getByRole("option", { name: value });
+      expect(document.activeElement).toBe(option);
+      if (value !== values[values.length - SEARCH_HISTORY_CONSTANTS.STEP]) {
+        fireEvent.keyDown(option, { key: KEYBOARD_KEYS.TAB });
+      }
+    }
+    fireEvent.keyDown(screen.getByRole("option", { name: values[values.length - SEARCH_HISTORY_CONSTANTS.STEP] }), { key: KEYBOARD_KEYS.ENTER });
+
+    expect(onSelectHistory).toHaveBeenCalledWith("keyword", values[values.length - SEARCH_HISTORY_CONSTANTS.STEP]);
+  });
+
+  it("does not trap Tab for an empty history or a single history item", () => {
+    const emptyProps = { onChangeQuery: () => undefined, onSearch: () => undefined, onCancel: () => undefined, isScanning: false, history: { keywords: [], directories: [] }, onSelectHistory: () => undefined };
+    const { rerender } = render(<SearchBar query={query} {...emptyProps} />);
+    const emptyButton = screen.getByRole("button", { name: "ui.KEYWORD_HISTORY_TOOLTIP" });
+    fireEvent.click(emptyButton);
+    const emptyTab = new KeyboardEvent("keydown", { key: KEYBOARD_KEYS.TAB, bubbles: true, cancelable: true });
+    fireEvent(emptyButton, emptyTab);
+    expect(emptyTab.defaultPrevented).toBe(false);
+
+    fireEvent.click(emptyButton);
+    rerender(<SearchBar query={query} {...emptyProps} history={{ keywords: ["invoice"], directories: [] }} />);
+    const button = screen.getByRole("button", { name: "ui.KEYWORD_HISTORY_TOOLTIP" });
+    fireEvent.click(button);
+    fireEvent.keyDown(button, { key: KEYBOARD_KEYS.TAB });
+    const option = screen.getByRole("option", { name: "invoice" });
+    fireEvent.keyDown(option, { key: KEYBOARD_KEYS.TAB });
+    expect(document.activeElement).toBe(option);
+  });
+
+  it("closes either history with Escape and returns focus to its input", () => {
+    render(<SearchBar query={query} onChangeQuery={() => undefined} onSearch={() => undefined} onCancel={() => undefined} isScanning={false} history={{ keywords: ["invoice"], directories: ["/saved"] }} onSelectHistory={() => undefined} />);
+    const cases = [
+      { button: "ui.KEYWORD_HISTORY_TOOLTIP", value: "invoice", input: 0 },
+      { button: "ui.DIRECTORY_HISTORY_TOOLTIP", value: "/saved", input: 1 },
+    ];
+    for (const item of cases) {
+      fireEvent.click(screen.getByRole("button", { name: item.button }));
+      const option = screen.getByRole("option", { name: item.value });
+      option.focus();
+      fireEvent.keyDown(option, { key: KEYBOARD_KEYS.ESCAPE });
+      expect(screen.queryByRole("option", { name: item.value })).toBeNull();
+      expect(document.activeElement).toBe(screen.getAllByRole("textbox")[item.input]);
+    }
+  });
+
+  it("ignores IME confirmation keys on history options", () => {
+    const onSelectHistory = vi.fn();
+    render(<SearchBar query={query} onChangeQuery={() => undefined} onSearch={() => undefined} onCancel={() => undefined} isScanning={false} history={{ keywords: ["invoice"], directories: [] }} onSelectHistory={onSelectHistory} />);
+    fireEvent.click(screen.getByRole("button", { name: "ui.KEYWORD_HISTORY_TOOLTIP" }));
+    const option = screen.getByRole("option", { name: "invoice" });
+    fireEvent.keyDown(option, { key: KEYBOARD_KEYS.ENTER, isComposing: true });
+    expect(onSelectHistory).not.toHaveBeenCalled();
   });
 
   it("uses directory suggestions and lets the history button replace them", async () => {
