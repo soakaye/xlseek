@@ -1,23 +1,23 @@
 ---
 name: syncing-mainui-mock
-description: Use when modifying or adding Tauri UI components, layouts, styles, or options in src/ to synchronize the standalone HTML prototype in design/mainui/index.html
+description: Use when modifying or adding Tauri UI components, layouts, styles, options, or independent screens in src/
 ---
-# Syncing MainUI Mock (Tauri画面変更のモック同期)
+# Syncing UI Mocks (Tauri画面変更のモック同期)
 
 ## Overview
 
-**Core Principle:** Tauri の画面実装（`src/` 配下）とデザインプロトタイプ（`design/mainui/index.html`）は常に 1:1 で完全同期されていなければならない。
+**Core Principle:** Tauri の画面実装（`src/` 配下）と対応するデザインプロトタイプは常に 1:1 で同期する。
 
-Tauri 本体のコンポーネント、レイアウト、スタイル、文言、またはオプションを変更・追加した場合、その変更を直ちに `design/mainui/index.html` に正確に反映します。
+メイン画面に属する UI は `design/mainui/index.html` に反映する。メイン画面から独立して表示される画面は、画面ごとに `design/<画面名>/index.html` を作成または更新する。
 
-メイン画面から独立した画面は、単独で起動参照可能な様に `design/<画面>/` ディレクトリを作成し同様に更新します。
+独立画面のプロトタイプは、その `index.html` を直接開くだけで画面と操作を確認できるようにする。メイン画面から開く導線を変更した場合は、メイン画面のプロトタイプも同期する。
 
 
 ## The Iron Law
 
 ```
-NO TAURI UI CHANGE IS COMPLETE WITHOUT UPDATING DESIGN/MAINUI/INDEX.HTML
-(design/mainui/index.html への反映なき画面変更完了は存在しない)
+NO TAURI UI CHANGE IS COMPLETE WITHOUT UPDATING ITS CORRESPONDING DESIGN/<SCREEN>/INDEX.HTML
+(メイン画面は design/mainui/index.html、独立画面は design/<画面名>/index.html)
 ```
 
 **Violating the letter of this rule is violating the spirit of this rule.**
@@ -31,13 +31,17 @@ NO TAURI UI CHANGE IS COMPLETE WITHOUT UPDATING DESIGN/MAINUI/INDEX.HTML
 digraph when_sync_mock {
     "Did you modify files in src/?" [shape=diamond];
     "Does it affect UI/layout/text/style?" [shape=diamond];
+    "Is this screen independent from mainui?" [shape=diamond];
     "Update design/mainui/index.html" [shape=box];
+    "Create or update design/<screen>/index.html" [shape=box];
     "No mock update needed" [shape=box];
 
     "Did you modify files in src/?" -> "Does it affect UI/layout/text/style?" [label="yes"];
     "Did you modify files in src/?" -> "No mock update needed" [label="no"];
-    "Does it affect UI/layout/text/style?" -> "Update design/mainui/index.html" [label="yes"];
+    "Does it affect UI/layout/text/style?" -> "Is this screen independent from mainui?" [label="yes"];
     "Does it affect UI/layout/text/style?" -> "No mock update needed" [label="no (pure backend/logic)"];
+    "Is this screen independent from mainui?" -> "Create or update design/<screen>/index.html" [label="yes"];
+    "Is this screen independent from mainui?" -> "Update design/mainui/index.html" [label="no"];
 }
 ```
 
@@ -48,11 +52,21 @@ digraph when_sync_mock {
 - `src/constants/index.ts` の UI 文言定数（`UI_MESSAGES`）や寸法（`LAYOUT_CONSTANTS`）を変更した
 - `src/types/search.ts` で検索条件（`SearchQuery`）や結果データ型（`SearchMatch`）に画面表示用フィールドを追加した
 - 検索オプション、ボタン、入力欄、アイコン、バッジ、色調、ツールチップ、トースト通知の内容が変更された
+- メイン画面とは別のウィンドウやルートとして表示できる画面を追加・変更した
 
 ### Do NOT Apply When:
 
 - `src-tauri/**` のみの変更で、画面の見た目や操作に一切影響がない内部ロジック改修
 - ドキュメント（Markdown）、CI 設定、またはパッケージ依存関係の軽微な更新
+
+---
+
+## Prototype Destination (更新先の決定)
+
+- メイン画面内のペイン、モーダル、ポップオーバーは `design/mainui/index.html` に同期する。
+- メイン画面から独立したウィンドウやルートは、画面名を小文字の kebab-case にして `design/<画面名>/index.html` に同期する。ディレクトリがなければ作成する。
+- 独立画面の `index.html` は、メイン画面の DOM、状態、JavaScript、Tauri 実行環境に依存させない。必要なマークアップ、モックデータ、操作用 JavaScript をその画面内に用意し、`file://` または静的サーバーで直接開けるようにする。
+- 同じ変更がメイン画面の起動ボタンや画面遷移にも及ぶ場合は、`design/mainui/index.html` も更新する。
 
 ---
 
@@ -79,7 +93,7 @@ digraph when_sync_mock {
 
 ## Core Simulation Rules (スタンドアローン動作の原則)
 
-`design/mainui/index.html` はブラウザ単体（`file://` や静的サーバー）で誰でも即座に確認できるスタンドアローンファイルでなければなりません。
+各 `design/<画面名>/index.html` はブラウザ単体（`file://` や静的サーバー）で誰でも即座に確認できるスタンドアローンファイルでなければなりません。`mainui` もこの規則に含みます。
 
 1. **ゼロ・バックエンド依存 (No Tauri Runtime Required)**
    - `@tauri-apps/api` や IPC 呼び出しを直書きしてはならない。
@@ -102,20 +116,20 @@ digraph when_sync_mock {
 
 ```
 1. 差分の特定:
-   git diff --name-only src/
-   変更されたコンポーネント・定数・スタイルを洗い出す。
+   git status --short -- src/
+   新規ファイルを含め、変更されたコンポーネント・定数・スタイルを洗い出す。
 
-2. HTML マークアップの反映:
-   design/mainui/index.html の該当セクションを見つけ、
+2. 更新先の決定と HTML マークアップの反映:
+   メイン画面内なら design/mainui/index.html、独立画面なら
+   design/<画面名>/index.html を選ぶ。独立画面のディレクトリがなければ作成する。
    React JSX と同じ Tailwind クラス・DOM 構造・アイコン・ID を反映する。
 
 3. モックデータ & イベントリスナーの更新:
-   新フィールドや新オプションがある場合、
-   mockMatches や optionPills 配列、イベントハンドラに追加する。
+   対応する画面に必要なモックデータとイベントハンドラを追加・更新する。
 
 4. 構文 & 動作検証:
-   python3 -c "import html.parser; p = html.parser.HTMLParser(); p.feed(open('design/mainui/index.html').read()); print('OK')"
-   ブラウザで開き、クリックやトグルが破綻していないか確認する。
+   更新した各 index.html を HTML パーサーで確認する。
+   ブラウザで各ファイルを直接開き、メイン画面なしで表示されることと、クリックやトグルが破綻していないことを確認する。
 
 5. 憲章コメント更新:
    変更履歴（バージョン、日付、改修内容）をヘッダコメントに記録する。
@@ -130,7 +144,8 @@ digraph when_sync_mock {
 | --------------------------------------- | --------------------------------------------------------------------------- |
 | 「今回は小さな UI 修正だからモック更新は不要」               | 小さな変更の蓄積がモックの腐敗を招く。1行のラベル変更であっても即時反映すること。                                   |
 | 「`npm run build` が通ったのでタスク完了である」        | ビルド通過は TypeScript の整合性を示しているに過ぎない。デザイン同期チェックを通過するまで完了ではない。                  |
-| 「デザインモックは最初のプロトタイプだから最新仕様とズレていても構わない」   | 本プロジェクトにおいて `design/mainui/index.html` は生きた仕様（Living Spec）として扱われる。乖離はバグである。 |
+| 「デザインモックは最初のプロトタイプだから最新仕様とズレていても構わない」   | 各 `design/<画面名>/index.html` は生きた仕様（Living Spec）として扱われる。乖離はバグである。 |
+| 「独立画面も mainui に含めればよい」 | 独立画面は `design/<画面名>/index.html` を作成または更新し、単独で開けるようにする。 |
 | 「Tauri ネイティブのダイアログや IPC は HTML で再現できない」 | 動作をスキップするのではなく、トースト通知（`showToast`）による自然なシミュレーションを実装すること。                    |
 | 「HTML ファイルを手動で直すのは面倒」                   | 画面設計の確認やレビューにおいて、スタンドアローン HTML は最速のフィードバック手段である。省略は許されない。                   |
 
@@ -141,7 +156,8 @@ digraph when_sync_mock {
 
 以下の思考や行動が現れたら **作業完了を宣言せず、即座にモック同期を実施すること**：
 
-- `src/components/` をコミットしようとしているのに `design/mainui/index.html` が `git status` に含まれていない
+- `src/components/` の UI 変更に対応する `design/<画面名>/index.html` が `git status` に含まれていない
+- 独立画面を `design/mainui/index.html` 内だけで再現している
 - 「とりあえずフロントエンドの実装だけ先に PR を出そう」と考えている
 - 「モック更新は別のタスクに切り出そう」と先送りしている
 - モックの HTML は直したが、JavaScript のモックデータやクリックイベントを更新していない
@@ -153,9 +169,9 @@ digraph when_sync_mock {
 
 画面変更作業の完了宣言前に、以下の検証を必ず実行すること：
 
-- [ ] `git status` を確認し、`src/` の UI 変更に対して `design/mainui/index.html` も変更対象に含まれていること
-- [ ] HTML 構文エラーがないこと（`python3 -c "import html.parser; ..."` の検証成功）
+- [ ] `git status` を確認し、`src/` の UI 変更に対応する `design/<画面名>/index.html` が変更対象に含まれていること（メイン画面は `design/mainui/index.html`）
+- [ ] 独立画面の新設時には `design/<画面名>/index.html` が存在し、そのファイルだけを直接開いて画面と操作を確認できること
+- [ ] 更新した各 `index.html` に HTML 構文エラーがないこと
 - [ ] アイコン名が正しい Lucide アイコン名になっており、動的変更時に `lucide.createIcons()` が実行されること
 - [ ] 新機能・新オプションがブラウザ上でクリック可能で、トーストや状態変化のフィードバックがあること
 - [ ] ヘッダコメントに変更履歴（日付、バージョン、変更内容）が記載されていること
-
