@@ -15,6 +15,7 @@ import React from "react";
 import { Info } from "lucide-react";
 import { SearchMatch } from "../../types/search";
 import { useTranslation } from "../../i18n";
+import { SEARCH_LABELS } from "../../constants";
 
 
 /**
@@ -64,6 +65,9 @@ export const MetaInfoCard: React.FC<MetaInfoCardProps> = ({ match }) => {
       case "HiddenSheet":
         // 定数参照: t("ui.MATCH_TYPE_HIDDEN_SHEET")
         return t("ui.MATCH_TYPE_HIDDEN_SHEET");
+      case "Shape":
+        // 定数参照: SEARCH_LABELS.SHAPE_TYPE
+        return t(SEARCH_LABELS.SHAPE_TYPE);
     }
   })();
 
@@ -85,7 +89,16 @@ export const MetaInfoCard: React.FC<MetaInfoCardProps> = ({ match }) => {
         {match.full_content || t("ui.EMPTY_CONTENT")}
       </div>
 
+      {match.match_type === "Shape" && (
+        <div className="text-zinc-300 text-[11px]">
+          {/* 定数参照: SEARCH_LABELS.SHAPE_NAME */}
+          {t(SEARCH_LABELS.SHAPE_NAME)} <strong className="text-zinc-100">{match.shape_name}</strong>
+        </div>
+      )}
+
       <div className="flex items-center gap-4 text-[11px] text-zinc-400 pt-1">
+        {(match.match_type !== "Shape" || match.cell_address !== "") && (
+          <>
         <span>
           {/* 定数参照: t("ui.ROW_NUMBER_LABEL") */}
           {t("ui.ROW_NUMBER_LABEL")} <strong className="text-zinc-200">{match.row_index}</strong>
@@ -97,11 +110,13 @@ export const MetaInfoCard: React.FC<MetaInfoCardProps> = ({ match }) => {
             {match.col_index} ({match.col_name})
           </strong>
         </span>
+          </>
+        )}
         <span>
           {/* 定数参照: t("ui.HIDDEN_STATUS_LABEL"), STATUS_HIDDEN, STATUS_VISIBLE */}
           {t("ui.HIDDEN_STATUS_LABEL")}{" "}
           <strong className="text-zinc-200">
-            {match.match_type === "HiddenSheet" ? t("ui.STATUS_HIDDEN") : t("ui.STATUS_VISIBLE")}
+            {match.sheet_hidden ? t("ui.STATUS_HIDDEN") : t("ui.STATUS_VISIBLE")}
           </strong>
         </span>
       </div>

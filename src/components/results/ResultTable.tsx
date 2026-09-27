@@ -16,7 +16,7 @@ import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import { ListFilter, Filter, ArrowUp, ArrowDown } from "lucide-react";
 import { SearchMatch, MatchType } from "../../types/search";
-import { LAYOUT_CONSTANTS } from "../../constants";
+import { LAYOUT_CONSTANTS, SEARCH_LABELS } from "../../constants";
 import { useTranslation } from "../../i18n";
 
 interface ResultTableProps {
@@ -66,6 +66,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
           it.file_name.toLowerCase().includes(q) ||
           it.sheet_name.toLowerCase().includes(q) ||
           it.cell_address.toLowerCase().includes(q) ||
+          (it.shape_name || "").toLowerCase().includes(q) ||
           it.snippet.toLowerCase().includes(q) ||
           it.full_content.toLowerCase().includes(q)
       );
@@ -171,6 +172,15 @@ export const ResultTable: React.FC<ResultTableProps> = ({
         const label = t("ui.MATCH_TYPE_HIDDEN_SHEET");
         return (
           <span className="inline-block max-w-full truncate whitespace-nowrap align-middle px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700" title={label} aria-label={label}>
+            {label}
+          </span>
+        );
+      }
+      case "Shape": {
+        // 定数参照: SEARCH_LABELS.SHAPE_RESULT_TYPE
+        const label = t(SEARCH_LABELS.SHAPE_RESULT_TYPE);
+        return (
+          <span className="inline-block max-w-full truncate whitespace-nowrap align-middle px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-950/80 text-cyan-300 border border-cyan-800/60" title={label} aria-label={label}>
             {label}
           </span>
         );
@@ -302,7 +312,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
                     {item.sheet_name}
                   </div>
                   <div className="w-[12%] px-3 font-mono font-bold text-emerald-400">
-                    {item.cell_address}
+                    {item.match_type === "Shape" ? item.shape_name : item.cell_address}
                   </div>
                   <div className="w-[15%] min-w-0 px-3">
                     {renderBadge(item.match_type)}

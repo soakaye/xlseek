@@ -896,9 +896,12 @@ name = "exlgrep"
 version = "0.1.0"
 dependencies = [
  "calamine",
+ "cfb",
  "chrono",
  "csv",
+ "encoding_rs",
  "open",
+ "quick-xml 0.41.0",
  "rayon",
  "regex",
  "rust_xlsxwriter",
@@ -912,6 +915,7 @@ dependencies = [
  "tauri-plugin-shell",
  "walkdir",
  "winreg",
+ "zip 0.6.6",
 ]
 
 [[package]]

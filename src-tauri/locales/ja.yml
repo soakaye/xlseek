@@ -43,6 +43,10 @@ ui.OPTIONS_LABEL: "オプション:"
 ui.OPTION_MATCH_CASE: 大文字/小文字を区別
 ui.OPTION_USE_REGEX: 正規表現 (Regex)
 ui.OPTION_INCLUDE_FORMULA: 数式 (Formula)
+ui.OPTION_INCLUDE_SHAPE: Shape 内テキスト
+ui.MATCH_TYPE_SHAPE: Shape
+ui.RESULT_MATCH_TYPE_SHAPE: Shape
+ui.SHAPE_NAME_LABEL: Shape 名
 ui.OPTION_INCLUDE_COMMENT: コメント / メモ
 ui.OPTION_INCLUDE_HIDDEN: 非表示シート
 ui.LABEL_TARGET_EXTENSIONS: "対象拡張子:"
@@ -178,6 +182,7 @@ export.header.fileName: ファイル名
 export.header.fullPath: フルパス
 export.header.sheetName: シート名
 export.header.cell: セル位置
+export.header.shapeName: Shape 名
 export.header.matchType: 一致種別
 export.header.matchedContent: 一致内容
 export.header.formula: 数式
@@ -186,3 +191,4 @@ export.match.value: 値
 export.match.formula: 数式
 export.match.comment: コメント
 export.match.hiddenSheet: 非表示シート
+export.match.shape: 図形

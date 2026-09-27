@@ -28,6 +28,10 @@ open = "5.3"
 csv = "1.3"
 rust_xlsxwriter = "0.65"
 chrono = "0.4"
+encoding_rs = "0.8.42"
+cfb = "0.7.3"
+quick-xml = "0.41.0"
+zip = { version = "0.6.6", default-features = false, features = ["deflate"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.55"

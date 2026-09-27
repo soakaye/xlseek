@@ -75,6 +75,7 @@ pub fn export_to_csv(
             MatchType::Formula => crate::constants::EXPORT_MATCH_FORMULA_KEY,
             MatchType::Comment => crate::constants::EXPORT_MATCH_COMMENT_KEY,
             MatchType::HiddenSheet => crate::constants::EXPORT_MATCH_HIDDEN_SHEET_KEY,
+            MatchType::Shape => crate::constants::EXPORT_MATCH_SHAPE_KEY,
         };
         let match_type_str = crate::i18n::resolve_catalog_text(catalogs, language, match_key)
             .ok_or_else(|| crate::constants::ERR_TRANSLATION_MISSING.to_string())?;
@@ -87,6 +88,7 @@ pub fn export_to_csv(
                 item.full_path.clone(),
                 item.sheet_name.clone(),
                 item.cell_address.clone(),
+                item.shape_name.clone().unwrap_or_default(),
                 match_type_str,
                 item.full_content.clone(),
                 item.formula.clone().unwrap_or_default(),

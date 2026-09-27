@@ -44,6 +44,37 @@ pub const SNIPPET_CONTEXT_CHARS: usize = 30;
 
 /// スニペット省略記号
 pub const SNIPPET_ELLIPSIS: &str = "...";
+pub const SNIPPET_MARK_OPEN: &str =
+    "<mark class='bg-yellow-500/30 text-yellow-300 px-0.5 rounded font-semibold'>";
+pub const SNIPPET_MARK_CLOSE: &str = "</mark>";
+pub const HTML_ESCAPE_AMPERSAND: &str = "&amp;";
+pub const HTML_ESCAPE_LESS_THAN: &str = "&lt;";
+pub const HTML_ESCAPE_GREATER_THAN: &str = "&gt;";
+pub const HTML_ESCAPE_DOUBLE_QUOTE: &str = "&quot;";
+pub const HTML_ESCAPE_APOSTROPHE: &str = "&#39;";
+pub const SHAPE_MAX_XML_BYTES: u64 = 52_428_800;
+pub const SHAPE_MAX_TOTAL_XML_BYTES: u64 = 209_715_200;
+pub const SHAPE_MAX_XML_DEPTH: usize = 128;
+pub const SHAPE_MAX_BINARY_BYTES: u64 = 52_428_800;
+pub const XLSB_BRT_BUNDLE_SH_RECORD_ID: u32 = 0x009C;
+pub const XLSB_BRT_DRAWING_RECORD_ID: u32 = 0x0226;
+pub const XLSB_BUNDLE_SHEET_FIXED_BYTES: usize = 8;
+pub const XLSB_STRING_LENGTH_BYTES: usize = 4;
+pub const XLSB_UTF16_UNIT_BYTES: usize = 2;
+pub const XLSB_VARINT_VALUE_MASK: u8 = 0x7F;
+pub const XLSB_VARINT_CONTINUATION_MASK: u8 = 0x80;
+pub const XLSB_VARINT_SHIFT: u32 = 7;
+pub const XLSB_VARINT_MAX_BYTES: u32 = 5;
+pub const XLS_MAX_BIFF_RECORD_BYTES: usize = 8_224;
+pub const XLS_BOUNDSHEET_RECORD_ID: u16 = 0x0085;
+pub const XLS_TXO_RECORD_ID: u16 = 0x01B6;
+pub const XLS_CONTINUE_RECORD_ID: u16 = 0x003C;
+pub const XLS_TXO_TEXT_COUNT_OFFSET: usize = 10;
+pub const XLS_TXO_FIXED_HEADER_BYTES: usize = 16;
+pub const XLS_BIFF_RECORD_HEADER_BYTES: usize = 4;
+pub const XLS_SHAPE_NAME_PREFIX: &str = "Shape ";
+pub const ERR_SHAPE_READ: &str = "Failed to read Shape drawing data";
+pub const ERR_SHAPE_LIMIT: &str = "Shape drawing data exceeds the safety limit";
 
 /// 検索一致アイテムIDの初期値
 pub const DEFAULT_MATCH_ID_START: u64 = 1;
@@ -98,14 +129,15 @@ pub const XLSX_HEADER_BG_COLOR: u32 = 0x000F_766E;
 pub const XLSX_HEADER_FG_COLOR: u32 = 0x00FF_FFFF;
 
 /// エクスポート列幅。翻訳見出しは共有カタログから取得する。
-pub const XLSX_COLUMN_WIDTHS: [f64; 8] = [8.0, 25.0, 40.0, 20.0, 12.0, 14.0, 45.0, 30.0];
+pub const XLSX_COLUMN_WIDTHS: [f64; 9] = [8.0, 25.0, 40.0, 20.0, 12.0, 22.0, 14.0, 45.0, 30.0];
 pub const ERR_INVALID_LANGUAGE: &str = "Unsupported export language";
-pub const EXPORT_HEADER_KEYS: [&str; 8] = [
+pub const EXPORT_HEADER_KEYS: [&str; 9] = [
     "export.header.id",
     "export.header.fileName",
     "export.header.fullPath",
     "export.header.sheetName",
     "export.header.cell",
+    "export.header.shapeName",
     "export.header.matchType",
     "export.header.matchedContent",
     "export.header.formula",
@@ -115,6 +147,7 @@ pub const EXPORT_MATCH_VALUE_KEY: &str = "export.match.value";
 pub const EXPORT_MATCH_FORMULA_KEY: &str = "export.match.formula";
 pub const EXPORT_MATCH_COMMENT_KEY: &str = "export.match.comment";
 pub const EXPORT_MATCH_HIDDEN_SHEET_KEY: &str = "export.match.hiddenSheet";
+pub const EXPORT_MATCH_SHAPE_KEY: &str = "export.match.shape";
 
 // ==============================================================================
 // 6. アプリケーション識別子・表示名定数 (Supported Apps)
@@ -219,7 +252,7 @@ mod tests {
         assert_eq!(EXPORT_HEADER_KEYS.len(), XLSX_COLUMN_WIDTHS.len());
         assert_eq!(EXPORT_HEADER_KEYS[0], "export.header.id");
         assert_eq!(EXPORT_HEADER_KEYS[1], "export.header.fileName");
-        assert_eq!(EXPORT_HEADER_KEYS[7], "export.header.formula");
+        assert_eq!(EXPORT_HEADER_KEYS[8], "export.header.formula");
         assert_eq!(EXPORT_SHEET_NAME_KEY, "export.sheetName");
         assert_eq!(EXPORT_MATCH_HIDDEN_SHEET_KEY, "export.match.hiddenSheet");
     }

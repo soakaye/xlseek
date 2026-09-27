@@ -26,6 +26,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { SearchQuery } from "../../types/search";
+import { SEARCH_LABELS } from "../../constants";
 import { COMMANDS, FILE_EXTENSIONS, KEYBOARD_KEYS, PATH_COMPLETION_CONSTANTS } from "../../constants";
 import { useTranslation } from "../../i18n";
 
@@ -656,6 +657,24 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               />
               {/* 定数参照: t("ui.OPTION_INCLUDE_FORMULA") */}
               <span>{t("ui.OPTION_INCLUDE_FORMULA")}</span>
+            </label>
+
+            {/* Shape 内テキスト */}
+            <label
+              className={`cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition ${
+                query.include_shape ?? true
+                  ? "bg-emerald-950/60 text-emerald-300 border-emerald-600/80 font-medium"
+                  : "bg-zinc-800 hover:bg-zinc-700/80 text-zinc-300 border-zinc-700"
+              }`}
+            >
+              <input
+                type="checkbox"
+                checked={query.include_shape ?? true}
+                onChange={(event) => onChangeQuery({ include_shape: event.target.checked })}
+                className="accent-excel rounded cursor-pointer"
+              />
+              {/* 定数参照: SEARCH_LABELS.INCLUDE_SHAPE */}
+              <span>{t(SEARCH_LABELS.INCLUDE_SHAPE)}</span>
             </label>
 
             {/* コメント */}

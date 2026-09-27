@@ -63,6 +63,12 @@ export const COMMANDS = {
   SHOW_OPEN_WITH_DIALOG: "show_open_with_dialog",
   SET_MENU_LOCALE: "set_menu_locale",
 } as const;
+export const SEARCH_LABELS = {
+  INCLUDE_SHAPE: "ui.OPTION_INCLUDE_SHAPE",
+  SHAPE_TYPE: "ui.MATCH_TYPE_SHAPE",
+  SHAPE_RESULT_TYPE: "ui.RESULT_MATCH_TYPE_SHAPE",
+  SHAPE_NAME: "ui.SHAPE_NAME_LABEL",
+} as const;
 
 // 定数参照: 検索履歴の保存値と入力補完の上限・待機時間を一元管理する。
 export const SEARCH_HISTORY_CONSTANTS = {

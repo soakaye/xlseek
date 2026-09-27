@@ -51,6 +51,7 @@
      * - v3.3.0 (2026-09-27, Codex): 履歴リストのキー操作をアプリに同期。
      * - v3.4.0 (2026-09-27, Codex): 入力欄にフォーカスが残る場合の下矢印移動を同期。
      * - v3.5.0 (2026-09-27, Codex): 履歴クリック後のフォーカスをボタンへ同期。
+     * - v3.6.0 (2026-09-28, Codex): Shape 検索トグルと Shape 結果選択時の詳細表示を同期。
      */
   -->
   <meta charset="UTF-8">
@@ -230,6 +231,12 @@
             <label id="pillFormula" class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition bg-emerald-950/60 text-emerald-300 border-emerald-600/80 font-medium">
               <input type="checkbox" id="optFormula" checked class="accent-excel rounded cursor-pointer">
               <span>数式 (Formula)</span>
+            </label>
+
+            <!-- Shape 内テキスト -->
+            <label id="pillShape" class="cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition bg-emerald-950/60 text-emerald-300 border-emerald-600/80 font-medium">
+              <input type="checkbox" id="optShape" checked class="accent-excel rounded cursor-pointer">
+              <span>Shape 内テキスト</span>
             </label>
 
             <!-- コメント / メモ -->
@@ -8039,6 +8046,8 @@
           return `<span class="inline-block max-w-full truncate whitespace-nowrap align-middle px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-950/80 text-amber-300 border border-amber-800/60" title="メモ" aria-label="メモ">メモ</span>`;
         case "HiddenSheet":
           return `<span class="inline-block max-w-full truncate whitespace-nowrap align-middle px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700" title="非表示" aria-label="非表示">非表示</span>`;
+        case "Shape":
+          return `<span class="inline-block max-w-full truncate whitespace-nowrap align-middle px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-950/80 text-cyan-300 border border-cyan-800/60" title="Shape" aria-label="Shape">Shape</span>`;
         default:
           return `<span class="inline-block max-w-full truncate whitespace-nowrap align-middle px-1.5 py-0.5 rounded text-[10px] font-medium bg-zinc-800 text-zinc-400 border border-zinc-700" title="一致" aria-label="一致">一致</span>`;
       }
@@ -8073,7 +8082,7 @@
           >
             <div class="w-[30%] px-3 truncate font-mono text-[11px]" title="${item.file_name}">${item.file_name}</div>
             <div class="w-[18%] px-3 truncate" title="${item.sheet_name}">${item.sheet_name}</div>
-            <div class="w-[12%] px-3 font-mono font-bold text-emerald-400">${item.cell_address}</div>
+            <div class="w-[12%] px-3 truncate font-mono font-bold text-emerald-400" title="${item.shape_name || item.cell_address}">${item.shape_name || item.cell_address}</div>
             <div class="w-[15%] min-w-0 px-3">${renderBadgeHtml(item.match_type)}</div>
             <div class="w-[25%] px-3 truncate text-zinc-300 font-mono text-[11px]" title="${item.full_content}">
               ${item.snippet}
@@ -8102,6 +8111,20 @@
       document.getElementById("previewSheetBadge").textContent = item.sheet_name;
       document.getElementById("previewFilePath").textContent = item.full_path;
       document.getElementById("previewFilePath").title = item.full_path;
+
+      if (item.match_type === "Shape") {
+        document.getElementById("nameBox").textContent = item.cell_address || "";
+        document.getElementById("formulaBarContent").textContent = item.full_content;
+        document.getElementById("gridHeaderRow").innerHTML = "";
+        document.getElementById("gridBody").innerHTML = "";
+        document.getElementById("sheetTabsList").innerHTML = "";
+        document.getElementById("metaMatchType").textContent = "Shape";
+        document.getElementById("metaFullContent").textContent = item.full_content;
+        document.getElementById("metaRow").textContent = item.row_index || "";
+        document.getElementById("metaCol").textContent = item.cell_address ? `${item.col_index} (${item.col_name})` : "";
+        document.getElementById("metaHidden").textContent = item.sheet_hidden ? "非表示" : "表示";
+        return;
+      }
 
       // 2. 数式バー初期化 (対象セルの値/数式)
       const currentCellAddress = selectedCellState ? selectedCellState.address : item.cell_address;
@@ -8270,13 +8293,14 @@
         CellValue: "セル値 (Text / Number)",
         Formula: "数式 (Formula)",
         Comment: "コメント / メモ",
-        HiddenSheet: "非表示シート一致"
+        HiddenSheet: "非表示シート一致",
+        Shape: "Shape"
       };
       document.getElementById("metaMatchType").textContent = matchTypeLabels[item.match_type] || item.match_type;
       document.getElementById("metaFullContent").textContent = item.full_content || "(空)";
       document.getElementById("metaRow").textContent = item.row_index;
       document.getElementById("metaCol").textContent = `${item.col_index} (${item.col_name})`;
-      document.getElementById("metaHidden").textContent = (item.match_type === "HiddenSheet") ? "非表示" : "表示";
+      document.getElementById("metaHidden").textContent = item.sheet_hidden ? "非表示" : "表示";
 
       lucide.createIcons();
     }
@@ -8305,6 +8329,7 @@
           m.file_name.toLowerCase().includes(filterVal) ||
           m.sheet_name.toLowerCase().includes(filterVal) ||
           m.cell_address.toLowerCase().includes(filterVal) ||
+          (m.shape_name || "").toLowerCase().includes(filterVal) ||
           m.full_content.toLowerCase().includes(filterVal)
         );
       }
@@ -8779,6 +8804,7 @@
         { id: "optCase", pillId: "pillCase" },
         { id: "optRegex", pillId: "pillRegex" },
         { id: "optFormula", pillId: "pillFormula" },
+        { id: "optShape", pillId: "pillShape" },
         { id: "optComment", pillId: "pillComment" },
         { id: "optHidden", pillId: "pillHidden" }
       ];
