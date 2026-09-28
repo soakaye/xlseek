@@ -30,7 +30,6 @@ import { loadDefaultSearchOptions } from "../default-options-core";
 import {
   COMMANDS,
   EVENT_NAMES,
-  FILE_EXTENSIONS,
   TIMING_CONSTANTS,
 } from "../constants";
 import { TranslationKey } from "../i18n";

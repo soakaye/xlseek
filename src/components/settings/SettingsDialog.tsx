@@ -103,7 +103,9 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
   const handleSaveOptions = () => {
     if (optDraft.extensions.length === 0) return;
-    onSaveDefaultOptions(optDraft);
+    if (onSaveDefaultOptions) {
+      onSaveDefaultOptions(optDraft);
+    }
   };
 
   const isExtensionValid = optDraft.extensions.length > 0;

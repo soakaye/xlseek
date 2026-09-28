@@ -598,7 +598,7 @@
         <input id="historyLimit" type="number" min="0" max="50" step="1" value="20" class="w-full rounded border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm">
         <p class="mt-1 text-xs text-zinc-400">0～50 件。0 件にすると履歴を保存しません。</p>
         <button id="saveHistoryLimit" type="button" class="mt-2 rounded bg-emerald-700 px-3 py-1.5 text-sm">件数を保存</button>
-        <fieldset>
+        <fieldset class="mt-4">
           <legend id="displayLanguageLabel" class="mb-2 text-sm font-medium">表示言語</legend>
           <div class="space-y-2">
             <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-700 px-3 py-2"><input type="radio" name="mockLanguage" value="default" checked><span id="defaultLanguageLabel">デフォルト</span></label>
@@ -606,6 +606,55 @@
             <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-700 px-3 py-2"><input type="radio" name="mockLanguage" value="en"><span>English</span></label>
           </div>
         </fieldset>
+
+        <!-- デフォルト検索オプション -->
+        <fieldset class="mt-6 border-t border-zinc-800 pt-4">
+          <legend id="defaultOptionsTitle" class="mb-1 text-sm font-medium">デフォルト検索オプション</legend>
+          <p id="defaultOptionsDescription" class="mb-3 text-xs text-zinc-400">次回起動時および検索初期状態に反映するオプションを設定します。</p>
+
+          <div class="space-y-2 text-xs">
+            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
+              <input type="checkbox" id="mockOptCase" class="accent-excel rounded cursor-pointer">
+              <span id="optMatchCaseLabel">大文字/小文字を区別</span>
+            </label>
+            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
+              <input type="checkbox" id="mockOptRegex" class="accent-excel rounded cursor-pointer">
+              <span id="optUseRegexLabel">正規表現 (Regex)</span>
+            </label>
+            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
+              <input type="checkbox" id="mockOptFormula" checked class="accent-excel rounded cursor-pointer">
+              <span id="optIncludeFormulaLabel">数式 (Formula)</span>
+            </label>
+            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
+              <input type="checkbox" id="mockOptShape" class="accent-excel rounded cursor-pointer">
+              <span id="optIncludeShapeLabel">Shape 内テキスト</span>
+            </label>
+            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
+              <input type="checkbox" id="mockOptComment" checked class="accent-excel rounded cursor-pointer">
+              <span id="optIncludeCommentLabel">コメント / メモ</span>
+            </label>
+            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
+              <input type="checkbox" id="mockOptHidden" class="accent-excel rounded cursor-pointer">
+              <span id="optIncludeHiddenLabel">非表示シート</span>
+            </label>
+
+            <div class="mt-3 pt-2">
+              <span id="targetExtensionsLabel" class="block mb-1.5 text-zinc-300 font-medium">対象拡張子:</span>
+              <div class="flex gap-2">
+                <button type="button" class="mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium" data-ext=".xlsx">.xlsx</button>
+                <button type="button" class="mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium" data-ext=".xlsm">.xlsm</button>
+                <button type="button" class="mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium" data-ext=".xlsb">.xlsb</button>
+                <button type="button" class="mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium" data-ext=".xls">.xls</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4 flex items-center justify-between gap-3">
+            <button id="resetDefaultOptionsBtn" type="button" class="rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700 transition">デフォルトに戻す</button>
+            <button id="saveDefaultOptionsBtn" type="button" class="rounded bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-600 transition">オプションを保存</button>
+          </div>
+        </fieldset>
+
         <p class="mt-4 text-xs text-zinc-400"><span id="currentLanguageLabel">現在の表示言語</span>: <span id="currentLanguageValue">日本語</span></p>
       </section>
     </div>
@@ -9015,6 +9064,89 @@
         document.getElementById("currentLanguageValue").textContent = english ? "English" : "日本語";
       });
       settingsModal.addEventListener("keydown", (event) => { if (event.key === "Escape") settingsModal.classList.add("hidden"); });
+
+      // デフォルト検索オプションのモック状態管理
+      let mockDefaultExtensions = [".xlsx", ".xlsm", ".xlsb", ".xls"];
+
+      // 設定ダイアログの拡張子ボタントグル
+      const mockExtBtns = settingsModal.querySelectorAll(".mock-ext-btn");
+      mockExtBtns.forEach(btn => {
+        btn.addEventListener("click", () => {
+          const ext = btn.getAttribute("data-ext");
+          if (mockDefaultExtensions.includes(ext)) {
+            if (mockDefaultExtensions.length <= 1) {
+              showToast("拡張子は1つ以上選択してください");
+              return;
+            }
+            mockDefaultExtensions = mockDefaultExtensions.filter(e => e !== ext);
+            btn.className = "mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-zinc-900/80 text-zinc-500 border-zinc-800 hover:text-zinc-400";
+          } else {
+            mockDefaultExtensions.push(ext);
+            btn.className = "mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium";
+          }
+        });
+      });
+
+      // デフォルトに戻す (公式既定値への復元)
+      document.getElementById("resetDefaultOptionsBtn").addEventListener("click", () => {
+        document.getElementById("mockOptCase").checked = false;
+        document.getElementById("mockOptRegex").checked = false;
+        document.getElementById("mockOptFormula").checked = true;
+        document.getElementById("mockOptShape").checked = false;
+        document.getElementById("mockOptComment").checked = true;
+        document.getElementById("mockOptHidden").checked = false;
+        mockDefaultExtensions = [".xlsx", ".xlsm", ".xlsb", ".xls"];
+        mockExtBtns.forEach(btn => {
+          btn.className = "mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium";
+        });
+        showToast("デフォルトオプションを初期値にリセットしました");
+      });
+
+      // オプションを保存 (設定の永続化シミュレーションとメイン検索バーへの即時同期)
+      document.getElementById("saveDefaultOptionsBtn").addEventListener("click", () => {
+        // メイン画面の検索バーコントロールへ即時同期
+        const isCase = document.getElementById("mockOptCase").checked;
+        const isRegex = document.getElementById("mockOptRegex").checked;
+        const isFormula = document.getElementById("mockOptFormula").checked;
+        const isShape = document.getElementById("mockOptShape").checked;
+        const isComment = document.getElementById("mockOptComment").checked;
+        const isHidden = document.getElementById("mockOptHidden").checked;
+
+        document.getElementById("optCase").checked = isCase;
+        document.getElementById("optRegex").checked = isRegex;
+        document.getElementById("optFormula").checked = isFormula;
+        document.getElementById("optShape").checked = isShape;
+        document.getElementById("optComment").checked = isComment;
+        document.getElementById("optHidden").checked = isHidden;
+
+        // ピルのスタイル更新
+        optionPills.forEach(opt => {
+          const input = document.getElementById(opt.id);
+          const pill = document.getElementById(opt.pillId);
+          if (input.checked) {
+            pill.className = "cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition bg-emerald-950/60 text-emerald-300 border-emerald-600/80 font-medium";
+          } else {
+            pill.className = "cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition bg-zinc-800 hover:bg-zinc-700/80 text-zinc-300 border-zinc-700";
+          }
+        });
+
+        // 拡張子の同期
+        selectedExtensions = [...mockDefaultExtensions];
+        extBtns.forEach(btn => {
+          const ext = btn.getAttribute("data-ext");
+          if (selectedExtensions.includes(ext)) {
+            btn.className = "ext-btn px-2 py-0.5 rounded text-[11px] font-mono border transition-all cursor-pointer bg-emerald-950/60 text-emerald-300 border-emerald-600/80 font-medium";
+            btn.title = `${ext} を検索対象から除外`;
+          } else {
+            btn.className = "ext-btn px-2 py-0.5 rounded text-[11px] font-mono border transition-all cursor-pointer bg-zinc-900/80 hover:bg-zinc-800 text-zinc-500 border-zinc-800 hover:text-zinc-400";
+            btn.title = `${ext} を検索対象に追加`;
+          }
+        });
+        applyFilterAndSort();
+
+        settingsModal.classList.add("hidden");
+        showToast("デフォルト検索オプションを保存し反映しました");
+      });
 
       let currentSelectedLicenseId = mockLicenses[0].id;
       let currentLicenseKeyword = "";
