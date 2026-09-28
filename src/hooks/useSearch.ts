@@ -12,7 +12,8 @@
  * - v1.2.0 (2026-09-26, AI Agent): 検索対象拡張子の空チェックバリデーションを追加。
  * - v1.3.0 (2026-09-26, AI Agent): 探索中フェーズおよび中断メッセージの定数参照化。
  * - v1.4.0 (2026-09-27, Codex): 受付成功後の履歴通知と正規表現エラー表示を追加。
- * - v1.5.0 (2026-09-28, AI Agent): デフォルト検索オプションの初期反映および applyDefaultOptions メソッドを追加。
+ * - v1.5.0 (2026-09-28, AI Agent): バッチ受信対応およびアンカー付きShapeのセルプレビュー読み込み対応。
+ * - v1.5.1 (2026-09-28, AI Agent): デフォルト検索オプションの初期反映および applyDefaultOptions メソッドを追加。
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -110,9 +111,13 @@ export function useSearch(options?: UseSearchOptions) {
     const setupListeners = async () => {
       try {
         // 定数参照: EVENT_NAMES.SEARCH_MATCH ("search-match") を使用
-        const uMatch = await listen<SearchMatch>(EVENT_NAMES.SEARCH_MATCH, (event) => {
+        const uMatch = await listen<SearchMatch | SearchMatch[]>(EVENT_NAMES.SEARCH_MATCH, (event) => {
           if (isCancelled || isCancellingRef.current) return;
-          resultsBufferRef.current.push(event.payload);
+          if (Array.isArray(event.payload)) {
+            resultsBufferRef.current.push(...event.payload);
+          } else {
+            resultsBufferRef.current.push(event.payload);
+          }
 
           if (!flushTimerRef.current) {
             // 定数参照: TIMING_CONSTANTS.PROGRESS_THROTTLE_MS を使用
@@ -219,7 +224,7 @@ export function useSearch(options?: UseSearchOptions) {
   const handleSelectItem = useCallback(
     (item: SearchMatch) => {
       setSelectedMatch(item);
-      if (item.match_type === "Shape") {
+      if (item.match_type === "Shape" && (!item.row_index || !item.col_index)) {
         setPreviewData(null);
         setLoadingPreview(false);
         setActiveSheet(item.sheet_name);
@@ -236,7 +241,10 @@ export function useSearch(options?: UseSearchOptions) {
   const handleSelectSheet = useCallback(
     (sheetName: string) => {
       if (!selectedMatch) return;
-      if (selectedMatch.match_type === "Shape") {
+      if (
+        selectedMatch.match_type === "Shape" &&
+        (!selectedMatch.row_index || !selectedMatch.col_index)
+      ) {
         setActiveSheet(sheetName);
         return;
       }

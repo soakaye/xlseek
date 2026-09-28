@@ -45,6 +45,28 @@ export interface ScanProgress {
 
 ---
 
+### 1.1 Tauri IPC イベント契約: `search-match` (バッチ配信仕様)
+
+大量マッチ発生時（1ファイルあたり数百〜数千件のヒット）に、同期的な単一イベント連打によって Windows (WebView2) の IPC メッセージキューが飽和し、`Failed to emit Tauri event` が連続発生して検索・プレビューが破綻することを防止するためのバッチ配信契約。
+
+#### イベント名
+`search-match`（定数: `crate::constants::EVENT_SEARCH_MATCH` / `src/constants/index.ts:EVENT_NAMES.SEARCH_MATCH`）
+
+#### ペイロードスキーマ (TypeScript)
+`SearchMatch | SearchMatch[]` (後方互換性のため単一および配列の双方を受容)
+
+#### バックエンド送信制御仕様 (`src-tauri/src/commands/search_cmd.rs`)
+- マッチ結果はスレッドセーフなバッファに蓄積される。
+- 以下のいずれかの条件を満たした時点でバッチ送信（`app_handle.emit`）を実行する：
+  1. バッファ内の件数が定数 `SEARCH_MATCH_BATCH_SIZE`（50件）に達したとき
+  2. 前回の送信から定数 `SEARCH_MATCH_BATCH_INTERVAL_MS`（25ミリ秒）以上が経過したとき
+- 検索処理完了時（正常完了またはエラー終了時）には、バッファ内に残存する全件を即座に強制フラッシュ（送信）する。
+
+#### フロントエンド受信処理仕様 (`src/hooks/useSearch.ts`)
+- リスナーコールバックにて `Array.isArray(event.payload)` を判定し、配列の場合は一括展開して結果状態（`results`, `resultCount`）へマージする。
+
+---
+
 ## 2. 検索エンジン内部インターフェース仕様 (`src-tauri/src/search/engine.rs`)
 
 ### 2.1 `collect_files`

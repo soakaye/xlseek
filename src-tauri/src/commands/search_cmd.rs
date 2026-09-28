@@ -9,6 +9,7 @@
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化、4要素ヘッダコメント付与。
 //! - v1.1.0 (2026-09-27, Codex): 検索開始前のパス・正規表現検証を追加。
 //! - v1.2.0 (2026-09-27, Codex): 必須条件の事前検証とパス補完 IPC を追加。
+//! - v1.3.0 (2026-09-28, AI Agent): 検索マッチのバッチ送信によるWebView2 IPC過負荷防止とエラー詳細出力。
 
 use crate::models::CommandError;
 use crate::models::{ErrorCode, ScanProgress, ScanState, SearchMatch, SearchQuery};
@@ -75,16 +76,38 @@ pub async fn start_search(
         let app_handle_match = app.clone();
         let app_handle_prog = app.clone();
         let app_handle_err = app.clone();
+        let app_handle_final = app.clone();
+
+        let match_buffer = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let last_emit_instant = Arc::new(std::sync::Mutex::new(std::time::Instant::now()));
+
+        let match_buffer_clone = Arc::clone(&match_buffer);
+        let last_emit_clone = Arc::clone(&last_emit_instant);
+
+        let flush_matches = |app_handle: &AppHandle, buf: &mut Vec<SearchMatch>| {
+            if buf.is_empty() {
+                return;
+            }
+            let batch: Vec<SearchMatch> = std::mem::take(buf);
+            // 定数参照: crate::constants::EVENT_SEARCH_MATCH を使用
+            if let Err(e) = app_handle.emit(crate::constants::EVENT_SEARCH_MATCH, &batch) {
+                eprintln!("{}: {:?}", crate::constants::LOG_EVENT_EMIT_FAILED, e);
+            }
+        };
 
         match engine.execute_search(
             query,
             move |search_match: SearchMatch| {
-                // 定数参照: crate::constants::EVENT_SEARCH_MATCH を使用
-                if let Err(e) =
-                    app_handle_match.emit(crate::constants::EVENT_SEARCH_MATCH, search_match)
+                let mut buf = match_buffer_clone.lock().unwrap();
+                buf.push(search_match);
+                let mut last = last_emit_clone.lock().unwrap();
+                // 定数参照: crate::constants::SEARCH_MATCH_BATCH_SIZE, crate::constants::SEARCH_MATCH_BATCH_INTERVAL_MS を使用
+                if buf.len() >= crate::constants::SEARCH_MATCH_BATCH_SIZE
+                    || last.elapsed().as_millis()
+                        >= crate::constants::SEARCH_MATCH_BATCH_INTERVAL_MS
                 {
-                    let _ = e;
-                    eprintln!("{}", crate::constants::LOG_EVENT_EMIT_FAILED);
+                    flush_matches(&app_handle_match, &mut buf);
+                    *last = std::time::Instant::now();
                 }
             },
             move |progress| {
@@ -92,16 +115,21 @@ pub async fn start_search(
                 if let Err(e) =
                     app_handle_prog.emit(crate::constants::EVENT_SCAN_PROGRESS, &progress)
                 {
-                    let _ = e;
-                    eprintln!("{}", crate::constants::LOG_EVENT_EMIT_FAILED);
+                    eprintln!("{}: {:?}", crate::constants::LOG_EVENT_EMIT_FAILED, e);
                 }
             },
         ) {
             Ok(final_prog) => {
+                if let Ok(mut buf) = match_buffer.lock() {
+                    flush_matches(&app_handle_final, &mut buf);
+                }
                 println!("{}", crate::constants::LOG_SEARCH_COMPLETED);
                 let _ = final_prog;
             }
             Err(err_msg) => {
+                if let Ok(mut buf) = match_buffer.lock() {
+                    flush_matches(&app_handle_final, &mut buf);
+                }
                 eprintln!("{}", crate::constants::LOG_SEARCH_FAILED);
                 let error_code = if err_msg.contains(crate::constants::ERR_INVALID_REGEX) {
                     crate::models::ErrorCode::InvalidRegex
