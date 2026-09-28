@@ -1,130 +1,78 @@
 # Excel Grep
 
-Rust と Tauri で構築された、超高速かつ軽量な **MS-Excel 専用 Grep（テキスト・値・数式検索）デスクトップアプリケーション** です。
+Excel Grep は、Excel ブックをフォルダ単位で検索するデスクトップアプリです。セルの値・数式・図形（Shape）内テキストを、通常の文字列または正規表現で検索できます。
 
-大量の Excel ファイル（`.xlsx`, `.xlsm`, `.xls`, `.xlsb`）から、指定したキーワードや正規表現に一致するセル、シート、コメントなどを瞬時に横断検索します。
+## 主な機能
 
----
+- `.xlsx`、`.xlsm`、`.xlsb`、`.xls` を対象にフォルダを再帰検索
+- 大文字小文字の区別、正規表現、数式、図形内テキスト、非表示シートを検索オプションで指定
+- 検索中の進捗表示とキャンセル
+- 結果一覧から一致内容と周辺セルをプレビューし、元ファイルを関連付けアプリで開く
+- 検索キーワードとフォルダの履歴、フォルダパスの入力補完
+- 検索結果を CSV または XLSX にエクスポート
+- 日本語・英語の表示と、既定の検索オプション・履歴件数の設定
+- About 画面でアプリ情報と依存パッケージのライセンスを表示
 
-## 🌟 主な特徴 (Features)
+検索オプションの既定値は、数式を含める設定です。図形内テキストと非表示シートは既定で検索対象外です。対象拡張子は4形式すべてが既定で選択されています。
 
-- ⚡ **Rust による圧倒的な処理速度**
-  - マルチスレッド並列処理（`rayon` 等）により、大量・大容量の Excel ブックも高速にパース＆スキャン。
-  - 軽量な Tauri アーキテクチャにより、メモリ消費量を抑え快適に動作。
-- 🔍 **柔軟な検索オプション**
-  - 通常のテキスト部分一致、完全一致、大文字/小文字の区別。
-  - 正規表現（Regex）による高度なパターンマッチング。
-  - セル値だけでなく、**数式（Formula）**、**コメント/メモ**、**シート名** の検索にも対応。
-  - 非表示シート・非表示行/列の検索対象設定。
-- 📁 **フォルダ一括・再帰検索**
-  - 指定ディレクトリ配下のサブフォルダも再帰的に走査。
-  - 拡張子フィルタ（`.xlsx`, `.xlsm`, `.xlsb`, `.xls`）やファイル名除外フィルタ機能。
-- 🖥️ **直感的な UI / プレビュー機能**
-  - ヒットしたファイル名、シート名、セル番地（例: `B12`）、一致したテキスト・数式を一覧表示。
-  - 検索結果から直接対象ファイルを Excel で開く、または該当セルのプレビューを確認。
-- 📤 **結果のエクスポート**
-  - 検索結果を CSV または Excel 形式で保存し、レポート作成や証跡記録に活用可能。
+## 技術構成
 
----
+| 領域 | 技術 |
+| --- | --- |
+| デスクトップ基盤 | Tauri 2 |
+| フロントエンド | React 18、TypeScript、Vite、Tailwind CSS |
+| バックエンド | Rust 2021 |
+| Excel 読み込み | calamine |
+| 並列検索 | rayon |
+| 正規表現 | regex |
+| エクスポート | csv、rust_xlsxwriter |
 
-## 🛠️ 技術スタック (Tech Stack)
+## 開発環境
 
-| レイヤー | 技術 / ライブラリ | 用途・説明 |
-| :--- | :--- | :--- |
-| **GUI Framework** | [Tauri](https://tauri.app/) (v2) | 軽量・セキュアなクロスプラットフォーム GUI |
-| **Backend** | [Rust](https://www.rust-lang.org/) | コアロジック、Excel パース、並列検索処理 |
-| **Excel Parser** | `calamine` | 高速 Excel 読み込みライブラリ（xlsx, xls, xlsb 等） |
-| **Concurrency** | `rayon` | 複数ファイルの並列読み込み・マルチスレッド走査 |
-| **Search Engine**| `regex` | 正規表現検索エンジン |
-| **Frontend** | TypeScript, React (or Svelte / Vue), Tailwind CSS | 直感的でレスポンシブなユーザーインターフェース |
+- Node.js と npm
+- Rust stable と Cargo
+- Tauri の開発に必要な OS ごとの依存関係（[Tauri 前提条件](https://tauri.app/start/prerequisites/)を参照）
 
----
-
-## 📂 プロジェクト構成 (Directory Structure)
-
-```text
-exlgrep/
-├── src/                # フロントエンドソースコード (UI / 状態管理)
-│   ├── assets/         # アイコン・静的ファイル
-│   ├── components/     # UI コンポーネント (検索フォーム, 結果テーブル, プレビュー等)
-│   └── App.tsx         # メインアプリケーション画面
-├── src-tauri/          # Rust バックエンド
-│   ├── src/
-│   │   ├── search/     # Excel ファイルパース & Grep コア検索ロジック
-│   │   ├── commands/   # Tauri IPC コマンド群
-│   │   └── main.rs     # エントリポイント
-│   ├── Cargo.toml      # Rust 依存クレート定義
-│   └── tauri.conf.json # Tauri アプリケーション設定
-├── package.json        # フロントエンド依存関係 & ビルドスクリプト
-└── Readme.md
+```bash
+npm install
+npm run tauri dev
 ```
 
----
-
-## 🚀 クイックスタート (Getting Started)
-
-### 前提条件 (Prerequisites)
-
-- [Node.js](https://nodejs.org/) (v18 以上推奨)
-- [Rust / Cargo](https://www.rust-lang.org/tools/install) (最新の stable)
-- **Windows 環境**: [WebView2](https://developer.microsoft.com/en-us/microsoft-edge/webview2/) ランタイム、C++ Build Tools
-
-### セットアップ & 開発実行
-
-1. **リポジトリのクローン**
-   ```bash
-   git clone <リポジトリURL>
-   cd exlgrep
-   ```
-
-2. **フロントエンド依存パッケージのインストール**
-   ```bash
-   npm install
-   # または pnpm install / yarn
-   ```
-
-3. **開発モードで起動**
-   ```bash
-   npm run tauri dev
-   ```
-
-### プロダクションビルド
-
-インストーラーまたは実行可能バイナリを生成します。
+## ビルド
 
 ```bash
 npm run tauri build
 ```
-ビルド完了後、`src-tauri/target/release/bundle/` 配下にインストーラー（`.msi` / `.exe`）が生成されます。
 
----
+Tauri が現在の OS 向けアプリケーションバンドルを `src-tauri/target/release/bundle/` に生成します。
 
-## 📖 使い方 (Usage)
+## 検証
 
-1. **検索対象の指定**
-   - 「フォルダ選択」ボタンまたはドラッグ＆ドロップで検索対象のディレクトリを指定します。
-2. **条件入力**
-   - 検索ワードを入力します（正規表現を使用する場合は「正規表現」トグルを ON）。
-   - 検索対象（セル値、数式、コメント、シート名）を選択します。
-3. **検索の実行**
-   - 「検索」ボタンをクリック（または `Enter` キー）。進行状況プログレスバーが表示されます。
-4. **結果の確認・操作**
-   - 一覧からセルをクリックすると詳細プレビューが表示されます。
-   - 「Excel で開く」ボタンで該当ファイルを即座に起動できます。
-   - 「エクスポート」から検索結果一覧を CSV / Excel に出力できます。
+```bash
+npm run build
+npm test
+npm run lint
+(cd src-tauri && cargo test)
+(cd src-tauri && cargo clippy --all-targets -- -D warnings)
+(cd src-tauri && cargo fmt --check)
+```
 
----
+## 主なディレクトリ
 
-## 🗺️ 今後のロードマップ (Roadmap)
+```text
+src/
+  components/     React UI
+  hooks/          検索・履歴・ロケール管理
+  constants/      フロントエンド定数と依存ライセンス一覧
+src-tauri/src/
+  commands/       Tauri IPC コマンド
+  search/         Excel 検索・プレビュー・図形テキスト抽出
+  export/         CSV / XLSX 出力
+  models/         IPC・検索データ型
+specs/            機能仕様・計画・タスク
+design/           UI プロトタイプ
+```
 
-- [ ] パスワード付き Excel ファイルの復号・スキップ制御
-- [ ] 検索結果の置換機能（一括置換・バックアップ自動生成）
-- [ ] シェイプ（図形・テキストボックス）内のテキスト検索
-- [ ] 検索履歴・お気に入り検索条件の保存機能
-- [ ] macOS / Linux へのクロスプラットフォーム対応
-
----
-
-## 📄 ライセンス (License)
+## ライセンス
 
 本プロジェクトは [MIT License](LICENSE) のもとで公開されています。
