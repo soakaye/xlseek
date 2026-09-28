@@ -1,7 +1,7 @@
 //! 処理内容: 検索ディレクトリの解決・読取検証・候補取得を提供する。
 //! 入出力: 利用者入力とホームディレクトリから検証済みパスまたは候補を返す。
 //! エラー: 不正・不存在・読取拒否のパスは型付きエラーで返す。
-//! 変更履歴: v1.0.0 (2026-09-27, Codex): パス機能テストを先行追加。v1.1.0 (2026-09-27, Codex): パス検証・解決・補完を実装。
+//! 変更履歴: v1.0.0 (2026-09-27, Codex): パス機能テストを先行追加。v1.1.0 (2026-09-27, Codex): パス検証・解決・補完を実装。v1.1.1 (2026-09-28, AI Agent): Prefix::UNC パターンマッチの不整合修正。
 
 use std::fs;
 use std::io;
@@ -133,10 +133,22 @@ pub fn complete_directory_path(input: &str, home_dir: Option<&Path>) -> Vec<Stri
         .collect()
 }
 
-/// 処理内容: 補完対象パスが絶対パス、またはホーム省略表記由来で安全な接頭辞か確認する。
-/// 引数・戻り値: 展開後 Path と省略表記判定を受け、対象なら true を返す。
-/// エラー: なし。対象外の形式は false を返す。
-/// 変更履歴: v1.0.0 (2026-09-27, Codex): 補完対象パス判定を追加。
+/// ## 処理内容
+/// 補完対象パスが絶対パス、またはホーム省略表記由来で安全な接頭辞か確認する。
+///
+/// ## 引数
+/// - `path`: `&Path` - 検査対象のパス
+/// - `is_home_input`: `bool` - ホーム省略表記由来の判定フラグ
+///
+/// ## 戻り値
+/// - `bool`: 対象の安全なプレフィックスであれば true、それ以外は false
+///
+/// ## エラー / 例外発生条件
+/// なし。対象外の形式は false を返す。
+///
+/// ## 変更履歴
+/// - v1.0.0 (2026-09-27, Codex): 補完対象パス判定を追加。
+/// - v1.0.1 (2026-09-28, AI Agent): WindowsのPrefix::UNCパターン不整合(E0023)をPrefix::UNC(..)に修正。
 fn is_supported_completion_path(path: &Path, is_home_input: bool) -> bool {
     if !path.is_absolute() {
         return false;
@@ -147,11 +159,11 @@ fn is_supported_completion_path(path: &Path, is_home_input: bool) -> bool {
         if is_home_input {
             return true;
         }
-        return matches!(
+        matches!(
             path.components().next(),
             Some(Component::Prefix(prefix))
-                if matches!(prefix.kind(), Prefix::Disk(_) | Prefix::UNC(_))
-        );
+                if matches!(prefix.kind(), Prefix::Disk(_) | Prefix::UNC(..))
+        )
     }
     #[cfg(not(windows))]
     {
@@ -163,7 +175,8 @@ fn is_supported_completion_path(path: &Path, is_home_input: bool) -> bool {
 #[cfg(test)]
 mod tests {
     use super::{
-        complete_directory_path, resolve_search_path, validate_search_directory, PathError,
+        complete_directory_path, is_supported_completion_path, resolve_search_path,
+        validate_search_directory, PathError,
     };
     use std::fs;
     #[cfg(windows)]

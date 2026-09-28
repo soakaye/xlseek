@@ -58,6 +58,7 @@ ui.PREVIEW_EMPTY: No preview data
 ui.PREVIEW_GUIDANCE: Nearby cells (3 rows and 2 columns around)
 ui.PREVIEW_SCROLL_GUIDANCE: Scroll vertically and horizontally (fixed headers)
 ui.PREVIEW_SELECT_ITEM_PROMPT: Select a result to show its preview
+ui.PREVIEW_SHAPE_NO_ANCHOR: Text inside shape / textbox (no cell anchor)
 ui.OPEN_IN_APP_DEFAULT: Open in app
 ui.OPEN_WITH_APP_TOOLTIP: Choose an application
 ui.OPEN_WITH_SPECIFIC_APP_PREFIX: " - Open with"

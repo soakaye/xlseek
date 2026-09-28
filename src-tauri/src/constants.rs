@@ -10,6 +10,7 @@
 //! - v1.1.0 (2026-09-26, AI Agent): Aboutダイアログメニューおよびイベント定数の追加。
 //! - v1.2.0 (2026-09-26, AI Agent): 並行パイプライン用バッファ定数および検出中メッセージ定数の追加。
 //! - v1.3.0 (2026-09-27, Codex): ホーム省略表記とパス補完上限の定数を追加。
+//! - v1.4.0 (2026-09-28, AI Agent): 検索マッチのバッチ送信定数を追加。
 
 // ==============================================================================
 // 1. ファイル拡張子定数 (File Extensions)
@@ -197,6 +198,10 @@ pub const HOME_PATH_PREFIX_WINDOWS: &str = "~\\";
 pub const MAX_PATH_COMPLETION_RESULTS: usize = 10;
 pub const LOG_EVENT_EMIT_FAILED: &str = "Failed to emit Tauri event";
 pub const LOG_CANCEL_REQUESTED: &str = "[cancel_search] Cancellation requested";
+/// 定数参照: 検索マッチのバッチ送信最大件数
+pub const SEARCH_MATCH_BATCH_SIZE: usize = 50;
+/// 定数参照: 検索マッチのバッチ送信インターバル (ミリ秒)
+pub const SEARCH_MATCH_BATCH_INTERVAL_MS: u128 = 25;
 
 /// macOS アプリケーションバンドル識別子
 pub const MAC_BUNDLE_EXCEL: &str = "com.microsoft.Excel";
@@ -323,5 +328,7 @@ mod tests {
     #[test]
     fn test_pipeline_constants() {
         assert_eq!(CHANNEL_BUFFER_SIZE, 1024);
+        assert_eq!(SEARCH_MATCH_BATCH_SIZE, 50);
+        assert_eq!(SEARCH_MATCH_BATCH_INTERVAL_MS, 25);
     }
 }

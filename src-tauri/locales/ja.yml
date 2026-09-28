@@ -58,6 +58,7 @@ ui.PREVIEW_EMPTY: プレビューデータがありません
 ui.PREVIEW_GUIDANCE: 周辺セルプレビュー (前後3行・前後2列)
 ui.PREVIEW_SCROLL_GUIDANCE: 縦横スクロール可能 (固定見出し)
 ui.PREVIEW_SELECT_ITEM_PROMPT: 項目を選択するとプレビューが表示されます
+ui.PREVIEW_SHAPE_NO_ANCHOR: 図形・テキストボックス内のテキストです（セル配置アンカーなし）
 ui.OPEN_IN_APP_DEFAULT: アプリで開く
 ui.OPEN_WITH_APP_TOOLTIP: 開くアプリケーションを選択
 ui.OPEN_WITH_SPECIFIC_APP_PREFIX: " で開く"

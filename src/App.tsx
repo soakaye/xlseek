@@ -14,6 +14,7 @@
  * - v1.3.0 (2026-09-26, AI Agent): AboutDialogコンポーネントをマウントし、開閉連動を統合。
  * - v1.4.0 (2026-09-26, AI Agent): システムメニュー (macOS) からのAboutダイアログ表示イベント (EVENT_NAMES.OPEN_ABOUT_DIALOG) のリッスン処理を追加。
  * - v1.5.0 (2026-09-27, Codex): 検索履歴と保存件数設定を検索・設定画面へ接続。
+ * - v1.6.0 (2026-09-28, AI Agent): アンカー付きShapeのセルプレビュー表示およびアンカーなしShapeのガイダンス表示に対応。
  */
 
 import React, { Suspense, lazy, useState, useEffect } from "react";
@@ -168,7 +169,22 @@ export const App: React.FC = () => {
             onShowToast={showToast}
           />
 
-          {selectedMatch?.match_type !== "Shape" && (
+          {selectedMatch?.match_type === "Shape" && (!selectedMatch.row_index || !selectedMatch.col_index) ? (
+            <div className="flex-1 min-h-0 min-w-0 p-6 flex flex-col items-center justify-center text-zinc-400 bg-[#141416]">
+              <div className="max-w-md w-full bg-[#1a1a1d] border border-zinc-800 rounded-lg p-5 text-center shadow-sm">
+                <span className="inline-block px-2.5 py-1 rounded text-xs font-medium bg-amber-950/60 text-amber-300 border border-amber-800/80 mb-3">
+                  {selectedMatch.shape_name || "Shape"}
+                </span>
+                <p className="text-xs text-zinc-300 mb-3 whitespace-pre-wrap text-left bg-zinc-900/80 p-3 rounded border border-zinc-800/80 font-mono max-h-48 overflow-y-auto">
+                  {selectedMatch.full_content}
+                </p>
+                <p className="text-[11px] text-zinc-500">
+                  {/* 定数参照: t(language, "ui.PREVIEW_SHAPE_NO_ANCHOR") */}
+                  {t(language, "ui.PREVIEW_SHAPE_NO_ANCHOR")}
+                </p>
+              </div>
+            </div>
+          ) : (
             <>
               {/* Excel 数式バー */}
               <FormulaBar
@@ -187,7 +203,7 @@ export const App: React.FC = () => {
           )}
 
           {/* Excel風シートタブバー */}
-          {previewData && selectedMatch?.match_type !== "Shape" && (
+          {previewData && (
             <div className="px-3.5 pb-1 bg-[#141416] flex-shrink-0">
               <SheetTabs
                 sheets={previewData.sheets_in_workbook}
