@@ -12,6 +12,7 @@
  * - v1.2.0 (2026-09-26, AI Agent): 検索対象拡張子の空チェックバリデーションを追加。
  * - v1.3.0 (2026-09-26, AI Agent): 探索中フェーズおよび中断メッセージの定数参照化。
  * - v1.4.0 (2026-09-27, Codex): 受付成功後の履歴通知と正規表現エラー表示を追加。
+ * - v1.5.0 (2026-09-28, AI Agent): デフォルト検索オプションの初期反映および applyDefaultOptions メソッドを追加。
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -23,6 +24,9 @@ import {
   ScanProgress,
   CellPreviewData,
 } from "../types/search";
+import { DefaultSearchOptions } from "../types/defaultOptions";
+import { loadDefaultSearchOptions } from "../default-options-core";
+
 import {
   COMMANDS,
   EVENT_NAMES,
@@ -53,17 +57,19 @@ interface UseSearchOptions {
  * - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
  */
 export function useSearch(options?: UseSearchOptions) {
-  // 定数参照: FILE_EXTENSIONS.DEFAULT_LIST を使用
-  const [query, setQuery] = useState<SearchQuery>({
-    keyword: "",
-    target_dir: "",
-    match_case: false,
-    use_regex: false,
-    include_formula: true,
-    include_shape: true,
-    include_comment: true,
-    include_hidden: false,
-    extensions: [...FILE_EXTENSIONS.DEFAULT_LIST],
+  const [query, setQuery] = useState<SearchQuery>(() => {
+    const defaults = loadDefaultSearchOptions();
+    return {
+      keyword: "",
+      target_dir: "",
+      match_case: defaults.match_case,
+      use_regex: defaults.use_regex,
+      include_formula: defaults.include_formula,
+      include_shape: defaults.include_shape,
+      include_comment: defaults.include_comment,
+      include_hidden: defaults.include_hidden,
+      extensions: [...defaults.extensions],
+    };
   });
 
   const [results, setResults] = useState<SearchMatch[]>([]);
@@ -366,9 +372,23 @@ export function useSearch(options?: UseSearchOptions) {
     setQuery((prev) => ({ ...prev, ...newQuery }));
   }, []);
 
+  const applyDefaultOptions = useCallback((options: DefaultSearchOptions) => {
+    setQuery((prev) => ({
+      ...prev,
+      match_case: options.match_case,
+      use_regex: options.use_regex,
+      include_formula: options.include_formula,
+      include_shape: options.include_shape,
+      include_comment: options.include_comment,
+      include_hidden: options.include_hidden,
+      extensions: [...options.extensions],
+    }));
+  }, []);
+
   return {
     query,
     updateQuery,
+    applyDefaultOptions,
     results,
     progress,
     isScanning,

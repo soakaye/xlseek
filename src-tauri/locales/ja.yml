@@ -101,7 +101,7 @@ ui.LANGUAGE_JA: 日本語
 ui.LANGUAGE_EN: English
 ui.SAVE_FAILED: 設定を保存できませんでした。次回起動時は保存済み設定を使用します。
 ui.CURRENT_LANGUAGE: 現在の表示言語
-ui.SETTINGS_DESCRIPTION: 表示言語と検索履歴を設定します。
+ui.SETTINGS_DESCRIPTION: 表示言語、検索履歴、およびデフォルト検索オプションを設定します。
 ui.KEYWORD_HISTORY_TOOLTIP: 検索テキストの履歴
 ui.DIRECTORY_HISTORY_TOOLTIP: 検索ディレクトリの履歴
 ui.HISTORY_EMPTY: 履歴はありません
@@ -109,6 +109,12 @@ ui.DIRECTORY_SUGGESTIONS: ディレクトリ候補
 ui.HISTORY_LIMIT_LABEL: 検索履歴の保存件数
 ui.HISTORY_LIMIT_DESCRIPTION: 0～50 件。0 件にすると履歴を保存しません。
 ui.HISTORY_LIMIT_SAVE: 件数を保存
+ui.DEFAULT_OPTIONS_TITLE: デフォルト検索オプション
+ui.DEFAULT_OPTIONS_DESCRIPTION: 次回起動時および検索初期状態に反映するオプションを設定します。
+ui.DEFAULT_OPTIONS_RESET: デフォルトに戻す
+ui.DEFAULT_OPTIONS_SAVE: オプションを保存
+ui.DEFAULT_OPTIONS_SAVED: デフォルト検索オプションを保存しました
+ui.DEFAULT_OPTIONS_EXTENSIONS_REQUIRED: 対象拡張子を少なくとも1つ選択してください
 ui.INVALID_REGEX: 正規表現が正しくありません
 ui.EXPORT_CSV_BUTTON: CSV 出力
 ui.EXPORT_XLSX_BUTTON: Excel 出力

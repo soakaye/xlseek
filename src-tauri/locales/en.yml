@@ -101,7 +101,7 @@ ui.LANGUAGE_JA: 日本語
 ui.LANGUAGE_EN: English
 ui.SAVE_FAILED: Could not save settings. The saved preference will be used next time.
 ui.CURRENT_LANGUAGE: Current display language
-ui.SETTINGS_DESCRIPTION: Configure the display language and search history.
+ui.SETTINGS_DESCRIPTION: Configure display language, search history, and default search options.
 ui.KEYWORD_HISTORY_TOOLTIP: Search text history
 ui.DIRECTORY_HISTORY_TOOLTIP: Search directory history
 ui.HISTORY_EMPTY: No history
@@ -109,6 +109,12 @@ ui.DIRECTORY_SUGGESTIONS: Directory suggestions
 ui.HISTORY_LIMIT_LABEL: Search history limit
 ui.HISTORY_LIMIT_DESCRIPTION: 0–50 entries. Set to 0 to disable history.
 ui.HISTORY_LIMIT_SAVE: Save limit
+ui.DEFAULT_OPTIONS_TITLE: Default Search Options
+ui.DEFAULT_OPTIONS_DESCRIPTION: Configure default search options applied on startup and reset.
+ui.DEFAULT_OPTIONS_RESET: Reset to Defaults
+ui.DEFAULT_OPTIONS_SAVE: Save Options
+ui.DEFAULT_OPTIONS_SAVED: Default search options saved
+ui.DEFAULT_OPTIONS_EXTENSIONS_REQUIRED: Select at least one target extension
 ui.INVALID_REGEX: The regular expression is invalid
 ui.EXPORT_CSV_BUTTON: Export CSV
 ui.EXPORT_XLSX_BUTTON: Export Excel

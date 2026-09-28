@@ -14,6 +14,7 @@
  * - v1.3.0 (2026-09-26, AI Agent): AboutDialogコンポーネントをマウントし、開閉連動を統合。
  * - v1.4.0 (2026-09-26, AI Agent): システムメニュー (macOS) からのAboutダイアログ表示イベント (EVENT_NAMES.OPEN_ABOUT_DIALOG) のリッスン処理を追加。
  * - v1.5.0 (2026-09-27, Codex): 検索履歴と保存件数設定を検索・設定画面へ接続。
+ * - v1.6.0 (2026-09-28, AI Agent): デフォルト検索オプションの永続化および即時画面同期を統合。
  */
 
 import React, { Suspense, lazy, useState, useEffect } from "react";
@@ -35,6 +36,8 @@ import { useSearchHistory } from "./hooks/useSearchHistory";
 import { APP_LOGS, COMMANDS, EVENT_NAMES } from "./constants";
 import { useLocale } from "./hooks/useLocale";
 import { LocaleProvider, t, TranslationKey, TranslationValues } from "./i18n";
+import { DefaultSearchOptions } from "./types/defaultOptions";
+import { loadDefaultSearchOptions, saveDefaultSearchOptions } from "./default-options-core";
 
 const AboutDialog = lazy(() => import("./components/about/AboutDialog").then((module) => ({ default: module.AboutDialog })));
 
@@ -114,11 +117,14 @@ export const App: React.FC = () => {
     setToastNotice({ key, values });
   };
 
+  const [defaultOptions, setDefaultOptions] = useState<DefaultSearchOptions>(() => loadDefaultSearchOptions());
+
   const { maxEntries, keywords, directories, addSearch, setMaxEntries } = useSearchHistory(() => showToast("ui.SAVE_FAILED"));
 
   const {
     query,
     updateQuery,
+    applyDefaultOptions,
     results,
     progress,
     isScanning,
@@ -134,6 +140,17 @@ export const App: React.FC = () => {
     startSearch,
     cancelSearch,
   } = useSearch({ onShowToast: showToast, onSearchAccepted: (acceptedQuery) => addSearch(acceptedQuery.keyword, acceptedQuery.target_dir) });
+
+  const handleSaveDefaultOptions = (newOptions: DefaultSearchOptions) => {
+    const saved = saveDefaultSearchOptions(newOptions);
+    if (!saved) {
+      showToast("ui.SAVE_FAILED");
+      return;
+    }
+    setDefaultOptions(newOptions);
+    applyDefaultOptions(newOptions);
+    showToast("ui.DEFAULT_OPTIONS_SAVED");
+  };
 
   if (!ready) return null;
 
@@ -222,6 +239,8 @@ export const App: React.FC = () => {
         language={language}
         maxEntries={maxEntries}
         onSetMaxEntries={(value) => { if (!setMaxEntries(value)) showToast("ui.SAVE_FAILED"); }}
+        defaultOptions={defaultOptions}
+        onSaveDefaultOptions={handleSaveDefaultOptions}
         onSelect={async (value) => {
           const saved = await selectLanguage(value);
           if (!saved) setToastNotice({ key: "ui.SAVE_FAILED" });

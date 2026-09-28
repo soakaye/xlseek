@@ -17,6 +17,7 @@
  * - v1.9.0 (2026-09-26, Codex): 翻訳文言をプラグインカタログへ移し、定数モジュールから日英辞書と Proxy を削除。
  * - v1.10.0 (2026-09-27, Codex): 検索履歴・パス補完の設定値と IPC 名を追加。
  * - v1.11.0 (2026-09-27, Codex): 履歴操作で使うキー名を追加。
+ * - v1.12.0 (2026-09-28, AI Agent): デフォルト検索オプション定数 (DEFAULT_SEARCH_OPTIONS, DEFAULT_OPTIONS_STORAGE_KEY) を追加。
  */
 
 // ==============================================================================
@@ -138,3 +139,19 @@ export const FILE_EXTENSIONS = {
   XLS: ".xls",
   DEFAULT_LIST: [".xlsx", ".xlsm", ".xlsb", ".xls"],
 } as const;
+
+// ==============================================================================
+// 6. デフォルト検索オプション定数 (Default Search Options)
+// ==============================================================================
+export const DEFAULT_OPTIONS_STORAGE_KEY = "exlgrep.default_search_options";
+
+export const DEFAULT_SEARCH_OPTIONS = {
+  match_case: false,
+  use_regex: false,
+  include_formula: true,
+  include_shape: false,
+  include_comment: true,
+  include_hidden: false,
+  extensions: [".xlsx", ".xlsm", ".xlsb", ".xls"],
+} as const;
+

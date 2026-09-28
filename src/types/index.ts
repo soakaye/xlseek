@@ -11,6 +11,7 @@
  */
 
 export * from "./search";
+export * from "./defaultOptions";
 
 /**
  * 検索進行フェーズ型 (SearchPhase)
