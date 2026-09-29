@@ -10,7 +10,7 @@ Excel Grep は、Excel ブックをフォルダ単位で検索するデスクト
 - 結果一覧から一致内容と周辺セルをプレビューし、元ファイルを関連付けアプリで開く
 - 検索キーワードとフォルダの履歴、フォルダパスの入力補完
 - 検索結果を CSV または XLSX にエクスポート
-- GUIを起動しない `exlgrep-cli` コマンドで検索し、CSVまたはXLSXへ保存
+- GUIを起動しない `xlseek-cli` コマンドで検索し、CSVまたはXLSXへ保存
 - 日本語・英語の表示と、既定の検索オプション・履歴件数の設定
 - About 画面でアプリ情報と依存パッケージのライセンスを表示
 
@@ -41,17 +41,17 @@ npm run tauri dev
 
 ## コマンドライン検索
 
-CLI（`exlgrep-cli`）は GUI とは別の実行バイナリです。リポジトリルートから以下のスクリプトでビルドして実行できます。
+CLI（`xlseek-cli`）は GUI とは別の実行バイナリです。リポジトリルートから以下のスクリプトでビルドして実行できます。
 
 ```bash
 # CLI のみをビルド
 npm run build:cli
 
 # 実行
-./target/release/exlgrep-cli --help
-./target/release/exlgrep-cli --path ./reports --query '売上' \
+./target/release/xlseek-cli --help
+./target/release/xlseek-cli --path ./reports --query '売上' \
   --format xlsx --output ./results.xlsx
-./target/release/exlgrep-cli --path ./reports --query '売上' \
+./target/release/xlseek-cli --path ./reports --query '売上' \
   --format csv --output ./results.csv --language en
 ```
 
@@ -69,7 +69,7 @@ npm run build:all
 npm run tauri build
 ```
 
-Tauri が現在の OS 向けアプリケーションバンドルおよびインストーラーを `target/release/bundle/` に生成します。生成されたインストーラー（Windows: MSI / NSIS）には `exlgrep`（GUI）と `exlgrep-cli`（CLI）の双方が同梱されます。
+Tauri が現在の OS 向けアプリケーションバンドルおよびインストーラーを `target/release/bundle/` に生成します。生成されたインストーラー（Windows: MSI / NSIS）には `xlseek`（GUI）と `xlseek-cli`（CLI）の双方が同梱されます。
 
 ## 検証
 

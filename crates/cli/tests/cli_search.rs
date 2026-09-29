@@ -14,7 +14,7 @@ use std::fs;
 use std::process::Command;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-const TEST_DIRECTORY_PREFIX: &str = "exlgrep-cli-search";
+const TEST_DIRECTORY_PREFIX: &str = "xlseek-cli-search";
 const QUERY_TEXT: &str = "Financial Report Q3";
 const FORMAT_CSV: &str = "csv";
 const OUTPUT_CSV_NAME: &str = "result.csv";
@@ -75,7 +75,7 @@ fn exports_search_results_from_a_single_workbook_without_gui() {
     fs::create_dir_all(&output_dir).expect("temporary test directory must be created");
     let output = output_dir.join(OUTPUT_CSV_NAME);
 
-    let result = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    let result = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg("--path")
         .arg(fixture)
         .arg("--query")
@@ -91,20 +91,20 @@ fn exports_search_results_from_a_single_workbook_without_gui() {
     let contents = fs::read_to_string(&output).expect("CSV result must be written");
     assert!(contents.contains(QUERY_TEXT));
     let xlsx = output_dir.join(OUTPUT_XLSX_NAME);
-    let excel_result = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    let excel_result = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg("--path")
         .arg(root.join("tests/fixtures/sample_report.xlsx"))
         .arg("--query")
         .arg(QUERY_TEXT)
         .arg("--format")
-        .arg(exlgrep_cli::constants::CLI_FORMAT_XLSX)
+        .arg(xlseek_cli::constants::CLI_FORMAT_XLSX)
         .arg("--output")
         .arg(&xlsx)
         .output()
         .expect("CLI Excel process must start");
     assert_eq!(
         excel_result.status.code(),
-        Some(exlgrep_cli::constants::CLI_EXIT_SUCCESS)
+        Some(xlseek_cli::constants::CLI_EXIT_SUCCESS)
     );
     let mut workbook = calamine::open_workbook_auto(&xlsx).expect("Excel output must open");
     let sheet_name = workbook.sheet_names().first().cloned().unwrap();
@@ -137,17 +137,17 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
     let broken_file = broken.join(TEST_BROKEN_WORKBOOK_NAME);
     fs::write(
         &broken_file,
-        exlgrep_cli::constants::CLI_TEST_INVALID_WORKBOOK_BYTES,
+        xlseek_cli::constants::CLI_TEST_INVALID_WORKBOOK_BYTES,
     )
     .unwrap();
     fs::copy(
         &fixture,
-        partial.join(exlgrep_cli::constants::CLI_TEST_VALID_WORKBOOK_NAME),
+        partial.join(xlseek_cli::constants::CLI_TEST_VALID_WORKBOOK_NAME),
     )
     .unwrap();
     fs::copy(&broken_file, partial.join(TEST_BROKEN_WORKBOOK_NAME)).unwrap();
 
-    let empty_output = work.join(exlgrep_cli::constants::CLI_TEST_EMPTY_OUTPUT_NAME);
+    let empty_output = work.join(xlseek_cli::constants::CLI_TEST_EMPTY_OUTPUT_NAME);
     assert_eq!(
         run_cli(&empty, QUERY_TEXT, &empty_output, FORMAT_CSV)
             .status
@@ -156,9 +156,9 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
     );
     assert!(fs::read(&empty_output)
         .unwrap()
-        .starts_with(&exlgrep_cli::constants::CSV_UTF8_BOM));
+        .starts_with(&xlseek_cli::constants::CSV_UTF8_BOM));
 
-    let broken_output = work.join(exlgrep_cli::constants::CLI_TEST_BROKEN_OUTPUT_NAME);
+    let broken_output = work.join(xlseek_cli::constants::CLI_TEST_BROKEN_OUTPUT_NAME);
     assert_eq!(
         run_cli(&broken, QUERY_TEXT, &broken_output, FORMAT_CSV)
             .status
@@ -167,9 +167,9 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
     );
     assert!(fs::read_to_string(&broken_output)
         .unwrap()
-        .contains(exlgrep_cli::constants::CLI_TEST_EXPECTED_HEADER_ID_JA));
+        .contains(xlseek_cli::constants::CLI_TEST_EXPECTED_HEADER_ID_JA));
 
-    let partial_output = work.join(exlgrep_cli::constants::CLI_TEST_PARTIAL_OUTPUT_NAME);
+    let partial_output = work.join(xlseek_cli::constants::CLI_TEST_PARTIAL_OUTPUT_NAME);
     assert_eq!(
         run_cli(&partial, QUERY_TEXT, &partial_output, FORMAT_CSV)
             .status
@@ -180,14 +180,14 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
         .unwrap()
         .contains(QUERY_TEXT));
 
-    let invalid_regex_output = work.join(exlgrep_cli::constants::CLI_TEST_REGEX_OUTPUT_NAME);
-    let invalid_regex = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    let invalid_regex_output = work.join(xlseek_cli::constants::CLI_TEST_REGEX_OUTPUT_NAME);
+    let invalid_regex = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg("--path")
         .arg(&fixture)
         .arg("--query")
-        .arg(exlgrep_cli::constants::CLI_TEST_INVALID_REGEX)
+        .arg(xlseek_cli::constants::CLI_TEST_INVALID_REGEX)
         .arg("--regex")
-        .arg(exlgrep_cli::constants::CLI_BOOLEAN_TRUE)
+        .arg(xlseek_cli::constants::CLI_BOOLEAN_TRUE)
         .arg("--format")
         .arg(FORMAT_CSV)
         .arg("--output")
@@ -212,7 +212,7 @@ fn exports_search_results_to_stdout_with_positional_arguments() {
     let fixture1 = root.join("tests/fixtures/sample_report.xlsx");
     let fixture2 = root.join("tests/fixtures");
 
-    let result = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    let result = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg(QUERY_TEXT)
         .arg(&fixture1)
         .arg(&fixture2)
@@ -224,7 +224,7 @@ fn exports_search_results_to_stdout_with_positional_arguments() {
     // Verify stdout is plain UTF-8 CSV without BOM
     assert!(!result
         .stdout
-        .starts_with(&exlgrep_cli::constants::CSV_UTF8_BOM));
+        .starts_with(&xlseek_cli::constants::CSV_UTF8_BOM));
 
     let stdout_str = String::from_utf8(result.stdout).expect("stdout must be valid UTF-8");
     assert!(stdout_str.contains(QUERY_TEXT));
@@ -249,7 +249,7 @@ fn supports_short_options_and_format_inference() {
     fs::create_dir_all(&output_dir).expect("temporary test directory must be created");
     let xlsx_output = output_dir.join("inferred.xlsx");
 
-    let result = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    let result = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg("-q")
         .arg(QUERY_TEXT)
         .arg("-p")
@@ -295,16 +295,16 @@ fn notifies_errors_in_realtime_during_async_pipeline() {
     let broken_file = mixed_dir.join(TEST_BROKEN_WORKBOOK_NAME);
     fs::write(
         &broken_file,
-        exlgrep_cli::constants::CLI_TEST_INVALID_WORKBOOK_BYTES,
+        xlseek_cli::constants::CLI_TEST_INVALID_WORKBOOK_BYTES,
     )
     .unwrap();
     fs::copy(
         &fixture,
-        mixed_dir.join(exlgrep_cli::constants::CLI_TEST_VALID_WORKBOOK_NAME),
+        mixed_dir.join(xlseek_cli::constants::CLI_TEST_VALID_WORKBOOK_NAME),
     )
     .unwrap();
 
-    let result = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    let result = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg(QUERY_TEXT)
         .arg(&mixed_dir)
         .output()
@@ -337,7 +337,7 @@ fn run_cli(
     output: &std::path::Path,
     format: &str,
 ) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg("--path")
         .arg(input)
         .arg("--query")

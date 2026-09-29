@@ -2,7 +2,7 @@
 //!
 //! ## Description
 //! Application startup point for desktop binary. Suppresses console window on Windows
-//! and calls core library `exlgrep_lib::run()` to start the GUI event loop.
+//! and calls core library `xlseek_lib::run()` to start the GUI event loop.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -18,5 +18,5 @@
 /// ## Errors / Exceptions
 /// Panics if application initialization fails.
 fn main() {
-    exlgrep_lib::run();
+    xlseek_lib::run();
 }

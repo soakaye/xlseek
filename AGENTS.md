@@ -6,7 +6,7 @@
 
 ## 1. プロジェクト概要
 
-- **名称**: Excel Grep (`exlgrep`)
+- **名称**: Excel Grep (`xlseek`)
 - **目的**: 大量の Excel ファイル（`.xlsx`, `.xlsm`, `.xls`, `.xlsb`）から、指定キーワードや正規表現に一致するセル、シート、コメントを高速かつセキュアに横断検索するデスクトップアプリケーション。
 - **アーキテクチャ**:
   - **GUI / フロントエンド**: React 18, TypeScript, Tailwind CSS, Lucide React, Tauri v2 API
@@ -62,7 +62,7 @@ exlgrep/
 │   │   ├── locales/           # 翻訳カタログ原本 (ja.yml, en.yml)
 │   │   ├── src/               # lib.rs, constants.rs, models/, search/, export/, i18n.rs
 │   │   └── tests/             # shape_*.rs 統合テスト
-│   └── cli/                   # 独立CLIバイナリ (exlgrep-cli)
+│   └── cli/                    # 独立CLIバイナリ (xlseek-cli)
 │       ├── Cargo.toml
 │       ├── src/               # main.rs, lib.rs, constants.rs, args.rs, output.rs
 │       └── tests/             # cli_search.rs, cli_output.rs 統合テスト
@@ -79,7 +79,7 @@ exlgrep/
 │       ├── preview/           # Excel セルプレビューグリッド・数式バー
 │       ├── results/           # 検索結果テーブル (仮想スクロール表示)
 │       └── search/            # 検索入力バー・拡張子トグル・コントロール
-├── src-tauri/                 # Tauri v2 デスクトップGUIアプリケーション (exlgrep)
+├── src-tauri/                 # Tauri v2 デスクトップGUIアプリケーション (xlseek)
 │   ├── Cargo.toml             # Rust クレート依存定義 (exlgrep-core に依存)
 │   ├── tauri.conf.json        # Tauri 設定ファイル (ウィンドウ設定, 権限設定)
 │   ├── capabilities/          # Tauri v2 セキュリティケーパビリティ (default.json)

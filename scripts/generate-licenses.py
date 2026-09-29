@@ -1,27 +1,24 @@
 #!/usr/bin/env python3
 """
-@fileoverview サードパーティライセンス情報自動収集スクリプト (scripts/generate-licenses.py)
+@fileoverview Third-party license information automated collection script (scripts/generate-licenses.py)
 
-## 処理内容
-本スクリプトは、アプリケーション（Excel Grep）のバイナリ配布物に同梱・静的リンクされる
-すべての本番ランタイムサードパーティパッケージ（Rust実行時クレートおよびnpmプロダクション依存関係）の
-ライセンス・著作権情報を自動的に抽出・集約し、静的JSONファイル (src/constants/licenses.json) を生成する。
+## Description
+Extracts and consolidates license and copyright metadata for all production runtime third-party
+packages (Rust runtime crates and npm production dependencies) statically linked or bundled
+into the Excel Grep application binary, outputting a static JSON file (src/constants/licenses.json).
 
-開発専用パッケージ (devDependencies, build-dependencies, テスト用ツール等) は除外し、
-同一名称で異なるバージョンが存在するパッケージは "{name}@{version}" を一意キーとして並列収録する。
-憲章原則I（自然な日本語出力）、原則III（網羅的なヘッダコメント）、原則IV（モジュール設計）、原則V（堅牢なエラー処理）に準拠。
+Development-only packages (devDependencies, build-dependencies, test utilities) are excluded.
+Packages sharing identical names with distinct versions are cataloged side-by-side using
+"{name}@{version}" as unique identifiers. Complies with Constitution Principles I, III, IV, and V.
 
-## 引数・戻り値
-- 引数: なし (コマンドラインオプション --output 等で出力先指定可能)
-- 戻り値: 終了ステータスコード (0: 正常終了, 1: 異常終了)
+## Arguments & Returns
+- Arguments: None (CLI option `--output` / `-o` can specify output path).
+- Returns: Process exit status code (0 for success, 1 for abnormal exit).
 
-## エラー・例外処理
-- cargo metadata や license-checker の実行エラー、JSON解析エラー、ファイル読み出し例外は
-  詳細なエラーメッセージを標準エラー出力へ表示し、安全に終了コード1で中断する。
-- ライセンスファイルがキャッシュ内に存在しない場合は、標準SPDXライセンス条項をフォールバックとして付与する。
-
-## 変更履歴
-- v1.0.0 (2026-09-26, AI Agent): 初版策定。Rustクレートおよびnpm依存の自動集約とJSON出力の実装。
+## Errors / Exceptions
+- Catches errors during `cargo metadata` or `license-checker` execution, JSON parsing, or filesystem reads,
+  logging diagnostics to stderr and safely terminating with exit code 1.
+- Falls back to standard SPDX license terms when upstream license files are missing from local caches.
 """
 
 from __future__ import annotations
@@ -35,7 +32,7 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
-# フォールバック用の標準SPDXライセンス条項辞書
+# Standard SPDX fallback license terms catalog
 FALLBACK_LICENSES: Dict[str, str] = {
     "MIT": """MIT License
 
@@ -112,13 +109,13 @@ Permission is granted to anyone to use this software for any purpose, including 
 
 
 def find_cargo_registry_crate_dir(crate_name: str, crate_version: str) -> Optional[Path]:
-    """Cargoのレジストリキャッシュディレクトリから該当クレートのソースフォルダを検索する。"""
+    """Finds crate source directory from Cargo registry cache directory."""
     cargo_home = Path(os.environ.get("CARGO_HOME", Path.home() / ".cargo"))
     registry_src = cargo_home / "registry" / "src"
     if not registry_src.is_dir():
         return None
 
-    # 各インデックスディレクトリ配下を検索 (例: index.crates.io-*/<crate>-<version>)
+    # Search inside index directories (e.g. index.crates.io-*/<crate>-<version>)
     pattern = f"{crate_name}-{crate_version}"
     for idx_dir in registry_src.iterdir():
         if idx_dir.is_dir():
@@ -129,7 +126,7 @@ def find_cargo_registry_crate_dir(crate_name: str, crate_version: str) -> Option
 
 
 def read_crate_license_file(crate_dir: Path) -> Optional[str]:
-    """クレートフォルダ内のLICENSE, COPYING等のファイルを走査して本文を読み込む。"""
+    """Scans crate directory for LICENSE, COPYING, etc. and reads file contents."""
     license_patterns = [
         "LICENSE*",
         "LICENCE*",
@@ -152,11 +149,11 @@ def read_crate_license_file(crate_dir: Path) -> Optional[str]:
 
 
 def get_fallback_license_text(license_spdx: Optional[str], crate_or_pkg_name: str) -> str:
-    """SPDXライセンス識別子からフォールバック用ライセンス本文を生成する。"""
+    """Generates fallback license text from SPDX license identifier."""
     if not license_spdx:
         return f"License information for {crate_or_pkg_name} is distributed under its published terms."
 
-    # 複合ライセンスの分解 ("MIT OR Apache-2.0" 等)
+    # Decompose compound licenses (e.g., "MIT OR Apache-2.0")
     parts = [p.strip() for p in license_spdx.replace(" OR ", "/").replace(" AND ", "/").split("/")]
     texts = []
     for part in parts:
@@ -167,7 +164,7 @@ def get_fallback_license_text(license_spdx: Optional[str], crate_or_pkg_name: st
     if texts:
         return "\n\n".join(texts)
 
-    # 主な主要キーによる検索
+    # Search by known primary keys
     for key, val in FALLBACK_LICENSES.items():
         if key.lower() in license_spdx.lower():
             return f"--- {key} (Derived from '{license_spdx}') ---\n\n{val}"
@@ -176,7 +173,7 @@ def get_fallback_license_text(license_spdx: Optional[str], crate_or_pkg_name: st
 
 
 def collect_rust_licenses(repo_root: Path) -> List[Dict[str, Any]]:
-    """`cargo metadata` を実行して本番ランタイムRustクレートのライセンス情報を収集する。"""
+    """Executes `cargo metadata` to collect license information for runtime Rust crates."""
     src_tauri = repo_root / "src-tauri"
     cmd = ["cargo", "metadata", "--format-version", "1"]
     try:
@@ -201,7 +198,7 @@ def collect_rust_licenses(repo_root: Path) -> List[Dict[str, Any]]:
         print("ERROR: Root crate not found in resolve nodes", file=sys.stderr)
         return []
 
-    # BFSで本番ランタイム依存（dep_kinds の kind が null または 'normal'）のみを辿る
+    # BFS traverse runtime dependencies (dep_kinds kind is null or 'normal')
     visited: Set[str] = set()
     queue = [root_id]
     visited.add(root_id)
@@ -219,7 +216,7 @@ def collect_rust_licenses(repo_root: Path) -> List[Dict[str, Any]]:
             if not dep_pkg_id:
                 continue
 
-            # dep_kinds をチェック: kind == null は通常実行時依存 (buildやdevでない)
+            # Check dep_kinds: kind == null represents normal runtime dependency (not build or dev)
             # kind: null = normal, "build" = build-dependency, "dev" = dev-dependency
             is_runtime = False
             for dk in dep.get("dep_kinds", []):
@@ -243,8 +240,8 @@ def collect_rust_licenses(repo_root: Path) -> List[Dict[str, Any]]:
 
         name = pkg.get("name", "")
         version = pkg.get("version", "")
-        # ルートクレート自身は除外
-        if name in ("exgrep", "exlgrep"):
+        # Exclude workspace root crates
+        if name in ("exgrep", "exlgrep", "xlseek", "xlseek-cli"):
             continue
 
         license_spdx = pkg.get("license") or "MIT OR Apache-2.0"
@@ -252,21 +249,21 @@ def collect_rust_licenses(repo_root: Path) -> List[Dict[str, Any]]:
         author = ", ".join(authors_list) if authors_list else None
         repository = pkg.get("repository")
 
-        # ライセンス本文の取得
+        # Retrieve license text
         license_text = None
-        # 1. ローカルクレートディレクトリの走査
+        # 1. Inspect local crate directory
         manifest_path = Path(pkg.get("manifest_path", ""))
         if manifest_path.is_file():
             crate_dir = manifest_path.parent
             license_text = read_crate_license_file(crate_dir)
 
-        # 2. Cargoレジストリキャッシュの走査
+        # 2. Inspect Cargo registry cache
         if not license_text:
             crate_cache_dir = find_cargo_registry_crate_dir(name, version)
             if crate_cache_dir:
                 license_text = read_crate_license_file(crate_cache_dir)
 
-        # 3. フォールバック
+        # 3. Fallback
         if not license_text:
             license_text = get_fallback_license_text(license_spdx, f"{name} {version}")
 
@@ -286,7 +283,7 @@ def collect_rust_licenses(repo_root: Path) -> List[Dict[str, Any]]:
 
 
 def collect_npm_licenses(repo_root: Path) -> List[Dict[str, Any]]:
-    """`npx license-checker --production --json` を実行して本番npmパッケージのライセンス情報を収集する。"""
+    """Executes `npx license-checker --production --json` to collect license information for production npm packages."""
     cmd = ["npx", "--yes", "license-checker", "--production", "--json"]
     try:
         res = subprocess.run(
@@ -304,11 +301,11 @@ def collect_npm_licenses(repo_root: Path) -> List[Dict[str, Any]]:
     records: List[Dict[str, Any]] = []
 
     for key, val in data.items():
-        # key 形式: "name@version" または "@scope/name@version"
-        if key.startswith("exgrep@") or key.startswith("exlgrep@"):
+        # key format: "name@version" or "@scope/name@version"
+        if key.startswith("exgrep@") or key.startswith("exlgrep@") or key.startswith("xlseek@"):
             continue
 
-        # 最後の '@' で分割して name と version を分離
+        # Split at the last '@' to extract name and version
         last_at = key.rfind("@")
         if last_at <= 0:
             continue
@@ -366,24 +363,24 @@ def main() -> int:
     repo_root = Path(__file__).resolve().parent.parent
     output_path = args.output or (repo_root / "src" / "constants" / "licenses.json")
 
-    print(f"=== Excel Grep サードパーティライセンス収集処理開始 ===")
-    print(f"プロジェクトルート: {repo_root}")
+    print(f"=== Excel Grep third-party license collection started ===")
+    print(f"Project root: {repo_root}")
 
-    # 1. Rust クレート収集
-    print("Rust 実行時クレート情報を収集中...")
+    # 1. Collect Rust crates
+    print("Collecting Rust runtime crate information...")
     rust_records = collect_rust_licenses(repo_root)
-    print(f"  -> {len(rust_records)} 件のRust本番実行時クレートを検出")
+    print(f"  -> Found {len(rust_records)} Rust production runtime crates")
 
-    # 2. npm パッケージ収集
-    print("npm 本番プロダクションパッケージ情報を収集中...")
+    # 2. Collect npm packages
+    print("Collecting npm production package information...")
     npm_records = collect_npm_licenses(repo_root)
-    print(f"  -> {len(npm_records)} 件のnpm本番パッケージを検出")
+    print(f"  -> Found {len(npm_records)} npm production packages")
 
-    # 3. 統合とソート (パッケージ名・バージョンの昇順)
+    # 3. Combine and sort (ascending by lowercase name and version)
     combined = rust_records + npm_records
     combined.sort(key=lambda r: (r["name"].lower(), r["version"]))
 
-    # 4. 一意性検証
+    # 4. Verify uniqueness
     seen_ids: Set[str] = set()
     unique_records = []
     for r in combined:
@@ -391,16 +388,16 @@ def main() -> int:
             seen_ids.add(r["id"])
             unique_records.append(r)
 
-    print(f"総計: {len(unique_records)} 件のサードパーティライセンスレコードを統合")
+    print(f"Total: Consolidated {len(unique_records)} third-party license records")
 
-    # 5. 出力
+    # 5. Output
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(
         json.dumps(unique_records, ensure_ascii=False, indent=2) + "\n",
         encoding="utf-8",
     )
-    print(f"ライセンスデータを保存しました: {output_path}")
-    print(f"=== 収集完了 ===")
+    print(f"Saved license data to: {output_path}")
+    print(f"=== Collection completed ===")
     return 0
 
 

@@ -1,12 +1,12 @@
 [package]
-name = "exlgrep"
+name = "xlseek"
 version = "0.1.0"
 description = "Super fast Excel Grep Desktop Application"
 authors = ["soakaye"]
 edition = "2021"
 
 [lib]
-name = "exlgrep_lib"
+name = "xlseek_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

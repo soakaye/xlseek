@@ -39,7 +39,7 @@ describe("locale selection", () => {
     expect(readLanguagePreference()).toBe("default");
     expect(saveLanguagePreference("ja")).toBe(true);
     expect(readLanguagePreference()).toBe("ja");
-    window.localStorage.setItem("exlgrep.language", "fr");
+    window.localStorage.setItem("xlseek.language", "fr");
     expect(readLanguagePreference()).toBe("default");
   });
 

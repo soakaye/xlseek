@@ -1,7 +1,7 @@
 //! # Standalone CLI Entrypoint (main.rs)
 //!
 //! ## Description
-//! Entrypoint for the standalone command-line executable (exlgrep-cli) without initializing any GUI.
+//! Entrypoint for the standalone command-line executable (xlseek-cli) without initializing any GUI.
 //!
 //! ## Arguments / Returns
 //! Receives operating system arguments and converts the CLI execution outcome into a process exit code.
@@ -17,5 +17,5 @@
 /// ## Errors
 /// The execution layer handles converting I/O and argument errors into appropriate exit codes.
 fn main() {
-    std::process::exit(exlgrep_cli::run(std::env::args_os().skip(1)));
+    std::process::exit(xlseek_cli::run(std::env::args_os().skip(1)));
 }

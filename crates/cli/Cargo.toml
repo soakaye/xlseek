@@ -1,23 +1,21 @@
 # Package manifest for exlgrep-cli binary.
 # Inputs: CLI source files under src/; output: executable binary exlgrep-cli.
 # Errors: Cargo reports compilation or dependency resolution errors.
-# History:
-# - v1.0.0 (2026-09-29, Antigravity): Initial creation of exlgrep-cli binary crate.
 
 [package]
-name = "exlgrep-cli"
+name = "xlseek-cli"
 version = "0.1.0"
 description = "Standalone command-line interface for Excel Grep"
 authors = ["soakaye"]
 edition = "2021"
-default-run = "exlgrep-cli"
+default-run = "xlseek-cli"
 
 [lib]
-name = "exlgrep_cli"
+name = "xlseek_cli"
 path = "src/lib.rs"
 
 [[bin]]
-name = "exlgrep-cli"
+name = "xlseek-cli"
 path = "src/main.rs"
 
 [dependencies]

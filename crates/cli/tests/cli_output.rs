@@ -13,7 +13,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
-const TEST_DIRECTORY_PREFIX: &str = "exlgrep-cli-output";
+const TEST_DIRECTORY_PREFIX: &str = "xlseek-cli-output";
 const TEST_EXISTING_CONTENT: &str = "preserve-existing-output";
 const TEST_QUERY: &str = "Financial Report Q3";
 const TEST_OUTPUT_NAME: &str = "results.csv";
@@ -57,14 +57,14 @@ fn rejects_existing_output_by_default_and_never_overwrites_input() {
     let denied = run_cli(&fixture, TEST_QUERY, &output, false);
     assert_eq!(
         denied.status.code(),
-        Some(exlgrep_cli::constants::CLI_EXIT_FAILURE)
+        Some(xlseek_cli::constants::CLI_EXIT_FAILURE)
     );
     assert_eq!(fs::read_to_string(&output).unwrap(), TEST_EXISTING_CONTENT);
 
     let replaced = run_cli(&fixture, TEST_QUERY, &output, true);
     assert_eq!(
         replaced.status.code(),
-        Some(exlgrep_cli::constants::CLI_EXIT_SUCCESS)
+        Some(xlseek_cli::constants::CLI_EXIT_SUCCESS)
     );
     assert!(fs::read_to_string(&output).unwrap().contains(TEST_QUERY));
 
@@ -72,7 +72,7 @@ fn rejects_existing_output_by_default_and_never_overwrites_input() {
     let input_output = run_cli(&fixture, TEST_QUERY, &fixture, true);
     assert_eq!(
         input_output.status.code(),
-        Some(exlgrep_cli::constants::CLI_EXIT_FAILURE)
+        Some(xlseek_cli::constants::CLI_EXIT_FAILURE)
     );
     assert_eq!(fs::read(&fixture).unwrap(), original_input);
     let _ = fs::remove_dir_all(directory);
@@ -91,7 +91,7 @@ fn run_cli(
     output: &std::path::Path,
     overwrite: bool,
 ) -> std::process::Output {
-    let mut command = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"));
+    let mut command = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"));
     command
         .arg("--path")
         .arg(input)
@@ -100,17 +100,17 @@ fn run_cli(
         .arg("--format")
         .arg(
             if output.extension().and_then(|value| value.to_str())
-                == Some(exlgrep_cli::constants::CLI_FORMAT_XLSX)
+                == Some(xlseek_cli::constants::CLI_FORMAT_XLSX)
             {
-                exlgrep_cli::constants::CLI_FORMAT_XLSX
+                xlseek_cli::constants::CLI_FORMAT_XLSX
             } else {
-                exlgrep_cli::constants::CLI_FORMAT_CSV
+                xlseek_cli::constants::CLI_FORMAT_CSV
             },
         )
         .arg("--output")
         .arg(output);
     if overwrite {
-        command.arg(exlgrep_cli::constants::CLI_TEST_OVERWRITE_OPTION);
+        command.arg(xlseek_cli::constants::CLI_TEST_OVERWRITE_OPTION);
     }
     command.output().expect("CLI process must start")
 }

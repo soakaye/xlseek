@@ -1,7 +1,6 @@
-# 処理内容: Excel Grep の画面・メニュー・出力に使う翻訳カタログ。
-# 入力・出力: dotted key と文字列を入力し、プラグイン用 locale を出力する。
-# エラー: 不正な YAML はプラグイン読込時に失敗し、英語カタログへフォールバックする。
-# 変更履歴: v1.0.0 (2026-09-26, Codex): tauri-plugin-i18n 移行用に作成。v1.1.0 (2026-09-27, Codex): 検索履歴・パス補完の文言を追加。
+# Description: Translation catalog used for Excel Grep UI, menus, and export outputs.
+# Arguments & Returns: Accepts dotted keys and string values, outputting locale maps for plugins.
+# Errors: Invalid YAML fails during plugin loading and falls back to default catalog.
 _version: 1
 ui.APP_TITLE: Excel Grep
 ui.SEARCHING: 検索中...
@@ -23,7 +22,7 @@ ui.EXPORT_CSV_SAVED: "CSVファイルを保存しました: {path}"
 ui.EXPORT_XLSX_SAVED: "Excelファイルを保存しました: {path}"
 ui.EXPORT_CSV_FILTER_NAME: CSVファイル
 cli.HELP: |
-  使用方法: exlgrep-cli [OPTIONS] [QUERY] [PATH]...
+  使用方法: xlseek-cli [OPTIONS] [QUERY] [PATH]...
   位置引数: 第1引数=検索文字列, 第2引数以降=検索対象パス (複数指定可能)
   主なオプション:
     -q, --query TEXT         検索文字列
