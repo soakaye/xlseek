@@ -8,7 +8,7 @@
 //! - v1.0.0 (2026-09-29, Codex): 安全なCLI結果公開を追加。
 
 use crate::constants;
-use crate::models::{ExportFormat, SearchMatch};
+use exlgrep_core::models::{ExportFormat, SearchMatch};
 use same_file::Handle;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
@@ -114,12 +114,18 @@ impl OutputGuard {
         let temporary_file = temporary_directory.path.join(constants::CLI_TEMP_FILE_NAME);
         let temporary_file_text = temporary_file.to_string_lossy();
         match format {
-            ExportFormat::Csv => {
-                crate::export::export_to_csv(&temporary_file_text, matches, language, catalogs)?
-            }
-            ExportFormat::Xlsx => {
-                crate::export::export_to_xlsx(&temporary_file_text, matches, language, catalogs)?
-            }
+            ExportFormat::Csv => exlgrep_core::export::export_to_csv(
+                &temporary_file_text,
+                matches,
+                language,
+                catalogs,
+            )?,
+            ExportFormat::Xlsx => exlgrep_core::export::export_to_xlsx(
+                &temporary_file_text,
+                matches,
+                language,
+                catalogs,
+            )?,
         }
         self.verify_output_identity()?;
         if self.overwrite {

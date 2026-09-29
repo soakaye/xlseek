@@ -473,7 +473,36 @@ mod tests {
     use crate::export::{export_to_csv, export_to_xlsx};
     use crate::search::preview::extract_cell_preview;
     use std::collections::BTreeMap;
-    use std::path::PathBuf;
+    /// ## 処理内容
+    /// ワークスペースのテスト用フィクスチャディレクトリ (tests/fixtures) の絶対パスを解決する。
+    ///
+    /// ## 引数
+    /// なし
+    ///
+    /// ## 戻り値
+    /// - `PathBuf`: 存在するフィクスチャディレクトリのパス
+    ///
+    /// ## エラー / 例外発生条件
+    /// フィクスチャディレクトリが見つからない場合はパニックする。
+    ///
+    /// ## 変更履歴
+    /// - v1.1.0 (2026-09-29, Antigravity): クレート分離に伴うマルチ階層探索に対応。
+    fn fixtures_dir() -> PathBuf {
+        let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let candidate_grandparent = manifest
+            .parent()
+            .and_then(|p| p.parent())
+            .map(|p| p.join("tests").join("fixtures"));
+        let candidate_parent = manifest.parent().map(|p| p.join("tests").join("fixtures"));
+
+        if let Some(path) = candidate_grandparent.filter(|p| p.exists()) {
+            path
+        } else if let Some(path) = candidate_parent.filter(|p| p.exists()) {
+            path
+        } else {
+            panic!("Fixtures dir not found from manifest: {:?}", manifest);
+        }
+    }
 
     /// ## 処理内容
     /// テスト用フィクスチャディレクトリ内のExcelファイルに対して検索を実行し、
@@ -490,19 +519,10 @@ mod tests {
     ///
     /// ## 変更履歴
     /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+    /// - v1.1.0 (2026-09-29, Antigravity): fixtures_dirヘルパーを利用。
     #[test]
     fn test_search_engine_on_fixtures() {
-        let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap()
-            .join("tests")
-            .join("fixtures");
-
-        assert!(
-            fixtures_dir.exists(),
-            "Fixtures dir should exist: {:?}",
-            fixtures_dir
-        );
+        let fixtures_dir = fixtures_dir();
 
         let engine = SearchEngine::new();
         let query = SearchQuery {
@@ -645,17 +665,7 @@ mod tests {
     /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
     #[test]
     fn test_search_engine_cancellation() {
-        let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap()
-            .join("tests")
-            .join("fixtures");
-
-        assert!(
-            fixtures_dir.exists(),
-            "Fixtures dir should exist: {:?}",
-            fixtures_dir
-        );
+        let fixtures_dir = fixtures_dir();
 
         let engine = Arc::new(SearchEngine::new());
         let engine_clone = Arc::clone(&engine);
@@ -704,19 +714,10 @@ mod tests {
     ///
     /// ## 変更履歴
     /// - v1.1.0 (2026-09-26, AI Agent): 初版策定。
+    /// - v1.1.1 (2026-09-29, Antigravity): fixtures_dirヘルパーを利用。
     #[test]
     fn test_collect_files_cancellation() {
-        let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap()
-            .join("tests")
-            .join("fixtures");
-
-        assert!(
-            fixtures_dir.exists(),
-            "Fixtures dir should exist: {:?}",
-            fixtures_dir
-        );
+        let fixtures_dir = fixtures_dir();
 
         let extensions = vec![".xlsx".to_string()];
 
@@ -756,11 +757,7 @@ mod tests {
     /// - v1.1.0 (2026-09-26, AI Agent): 初版策定。
     #[test]
     fn test_search_engine_parallel_pipeline() {
-        let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap()
-            .join("tests")
-            .join("fixtures");
+        let fixtures_dir = fixtures_dir();
 
         let engine = SearchEngine::new();
         let query = SearchQuery {
@@ -820,13 +817,10 @@ mod tests {
     ///
     /// ## 変更履歴
     /// - v1.1.0 (2026-09-26, AI Agent): 初版策定。
+    /// - v1.1.1 (2026-09-29, Antigravity): fixtures_dirヘルパーを利用。
     #[test]
     fn test_search_engine_cancellation_during_scan() {
-        let fixtures_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap()
-            .join("tests")
-            .join("fixtures");
+        let fixtures_dir = fixtures_dir();
 
         let engine = Arc::new(SearchEngine::new());
         let engine_clone = Arc::clone(&engine);

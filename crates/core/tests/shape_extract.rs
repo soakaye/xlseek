@@ -9,10 +9,10 @@
 //! ## 変更履歴
 //! - v1.0.0 (2026-09-28, Codex): OOXML Shape 検索統合テストを追加。
 
-use exlgrep_lib::constants::*;
-use exlgrep_lib::models::{MatchType, SearchQuery};
-use exlgrep_lib::search::parser::parse_and_search_file;
-use exlgrep_lib::search::shape::extract_shapes;
+use exlgrep_core::constants::*;
+use exlgrep_core::models::{MatchType, SearchQuery};
+use exlgrep_core::search::parser::parse_and_search_file;
+use exlgrep_core::search::shape::extract_shapes;
 use std::io::{Cursor, Write};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
@@ -42,6 +42,26 @@ fn unique_fixture_path(file_name: &str) -> PathBuf {
         "{stem}-{}-{sequence}.{extension}",
         std::process::id()
     ))
+}
+
+/// ## 処理内容
+/// リポジトリルートの絶対パスを解決する。
+/// ## 引数・戻り値
+/// 引数なし。`PathBuf` を返す。
+/// ## エラー
+/// ルートが見つからない場合は panic する。
+/// ## 変更履歴
+/// - v1.0.0 (2026-09-29, Antigravity): クレート分離に伴うルートパス解決。
+fn repo_root() -> PathBuf {
+    let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    if manifest.join("../../tests/fixtures").exists() {
+        manifest.join("../..")
+    } else {
+        manifest
+            .parent()
+            .expect("repository root must exist")
+            .to_path_buf()
+    }
 }
 
 /// ## 処理内容
@@ -225,8 +245,8 @@ fn extracts_text_shape_with_sheet_and_anchor() {
         keyword: "needle".to_string(),
         target_dir: path.to_string_lossy().to_string(),
         match_case: false,
-        // 定数参照: exlgrep_lib::constants::DEFAULT_INCLUDE_VALUE を使用。
-        include_value: exlgrep_lib::constants::DEFAULT_INCLUDE_VALUE,
+        // 定数参照: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE を使用。
+        include_value: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE,
         use_regex: false,
         include_formula: false,
         include_comment: true,
@@ -272,23 +292,20 @@ fn extracts_text_shape_with_sheet_and_anchor() {
 /// - v1.1.0 (2026-09-29, Codex): range原点の回帰テストを追加。
 #[test]
 fn uses_real_cell_coordinates_for_ranges_starting_after_a1() {
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("repository root must exist")
-        .to_path_buf();
+    let root = repo_root();
     let path = root.join("tests/fixtures/sample_report.xlsx");
     let query = SearchQuery {
         keyword: "Financial Report Q3".to_string(),
         target_dir: path.to_string_lossy().into_owned(),
         match_case: false,
-        // 定数参照: exlgrep_lib::constants::DEFAULT_INCLUDE_VALUE を使用。
-        include_value: exlgrep_lib::constants::DEFAULT_INCLUDE_VALUE,
+        // 定数参照: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE を使用。
+        include_value: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE,
         use_regex: false,
         include_formula: false,
         include_comment: false,
         include_shape: false,
         include_hidden: false,
-        extensions: exlgrep_lib::constants::DEFAULT_EXTENSIONS
+        extensions: exlgrep_core::constants::DEFAULT_EXTENSIONS
             .iter()
             .map(|extension| extension.to_string())
             .collect(),
@@ -325,23 +342,20 @@ fn extracts_shapes_when_extension_is_uppercase() {
 /// - v1.3.0 (2026-09-29, Codex): OOXMLメモ検索回帰テストを追加。
 #[test]
 fn searches_legacy_cell_comments() {
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("repository root must exist")
-        .to_path_buf();
+    let root = repo_root();
     let path = root.join("tests/fixtures/sample_report.xlsx");
     let query = SearchQuery {
-        keyword: exlgrep_lib::constants::CLI_TEST_COMMENT_QUERY.to_string(),
+        keyword: exlgrep_core::constants::CLI_TEST_COMMENT_QUERY.to_string(),
         target_dir: path.to_string_lossy().into_owned(),
         match_case: false,
-        // 定数参照: exlgrep_lib::constants::DEFAULT_INCLUDE_VALUE を使用。
-        include_value: exlgrep_lib::constants::DEFAULT_INCLUDE_VALUE,
+        // 定数参照: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE を使用。
+        include_value: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE,
         use_regex: false,
         include_formula: false,
         include_comment: true,
         include_shape: false,
         include_hidden: false,
-        extensions: exlgrep_lib::constants::DEFAULT_EXTENSIONS
+        extensions: exlgrep_core::constants::DEFAULT_EXTENSIONS
             .iter()
             .map(|extension| extension.to_string())
             .collect(),

@@ -4,7 +4,6 @@ version = "0.1.0"
 description = "Super fast Excel Grep Desktop Application"
 authors = ["soakaye"]
 edition = "2021"
-default-run = "exlgrep"
 
 [lib]
 name = "exlgrep_lib"
@@ -14,6 +13,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2.0.0", features = [] }
 
 [dependencies]
+exlgrep-core = { path = "../crates/core" }
 tauri = { version = "2.0.0", features = [] }
 tauri-plugin-dialog = "2.0.0"
 tauri-plugin-os = "2.0.0"

@@ -10,6 +10,7 @@ import react from "@vitejs/plugin-react";
  * 小さすぎる値ではライセンス JSON のチャンクについて既知のサイズ警告が発生する。
  * ## 変更履歴
  * - v1.0.0 (2026-09-26, Codex): About のライセンス一覧に合わせて上限を定義。
+ * - v1.1.0 (2026-09-29, Antigravity): RustのtargetおよびcratesディレクトリをViteのwatch対象から除外しEBUSYを防止。
  */
 const LICENSE_CATALOG_CHUNK_SIZE_KB = 3500;
 
@@ -21,8 +22,8 @@ export default defineConfig({
     port: 1420,
     strictPort: true,
     watch: {
-      // ViteがRustのtargetディレクトリやsrc-tauri配下を監視してEBUSYエラーを起こすのを防止
-      ignored: ["**/src-tauri/**"],
+      // ViteがRustのtargetディレクトリ、crates、src-tauri配下を監視してEBUSYエラーを起こすのを防止
+      ignored: ["**/src-tauri/**", "**/target/**", "**/crates/**"],
     },
   },
   envPrefix: ["VITE_", "TAURI_"],

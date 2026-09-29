@@ -11,7 +11,7 @@
 //! - v1.1.0 (2026-09-29, AI Agent): 短縮オプション、位置引数、複数パス、フォーマット自動推論、標準出力モード対応。
 
 use crate::constants;
-use crate::models::{ExportFormat, SearchQuery};
+use exlgrep_core::models::{ExportFormat, SearchQuery};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -227,7 +227,7 @@ where
             .map(String::as_str)
             .unwrap_or(constants::CLI_DEFAULT_LANGUAGE);
         validate_language(language)?;
-        let help = crate::i18n::resolve_catalog_text(
+        let help = exlgrep_core::i18n::resolve_catalog_text(
             catalogs,
             language,
             constants::CLI_TRANSLATION_HELP_KEY,
@@ -592,7 +592,27 @@ fn validate_language(language: &str) -> Result<(), String> {
 mod tests {
     use super::{parse_args, CliOutputTarget, ParseOutcome};
     use crate::constants;
-    use crate::models::ExportFormat;
+    use exlgrep_core::models::ExportFormat;
+
+    /// ## 処理内容
+    /// リポジトリルートの絶対パスを解決する。
+    /// ## 引数・戻り値
+    /// 引数なし。`PathBuf` を返す。
+    /// ## エラー
+    /// ルートが見つからない場合は panic する。
+    /// ## 変更履歴
+    /// - v1.0.0 (2026-09-29, Antigravity): クレート分離に伴うルートパス解決。
+    fn repo_root() -> std::path::PathBuf {
+        let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        if manifest.join("../../tests/fixtures").exists() {
+            manifest.join("../..")
+        } else {
+            manifest
+                .parent()
+                .expect("repository root must exist")
+                .to_path_buf()
+        }
+    }
 
     /// ## 処理内容
     /// 必須引数と固定既定値からCLI検索要求を構築し、ハイフン始まりの検索語を保つ。
@@ -605,10 +625,7 @@ mod tests {
     /// - v1.1.0 (2026-09-29, AI Agent): input_paths, output_target に追従。
     #[test]
     fn parses_required_arguments_and_fixed_defaults() {
-        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap()
-            .to_path_buf();
+        let root = repo_root();
         let input = root.join("tests/fixtures/sample_report.xlsx");
         let output = std::env::temp_dir().join(constants::CLI_TEST_OUTPUT_NAME);
         let args = [
@@ -621,7 +638,7 @@ mod tests {
             "--output".to_string(),
             output.to_string_lossy().into_owned(),
         ];
-        let catalogs = crate::i18n::load_embedded_catalogs().unwrap();
+        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
         let ParseOutcome::Run(options) = parse_args(args, &catalogs).unwrap() else {
             panic!("valid request must run");
         };
@@ -659,10 +676,7 @@ mod tests {
     /// - v1.0.0 (2026-09-29, AI Agent): 位置引数と標準出力テストを追加。
     #[test]
     fn parses_positional_arguments_and_stdout() {
-        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap()
-            .to_path_buf();
+        let root = repo_root();
         let input1 = root.join("tests/fixtures/sample_report.xlsx");
         let input2 = root.join("tests/fixtures");
         let args = [
@@ -670,7 +684,7 @@ mod tests {
             input1.to_string_lossy().into_owned(),
             input2.to_string_lossy().into_owned(),
         ];
-        let catalogs = crate::i18n::load_embedded_catalogs().unwrap();
+        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
         let ParseOutcome::Run(options) = parse_args(args, &catalogs).unwrap() else {
             panic!("valid request must run");
         };
@@ -690,10 +704,7 @@ mod tests {
     /// - v1.0.0 (2026-09-29, AI Agent): 短縮オプションとフォーマット推論テストを追加。
     #[test]
     fn parses_short_options_and_infers_format() {
-        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap()
-            .to_path_buf();
+        let root = repo_root();
         let input = root.join("tests/fixtures/sample_report.xlsx");
         let output = std::env::temp_dir().join("result.xlsx");
         let args = [
@@ -708,7 +719,7 @@ mod tests {
             "-l".to_string(),
             "en".to_string(),
         ];
-        let catalogs = crate::i18n::load_embedded_catalogs().unwrap();
+        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
         let ParseOutcome::Run(options) = parse_args(args, &catalogs).unwrap() else {
             panic!("valid request must run");
         };
@@ -729,11 +740,8 @@ mod tests {
     /// - v1.0.0 (2026-09-29, AI Agent): 重複指定拒否テストを追加。
     #[test]
     fn rejects_duplicate_positional_and_named() {
-        let catalogs = crate::i18n::load_embedded_catalogs().unwrap();
-        let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-            .parent()
-            .unwrap()
-            .to_path_buf();
+        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
+        let root = repo_root();
         let input = root.join("tests/fixtures/sample_report.xlsx");
 
         // クエリ重複
@@ -766,7 +774,7 @@ mod tests {
     /// - v1.0.0 (2026-09-29, AI Agent): 未知短縮オプション拒否テストを追加。
     #[test]
     fn rejects_unknown_short_option() {
-        let catalogs = crate::i18n::load_embedded_catalogs().unwrap();
+        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
         let args = ["-z".to_string(), "val".to_string()];
         assert!(parse_args(args, &catalogs).is_err());
     }
@@ -781,7 +789,7 @@ mod tests {
     /// - v1.0.0 (2026-09-29, Codex): 言語付きヘルプテストを追加。
     #[test]
     fn help_accepts_language_without_search_options() {
-        let catalogs = crate::i18n::load_embedded_catalogs().unwrap();
+        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
         let result = parse_args(
             [
                 constants::CLI_LONG_HELP.to_string(),

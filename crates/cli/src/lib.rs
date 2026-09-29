@@ -11,11 +11,11 @@
 //! - v1.1.0 (2026-09-29, AI Agent): 非同期パイプライン、標準出力CSV、即時エラー出力対応。
 
 pub mod args;
+pub mod constants;
 pub mod output;
 
-use crate::constants;
-use crate::models::{SearchIssue, SearchMatch, SearchReport};
 use args::{CliOptions, CliOutputTarget, ParseOutcome};
+use exlgrep_core::models::{SearchIssue, SearchMatch, SearchReport};
 use same_file::Handle;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -40,7 +40,7 @@ where
     I: IntoIterator<Item = S>,
     S: Into<std::ffi::OsString>,
 {
-    let catalogs = match crate::i18n::load_embedded_catalogs() {
+    let catalogs = match exlgrep_core::i18n::load_embedded_catalogs() {
         Ok(catalogs) => catalogs,
         Err(error) => {
             eprintln!("{}: {error}", constants::CLI_ERROR_LABEL_EN);
@@ -314,7 +314,7 @@ fn execute(
                         };
                         scanned_consumer.fetch_add(1, Ordering::Relaxed);
                         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                            crate::search::parser::parse_and_search_file(
+                            exlgrep_core::search::parser::parse_and_search_file(
                                 &path, query, regex_ref, None,
                             )
                         })) {
@@ -400,7 +400,7 @@ fn execute(
         }
         CliOutputTarget::Stdout => {
             let mut stdout = std::io::stdout().lock();
-            crate::export::write_csv_to_writer(
+            exlgrep_core::export::write_csv_to_writer(
                 &mut stdout,
                 &matches_list,
                 &options.language,
@@ -435,7 +435,7 @@ fn translate(
     language: &str,
     key: &str,
 ) -> String {
-    crate::i18n::resolve_catalog_text(catalogs, language, key)
+    exlgrep_core::i18n::resolve_catalog_text(catalogs, language, key)
         .unwrap_or_else(|| constants::CLI_FALLBACK_ENGLISH.to_string())
 }
 

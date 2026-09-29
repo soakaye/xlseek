@@ -54,7 +54,18 @@
 exlgrep/
 ├── AGENTS.md                  # 本ファイル（AI エージェント行動規範）
 ├── README.md                  # プロジェクト概要・機能説明
+├── Cargo.toml                 # Cargo ワークスペース定義 (crates/core, crates/cli, src-tauri)
 ├── package.json               # フロントエンド依存関係 & npm スクリプト
+├── crates/                    # バックエンド共有コア & 独立CLIクレート
+│   ├── core/                  # 検索エンジン・パーサー・エクスポート・共有モデル (exlgrep-core)
+│   │   ├── Cargo.toml
+│   │   ├── locales/           # 翻訳カタログ原本 (ja.yml, en.yml)
+│   │   ├── src/               # lib.rs, constants.rs, models/, search/, export/, i18n.rs
+│   │   └── tests/             # shape_*.rs 統合テスト
+│   └── cli/                   # 独立CLIバイナリ (exlgrep-cli)
+│       ├── Cargo.toml
+│       ├── src/               # main.rs, lib.rs, constants.rs, args.rs, output.rs
+│       └── tests/             # cli_search.rs, cli_output.rs 統合テスト
 ├── src/                       # フロントエンドソースコード (React / TypeScript)
 │   ├── App.tsx                # ルートコンポーネント (状態バインディング & ダイアログ統合)
 │   ├── main.tsx               # エントリポイント
@@ -68,18 +79,15 @@ exlgrep/
 │       ├── preview/           # Excel セルプレビューグリッド・数式バー
 │       ├── results/           # 検索結果テーブル (仮想スクロール表示)
 │       └── search/            # 検索入力バー・拡張子トグル・コントロール
-├── src-tauri/                 # Tauri v2 バックエンド (Rust)
-│   ├── Cargo.toml             # Rust クレート依存定義
+├── src-tauri/                 # Tauri v2 デスクトップGUIアプリケーション (exlgrep)
+│   ├── Cargo.toml             # Rust クレート依存定義 (exlgrep-core に依存)
 │   ├── tauri.conf.json        # Tauri 設定ファイル (ウィンドウ設定, 権限設定)
 │   ├── capabilities/          # Tauri v2 セキュリティケーパビリティ (default.json)
 │   └── src/
 │       ├── lib.rs             # アプリケーション初期化, メニュー構築, イベントハンドラ
 │       ├── main.rs            # 実行バイナリエントリポイント
-│       ├── constants.rs       # バックエンド定数一元定義モジュール & 単体テスト
-│       ├── commands.rs        # Tauri IPC コマンドハンドラ群
-│       ├── search/            # 検索エンジン・プレビュー抽出ロジック (engine.rs, preview.rs)
-│       ├── export/            # CSV / Excel エクスポート処理 (csv.rs, xlsx.rs)
-│       └── models/            # 内部データモデル構造体
+│       ├── constants.rs       # GUI専用定数一元定義モジュール & 単体テスト
+│       └── commands/          # Tauri IPC コマンドハンドラ群 (search, preview, export, system)
 ├── specs/                     # Spec Kit 機能仕様・計画・タスク管理ディレクトリ
 ├── design/                    # UI モックアップ & スタンドアローン HTML プロトタイプ
 └── .specify/                  # Spec Kit ワークフロー基盤
@@ -97,9 +105,9 @@ exlgrep/
 | レイヤー | 検証コマンド | 目的・合格基準 |
 | :--- | :--- | :--- |
 | **Frontend** | `npm run build` | TypeScript 型チェック (`tsc`) と Vite バンドルが正常に exit 0 で完了すること |
-| **Rust Test** | `cargo test` (in `src-tauri`) | 全単体・統合テストが 1 件の失敗もなくパスすること |
-| **Rust Clippy** | `cargo clippy --all-targets -- -D warnings` (in `src-tauri`) | コンパイラおよび Clippy の警告が 0 件であること |
-| **Rust Format** | `cargo fmt --check` (in `src-tauri`) | Rust 公式フォーマット規約に完全に適合していること |
+| **Rust Test** | `cargo test --workspace` | 全クレートの単体・統合テストが 1 件の失敗もなくパスすること |
+| **Rust Clippy** | `cargo clippy --workspace --all-targets -- -D warnings` | 全クレートでコンパイラおよび Clippy の警告が 0 件であること |
+| **Rust Format** | `cargo fmt --check` | ワークスペース全体のコードが Rust 公式フォーマット規約に完全に適合していること |
 
 ---
 

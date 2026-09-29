@@ -10,9 +10,9 @@
 //! - v1.0.0 (2026-09-28, Codex): Shape 名を含む出力契約テストを追加。
 
 use calamine::Reader;
-use exlgrep_lib::constants::*;
-use exlgrep_lib::export::{csv_export::export_to_csv, xlsx_export::export_to_xlsx};
-use exlgrep_lib::models::{MatchType, SearchMatch};
+use exlgrep_core::constants::*;
+use exlgrep_core::export::{csv_export::export_to_csv, xlsx_export::export_to_xlsx};
+use exlgrep_core::models::{MatchType, SearchMatch};
 use std::collections::BTreeMap;
 
 const TEST_OUTPUT_PREFIX: &str = "exlgrep-shape-export";

@@ -900,6 +900,7 @@ dependencies = [
  "chrono",
  "csv",
  "encoding_rs",
+ "exlgrep-core",
  "open",
  "quick-xml 0.41.0",
  "rayon",
@@ -917,6 +918,39 @@ dependencies = [
  "tauri-plugin-shell",
  "walkdir",
  "winreg",
+ "zip 0.6.6",
+]
+
+[[package]]
+name = "exlgrep-cli"
+version = "0.1.0"
+dependencies = [
+ "calamine",
+ "exlgrep-core",
+ "rayon",
+ "regex",
+ "same-file",
+ "walkdir",
+]
+
+[[package]]
+name = "exlgrep-core"
+version = "0.1.0"
+dependencies = [
+ "calamine",
+ "cfb",
+ "chrono",
+ "csv",
+ "encoding_rs",
+ "quick-xml 0.41.0",
+ "rayon",
+ "regex",
+ "rust_xlsxwriter",
+ "same-file",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "walkdir",
  "zip 0.6.6",
 ]
 

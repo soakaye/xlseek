@@ -41,6 +41,26 @@ fn unique_test_directory() -> std::path::PathBuf {
 }
 
 /// ## 処理内容
+/// リポジトリルートの絶対パスを解決する。
+/// ## 引数・戻り値
+/// 引数なし。`PathBuf` を返す。
+/// ## エラー
+/// ルートが見つからない場合は panic する。
+/// ## 変更履歴
+/// - v1.0.0 (2026-09-29, Antigravity): クレート分離に伴うルートパス解決。
+fn repo_root() -> std::path::PathBuf {
+    let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+    if manifest.join("../../tests/fixtures").exists() {
+        manifest.join("../..")
+    } else {
+        manifest
+            .parent()
+            .expect("repository root must exist")
+            .to_path_buf()
+    }
+}
+
+/// ## 処理内容
 /// 有効な単一ブックを検索し、GUIなしでCSVへ一致結果を保存する。
 /// ## 引数・戻り値
 /// 引数なし。失敗条件ではassertがテストを失敗させる。
@@ -50,10 +70,7 @@ fn unique_test_directory() -> std::path::PathBuf {
 /// - v1.0.0 (2026-09-29, Codex): CSV CLI検索のREDテストを追加。
 #[test]
 fn exports_search_results_from_a_single_workbook_without_gui() {
-    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("repository root must exist")
-        .to_path_buf();
+    let root = repo_root();
     let fixture = root.join("tests/fixtures/sample_report.xlsx");
     let output_dir = unique_test_directory();
     fs::create_dir_all(&output_dir).expect("temporary test directory must be created");
@@ -81,14 +98,14 @@ fn exports_search_results_from_a_single_workbook_without_gui() {
         .arg("--query")
         .arg(QUERY_TEXT)
         .arg("--format")
-        .arg(exlgrep_lib::constants::CLI_FORMAT_XLSX)
+        .arg(exlgrep_cli::constants::CLI_FORMAT_XLSX)
         .arg("--output")
         .arg(&xlsx)
         .output()
         .expect("CLI Excel process must start");
     assert_eq!(
         excel_result.status.code(),
-        Some(exlgrep_lib::constants::CLI_EXIT_SUCCESS)
+        Some(exlgrep_cli::constants::CLI_EXIT_SUCCESS)
     );
     let mut workbook = calamine::open_workbook_auto(&xlsx).expect("Excel output must open");
     let sheet_name = workbook.sheet_names().first().cloned().unwrap();
@@ -110,10 +127,7 @@ fn exports_search_results_from_a_single_workbook_without_gui() {
 /// - v1.1.0 (2026-09-29, Codex): CLI失敗状態のプロセス検証を追加。
 #[test]
 fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
-    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("repository root must exist")
-        .to_path_buf();
+    let root = repo_root();
     let fixture = root.join("tests/fixtures/sample_report.xlsx");
     let work = unique_test_directory();
     let empty = work.join(TEST_EMPTY_DIRECTORY_NAME);
@@ -125,17 +139,17 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
     let broken_file = broken.join(TEST_BROKEN_WORKBOOK_NAME);
     fs::write(
         &broken_file,
-        exlgrep_lib::constants::CLI_TEST_INVALID_WORKBOOK_BYTES,
+        exlgrep_cli::constants::CLI_TEST_INVALID_WORKBOOK_BYTES,
     )
     .unwrap();
     fs::copy(
         &fixture,
-        partial.join(exlgrep_lib::constants::CLI_TEST_VALID_WORKBOOK_NAME),
+        partial.join(exlgrep_cli::constants::CLI_TEST_VALID_WORKBOOK_NAME),
     )
     .unwrap();
     fs::copy(&broken_file, partial.join(TEST_BROKEN_WORKBOOK_NAME)).unwrap();
 
-    let empty_output = work.join(exlgrep_lib::constants::CLI_TEST_EMPTY_OUTPUT_NAME);
+    let empty_output = work.join(exlgrep_cli::constants::CLI_TEST_EMPTY_OUTPUT_NAME);
     assert_eq!(
         run_cli(&empty, QUERY_TEXT, &empty_output, FORMAT_CSV)
             .status
@@ -144,9 +158,9 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
     );
     assert!(fs::read(&empty_output)
         .unwrap()
-        .starts_with(&exlgrep_lib::constants::CSV_UTF8_BOM));
+        .starts_with(&exlgrep_cli::constants::CSV_UTF8_BOM));
 
-    let broken_output = work.join(exlgrep_lib::constants::CLI_TEST_BROKEN_OUTPUT_NAME);
+    let broken_output = work.join(exlgrep_cli::constants::CLI_TEST_BROKEN_OUTPUT_NAME);
     assert_eq!(
         run_cli(&broken, QUERY_TEXT, &broken_output, FORMAT_CSV)
             .status
@@ -155,9 +169,9 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
     );
     assert!(fs::read_to_string(&broken_output)
         .unwrap()
-        .contains(exlgrep_lib::constants::CLI_TEST_EXPECTED_HEADER_ID_JA));
+        .contains(exlgrep_cli::constants::CLI_TEST_EXPECTED_HEADER_ID_JA));
 
-    let partial_output = work.join(exlgrep_lib::constants::CLI_TEST_PARTIAL_OUTPUT_NAME);
+    let partial_output = work.join(exlgrep_cli::constants::CLI_TEST_PARTIAL_OUTPUT_NAME);
     assert_eq!(
         run_cli(&partial, QUERY_TEXT, &partial_output, FORMAT_CSV)
             .status
@@ -168,14 +182,14 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
         .unwrap()
         .contains(QUERY_TEXT));
 
-    let invalid_regex_output = work.join(exlgrep_lib::constants::CLI_TEST_REGEX_OUTPUT_NAME);
+    let invalid_regex_output = work.join(exlgrep_cli::constants::CLI_TEST_REGEX_OUTPUT_NAME);
     let invalid_regex = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
         .arg("--path")
         .arg(&fixture)
         .arg("--query")
-        .arg(exlgrep_lib::constants::CLI_TEST_INVALID_REGEX)
+        .arg(exlgrep_cli::constants::CLI_TEST_INVALID_REGEX)
         .arg("--regex")
-        .arg(exlgrep_lib::constants::CLI_BOOLEAN_TRUE)
+        .arg(exlgrep_cli::constants::CLI_BOOLEAN_TRUE)
         .arg("--format")
         .arg(FORMAT_CSV)
         .arg("--output")
@@ -197,10 +211,7 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
 /// - v1.0.0 (2026-09-29, AI Agent): 位置引数とstdoutストリーミングのテストを追加。
 #[test]
 fn exports_search_results_to_stdout_with_positional_arguments() {
-    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("repository root must exist")
-        .to_path_buf();
+    let root = repo_root();
     let fixture1 = root.join("tests/fixtures/sample_report.xlsx");
     let fixture2 = root.join("tests/fixtures");
 
@@ -216,7 +227,7 @@ fn exports_search_results_to_stdout_with_positional_arguments() {
     // stdoutはBOMなしプレーンUTF-8 CSVであること
     assert!(!result
         .stdout
-        .starts_with(&exlgrep_lib::constants::CSV_UTF8_BOM));
+        .starts_with(&exlgrep_cli::constants::CSV_UTF8_BOM));
 
     let stdout_str = String::from_utf8(result.stdout).expect("stdout must be valid UTF-8");
     assert!(stdout_str.contains(QUERY_TEXT));
@@ -236,10 +247,7 @@ fn exports_search_results_to_stdout_with_positional_arguments() {
 /// - v1.0.0 (2026-09-29, AI Agent): 短縮オプションとフォーマット推論テストを追加。
 #[test]
 fn supports_short_options_and_format_inference() {
-    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("repository root must exist")
-        .to_path_buf();
+    let root = repo_root();
     let fixture = root.join("tests/fixtures/sample_report.xlsx");
     let output_dir = unique_test_directory();
     fs::create_dir_all(&output_dir).expect("temporary test directory must be created");
@@ -284,10 +292,7 @@ fn supports_short_options_and_format_inference() {
 /// - v1.0.0 (2026-09-29, AI Agent): 非同期パイプライン即時エラー通知テストを追加。
 #[test]
 fn notifies_errors_in_realtime_during_async_pipeline() {
-    let root = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .expect("repository root must exist")
-        .to_path_buf();
+    let root = repo_root();
     let fixture = root.join("tests/fixtures/sample_report.xlsx");
     let work = unique_test_directory();
     let mixed_dir = work.join("mixed");
@@ -296,12 +301,12 @@ fn notifies_errors_in_realtime_during_async_pipeline() {
     let broken_file = mixed_dir.join(TEST_BROKEN_WORKBOOK_NAME);
     fs::write(
         &broken_file,
-        exlgrep_lib::constants::CLI_TEST_INVALID_WORKBOOK_BYTES,
+        exlgrep_cli::constants::CLI_TEST_INVALID_WORKBOOK_BYTES,
     )
     .unwrap();
     fs::copy(
         &fixture,
-        mixed_dir.join(exlgrep_lib::constants::CLI_TEST_VALID_WORKBOOK_NAME),
+        mixed_dir.join(exlgrep_cli::constants::CLI_TEST_VALID_WORKBOOK_NAME),
     )
     .unwrap();
 

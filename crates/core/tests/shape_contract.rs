@@ -9,7 +9,7 @@
 //! ## 変更履歴
 //! - v1.0.0 (2026-09-28, Codex): Shape 検索契約テストを追加。
 
-use exlgrep_lib::models::{MatchType, SearchMatch, SearchQuery};
+use exlgrep_core::models::{MatchType, SearchMatch, SearchQuery};
 
 /// ## 処理内容
 /// include_shape を省略した検索要求が有効として解釈され、Shape 一致種別が安定して直列化されることを確認する。

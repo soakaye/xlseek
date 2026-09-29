@@ -8,14 +8,12 @@
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。constantsモジュールの公開と憲章準拠ヘッダコメントの追加。
 //! - v1.1.0 (2026-09-26, AI Agent): macOSシステムメニューのカスタム構築 (create_app_menu) および About ダイアログ用メニューイベントハンドラ (on_menu_event) の追加。
 //! - v1.3.0 (2026-09-29, Codex): GUIと独立したCLIモジュールを公開。
+//! - v1.4.0 (2026-09-29, Antigravity): CLIモジュールをcrates/cliへ分離し、共有モジュールをexlgrep_coreから再エクスポート。
 
-pub mod cli;
 pub mod commands;
 pub mod constants;
-pub mod export;
-pub mod i18n;
-pub mod models;
-pub mod search;
+
+pub use exlgrep_core::{export, i18n, models, search};
 
 use commands::AppState;
 use search::engine::SearchEngine;
