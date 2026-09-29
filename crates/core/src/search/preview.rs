@@ -79,13 +79,18 @@ pub fn extract_cell_preview<P: AsRef<Path>>(
         )
     })?;
 
+    let (range_start_row, range_start_col) = range.start().unwrap_or_default();
+
     // Read formula map if available
     let formula_map = if let Ok(f_range) = workbook.worksheet_formula(sheet_name) {
+        let (f_start_row, f_start_col) = f_range.start().unwrap_or_default();
         let mut map: HashMap<(u32, u32), String> = HashMap::new();
         for (r, row) in f_range.rows().enumerate() {
             for (c, formula) in row.iter().enumerate() {
                 if !formula.is_empty() {
-                    map.insert((r as u32, c as u32), formula.clone());
+                    let absolute_r = r as u32 + f_start_row;
+                    let absolute_c = c as u32 + f_start_col;
+                    map.insert((absolute_r, absolute_c), formula.clone());
                 }
             }
         }
@@ -104,17 +109,23 @@ pub fn extract_cell_preview<P: AsRef<Path>>(
             let col_name = col_to_name(c);
             let is_target = r == target_row_0based && c == target_col_0based;
 
-            let value_str = if let Some(cell_data) = range.get((r as usize, c as usize)) {
-                match cell_data {
-                    Data::Empty => String::new(),
-                    Data::String(s) => s.clone(),
-                    Data::Float(f) => f.to_string(),
-                    Data::Int(i) => i.to_string(),
-                    Data::Bool(b) => b.to_string(),
-                    Data::DateTime(d) => d.to_string(),
-                    Data::DateTimeIso(d) => d.clone(),
-                    Data::DurationIso(d) => d.clone(),
-                    Data::Error(e) => format!("{:?}", e),
+            let value_str = if r >= range_start_row && c >= range_start_col {
+                let rel_r = (r - range_start_row) as usize;
+                let rel_c = (c - range_start_col) as usize;
+                if let Some(cell_data) = range.get((rel_r, rel_c)) {
+                    match cell_data {
+                        Data::Empty => String::new(),
+                        Data::String(s) => s.clone(),
+                        Data::Float(f) => f.to_string(),
+                        Data::Int(i) => i.to_string(),
+                        Data::Bool(b) => b.to_string(),
+                        Data::DateTime(d) => d.to_string(),
+                        Data::DateTimeIso(d) => d.clone(),
+                        Data::DurationIso(d) => d.clone(),
+                        Data::Error(e) => format!("{:?}", e),
+                    }
+                } else {
+                    String::new()
                 }
             } else {
                 String::new()
@@ -168,5 +179,40 @@ mod tests {
         assert!(result.is_err());
         let err_msg = result.unwrap_err();
         assert!(err_msg.contains(crate::constants::ERR_WORKBOOK_OPEN));
+    }
+
+    /// ## Description
+    /// Verifies that extract_cell_preview extracts cells correctly even when the worksheet range
+    /// begins after A1 (non-zero start offset).
+    ///
+    /// ## Arguments
+    /// None
+    ///
+    /// ## Returns
+    /// None
+    ///
+    /// ## Errors / Exceptions
+    /// Panics if an assertion fails or fixture cannot be read.
+    #[test]
+    fn test_extract_cell_preview_range_with_start_offset() {
+        let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let root = if manifest.join("../../tests/fixtures").exists() {
+            manifest.join("../..")
+        } else {
+            manifest.parent().unwrap().to_path_buf()
+        };
+        let fixture = root.join("tests/fixtures/sample_report.xlsx");
+        // In sample_report.xlsx, Data range starts at A12 (0-based row 11)
+        let result = extract_cell_preview(&fixture, "Data", 12, 1).expect("preview should succeed");
+        assert_eq!(result.target_row, 12);
+        assert_eq!(result.target_col, 1);
+        let target_row = result
+            .rows
+            .iter()
+            .find(|r| r.row_number == 12)
+            .expect("row 12 must be present");
+        let target_cell = target_row.cells.get("A").expect("cell A must be present");
+        assert!(target_cell.is_target);
+        assert_eq!(target_cell.value, "Financial Report Q3");
     }
 }
