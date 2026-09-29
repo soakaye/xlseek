@@ -23,12 +23,20 @@ ui.EXPORT_CSV_SAVED: "CSV file saved: {path}"
 ui.EXPORT_XLSX_SAVED: "Excel file saved: {path}"
 ui.EXPORT_CSV_FILTER_NAME: CSV file
 cli.HELP: |
-  Usage: exlgrep-cli --path PATH --query TEXT --format csv|xlsx --output PATH [OPTIONS]
-  Options: --match-case BOOL --regex BOOL --values BOOL --formulas BOOL
-           --comments BOOL --shapes BOOL --hidden-sheets BOOL
-           --extensions LIST --language ja|en --overwrite --help
-  Defaults: match-case=false regex=false values=true formulas=true comments=true
-            shapes=false hidden-sheets=false extensions=.xlsx,.xlsm,.xlsb,.xls language=ja
+  Usage: exlgrep-cli [OPTIONS] [QUERY] [PATH]...
+  Positional arguments: 1st argument = search query, 2nd+ arguments = target path(s)
+  Main options:
+    -q, --query TEXT         Search keyword or regex
+    -p, --path PATH          Target file or directory
+    -o, --output PATH        Output file path (prints CSV to stdout if omitted)
+    -f, --format csv|xlsx    Output format (auto-inferred from extension if omitted)
+    -c, --match-case BOOL    Case sensitive matching (default: false)
+    -r, --regex BOOL         Regular expression (default: false)
+    -w, --overwrite          Overwrite existing output file
+    -l, --language ja|en     Output language (default: ja)
+    -e, --extensions LIST    Excel extensions (.xlsx,.xlsm,.xlsb,.xls)
+    -h, --help               Display help
+    --values BOOL, --formulas BOOL, --comments BOOL, --shapes BOOL, --hidden-sheets BOOL
   --help and -h may be combined only with --language ja|en.
 cli.ERROR: Error
 cli.SUMMARY: "Search complete: {scanned} files, {matches} matches, saved to {path}"

@@ -66,8 +66,8 @@ auto_commit:
     enabled: false
     message: "[Spec Kit] Add tasks"
   after_implement:
-    enabled: false
-    message: "[Spec Kit] Implementation progress"
+    enabled: true
+    message: "feat(cli): 短縮オプション・位置引数・非同期パイプライン・標準出力CSVストリーミング対応"
   after_checklist:
     enabled: false
     message: "[Spec Kit] Add checklist"

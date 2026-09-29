@@ -23,12 +23,20 @@ ui.EXPORT_CSV_SAVED: "CSVファイルを保存しました: {path}"
 ui.EXPORT_XLSX_SAVED: "Excelファイルを保存しました: {path}"
 ui.EXPORT_CSV_FILTER_NAME: CSVファイル
 cli.HELP: |
-  使用方法: exlgrep-cli --path PATH --query TEXT --format csv|xlsx --output PATH [OPTIONS]
-  オプション: --match-case BOOL --regex BOOL --values BOOL --formulas BOOL
-             --comments BOOL --shapes BOOL --hidden-sheets BOOL
-             --extensions LIST --language ja|en --overwrite --help
-  既定値: match-case=false regex=false values=true formulas=true comments=true
-          shapes=false hidden-sheets=false extensions=.xlsx,.xlsm,.xlsb,.xls language=ja
+  使用方法: exlgrep-cli [OPTIONS] [QUERY] [PATH]...
+  位置引数: 第1引数=検索文字列, 第2引数以降=検索対象パス (複数指定可能)
+  主なオプション:
+    -q, --query TEXT         検索文字列
+    -p, --path PATH          検索対象パス
+    -o, --output PATH        出力先ファイル (省略時は標準出力へCSV出力)
+    -f, --format csv|xlsx    出力形式 (省略時は拡張子から自動推論)
+    -c, --match-case BOOL    大文字/小文字を区別 (既定: false)
+    -r, --regex BOOL         正規表現として解釈 (既定: false)
+    -w, --overwrite          既存出力先の上書きを許可
+    -l, --language ja|en     出力言語 (既定: ja)
+    -e, --extensions LIST    対象拡張子 (.xlsx,.xlsm,.xlsb,.xls)
+    -h, --help               ヘルプを表示
+    --values BOOL, --formulas BOOL, --comments BOOL, --shapes BOOL, --hidden-sheets BOOL
   --help と -h は --language ja|en だけ併用できます。
 cli.ERROR: エラー
 cli.SUMMARY: "検索完了: {scanned} ファイル、{matches} 件一致、保存先 {path}"
