@@ -3,55 +3,29 @@
 <head>
   <!--
     /**
-     * @fileoverview Excel Grep 最新画面構成プロトタイプ (design/mainui/index.html)
+     * @fileoverview Excel Grep Standalone UI Prototype (design/mainui/index.html)
      *
-     * ## 処理内容
-     * Excel Grep アプリケーションの最新UI画面構成（Tauri v2 + React + Tailwind CSS）を完全再現した
-     * スタンドアローンHTML/CSS/JSプロトタイプ。
-     * - OSネイティブウィンドウ装飾への準拠（独自カスタムタイトルバーの廃止）
-     * - フォルダドラッグ＆ドロップ対応検索バー
-     * - 仮想スクロール風結果テーブル（ソート・絞り込み・キーボード移動）
-     * - アプリ連携スプリットボタン（OS既定起動、サポートアプリドロップダウン、関連付けダイアログ）
-     * - 独立パス表示行とクリップボードコピー
-     * - Excel風数式バー、周辺セルグリッド、ワークシート切替タブ、詳細メタ情報カード
-     * - ステータスバー（進捗インジケーター、CSV/Excel出力）
-     * - 対象拡張子トグル選択ピル（.xlsx, .xlsm, .xlsb, .xls）
-     * - トースト通知
-     * 憲章原則I（自然かつ正確な日本語）、原則III（網羅的なヘッダコメント）に準拠。
+     * ## Description
+     * Complete standalone HTML/CSS/JS prototype replicating the Excel Grep application UI
+     * (Tauri v2 + React + Tailwind CSS).
+     * - Native OS window framing
+     * - Drag & drop folder search bar
+     * - Virtual scrolling style results table (sorting, filtering, keyboard navigation)
+     * - Associated app split button (OS default launch, app dropdown, open-with dialog)
+     * - Dedicated file path row and clipboard copy
+     * - Excel-style formula bar, cell preview grid, sheet tabs, and metadata cards
+     * - Status bar (progress indicator, CSV/Excel export)
+     * - Extension toggle pills (.xlsx, .xlsm, .xlsb, .xls)
+     * - Toast notifications
+     * Conforms to Constitution Principle I (English code/comments) and Principle III (Header comments).
      *
-     * ## 構成要素
-     * - Tailwind CSS CDN: スタイリングエンジン
-     * - Lucide Icons CDN: アイコン描画
-     * - Mock Data & Interactive Controller: インタラクティブUI操作ロジック
+     * ## Components
+     * - Tailwind CSS CDN: Styling engine
+     * - Lucide Icons CDN: Icon rendering
+     * - Mock Data & Interactive Controller: Interactive UI simulation logic
      *
-     * ## エラー・例外条件
-     * - 静的HTMLファイルのため外部通信エラーは発生しない。クリップボードAPI非対応環境ではフォールバックトーストを表示。
-     *
-     * ## 変更履歴
-     * - v1.0.0 (2026-09-25, AI Agent): 初版プロトタイプ作成。
-     * - v2.0.0 (2026-09-26, AI Agent): 現行Reactコンポーネント構成（002-launch-associated-app、003-macos-support、004-align-with-constitution）に完全準拠し全面刷新。
-     * - v2.1.0 (2026-09-26, AI Agent): デザインレビューフィードバック対応。プログレスバーをメッセージ前（固定幅 w-44）へ配置変更し、ファイル読み込み前のフォルダスキャン中表示（対象フォルダ名表示）を導入。
-     * - v2.2.0 (2026-09-26, AI Agent): デザインフィードバック対応。ステータスバーのCalamine Engine表示を削除し、対象拡張子バッジをトグル選択ボタンへ変更。
-     * - v2.3.0 (2026-09-26, AI Agent): デザインレビューフィードバック対応。検索結果リスト（16件全拡張子網羅）および周辺セルプレビュー（縦横スクロール・全方向固定見出し対応）のサンプルデータを大幅拡充。
-     * - v2.4.0 (2026-09-26, AI Agent): プレビュー領域のスクロールレイアウト改修。overflow-hiddenによる横スクロール遮断を解消し、縦横両方向のスムーズなスクロールと行・列固定見出し（Freeze Panes）を両立。
-     * - v2.5.0 (2026-09-26, AI Agent): デザインレビューフィードバック対応。
-     *   1) 検索キーワード入力欄にて日本語入力(IME)確定時のEnterによる誤爆発火を防止（WebKit/Safari・Chromium両対応）。フォルダ入力欄はEnterによる検索実行を排除し、入力中のEnterキーを無視（それ以外はデフォルト動作）。
-     *   2) 周辺セルプレビューグリッドのサンプルデータ行を大幅拡充（30行以上確保）し、縦スクロールおよび行列固定見出し（Freeze Panes）の動作確認を可能に改善。
-     * - v2.6.0 (2026-09-26, AI Agent): アプリ情報・オープンソースライセンス閲覧モーダル (About Dialog) を追加同期。
-     *   ステータスバー最右端にInfoアイコンボタンを配置し、アプリ基本情報表示および左右2ペインの
-     *   マスター／ディテールライセンス一覧（リアルタイム検索・ライセンス本文ワンクリックコピー）を完全シミュレート。
-     * - v2.7.0 (2026-09-26, AI Agent): 並行ファイル走査・即時検索パイプライン対応。ステータスバーにおける未確定時アニメーションパルスおよび検出・走査中ファイル数表示、進捗フェーズ遷移ロジックを同期。
-     * - v2.9.0 (2026-09-26, Codex): 設定モックで既定言語をブラウザーのシステム言語に合わせる。
-     * - v2.10.0 (2026-09-27, Codex): 検索履歴・ディレクトリ補完・保存件数設定 UI を追加。
-     * - v2.11.0 (2026-09-27, Codex): 履歴・補完のフォーカス離脱時の非表示を同期。
-     * - v2.11.1 (2026-09-27, Codex): フォルダ参照時の履歴・補完の非表示を同期。
-     * - v3.0.0 (2026-09-27, Codex): 検索結果タイプバッジを折り返さず、省略表示するよう同期。
-     * - v3.1.0 (2026-09-27, Codex): 検索結果一覧の一致種別ラベルを詳細情報から分け、短い表示名へ同期。
-     * - v3.2.0 (2026-09-27, Codex): 進捗欄の件数表示を短縮し、固定幅内での省略を同期。
-     * - v3.3.0 (2026-09-27, Codex): 履歴リストのキー操作をアプリに同期。
-     * - v3.4.0 (2026-09-27, Codex): 入力欄にフォーカスが残る場合の下矢印移動を同期。
-     * - v3.5.0 (2026-09-27, Codex): 履歴クリック後のフォーカスをボタンへ同期。
-     * - v3.6.0 (2026-09-28, Codex): Shape 検索トグルと Shape 結果選択時の詳細表示を同期。
+     * ## Errors / Exceptions
+     * Static HTML file; external network errors do not occur. Fallback toast is displayed when clipboard API is unavailable.
      */
   -->
   <meta charset="UTF-8">
@@ -8598,7 +8572,7 @@
       const keywordHistory = ["Financial Report Q3", "Revenue", "顧客一覧"];
       const directoryHistory = ["/Users/soakaye/Documents/Reports/", "/Users/soakaye/Documents/Books/"];
       let completionTimer;
-      // 処理内容: 対応する入力欄の履歴または候補を表示する。引数・戻り値: 候補配列、欄の種類、履歴かどうかを受け、戻り値なし。エラー: 候補が空なら空状態を表示。変更履歴: v1.2.0 (2026-09-27, Codex): 履歴のキー移動と取消しを追加。
+      // Description: Displays history or completion candidates for the input field. Arguments/Returns: values array, field type, isHistory flag. No return value. Errors: Displays empty state if values is empty.
       const showHistory = (values, field, isHistory = true) => {
         const popup = field === "keyword" ? keywordHistoryPopup : historyPopup;
         (field === "keyword" ? historyPopup : keywordHistoryPopup).classList.add("hidden");

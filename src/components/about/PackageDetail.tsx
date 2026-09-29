@@ -1,34 +1,18 @@
 /**
- * @fileoverview パッケージ詳細ビューコンポーネント (src/components/about/PackageDetail.tsx)
+ * @fileoverview Package detail view component (src/components/about/PackageDetail.tsx)
  *
- * ## 処理内容
- * Aboutダイアログ「オープンソースライセンス」タブの右ペイン（幅60%相当）を担う。
- * 選択中パッケージのメタヘッダー情報（名称、バージョン、SPDXライセンス、著作者、リポジトリURL）
- * および独立スクロール可能な正規ライセンス全文を描画する。
- * ライセンス本文のクリップボードコピーボタンと視覚フィードバック表示を統合する。
- * 未選択時（検索0件等）は案内プレースホルダーを表示する。
- * 憲章原則I（自然かつ正確な日本語）、原則II（定数の一元化）、原則III（網羅的なヘッダコメント）、原則IV（モジュール設計）に準拠。
- *
- * ## プロパティ (PackageDetailProps)
- * - `package`: PackageLicenseRecord | null - 表示対象のパッケージレコード
- * - `onCopyLicense`: (text: string) => void - ライセンス本文コピー要求コールバック
- * - `isCopied`: boolean - コピー完了フィードバック表示中フラグ
- *
- * ## 戻り値
- * - `React.ReactElement`: パッケージ詳細およびライセンス本文要素
- *
- * ## エラー・例外条件
- * - パッケージが null の場合は定数案内 `SELECT_PACKAGE_PROMPT` を中央表示する。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。詳細ヘッダー、コピー操作、および全文表示UIの実装。
+ * ## Description
+ * Manages the right pane (60% width) in the About dialog "Open Source Licenses" tab.
+ * Renders selected package metadata (name, version, SPDX license, author, repository URL)
+ * and independently scrollable full license text.
+ * Integrates clipboard copy button and visual feedback.
+ * Complies with Constitution Principle I (English documentation), Principle II (constant reference), Principle III (comprehensive documentation), and Principle IV (modular design).
  */
 
 import React from "react";
 import { Copy, Check } from "lucide-react";
 import { PackageLicenseRecord } from "../../types/license";
 import { useTranslation } from "../../i18n";
-
 
 export interface PackageDetailProps {
   package: PackageLicenseRecord | null;
@@ -37,17 +21,17 @@ export interface PackageDetailProps {
 }
 
 /**
- * パッケージ詳細ビューコンポーネント
+ * ## Description
+ * Package detail view component.
  *
- * ## 処理詳細
- * 選択パッケージの詳細属性およびライセンス全文を表示し、ワンクリックでのコピー実行と
- * 状態変化フィードバックを提供する。
- *
- * ## 引数
+ * ## Arguments
  * @param props - PackageDetailProps
  *
- * ## 戻り値
- * @returns レンダリング要素
+ * ## Returns
+ * @returns Rendered element
+ *
+ * ## Errors / Exceptions
+ * Shows guidance placeholder when package is null.
  */
 export const PackageDetail: React.FC<PackageDetailProps> = ({
   package: pkg,
@@ -67,7 +51,7 @@ export const PackageDetail: React.FC<PackageDetailProps> = ({
 
   return (
     <div className="flex-1 flex flex-col bg-[#18181b] min-w-0 overflow-hidden">
-      {/* 詳細ヘッダー */}
+      {/* Detail header */}
       <div className="p-4 border-b border-zinc-800 flex-shrink-0 bg-[#161618]">
         <div className="flex items-start justify-between gap-3 mb-2">
           <div>
@@ -82,7 +66,7 @@ export const PackageDetail: React.FC<PackageDetailProps> = ({
             </div>
           </div>
 
-          {/* コピーボタン */}
+          {/* Copy button */}
           <button
             type="button"
             onClick={() => onCopyLicense(pkg.license_text)}
@@ -106,7 +90,7 @@ export const PackageDetail: React.FC<PackageDetailProps> = ({
           </button>
         </div>
 
-        {/* メタ情報（著作者・リポジトリ） */}
+        {/* Metadata (Author, Repository) */}
         <div className="space-y-1 text-xs text-zinc-400">
           {pkg.author && (
             <div className="flex items-baseline gap-2">
@@ -129,7 +113,7 @@ export const PackageDetail: React.FC<PackageDetailProps> = ({
         </div>
       </div>
 
-      {/* ライセンス本文スクロールビュー */}
+      {/* License text scrollview */}
       <div className="flex-1 flex flex-col p-4 min-h-0 bg-[#141416]">
         <div className="text-[11px] text-zinc-400 font-medium mb-1.5 flex items-center justify-between">
           <span>{t("about.LICENSE_TEXT_LABEL")}</span>

@@ -1,8 +1,7 @@
 /**
- * 処理内容: 言語と検索履歴の保存件数設定 UI を検証する。
- * 引数・戻り値: Vitest がテストを実行し、ダイアログの表示・入力制約・コールバックを確認する。
- * エラー: 表示または入力制約が仕様に反する場合はテストが失敗する。
- * 変更履歴: v1.0.0 (2026-09-26, AI Agent): 言語設定 UI テストを追加。v1.1.0 (2026-09-27, Codex): 履歴上限の検証を追加。
+ * Description: Unit and integration tests for settings.test.tsx.
+ * Arguments & Returns: Vitest runs test suites; no public arguments or return values.
+ * Errors: Test assertions fail if behavior deviates from requirements.
  */
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

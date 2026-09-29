@@ -1,19 +1,10 @@
 /**
- * @fileoverview ステータスバーUIコンポーネント (src/components/common/StatusBar.tsx)
+ * @fileoverview Status bar UI component (src/components/common/StatusBar.tsx)
  *
- * ## 処理内容
- * 画面下部にスキャン進捗状態、走査ファイル数、ヒット件数、経過時間を表示する。
- * プログレスバー描画および検索結果のCSV/Excelエクスポート実行ボタンを提供する。
- * 憲章原則I（日本語表示）、原則II（定数参照）、原則III（ヘッダコメント）に準拠。
- *
- * ## 変更履歴
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化（COMMANDS.EXPORT_RESULTS）およびJSDoc付与。
- * - v1.1.0 (2026-09-26, AI Agent): デザイン改善フィードバック対応。プログレスバーをメッセージ前（固定幅 w-44）へ配置変更し、ファイル読み込み前のフォルダスキャン中表示（対象フォルダ名表示）を導入。
- * - v1.2.0 (2026-09-26, AI Agent): デザインフィードバック対応。フッター右側のCalamine Engineバッジ表示を削除。
- * - v1.3.0 (2026-09-26, AI Agent): 最右端にAboutダイアログ起動ボタン（Infoアイコン）を追加。
- * - v1.4.0 (2026-09-26, AI Agent): 並行ファイル走査・即時検索パイプライン対応。総数未確定時のパルス表示および検出・走査中ファイル数表示の実装、定数参照の拡充。
- * - v1.5.0 (2026-09-27, Codex): 固定幅の進捗欄を短い件数表示にし、文字のはみ出しを防止。
+ * ## Description
+ * Displays scan progress state, scanned file count, match count, and elapsed time at the bottom of the screen.
+ * Renders progress bar and triggers CSV/Excel export buttons for search results.
+ * Complies with Constitution Principle I (English documentation), Principle II (constant reference), and Principle III (comprehensive documentation).
  */
 
 import React from "react";
@@ -35,23 +26,17 @@ interface StatusBarProps {
 }
 
 /**
- * ## 処理内容
- * アプリケーションの最下部ステータスバーを表示するコンポーネント。
+ * ## Description
+ * Component displaying the bottom status bar of the application.
  *
- * ## 引数
- * @param props - 進捗情報、検索結果一覧、トースト通知コールバック、Aboutダイアログ表示ハンドラ
+ * ## Arguments
+ * @param props - Progress details, result match list, toast callback, About modal opener, settings opener
  *
- * ## 戻り値
- * @returns レンダリング要素
+ * ## Returns
+ * @returns Rendered status bar element
  *
- * ## エラー / 例外発生条件
- * エクスポート失敗時はトースト通知で日本語エラーを表示する。例外は外部へスローしない。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
- * - v1.3.0 (2026-09-26, AI Agent): onOpenAbout プロパティの追加。
- * - v1.4.0 (2026-09-26, AI Agent): パイプライン並行化に伴う未確定時アニメーション・文言切り替えの追加。
- * - v1.5.0 (2026-09-27, Codex): 進捗欄の短縮表示と省略制約を追加。
+ * ## Errors / Exceptions
+ * Export failures trigger toast notifications; no uncaught exceptions are thrown.
  */
 export const StatusBar: React.FC<StatusBarProps> = ({
   progress,
@@ -82,13 +67,13 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
   const handleExport = async (format: "csv" | "xlsx") => {
     if (items.length === 0) {
-      // 定数参照: t("ui.EXPORT_NO_RESULTS_MSG")
+      // Translation reference: t("ui.EXPORT_NO_RESULTS_MSG")
       onShowToast("ui.EXPORT_NO_RESULTS_MSG");
       return;
     }
 
     try {
-      // 定数参照: t("ui.EXPORT_DEFAULT_FILENAME_PREFIX")
+      // Translation reference: t("ui.EXPORT_DEFAULT_FILENAME_PREFIX")
       const defaultFilename = `${t("ui.EXPORT_DEFAULT_FILENAME_PREFIX")}${new Date()
         .toISOString()
         .slice(0, 10)}.${format}`;
@@ -96,7 +81,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       const selectedPath = await save({
         filters: [
           {
-            // 定数参照: t("ui.EXPORT_CSV_FILTER_NAME") / t("ui.EXPORT_XLSX_FILTER_NAME")
+            // Translation reference: t("ui.EXPORT_CSV_FILTER_NAME") / t("ui.EXPORT_XLSX_FILTER_NAME")
             name:
               format === "csv"
                 ? t("ui.EXPORT_CSV_FILTER_NAME")
@@ -116,20 +101,20 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         language,
       };
 
-      // 定数参照: COMMANDS.EXPORT_RESULTS を使用
+      // Constant reference: COMMANDS.EXPORT_RESULTS
       await invoke(COMMANDS.EXPORT_RESULTS, { request: req });
-      // 翻訳参照: エクスポート形式ごとのメッセージキーと差込パスを保存する。
+      // Translation reference: formats path interpolation
       onShowToast(format === "csv" ? "ui.EXPORT_CSV_SAVED" : "ui.EXPORT_XLSX_SAVED", { path: selectedPath });
     } catch {
       console.error("[StatusBar] Export failed");
-      // 定数参照: t("ui.EXPORT_ERROR_PREFIX")
+      // Translation reference: t("ui.EXPORT_FAILED")
       onShowToast("ui.EXPORT_FAILED");
     }
   };
 
   const statusText = (() => {
     if (!progress) {
-      // 定数参照: t("ui.STATUS_IDLE")
+      // Translation reference: t("ui.STATUS_IDLE")
       return t("ui.STATUS_IDLE");
     }
     const elapsedSec = (progress.elapsed_ms / 1000).toFixed(2);
@@ -141,16 +126,16 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         if (!isDetermined) {
           if (progress.phase === "preparing") return t("ui.STATUS_SCAN_PREPARING");
           if (progress.scanned_files === 0) {
-            // 定数参照: t("ui.FOLDER_SCANNING_PREFIX") / FOLDER_SEARCHING_DEFAULT
+            // Translation reference: t("ui.FOLDER_SCANNING_PREFIX") / FOLDER_SEARCHING_DEFAULT
             return `${t("ui.FOLDER_SCANNING_PREFIX")}${progress.current_file || t("ui.FOLDER_SEARCHING_DEFAULT")}`;
           }
-          // 定数参照: t("ui.STATUS_DISCOVERING_PREFIX")
+          // Translation reference: t("ui.STATUS_DISCOVERING_DETAIL")
           return `${t("ui.STATUS_DISCOVERING_DETAIL")}: ${progress.scanned_files} ${fileUnit} (${progress.matches_found} ${matchUnit}, ${elapsed}) - ${progress.current_file}`;
         }
-        // 定数参照: t("ui.STATUS_SCANNING_PREFIX")
+        // Translation reference: t("ui.STATUS_SCANNING_DETAIL")
         return `${t("ui.STATUS_SCANNING_DETAIL")}: ${progress.scanned_files}/${progress.total_files} ${fileUnit} (${progress.matches_found} ${matchUnit}, ${elapsed}) - ${progress.current_file}`;
       case "Completed":
-        // 定数参照: t("ui.STATUS_COMPLETED_PREFIX")
+        // Translation reference: t("ui.STATUS_COMPLETED_PREFIX")
         return `${t("ui.STATUS_COMPLETED_PREFIX")}${progress.matches_found} ${matchUnit} (${progress.scanned_files} ${fileUnit}, ${elapsed})`;
       case "Cancelled":
         return `${t("ui.STATUS_CANCELLED_DETAIL")}: ${progress.matches_found} ${matchUnit} (${progress.scanned_files} ${fileUnit})`;
@@ -161,9 +146,9 @@ export const StatusBar: React.FC<StatusBarProps> = ({
 
   return (
     <footer className="h-10 bg-[#18181b] border-t border-zinc-800 px-4 flex items-center justify-between text-xs text-zinc-400 flex-shrink-0 select-none">
-      {/* 検索メトリクス & 進捗 */}
+      {/* Search metrics & progress */}
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        {/* 状態インジケーター */}
+        {/* Status indicator light */}
         <span
           className={`w-2 h-2 rounded-full flex-shrink-0 ${
             isScanning
@@ -176,7 +161,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           }`}
         />
 
-        {/* プログレスバー (メッセージの前に固定幅 w-44 で配置: 可変テキストによる位置ズレを防止) */}
+        {/* Progress bar (fixed width w-44 placed before message to avoid layout shifts) */}
         <div className="flex items-center gap-2 flex-shrink-0 w-44">
           <div className="w-24 bg-zinc-800 h-1.5 rounded-full overflow-hidden border border-zinc-700/50 flex-shrink-0">
             <div
@@ -204,10 +189,10 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           </span>
         </div>
 
-        {/* 縦仕切り線 */}
+        {/* Vertical divider */}
         <div className="h-3.5 w-px bg-zinc-800 flex-shrink-0" />
 
-        {/* ステータステキスト (可変長・右側へ伸長・truncate) */}
+        {/* Status text (variable length, truncated) */}
         <span
           className="text-zinc-200 font-medium truncate flex-1"
           title={statusText}
@@ -216,7 +201,7 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         </span>
       </div>
 
-      {/* 右側: エクスポートボタン群 */}
+      {/* Right controls: Export and dialog triggers */}
       <div className="flex items-center gap-2 flex-shrink-0">
         <button type="button" onClick={onOpenSettings} title={t("ui.SETTINGS")} aria-label={t("ui.SETTINGS")} className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded border border-zinc-700/60 transition flex items-center justify-center cursor-pointer">
           <Settings className="w-3.5 h-3.5" />
@@ -240,14 +225,14 @@ export const StatusBar: React.FC<StatusBarProps> = ({
           <span>{t("ui.EXPORT_XLSX_BUTTON")}</span>
         </button>
 
-        {/* 縦仕切り線 */}
+        {/* Vertical divider */}
         <div className="h-3.5 w-px bg-zinc-800 flex-shrink-0" />
 
-        {/* Aboutダイアログ起動ボタン */}
+        {/* About dialog trigger button */}
         <button
           type="button"
           onClick={onOpenAbout}
-          /* 定数参照: t("about.BUTTON_ABOUT_TOOLTIP") */
+          /* Translation reference: t("about.BUTTON_ABOUT_TOOLTIP") */
           title={t("about.BUTTON_ABOUT_TOOLTIP")}
           className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded border border-zinc-700/60 transition flex items-center justify-center cursor-pointer"
         >

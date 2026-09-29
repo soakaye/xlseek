@@ -1,24 +1,20 @@
-//! # Shape 検索契約テスト
+//! # Shape Search Contract Test
 //!
-//! ## 処理内容
-//! Shape 検索クエリの省略時既定値と Shape 結果モデルのシリアライズ契約を検証する。
-//! ## 引数・戻り値
-//! 引数なし。Serde の変換結果をアサーションで検証する。
-//! ## エラー / 例外発生条件
-//! JSON 変換または期待値が一致しない場合にテストが失敗する。
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-28, Codex): Shape 検索契約テストを追加。
+//! ## Description
+//! Verifies default query values and serialization contracts for shape search results.
+//! ## Arguments / Returns
+//! No arguments. Verifies Serde serialization results via assertions.
+//! ## Errors / Exceptions
+//! Fails if JSON serialization or deserialization does not match expected output.
 
 use exlgrep_core::models::{MatchType, SearchMatch, SearchQuery};
 
-/// ## 処理内容
-/// include_shape を省略した検索要求が有効として解釈され、Shape 一致種別が安定して直列化されることを確認する。
-/// ## 引数・戻り値
-/// 引数なし。期待する値が異なる場合にテストが失敗する。
-/// ## エラー / 例外発生条件
-/// JSON デシリアライズが失敗した場合にテストが失敗する。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): 既定値と Shape 種別の検証を追加。
+/// ## Description
+/// Verifies that omitting include_shape defaults to true and that Shape MatchType serializes stably.
+/// ## Arguments / Returns
+/// No arguments. Fails if actual results do not match assertions.
+/// ## Errors / Exceptions
+/// Fails if JSON deserialization fails.
 #[test]
 fn defaults_shape_search_to_enabled_and_serializes_shape_type() {
     let query: SearchQuery =

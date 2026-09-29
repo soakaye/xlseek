@@ -1,17 +1,15 @@
 /**
- * 処理内容: 検索テキストとディレクトリの履歴を検証し、端末内へ保存する。
- * 引数・戻り値: 保存失敗時の通知コールバックを受け、履歴と更新操作を返す。
- * エラー: localStorage の読書き失敗は通知し、メモリ上の検索状態を維持する。
- * 変更履歴: v1.0.0 (2026-09-27, Codex): 検索履歴フックを追加。
+ * Description: Validates and persists search query and directory path history to local storage.
+ * Arguments & Returns: Accepts an optional storage failure callback; returns history state and update operations.
+ * Errors: Storage read/write errors trigger the callback while keeping in-memory history active.
  */
 import { useEffect, useRef, useState } from "react";
 import { SEARCH_HISTORY_CONSTANTS } from "../constants";
 
 /**
- * 処理内容: 保存された検索履歴の形を表す。
- * 引数・戻り値: maxEntries、keywords、directories を保持する。
- * エラー: なし。実データの検証は loadHistory が行う。
- * 変更履歴: v1.0.0 (2026-09-27, Codex): 保存履歴型を追加。
+ * Description: Represents the structure of persisted search history.
+ * Arguments & Returns: Holds maxEntries, keywords, and directories.
+ * Errors: None. Validation is performed by isSearchHistory.
  */
 export interface SearchHistory {
   maxEntries: number;
@@ -20,15 +18,14 @@ export interface SearchHistory {
 }
 
 /**
- * 処理内容: 保存値が履歴契約を満たすか確認する。
- * 引数・戻り値: unknown を受け、妥当なら型ガードとして true を返す。
- * エラー: 不正値では false を返し、例外は送出しない。
- * 変更履歴: v1.0.0 (2026-09-27, Codex): 保存値検証を追加。
+ * Description: Verifies whether an unknown value conforms to the SearchHistory structure.
+ * Arguments & Returns: Accepts unknown value; returns boolean type guard.
+ * Errors: Returns false on invalid input without throwing exceptions.
  */
 function isSearchHistory(value: unknown): value is SearchHistory {
   if (!value || typeof value !== "object") return false;
   const candidate = value as Partial<SearchHistory>;
-  // 定数参照: SEARCH_HISTORY_CONSTANTS の件数範囲を検証する。
+  // Constant reference: Validate entry limit against SEARCH_HISTORY_CONSTANTS range.
   if (
     !Number.isInteger(candidate.maxEntries) ||
     (candidate.maxEntries as number) < SEARCH_HISTORY_CONSTANTS.MIN_ENTRIES ||
@@ -45,10 +42,9 @@ function isSearchHistory(value: unknown): value is SearchHistory {
 }
 
 /**
- * 処理内容: localStorage から履歴を読み、存在しない値や不正値は初期状態にする。
- * 引数・戻り値: 保存失敗時の通知関数を受け、検証済み履歴を返す。
- * エラー: 読込・JSON 解析に失敗した場合は通知して初期状態を返す。
- * 変更履歴: v1.0.0 (2026-09-27, Codex): 永続化読込を追加。
+ * Description: Loads history from localStorage, falling back to initial defaults on missing or corrupted data.
+ * Arguments & Returns: Accepts an optional storage error callback; returns validated SearchHistory.
+ * Errors: Storage read or JSON parsing failures trigger the callback and return default initial state.
  */
 function loadHistory(onStorageError?: () => void): SearchHistory {
   const initial: SearchHistory = {
@@ -57,7 +53,7 @@ function loadHistory(onStorageError?: () => void): SearchHistory {
     directories: [],
   };
   try {
-    // 定数参照: SEARCH_HISTORY_CONSTANTS.STORAGE_KEY を使用。
+    // Constant reference: SEARCH_HISTORY_CONSTANTS.STORAGE_KEY
     const stored = window.localStorage.getItem(SEARCH_HISTORY_CONSTANTS.STORAGE_KEY);
     if (!stored) return initial;
     const parsed: unknown = JSON.parse(stored);
@@ -69,10 +65,9 @@ function loadHistory(onStorageError?: () => void): SearchHistory {
 }
 
 /**
- * 処理内容: 履歴の読み込み・追加・件数変更を提供し、単一の保存値へ永続化する。
- * 引数・戻り値: 保存失敗通知を受け、履歴状態と検索追加・件数変更操作を返す。
- * エラー: localStorage の読書き失敗時は通知し、状態はメモリ上で利用可能なままにする。
- * 変更履歴: v1.0.0 (2026-09-27, Codex): 検索履歴管理フックを追加。
+ * Description: Provides history loading, addition, and limit reconfiguration, persisted to local storage.
+ * Arguments & Returns: Accepts storage error callback; returns history state and mutation operations.
+ * Errors: Storage read/write errors trigger the callback; in-memory state remains operational.
  */
 export function useSearchHistory(onStorageError?: () => void) {
   const readFailed = useRef(false);
@@ -86,23 +81,23 @@ export function useSearchHistory(onStorageError?: () => void) {
     }
   }, [onStorageError]);
 
-  /** 処理内容: 履歴をメモリと端末保存領域へ反映する。引数・戻り値: SearchHistory を受け void を返す。エラー: 保存失敗時は通知し状態を維持。変更履歴: v1.0.0 (2026-09-27, Codex)。 */
+  /** Description: Commits history state to memory and localStorage. Arguments & Returns: Accepts SearchHistory, returns void. Errors: Calls onStorageError on write error. */
   const commit = (next: SearchHistory) => {
     historyRef.current = next;
     setHistory(next);
     try {
-      // 定数参照: SEARCH_HISTORY_CONSTANTS.STORAGE_KEY を使用。
+      // Constant reference: SEARCH_HISTORY_CONSTANTS.STORAGE_KEY
       window.localStorage.setItem(SEARCH_HISTORY_CONSTANTS.STORAGE_KEY, JSON.stringify(next));
     } catch {
       onStorageError?.();
     }
   };
 
-  /** 処理内容: 成功した検索を履歴へ追加する。引数・戻り値: 検索語とディレクトリを受け void を返す。エラー: 永続化失敗は commit が通知。変更履歴: v1.0.0 (2026-09-27, Codex)。 */
+  /** Description: Records a successful search to history. Arguments & Returns: Accepts keyword and directory, returns void. Errors: Storage failure notified via commit. */
   const addSearch = (keyword: string, directory: string) => {
     const current = historyRef.current;
     if (current.maxEntries === SEARCH_HISTORY_CONSTANTS.MIN_ENTRIES) return;
-    /** 処理内容: 空白のみを除き、最新値を重複排除して先頭へ置く。引数・戻り値: 文字列配列と値を受け上限付き配列を返す。エラー: なし。変更履歴: v1.0.0 (2026-09-27, Codex)。 */
+    /** Description: Removes whitespace-only values, deduplicates, and places latest at front. Arguments & Returns: Array and value, returns trimmed array. Errors: None. */
     const addRecent = (entries: string[], value: string) =>
       value.trim()
         ? [value, ...entries.filter((entry) => entry !== value)].slice(0, current.maxEntries)
@@ -114,9 +109,9 @@ export function useSearchHistory(onStorageError?: () => void) {
     });
   };
 
-  /** 処理内容: 両履歴の保存上限を検証し即時切り詰める。引数・戻り値: 件数を受け成功状態を boolean で返す。エラー: 範囲外・非整数は false。変更履歴: v1.0.0 (2026-09-27, Codex)。 */
+  /** Description: Validates and applies new max entry limit, trimming entries immediately. Arguments & Returns: Limit number, returns boolean success. Errors: Returns false on invalid input. */
   const setMaxEntries = (maxEntries: number): boolean => {
-    // 定数参照: SEARCH_HISTORY_CONSTANTS の有効範囲を検証する。
+    // Constant reference: Validates range against SEARCH_HISTORY_CONSTANTS
     if (
       !Number.isInteger(maxEntries) ||
       maxEntries < SEARCH_HISTORY_CONSTANTS.MIN_ENTRIES ||

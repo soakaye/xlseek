@@ -1,13 +1,11 @@
-//! # Excelファイル解析・検索モジュール (search/parser.rs)
+//! # Excel File Parsing & Search Module (search/parser.rs)
 //!
-//! ## 処理内容
-//! calamineを用いて単一のExcelブックを開き、セル値・数式・任意の Shape テキストを検索する。
-//! UTF-8境界補正・HTMLエスケープ済みスニペットと、実シート可視状態・アンカー情報も扱う。
-//! 憲章原則I（日本語エラー）、原則II（定数参照）、原則III（ヘッダコメント）、原則IV（Clippy完全準拠）に準拠。
-//!
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化、Clippy指摘修正（is_some_and）、日本語エラー化、4要素ヘッダコメント付与。
-//! - v1.3.0 (2026-09-28, Codex): Shape 抽出・検索、シート可視状態、HTML 安全化を追加。
+//! ## Description
+//! Opens a single Excel workbook using `calamine` and searches cell values, formulas,
+//! and optional shape text. Handles UTF-8 boundary correction, HTML-escaped snippets,
+//! actual sheet visibility state, and cell anchors.
+//! Conforms to Constitution Principle I (English code/comments), Principle II (Constant references),
+//! Principle III (Header comments), and Principle IV (Clippy compliance).
 
 use crate::models::{MatchType, SearchMatch, SearchQuery};
 use calamine::{open_workbook_auto, Data, Reader, SheetVisible, Sheets};
@@ -15,23 +13,20 @@ use regex::Regex;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
-// 定数参照: crate::constants::DEFAULT_MATCH_ID_START を使用
+// Constant reference: crate::constants::DEFAULT_MATCH_ID_START
 static MATCH_ID_COUNTER: AtomicU64 = AtomicU64::new(crate::constants::DEFAULT_MATCH_ID_START);
 
-/// ## 処理内容
-/// 0始まりの列インデックスをExcel列名（例: 0 -> A, 1 -> B, 26 -> AA）に変換する。
+/// ## Description
+/// Converts a 0-based column index to an Excel column name (e.g., 0 -> A, 1 -> B, 26 -> AA).
 ///
-/// ## 引数
-/// - `col_idx`: `u32` - 0始まりの列インデックス
+/// ## Arguments
+/// - `col_idx`: `u32` - 0-based column index
 ///
-/// ## 戻り値
-/// - `String`: アルファベット表記の列名文字列
+/// ## Returns
+/// - `String`: Alphabetic column name string
 ///
-/// ## エラー / 例外発生条件
-/// panicは発生しない。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
+/// ## Errors / Exceptions
+/// Does not panic.
 pub fn col_to_name(mut col_idx: u32) -> String {
     let mut name = String::new();
     loop {
@@ -45,35 +40,37 @@ pub fn col_to_name(mut col_idx: u32) -> String {
     name.chars().rev().collect()
 }
 
-/// ## 処理内容
-/// 行・列インデックス（0始まり）からExcel形式のセル番地文字列（例: A12）と列名を生成する。
+/// ## Description
+/// Generates an Excel-format cell address string (e.g., A12) and column name from 0-based row and column indices.
 ///
-/// ## 引数
-/// - `row_idx`: `u32` - 0始まりの行インデックス
-/// - `col_idx`: `u32` - 0始まりの列インデックス
+/// ## Arguments
+/// - `row_idx`: `u32` - 0-based row index
+/// - `col_idx`: `u32` - 0-based column index
 ///
-/// ## 戻り値
-/// - `(String, String)`: (セル番地文字列, 列名アルファベット)
+/// ## Returns
+/// - `(String, String)`: Tuple of (cell address string, column name)
 ///
-/// ## エラー / 例外発生条件
-/// panicは発生しない。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
+/// ## Errors / Exceptions
+/// Does not panic.
 pub fn format_cell_address(row_idx: u32, col_idx: u32) -> (String, String) {
     let col_str = col_to_name(col_idx);
     let address = format!("{}{}", col_str, row_idx + 1);
     (address, col_str)
 }
 
-/// ## 処理内容
-/// 検索条件に応じた部分一致または正規表現一致のバイト範囲を得る。
-/// ## 引数・戻り値
-/// `text` は対象文字列、`query` は検索条件、`regex_opt` は任意の正規表現、戻り値は一致範囲。
-/// ## エラー / 例外発生条件
-/// 正規表現は事前コンパイル済みのためエラーを返さず、一致しない場合は `None`。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): 値・数式・Shape 共通の一致判定を追加。
+/// ## Description
+/// Finds the byte range of a partial text match or regular expression match based on query conditions.
+///
+/// ## Arguments
+/// - `text`: `&str` - Target string to search within
+/// - `query`: `&SearchQuery` - Search query parameters
+/// - `regex_opt`: `Option<&Regex>` - Optional precompiled regular expression
+///
+/// ## Returns
+/// - `Option<(usize, usize)>`: Matching start and end byte offsets, or None if not matched
+///
+/// ## Errors / Exceptions
+/// Does not panic; invalid regexes are caught prior to invocation.
 fn find_match_position(
     text: &str,
     query: &SearchQuery,
@@ -93,24 +90,19 @@ fn find_match_position(
     }
 }
 
-/// ## 処理内容
-/// ヒットした文字列の前後にコンテキストを付与し、未信頼文字列をHTMLエスケープした
-/// ハイライト表示用スニペットを生成する。
+/// ## Description
+/// Generates a highlighted display snippet with surrounding context and HTML escaping for untrusted content.
 ///
-/// ## 引数
-/// - `text`: `&str` - 対象セルの全体テキスト
-/// - `mat_start`: `usize` - 一致箇所の開始バイト位置
-/// - `mat_end`: `usize` - 一致箇所の終了バイト位置
+/// ## Arguments
+/// - `text`: `&str` - Full content string of the matching cell
+/// - `mat_start`: `usize` - Match start byte offset
+/// - `mat_end`: `usize` - Match end byte offset
 ///
-/// ## 戻り値
-/// - `String`: `<mark>` タグ付きハイライトスニペット文字列
+/// ## Returns
+/// - `String`: Snippet string containing `<mark>` highlight tags
 ///
-/// ## エラー / 例外発生条件
-/// 範囲外または UTF-8 文字境界外の位置は安全な境界へ補正する。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
-/// - v1.3.0 (2026-09-28, Codex): スニペットに未信頼文字列の HTML エスケープを追加。
+/// ## Errors / Exceptions
+/// Safely adjusts out-of-range or non-UTF-8 boundary offsets.
 pub fn make_snippet(text: &str, mat_start: usize, mat_end: usize) -> String {
     let mut start = mat_start.min(text.len());
     while !text.is_char_boundary(start) {
@@ -124,7 +116,7 @@ pub fn make_snippet(text: &str, mat_start: usize, mat_end: usize) -> String {
     let matched = &text[start..end];
     let after_str = &text[end..];
 
-    // 定数参照: crate::constants::SNIPPET_CONTEXT_CHARS を使用
+    // Constant reference: crate::constants::SNIPPET_CONTEXT_CHARS
     let before_chars_count = crate::constants::SNIPPET_CONTEXT_CHARS;
     let before_byte_len = before_str
         .char_indices()
@@ -135,22 +127,22 @@ pub fn make_snippet(text: &str, mat_start: usize, mat_end: usize) -> String {
         .unwrap_or(0);
 
     let before = &before_str[before_byte_len..];
-    // 定数参照: crate::constants::SNIPPET_ELLIPSIS を使用
+    // Constant reference: crate::constants::SNIPPET_ELLIPSIS
     let prefix = if before_byte_len > 0 {
         crate::constants::SNIPPET_ELLIPSIS
     } else {
         ""
     };
 
-    // 定数参照: crate::constants::SNIPPET_CONTEXT_CHARS を使用
+    // Constant reference: crate::constants::SNIPPET_CONTEXT_CHARS
     let after_chars_count = crate::constants::SNIPPET_CONTEXT_CHARS;
-    // 定数参照: crate::constants::SNIPPET_ELLIPSIS を使用
+    // Constant reference: crate::constants::SNIPPET_ELLIPSIS
     let (after, suffix) = match after_str.char_indices().nth(after_chars_count) {
         Some((idx, _)) => (&after_str[..idx], crate::constants::SNIPPET_ELLIPSIS),
         None => (after_str, ""),
     };
 
-    // 定数参照: crate::constants::HTML_ESCAPE_* を使用し、検索対象由来の HTML を無効化する。
+    // Constant reference: crate::constants::HTML_ESCAPE_*
     let escape_html = |value: &str| {
         value
             .replace('&', crate::constants::HTML_ESCAPE_AMPERSAND)
@@ -160,7 +152,7 @@ pub fn make_snippet(text: &str, mat_start: usize, mat_end: usize) -> String {
             .replace('\'', crate::constants::HTML_ESCAPE_APOSTROPHE)
     };
 
-    // 定数参照: crate::constants::SNIPPET_MARK_OPEN/CLOSE を使用。
+    // Constant reference: crate::constants::SNIPPET_MARK_OPEN/CLOSE
     format!(
         "{}{}{}{}{}{}{}",
         prefix,
@@ -173,29 +165,22 @@ pub fn make_snippet(text: &str, mat_start: usize, mat_end: usize) -> String {
     )
 }
 
-/// ## 処理内容
-/// 指定された単一のExcelファイルを開き、シートごとのセル値および数式を走査して検索クエリに一致するセルを抽出する。
-/// 有効時は Shape テキストも検索し、Shape 結果をセルプレビュー向けの形式で返す。
-/// キャンセル通知フラグを定期的に確認し、要求があれば速やかに処理を中断する。
+/// ## Description
+/// Opens a specified Excel workbook, scanning per-sheet cell values, formulas, comments, and shapes
+/// matching the search query. Periodically checks the cancellation flag to abort execution promptly when requested.
 ///
-/// ## 引数
-/// - `path`: `P` - Excelファイルのパス
-/// - `query`: `&SearchQuery` - 検索キーワード、正規表現設定、数式含むフラグ等の検索条件
-/// - `regex_opt`: `Option<&Regex>` - コンパイル済みの正規表現オブジェクト（使用時のみ）
-/// - `cancel_flag`: `Option<&AtomicBool>` - 外部からのスキャン中断通知フラグ
+/// ## Arguments
+/// - `path`: `P` - Path to the Excel file
+/// - `query`: `&SearchQuery` - Search criteria including keyword, regex, and include flags
+/// - `regex_opt`: `Option<&Regex>` - Compiled regular expression object if regex mode is enabled
+/// - `cancel_flag`: `Option<&AtomicBool>` - External cancellation signal flag
 ///
-/// ## 戻り値
-/// - `Result<Vec<SearchMatch>, String>`: 一致アイテムのベクター、または日本語エラー文字列
+/// ## Returns
+/// - `Result<Vec<SearchMatch>, String>`: Vector of matching search items, or error string
 ///
-/// ## エラー / 例外発生条件
-/// - ワークブックのオープンに失敗した場合に `Err` を返却する。
-/// - panicは発生しない。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化、Clippy指摘修正（is_some_and）。
-/// - v1.3.0 (2026-09-28, Codex): Shape 検索と実シート可視状態を追加。
-/// - v1.4.0 (2026-09-29, Codex): 値検索切替とrange原点を反映。
-/// - v1.5.0 (2026-09-29, Codex): OOXMLコメント検索を接続。
+/// ## Errors / Exceptions
+/// - Returns `Err` if opening the workbook or parsing fails.
+/// - Does not panic.
 pub fn parse_and_search_file<P: AsRef<Path>>(
     path: P,
     query: &SearchQuery,
@@ -214,7 +199,7 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
         .unwrap_or_else(|| "Unknown".to_string());
 
     let mut workbook: Sheets<_> = open_workbook_auto(path_ref).map_err(|e| {
-        // 定数参照: crate::constants::ERR_WORKBOOK_OPEN を使用
+        // Constant reference: crate::constants::ERR_WORKBOOK_OPEN
         format!(
             "{}: {} ({})",
             crate::constants::ERR_WORKBOOK_OPEN,
@@ -247,19 +232,19 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
             return Ok(matches);
         }
 
-        // 定数参照: SheetVisible メタデータで Hidden / VeryHidden を判定する。
+        // Constant reference: SheetVisible metadata
         let is_hidden_sheet = sheet_visibility.get(sheet_name).copied().unwrap_or(false);
 
         if is_hidden_sheet && !query.include_hidden {
             continue;
         }
 
-        // ワークシートのセル値読み込み
+        // Read worksheet cell values
         if query.include_value {
             if let Ok(range) = workbook.worksheet_range(sheet_name) {
                 let (range_start_row, range_start_col) = range.start().unwrap_or_default();
                 for (row_idx, row) in range.rows().enumerate() {
-                    // 定数参照: crate::constants::CANCEL_CHECK_ROW_INTERVAL を使用
+                    // Constant reference: crate::constants::CANCEL_CHECK_ROW_INTERVAL
                     if (row_idx & crate::constants::CANCEL_CHECK_ROW_INTERVAL) == 0
                         && cancel_flag.is_some_and(|f| f.load(Ordering::Relaxed))
                     {
@@ -283,7 +268,7 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
                             continue;
                         }
 
-                        // 一致判定 (正規表現 or テキスト部分一致)
+                        // Match evaluation (regex or substring match)
                         let match_pos = find_match_position(&cell_str, query, regex_opt);
 
                         if let Some((start, end)) = match_pos {
@@ -349,12 +334,12 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
             }
         }
 
-        // 数式 (Formula) の検索
+        // Formula search
         if query.include_formula {
             if let Ok(formula_range) = workbook.worksheet_formula(sheet_name) {
                 let (range_start_row, range_start_col) = formula_range.start().unwrap_or_default();
                 for (row_idx, row) in formula_range.rows().enumerate() {
-                    // 定数参照: crate::constants::CANCEL_CHECK_ROW_INTERVAL を使用
+                    // Constant reference: crate::constants::CANCEL_CHECK_ROW_INTERVAL
                     if (row_idx & crate::constants::CANCEL_CHECK_ROW_INTERVAL) == 0
                         && cancel_flag.is_some_and(|f| f.load(Ordering::Relaxed))
                     {
@@ -444,14 +429,14 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
 mod snippet_tests {
     use super::make_snippet;
 
-    /// ## 処理内容
-    /// スニペットへ渡す未信頼 HTML がエスケープされ、無効な UTF-8 範囲も安全に処理されることを確認する。
-    /// ## 引数・戻り値
-    /// 引数なし。アサーションが失敗した場合にテストが失敗する。
-    /// ## エラー / 例外発生条件
-    /// 関数は panic せず、期待した文字列でない場合にテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-28, Codex): 未信頼文字列のエスケープ確認を追加。
+    /// ## Description
+    /// Verifies that untrusted HTML passed to make_snippet is escaped and invalid UTF-8 ranges are handled safely.
+    ///
+    /// ## Arguments / Returns
+    /// No arguments. Fails if assertions fail.
+    ///
+    /// ## Errors / Exceptions
+    /// Fails if output string does not match expected escaped markup.
     #[test]
     fn escapes_html_and_repairs_invalid_utf8_ranges() {
         let snippet = make_snippet("<img src=x>&'\"needle", 14, 20);

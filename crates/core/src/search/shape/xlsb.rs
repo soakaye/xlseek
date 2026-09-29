@@ -1,13 +1,11 @@
-//! # XLSB Shape 抽出器
+//! # XLSB Shape Extractor
 //!
-//! ## 処理内容
-//! BIFF12 ブック・ワークシートレコードからリレーション ID を得て、DrawingML 描画パーツを読む。
-//! ## 引数・戻り値
-//! ブックパス、ワークシート名一覧、中断状態を受け取り、Shape テキスト一覧を返す。
-//! ## エラー / 例外発生条件
-//! ZIP・レコード・文字列の破損や安全上限超過時にエラーを返す。
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-28, Codex): BrtBundleSh / BrtDrawing を介した XLSB 描画抽出を追加。
+//! ## Description
+//! Obtains relationship IDs from BIFF12 workbook and worksheet records, and reads DrawingML parts.
+//! ## Arguments / Returns
+//! Accepts workbook path, worksheet name list, and cancellation flag; returns list of ShapeText items.
+//! ## Errors / Exceptions
+//! Returns error on corrupted ZIP, records, strings, or exceeded security limits.
 
 use super::ooxml;
 use super::ShapeText;
@@ -17,14 +15,12 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use zip::ZipArchive;
 
-/// ## 処理内容
-/// XLSB ブックのシート部品と BrtDrawing を解決し、DrawingML の Shape を返す。
-/// ## 引数・戻り値
-/// `path` は XLSB ファイル、`sheet_names` は可視状態等で得たシート名、`cancel_flag` は任意の中断状態。
-/// ## エラー / 例外発生条件
-/// ZIP・BIFF12 データが不正または上限超過時にエラーを返し、中断時は取得済み結果を返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): XLSB 部品関係と描画 XML を結合。
+/// ## Description
+/// Resolves sheet parts and BrtDrawing in XLSB workbook, returning DrawingML shapes.
+/// ## Arguments / Returns
+/// `path` is an XLSB file, `sheet_names` is list of sheet names, `cancel_flag` is optional cancellation flag.
+/// ## Errors / Exceptions
+/// Returns error on invalid ZIP or BIFF12 data or exceeded limits; returns partial results on cancellation.
 pub(super) fn extract(
     path: &Path,
     sheet_names: &[String],
@@ -70,14 +66,12 @@ pub(super) fn extract(
     Ok(output)
 }
 
-/// ## 処理内容
-/// ZIP 内の BIFF12 パーツをサイズ上限付きで読み込む。
-/// ## 引数・戻り値
-/// ZIP アーカイブ、パーツ名、累積サイズを受け取り、バイト列を返す。
-/// ## エラー / 例外発生条件
-/// パーツ欠損、読取失敗、パーツまたは累積サイズ上限超過時にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): BIFF12 パーツの上限確認を追加。
+/// ## Description
+/// Reads BIFF12 parts within a ZIP archive with size limits.
+/// ## Arguments / Returns
+/// Accepts ZIP archive, part path, and cumulative size pointer; returns byte vector.
+/// ## Errors / Exceptions
+/// Returns error on missing part, read failure, or single/cumulative size limit exceeded.
 fn read_binary_part(
     archive: &mut ZipArchive<File>,
     part: &str,
@@ -87,7 +81,7 @@ fn read_binary_part(
         .by_name(part)
         .map_err(|_| crate::constants::ERR_SHAPE_READ.to_string())?;
     let size = entry.size();
-    // 定数参照: SHAPE_MAX_BINARY_BYTES / SHAPE_MAX_TOTAL_XML_BYTES を使用。
+    // Constant reference: SHAPE_MAX_BINARY_BYTES / SHAPE_MAX_TOTAL_XML_BYTES
     if size > crate::constants::SHAPE_MAX_BINARY_BYTES
         || total_size.saturating_add(size) > crate::constants::SHAPE_MAX_TOTAL_XML_BYTES
     {
@@ -101,14 +95,12 @@ fn read_binary_part(
     Ok(bytes)
 }
 
-/// ## 処理内容
-/// BIFF12 レコード列から各シート名と workbook relationship ID を取り出す。
-/// ## 引数・戻り値
-/// `bytes` は `workbook.bin` の全内容、戻り値はシート部品対応一覧。
-/// ## エラー / 例外発生条件
-/// レコード長または XLWideString が不正な場合にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): BrtBundleSh の解析を追加。
+/// ## Description
+/// Extracts sheet names and workbook relationship IDs from BIFF12 record stream.
+/// ## Arguments / Returns
+/// `bytes` is entire content of `workbook.bin`; returns list of sheet part mappings.
+/// ## Errors / Exceptions
+/// Returns error on malformed record length or XLWideString.
 fn bundle_sheets(bytes: &[u8]) -> Result<Vec<BundleSheet>, String> {
     let mut position = 0;
     let mut sheets = Vec::new();
@@ -117,7 +109,7 @@ fn bundle_sheets(bytes: &[u8]) -> Result<Vec<BundleSheet>, String> {
         if record_id != crate::constants::XLSB_BRT_BUNDLE_SH_RECORD_ID {
             continue;
         }
-        // 定数参照: XLSB_BUNDLE_SHEET_FIXED_BYTES を使用。
+        // Constant reference: XLSB_BUNDLE_SHEET_FIXED_BYTES
         let mut cursor = crate::constants::XLSB_BUNDLE_SHEET_FIXED_BYTES;
         let relation_id = read_wide_string(payload, &mut cursor)?;
         let name = read_wide_string(payload, &mut cursor)?;
@@ -128,14 +120,12 @@ fn bundle_sheets(bytes: &[u8]) -> Result<Vec<BundleSheet>, String> {
     Ok(sheets)
 }
 
-/// ## 処理内容
-/// BIFF12 worksheet レコードから BrtDrawing の relationship ID を返す。
-/// ## 引数・戻り値
-/// `bytes` は worksheet binary の全内容、戻り値は任意の描画 relationship ID。
-/// ## エラー / 例外発生条件
-/// レコード列または描画文字列が不正の場合にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): BrtDrawing の関係 ID 読取を追加。
+/// ## Description
+/// Returns relationship ID of BrtDrawing from BIFF12 worksheet records.
+/// ## Arguments / Returns
+/// `bytes` is worksheet binary content; returns optional drawing relationship ID.
+/// ## Errors / Exceptions
+/// Returns error on malformed records or drawing string.
 fn drawing_relation_id(bytes: &[u8]) -> Result<Option<String>, String> {
     let mut position = 0;
     while position < bytes.len() {
@@ -148,14 +138,12 @@ fn drawing_relation_id(bytes: &[u8]) -> Result<Option<String>, String> {
     Ok(None)
 }
 
-/// ## 処理内容
-/// BIFF12 の可変長 record ID と payload 長を読み、レコード本体の範囲を検証する。
-/// ## 引数・戻り値
-/// `bytes` と可変の `position` を受け取り、record ID と payload slice を返す。
-/// ## エラー / 例外発生条件
-/// 範囲外、長さ上限超過、または varint 不正でエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): BIFF12 レコード境界検証を追加。
+/// ## Description
+/// Reads variable-length record ID and payload length, validating record boundary in BIFF12.
+/// ## Arguments / Returns
+/// Accepts `bytes` and mutable `position`; returns record ID and payload slice.
+/// ## Errors / Exceptions
+/// Returns error on out-of-bounds, length exceeding limit, or invalid varint.
 fn next_record<'a>(bytes: &'a [u8], position: &mut usize) -> Result<(u32, &'a [u8]), String> {
     let record_id = read_varint(bytes, position)?;
     let length = read_varint(bytes, position)? as usize;
@@ -171,17 +159,15 @@ fn next_record<'a>(bytes: &'a [u8], position: &mut usize) -> Result<(u32, &'a [u
     Ok((record_id, payload))
 }
 
-/// ## 処理内容
-/// 7-bit BIFF12 整数を最大5バイトで復号する。
-/// ## 引数・戻り値
-/// バイト列と可変の読取位置を受け取り、復号した `u32` を返す。
-/// ## エラー / 例外発生条件
-/// 入力欠損、過剰な継続ビット、数値オーバーフロー時にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): 可変長整数読取を追加。
+/// ## Description
+/// Decodes a 7-bit BIFF12 integer using up to 5 bytes.
+/// ## Arguments / Returns
+/// Accepts byte slice and mutable read position; returns decoded `u32`.
+/// ## Errors / Exceptions
+/// Returns error on missing input, excessive continuation bits, or integer overflow.
 fn read_varint(bytes: &[u8], position: &mut usize) -> Result<u32, String> {
     let mut value = 0_u32;
-    // 定数参照: XLSB_VARINT_* を使用して BIFF12 continuation encoding を読む。
+    // Constant reference: XLSB_VARINT_*
     for shift in (0..crate::constants::XLSB_VARINT_SHIFT * crate::constants::XLSB_VARINT_MAX_BYTES)
         .step_by(crate::constants::XLSB_VARINT_SHIFT as usize)
     {
@@ -199,16 +185,14 @@ fn read_varint(bytes: &[u8], position: &mut usize) -> Result<u32, String> {
     Err(crate::constants::ERR_SHAPE_READ.to_string())
 }
 
-/// ## 処理内容
-/// BIFF12 の長さ付き UTF-16LE 文字列を読み取る。
-/// ## 引数・戻り値
-/// record payload と可変読取位置を受け取り、デコードした文字列を返す。
-/// ## エラー / 例外発生条件
-/// 長さ不整合または不正 UTF-16 の場合にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): BIFF12 文字列の境界確認を追加。
+/// ## Description
+/// Reads length-prefixed UTF-16LE string from BIFF12 payload.
+/// ## Arguments / Returns
+/// Accepts record payload and mutable position; returns decoded string.
+/// ## Errors / Exceptions
+/// Returns error on length mismatch or invalid UTF-16.
 fn read_wide_string(bytes: &[u8], position: &mut usize) -> Result<String, String> {
-    // 定数参照: XLSB_STRING_LENGTH_BYTES と XLSB_UTF16_UNIT_BYTES を使用。
+    // Constant reference: XLSB_STRING_LENGTH_BYTES and XLSB_UTF16_UNIT_BYTES
     let count_bytes = bytes
         .get(*position..position.saturating_add(crate::constants::XLSB_STRING_LENGTH_BYTES))
         .ok_or_else(|| crate::constants::ERR_SHAPE_READ.to_string())?;
@@ -238,14 +222,12 @@ fn read_wide_string(bytes: &[u8], position: &mut usize) -> Result<String, String
     Ok(value)
 }
 
-/// ## 処理内容
-/// BrtBundleSh から読み込んだシート名と relationship ID を保持する。
-/// ## 引数・戻り値
-/// `name` と `relation_id` がブック中のシート識別情報となる。
-/// ## エラー / 例外発生条件
-/// データ保持のみでエラーや panic は発生しない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): XLSB シート対応モデルを追加。
+/// ## Description
+/// Holds sheet name and relationship ID read from BrtBundleSh.
+/// ## Arguments / Returns
+/// `name` and `relation_id` identify the worksheet in the workbook.
+/// ## Errors / Exceptions
+/// Data holder only; does not generate errors or panics.
 struct BundleSheet {
     name: String,
     relation_id: String,
@@ -255,14 +237,12 @@ struct BundleSheet {
 mod tests {
     use super::{bundle_sheets, drawing_relation_id};
 
-    /// ## 処理内容
-    /// BrtBundleSh と BrtDrawing のレコードから relationship ID とシート名を取り出せることを確認する。
-    /// ## 引数・戻り値
-    /// 引数なし。小さなバイナリレコード列を生成して解析結果を検証する。
-    /// ## エラー / 例外発生条件
-    /// 不正なテスト値や解析結果不一致でテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-28, Codex): XLSB 関係レコード解析テストを追加。
+    /// ## Description
+    /// Verifies extracting relationship IDs and sheet names from BrtBundleSh and BrtDrawing records.
+    /// ## Arguments / Returns
+    /// No arguments. Generates binary record sequence and verifies parse results.
+    /// ## Errors / Exceptions
+    /// Fails on invalid test data or mismatched parse results.
     #[test]
     fn reads_bundle_sheet_and_drawing_relationships() {
         let mut bundle = vec![0, 0, 0, 0, 1, 0, 0, 0];
@@ -292,14 +272,12 @@ mod tests {
         );
     }
 
-    /// ## 処理内容
-    /// 長さ付き UTF-16LE 文字列を BIFF12 テストレコードへ追加する。
-    /// ## 引数・戻り値
-    /// `value` は入力文字列、`bytes` は追記先バイト列。戻り値はない。
-    /// ## エラー / 例外発生条件
-    /// 文字数が `u32` の範囲を超えると panic するが、固定テスト値のみで呼び出す。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-28, Codex): テスト用 BIFF12 文字列生成を追加。
+    /// ## Description
+    /// Appends length-prefixed UTF-16LE string to BIFF12 test record.
+    /// ## Arguments / Returns
+    /// `value` is input string, `bytes` is target vector. No return value.
+    /// ## Errors / Exceptions
+    /// Panics if character count exceeds `u32::MAX`.
     fn append_wide_string(value: &str, bytes: &mut Vec<u8>) {
         bytes.extend_from_slice(&(value.encode_utf16().count() as u32).to_le_bytes());
         for unit in value.encode_utf16() {
@@ -307,14 +285,12 @@ mod tests {
         }
     }
 
-    /// ## 処理内容
-    /// `u32` の BIFF12 可変長整数をテスト用バイト列へ追加する。
-    /// ## 引数・戻り値
-    /// `value` は符号なし整数、`bytes` は追記先バイト列。戻り値はない。
-    /// ## エラー / 例外発生条件
-    /// 5バイトで表現できない値は入力型で排除される。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-28, Codex): テスト用 varint 生成を追加。
+    /// ## Description
+    /// Appends `u32` BIFF12 variable-length integer to test byte vector.
+    /// ## Arguments / Returns
+    /// `value` is unsigned integer, `bytes` is target vector. No return value.
+    /// ## Errors / Exceptions
+    /// None.
     fn append_varint(mut value: u32, bytes: &mut Vec<u8>) {
         while value >= u32::from(crate::constants::XLSB_VARINT_CONTINUATION_MASK) {
             bytes.push(

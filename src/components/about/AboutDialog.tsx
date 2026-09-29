@@ -1,28 +1,12 @@
 /**
- * @fileoverview About（アプリについて）ダイアログ最上位コンポーネント (src/components/about/AboutDialog.tsx)
+ * @fileoverview About dialog top-level component (src/components/about/AboutDialog.tsx)
  *
- * ## 処理内容
- * アプリケーションの基本情報（名称、バージョン、概要、著作権）および利用している全サードパーティ製
- * パッケージのオープンソースライセンス情報をモーダル表示する。
- * タブ切り替え（アプリ情報 / オープンソースライセンス）、ESCキー押下やバックドロップクリックによる
- * 安全な閉鎖処理、および子コンポーネント（PackageList, PackageDetail）の統合制御を行う。
- * 憲章原則I（自然かつ正確な日本語）、原則II（定数の一元化）、原則III（網羅的なヘッダコメント）、原則IV（モジュール設計）に準拠。
- *
- * ## プロパティ (AboutDialogProps)
- * - `isOpen`: boolean - ダイアログの表示状態
- * - `onClose`: () => void - ダイアログを閉じるコールバック
- * - `onShowToast`: (message: string) => void - コピー完了等のトースト通知コールバック
- * - `licenses`?: PackageLicenseRecord[] - 表示対象のライセンスデータ（省略時はバンドルJSONを使用）
- *
- * ## 戻り値
- * - `React.ReactElement | null`: ダイアログUI（非表示時は null）
- *
- * ## エラー・例外条件
- * - クリップボードコピー失敗時は例外を捕捉し、日本語のエラートーストを通知する。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。モーダルシェルおよびアプリ情報タブの実装。
- * - v1.1.0 (2026-09-26, AI Agent): PackageListおよびPackageDetailコンポーネントの分離・統合。
+ * ## Description
+ * Displays basic application metadata (name, version, description, copyright) and open-source license
+ * information for all third-party packages used across the application in a modal dialog.
+ * Handles tab navigation (App info / Open Source Licenses), keyboard ESC and backdrop dismissal,
+ * and integration of child components (PackageList, PackageDetail).
+ * Complies with Constitution Principle I (English documentation), Principle II (constant reference), Principle III (comprehensive documentation), and Principle IV (modular design).
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -42,17 +26,17 @@ export interface AboutDialogProps {
 }
 
 /**
- * Aboutダイアログモーダルコンポーネント
+ * ## Description
+ * About modal dialog component.
  *
- * ## 処理詳細
- * モーダル表示状態、アクティブタブ、キーワード検索、および選択中のパッケージを管理し、
- * キーボードESC操作やバックドロップクリックによる安全な閉鎖イベントを処理する。
- *
- * ## 引数
+ * ## Arguments
  * @param props - AboutDialogProps
  *
- * ## 戻り値
- * @returns レンダリング要素またはnull
+ * ## Returns
+ * @returns Rendered dialog element or null if not open
+ *
+ * ## Errors / Exceptions
+ * Clipboard copy errors are caught and surfaced via toast notifications without crashing the UI.
  */
 export const AboutDialog: React.FC<AboutDialogProps> = ({
   isOpen,
@@ -66,7 +50,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   const [copyFeedback, setCopyFeedback] = useState<boolean>(false);
 
-  // ダイアログが開かれた際に初期選択を設定
+  // Set initial package selection when opening
   useEffect(() => {
     if (isOpen) {
       if (licenses.length > 0 && !selectedPackageId) {
@@ -75,7 +59,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
     }
   }, [isOpen, licenses, selectedPackageId]);
 
-  // ESCキー押下によるダイアログ閉鎖の購読
+  // Subscribe to ESC key to dismiss dialog
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Escape" && isOpen) {
@@ -86,7 +70,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  // 検索キーワードに基づくパッケージ一覧のフィルタリング
+  // Filter package list based on search keyword
   const filteredPackages = useMemo(() => {
     const keyword = searchKeyword.trim().toLowerCase();
     if (!keyword) {
@@ -100,7 +84,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
     );
   }, [licenses, searchKeyword]);
 
-  // フィルタリング結果に応じた選択アイテムの同期
+  // Sync selected package ID with filtered results
   useEffect(() => {
     if (filteredPackages.length > 0) {
       const exists = filteredPackages.some((p) => p.id === selectedPackageId);
@@ -112,13 +96,13 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
     }
   }, [filteredPackages, selectedPackageId]);
 
-  // 現在選択中のパッケージレコード
+  // Active package record
   const selectedPackage = useMemo(() => {
     if (!selectedPackageId) return null;
     return filteredPackages.find((p) => p.id === selectedPackageId) || null;
   }, [filteredPackages, selectedPackageId]);
 
-  // ライセンス本文のクリップボードコピー処理
+  // Copy full license text to clipboard
   const handleCopyLicense = useCallback(
     async (text: string) => {
       try {
@@ -144,12 +128,12 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm select-none p-4"
       onClick={onClose}
     >
-      {/* モーダルウィンドウ本体 */}
+      {/* Modal dialog shell */}
       <div
         className="w-full max-w-4xl h-[620px] bg-[#18181b] border border-zinc-700/80 rounded-xl shadow-2xl flex flex-col overflow-hidden text-zinc-100 animate-in fade-in zoom-in-95 duration-150"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* モーダル上部ヘッダーバー */}
+        {/* Modal header bar */}
         <div className="h-14 px-5 bg-[#141416] border-b border-zinc-800 flex items-center justify-between flex-shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-excel/20 border border-excel/40 flex items-center justify-center text-excel-light">
@@ -165,7 +149,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
             </div>
           </div>
 
-          {/* タブ切り替えボタン */}
+          {/* Tab switcher */}
           <div className="flex items-center gap-1 bg-[#202024] p-1 rounded-lg border border-zinc-800">
             <button
               type="button"
@@ -195,7 +179,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
             </button>
           </div>
 
-          {/* 閉じるボタン (✕) */}
+          {/* Close button (X) */}
           <button
             type="button"
             onClick={onClose}
@@ -206,10 +190,10 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
           </button>
         </div>
 
-        {/* モーダルコンテンツ領域 */}
+        {/* Modal content body */}
         <div className="flex-1 overflow-hidden flex flex-col bg-[#161618]">
           {activeTab === "about" ? (
-            /* タブ 1: アプリケーション基本情報 */
+            /* Tab 1: Application General Info */
             <div className="flex-1 overflow-y-auto p-8 flex flex-col items-center justify-center text-center">
               <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-excel/10 border border-emerald-500/30 flex items-center justify-center mb-5 shadow-lg shadow-emerald-950/20">
                 <ShieldCheck className="w-10 h-10 text-emerald-400" />
@@ -254,7 +238,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
               </button>
             </div>
           ) : (
-            /* タブ 2: オープンソースライセンス一覧 (2ペイン Master-Detail) */
+            /* Tab 2: Open Source Licenses (Master-Detail) */
             <div className="flex-1 flex overflow-hidden min-h-0">
               <PackageList
                 packages={filteredPackages}
@@ -273,7 +257,7 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
           )}
         </div>
 
-        {/* モーダル下部フッター */}
+        {/* Modal footer */}
         <div className="h-12 px-5 bg-[#141416] border-t border-zinc-800 flex items-center justify-end flex-shrink-0">
           <button
             type="button"

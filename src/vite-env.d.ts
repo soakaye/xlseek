@@ -1,12 +1,12 @@
 /**
- * ## 処理内容
- * Vite の環境型と raw 資源インポート型を TypeScript に提供する。
- * ## 引数・戻り値
- * 宣言のみを含み、`.yml?raw` インポートを文字列として型付けする。
- * ## エラー
- * 型宣言が不足した場合は TypeScript が raw 資源インポートを拒否する。
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, Codex): YAML raw インポート型を追加。
+ * ## Description
+ * Provides Vite environment types and raw resource import types to TypeScript.
+ *
+ * ## Arguments & Returns
+ * Type declarations only; types `*.yml?raw` imports as string.
+ *
+ * ## Errors / Exceptions
+ * TypeScript will reject raw resource imports if this type declaration is missing.
  */
 /// <reference types="vite/client" />
 

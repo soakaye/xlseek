@@ -1,13 +1,12 @@
-//! # Shape 出力統合テスト
+//! # Shape Export Integration Test
 //!
-//! ## 処理内容
-//! Shape 結果の名前、種別、本文、位置が CSV と Excel の共通列順で出力されることを確認する。
-//! ## 引数・戻り値
-//! 引数なし。翻訳カタログと結果モデルを出力関数へ渡してファイルを読み戻す。
-//! ## エラー / 例外発生条件
-//! ファイル出力・読み戻し・列値の不一致でテストが失敗する。
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-28, Codex): Shape 名を含む出力契約テストを追加。
+//! ## Description
+//! Verifies that shape result name, type, content, and position are exported
+//! in common column order for both CSV and Excel formats.
+//! ## Arguments / Returns
+//! No arguments. Passes translation catalogs and result model to export functions and reads back files.
+//! ## Errors / Exceptions
+//! Fails if file export, reopening, or column values mismatch assertions.
 
 use calamine::Reader;
 use exlgrep_core::constants::*;
@@ -17,14 +16,12 @@ use std::collections::BTreeMap;
 
 const TEST_OUTPUT_PREFIX: &str = "exlgrep-shape-export";
 
-/// ## 処理内容
-/// CSV と Excel の Shape 名列に図形名が入り、Shape 種別と全文が正しい列へ出ることを検証する。
-/// ## 引数・戻り値
-/// 引数なし。各形式を読み戻して列順と値を検証する。
-/// ## エラー / 例外発生条件
-/// 出力関数、ファイル読取、またはアサーション失敗時にテストが失敗する。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): CSV / Excel Shape 出力を検証。
+/// ## Description
+/// Verifies that shape name appears in shape column and shape type/content appear in appropriate columns.
+/// ## Arguments / Returns
+/// No arguments. Reopens both formats and verifies column order and values.
+/// ## Errors / Exceptions
+/// Fails on export error, file read failure, or assertion failure.
 #[test]
 fn writes_shape_name_to_independent_column_in_both_formats() {
     let mut catalog = BTreeMap::new();

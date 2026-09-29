@@ -1,33 +1,30 @@
 /**
- * @fileoverview サードパーティライセンスおよびAboutダイアログ型定義 (src/types/license.ts)
+ * @fileoverview Third-party licenses and About dialog type definitions (src/types/license.ts)
  *
- * ## 処理内容
- * アプリケーションで使用されているオープンソースソフトウェア（OSS）のライセンスレコード型、
- * アプリケーション基本情報型、およびAboutダイアログの表示・選択・検索状態を管理する型を定義する。
- * 憲章原則I（自然かつ正確な日本語ドキュメント）、原則III（網羅的なヘッダコメント）、原則IV（モジュール設計）に準拠。
+ * ## Description
+ * Defines license record types for open-source software (OSS) used in the application,
+ * basic application metadata types, and state management types for the About dialog.
+ * Complies with Constitution Principle I (English documentation), Principle III (comprehensive documentation), and Principle IV (modular design).
  *
- * ## 型一覧
- * - `PackageLicenseRecord`: サードパーティ製パッケージ（Rust / npm）の個別ライセンス情報レコード型
- * - `AppMetaInfo`: アプリケーション自体のバージョン・概要・著作権表示メタデータ型
- * - `AboutTabType`: Aboutダイアログ内のアクティブタブ区分 ("about" | "licenses")
- * - `AboutDialogState`: Aboutダイアログ全体のUIおよび選択・検索状態管理型
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。PackageLicenseRecord, AppMetaInfo, AboutDialogState等の型定義。
+ * ## Type Definitions
+ * - `PackageLicenseRecord`: Individual license record for third-party packages (Rust / npm)
+ * - `AppMetaInfo`: Application version, description, and copyright metadata
+ * - `AboutTabType`: Active tab in About dialog ("about" | "licenses")
+ * - `AboutDialogState`: State management for About dialog UI, selection, and search
  */
 
 /**
- * サードパーティ製パッケージの個別ライセンス情報レコード型
+ * Individual license information record for a third-party package
  *
- * ## フィールド定義
- * - `id`: 一意識別子 (`{name}@{version}`)
- * - `name`: パッケージ名称（クレート名またはnpmパッケージ名）
- * - `version`: パッケージのバージョン文字列
- * - `source`: パッケージの出自 ("rust": バックエンドクレート, "npm": フロントエンドライブラリ)
- * - `license`: SPDXライセンス識別子またはライセンス名称（例: "MIT", "Apache-2.0"）
- * - `author`: 著作者・著作権者表記（Copyright notice、存在しない場合は null）
- * - `repository`: リポジトリまたは公式サイトのURL（存在しない場合は null）
- * - `license_text`: 原著作者によって提供された正規のライセンス全文テキスト
+ * ## Field Definitions
+ * - `id`: Unique identifier (`{name}@{version}`)
+ * - `name`: Package name (crate or npm package name)
+ * - `version`: Package version string
+ * - `source`: Package source origin ("rust": backend crate, "npm": frontend package)
+ * - `license`: SPDX license identifier or license name (e.g. "MIT", "Apache-2.0")
+ * - `author`: Author or copyright notice (null if not available)
+ * - `repository`: Repository or official site URL (null if not available)
+ * - `license_text`: Full license text provided by the upstream author
  */
 export interface PackageLicenseRecord {
   id: string;
@@ -41,14 +38,14 @@ export interface PackageLicenseRecord {
 }
 
 /**
- * アプリケーション基本情報メタデータ型
+ * Basic application metadata interface
  *
- * ## フィールド定義
- * - `name`: アプリケーション名称 ("Excel Grep")
- * - `version`: 現在のアプリケーションバージョン番号 (例: "0.1.0")
- * - `description`: アプリケーションの概要説明文
- * - `copyright`: アプリケーション全体の著作権表示文字列
- * - `license`: アプリケーション自体の配布ライセンス ("MIT License")
+ * ## Field Definitions
+ * - `name`: Application name ("Excel Grep")
+ * - `version`: Application version string (e.g. "0.1.0")
+ * - `description`: Application description summary
+ * - `copyright`: Full application copyright notice string
+ * - `license`: Application distribution license ("MIT License")
  */
 export interface AppMetaInfo {
   name: string;
@@ -59,21 +56,21 @@ export interface AppMetaInfo {
 }
 
 /**
- * Aboutダイアログのアクティブタブ区分型
- * - `"about"`: アプリ基本情報・概要・著作権表示
- * - `"licenses"`: オープンソースライセンス一覧および詳細閲覧
+ * Active tab union type for About dialog
+ * - `"about"`: App basic info, overview, and copyright
+ * - `"licenses"`: Open-source licenses list and detail view
  */
 export type AboutTabType = "about" | "licenses";
 
 /**
- * AboutダイアログUI状態型
+ * About dialog UI state interface
  *
- * ## フィールド定義
- * - `isOpen`: ダイアログのモーダル表示フラグ
- * - `activeTab`: 現在アクティブな表示タブ
- * - `searchKeyword`: ライセンス一覧のフィルタリング用検索文字列
- * - `selectedPackageId`: 2ペイン右側で詳細表示されているパッケージの id
- * - `copyFeedback`: クリップボードコピー成功時の一時的視覚フィードバック表示中フラグ
+ * ## Field Definitions
+ * - `isOpen`: Dialog modal visibility flag
+ * - `activeTab`: Currently active tab
+ * - `searchKeyword`: Search filter query for license list
+ * - `selectedPackageId`: ID of the package selected for detailed view in the right pane
+ * - `copyFeedback`: Temporary visual feedback flag when clipboard copy succeeds
  */
 export interface AboutDialogState {
   isOpen: boolean;

@@ -1,43 +1,41 @@
-//! ## 処理内容
-//! コマンドライン引数を検証し、検索要求またはヘルプ要求へ変換する。
-//! 短縮オプション（-p, -q等）、位置引数（第1引数: クエリ、第2引数以降: パス）、
-//! 複数パス指定、フォーマット推論、および標準出力モード（-o 省略時）をサポートする。
-//! ## 引数・戻り値
-//! OS引数を受け取り、`ParseOutcome` または利用者向けエラー文字列を返す。
-//! ## エラー
-//! 非Unicode、不足・重複・未知の引数、無効なパスや検索条件はErrとする。
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-29, Codex): CLI引数解析を追加。
-//! - v1.1.0 (2026-09-29, AI Agent): 短縮オプション、位置引数、複数パス、フォーマット自動推論、標準出力モード対応。
+//! # CLI Argument Parser
+//!
+//! ## Description
+//! Validates command-line arguments and converts them into search requests or help requests.
+//! Supports short options (`-p`, `-q`, etc.), positional arguments (1st arg: query, 2nd+ args: path(s)),
+//! multiple input paths, format inference, and stdout mode (when `-o` is omitted).
+//!
+//! ## Arguments / Returns
+//! Receives operating system arguments and returns `ParseOutcome` or a user-facing error string.
+//!
+//! ## Errors
+//! Returns `Err` on non-Unicode arguments, missing/duplicate/unknown arguments, or invalid paths/queries.
 
 use crate::constants;
 use exlgrep_core::models::{ExportFormat, SearchQuery};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-/// ## 処理内容
-/// CLI検索結果の出力先ターゲット（ファイル保存または標準出力ストリーミング）を表す。
-/// ## 引数・戻り値
-/// Fileは保存先PathBufを保持し、Stdoutは出力先省略時の標準出力を表す。
-/// ## エラー
-/// 値保持のみでエラーを発生させない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, AI Agent): 出力先ターゲット列挙型を追加。
+/// Represents the output destination target for CLI search results (file path or stdout streaming).
+///
+/// ## Arguments / Returns
+/// `File` holds the destination `PathBuf`, while `Stdout` represents standard output when destination is omitted.
+///
+/// ## Errors
+/// Simple value carrier that produces no errors.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum CliOutputTarget {
     File(PathBuf),
     Stdout,
 }
 
-/// ## 処理内容
-/// CLI一回分の検索および保存設定を保持する。
-/// ## 引数・戻り値
-/// 入力パス一覧、出力先ターゲット、検索条件、形式、言語、上書き指定を格納する。
-/// ## エラー
-/// 検証済み値のみ保持し、構築後にエラーを発生させない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): CLI要求型を追加。
-/// - v1.1.0 (2026-09-29, AI Agent): 複数入力パスおよび出力先ターゲット対応へ更新。
+/// Retains search and output settings for a single CLI invocation.
+///
+/// ## Arguments / Returns
+/// Stores input path list, output target, search query options, export format, language, and overwrite flag.
+///
+/// ## Errors
+/// Encapsulates validated values only and produces no errors after construction.
 #[derive(Debug, Clone)]
 pub struct CliOptions {
     pub query: SearchQuery,
@@ -48,29 +46,26 @@ pub struct CliOptions {
     pub overwrite: bool,
 }
 
-/// ## 処理内容
-/// 引数解析結果が実行要求かヘルプ要求かを表す。
-/// ## 引数・戻り値
-/// Runは`CliOptions`、Helpは選択言語の翻訳本文を保持する。
-/// ## エラー
-/// 値保持のみでエラーを発生させない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): 引数解析結果型を追加。
+/// Represents whether parsed arguments specify an execution request or a help request.
+///
+/// ## Arguments / Returns
+/// `Run` contains `CliOptions`, while `Help` contains the translated help text in the requested language.
+///
+/// ## Errors
+/// Simple value carrier that produces no errors.
 pub enum ParseOutcome {
     Run(CliOptions),
     Help(String),
 }
 
-/// ## 処理内容
-/// OS引数をCLI契約に従って解析し、入力・出力パスとSearchQueryを検証する。
-/// 短縮オプション、位置引数、拡張子からのフォーマット自動推論、出力省略時のStdout設定を行う。
-/// ## 引数・戻り値
-/// OS引数イテレーター、翻訳辞書を受け、`Result<ParseOutcome, String>` を返す。
-/// ## エラー
-/// 不正オプション、パス、拡張子、正規表現、重複指定、翻訳欠落ではErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): 標準ライブラリによる引数解析を追加。
-/// - v1.1.0 (2026-09-29, AI Agent): 短縮オプション、位置引数、複数パス、自動推論、標準出力対応。
+/// Parses operating system arguments according to CLI contracts and validates input/output paths and SearchQuery.
+/// Handles short options, positional arguments, format inference from extensions, and stdout mode when output is omitted.
+///
+/// ## Arguments / Returns
+/// Accepts OS arguments iterator and translation catalogs, returning `Result<ParseOutcome, String>`.
+///
+/// ## Errors
+/// Returns `Err` on invalid options, paths, extensions, regex syntax, duplicate definitions, or missing translations.
 pub fn parse_args<I, S>(
     args: I,
     catalogs: &BTreeMap<String, BTreeMap<String, String>>,
@@ -94,21 +89,21 @@ where
     while let Some(argument) = iterator.next() {
         let argument = argument?;
 
-        // 終端記号 "--" 以降はすべて位置引数として扱う
+        // Treat everything after "--" terminator as positional arguments
         if after_terminator {
             positional_args.push(argument);
             continue;
         }
 
-        // オプション終端記号 "--" の判定
-        // 定数参照: constants::CLI_OPTION_TERMINATOR
+        // Check for option terminator "--"
+        // Constant reference: constants::CLI_OPTION_TERMINATOR
         if argument == constants::CLI_OPTION_TERMINATOR {
             after_terminator = true;
             continue;
         }
 
-        // ヘルプオプションの判定
-        // 定数参照: constants::CLI_SHORT_HELP, constants::CLI_LONG_HELP
+        // Check for help option
+        // Constant reference: constants::CLI_SHORT_HELP, constants::CLI_LONG_HELP
         if argument == constants::CLI_SHORT_HELP || argument == constants::CLI_LONG_HELP {
             if help {
                 return Err(format!("{}: {}", constants::ERR_CLI_DUPLICATE, argument));
@@ -117,8 +112,8 @@ where
             continue;
         }
 
-        // ロングオプション (--name または --name=value)
-        // 定数参照: constants::CLI_OPTION_PREFIX
+        // Long options (--name or --name=value)
+        // Constant reference: constants::CLI_OPTION_PREFIX
         if argument.starts_with(constants::CLI_OPTION_PREFIX) {
             let (name, inline_value) =
                 match argument.split_once(constants::CLI_ASSIGNMENT_SEPARATOR) {
@@ -129,7 +124,7 @@ where
                 .strip_prefix(constants::CLI_OPTION_PREFIX)
                 .ok_or_else(|| format!("{}: {name}", constants::ERR_CLI_UNKNOWN))?;
 
-            // 定数参照: constants::CLI_OVERWRITE_FIELD
+            // Constant reference: constants::CLI_OVERWRITE_FIELD
             if option_name == constants::CLI_OVERWRITE_FIELD {
                 if inline_value.is_some()
                     || values
@@ -141,7 +136,7 @@ where
                 continue;
             }
 
-            // 定数参照: constants::CLI_VALUE_OPTIONS
+            // Constant reference: constants::CLI_VALUE_OPTIONS
             if !constants::CLI_VALUE_OPTIONS.contains(&option_name) {
                 return Err(format!("{}: {name}", constants::ERR_CLI_UNKNOWN));
             }
@@ -159,8 +154,8 @@ where
             continue;
         }
 
-        // ショートオプション (-x または -x=value)
-        // 定数参照: constants::CLI_SHORT_OPTION_PREFIX
+        // Short options (-x or -x=value)
+        // Constant reference: constants::CLI_SHORT_OPTION_PREFIX
         if argument.starts_with(constants::CLI_SHORT_OPTION_PREFIX)
             && argument != constants::CLI_SHORT_OPTION_PREFIX
         {
@@ -170,7 +165,7 @@ where
                     None => (argument, None),
                 };
 
-            // 定数参照: constants::CLI_SHORT_TO_LONG_OPTIONS
+            // Constant reference: constants::CLI_SHORT_TO_LONG_OPTIONS
             let (_, long_field) = constants::CLI_SHORT_TO_LONG_OPTIONS
                 .iter()
                 .find(|(short, _)| *short == short_flag)
@@ -209,11 +204,11 @@ where
             continue;
         }
 
-        // 位置引数
+        // Positional argument
         positional_args.push(argument);
     }
 
-    // ヘルプ要求の処理
+    // Process help request
     if help {
         if !positional_args.is_empty()
             || values
@@ -236,10 +231,10 @@ where
         return Ok(ParseOutcome::Help(help));
     }
 
-    // クエリおよびパスの解決（位置引数と名前付きオプションの排他検査）
+    // Resolve query and input path(s) (mutual exclusion between positional and named args)
     let (query_str, input_paths) = match positional_args.as_slice() {
         [] => {
-            // 位置引数なし: --query と --path が必須
+            // No positional args: --query and --path are required
             let query = values
                 .get(constants::CLI_QUERY_FIELD)
                 .cloned()
@@ -261,7 +256,7 @@ where
             (query, vec![resolved])
         }
         [first_pos] => {
-            // 位置引数が1つ: 第1引数はクエリ
+            // Single positional argument: 1st argument is query
             if values.contains_key(constants::CLI_QUERY_FIELD) {
                 return Err(format!(
                     "{}: --{}",
@@ -280,7 +275,7 @@ where
             (first_pos.clone(), vec![resolved])
         }
         [first_pos, remaining_paths @ ..] => {
-            // 位置引数が2つ以上: 第1引数はクエリ、第2引数以降はパス
+            // Two or more positional arguments: 1st is query, 2nd+ are paths
             if values.contains_key(constants::CLI_QUERY_FIELD) {
                 return Err(format!(
                     "{}: --{}",
@@ -307,7 +302,7 @@ where
         return Err(constants::ERR_CLI_EMPTY_QUERY.to_string());
     }
 
-    // 出力先およびフォーマットの解決（フォーマット自動推論）
+    // Resolve output destination and export format (automatic format inference)
     let output_arg_opt = values.get(constants::CLI_OUTPUT_FIELD);
     let format_arg_opt = values.get(constants::CLI_FORMAT_FIELD).map(String::as_str);
 
@@ -336,7 +331,7 @@ where
                 }
                 Some(_) => return Err(constants::ERR_CLI_FORMAT.to_string()),
                 None => {
-                    // フォーマット自動推論
+                    // Automatic format inference
                     if ext.eq_ignore_ascii_case(constants::CLI_FORMAT_CSV) {
                         ExportFormat::Csv
                     } else if ext.eq_ignore_ascii_case(constants::CLI_FORMAT_XLSX) {
@@ -349,7 +344,7 @@ where
             (CliOutputTarget::File(output_path), format)
         }
         None => {
-            // 出力省略時は標準出力（stdout）モード。フォーマットは CSV のみ対応。
+            // Default to stdout streaming mode when output is omitted. Format is CSV only.
             let format = match format_arg_opt {
                 Some(constants::CLI_FORMAT_CSV) | None => ExportFormat::Csv,
                 _ => return Err(constants::ERR_CLI_FORMAT.to_string()),
@@ -486,14 +481,13 @@ where
     }))
 }
 
-/// ## 処理内容
-/// 真偽値オプションを明示値または既定値から解析する。
-/// ## 引数・戻り値
-/// 値辞書、オプション名、bool既定値を受け、boolを返す。
-/// ## エラー
-/// `true` と `false` 以外の指定でErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): 真偽値解析を追加。
+/// Parses boolean option from explicit map value or defaults.
+///
+/// ## Arguments / Returns
+/// Accepts value map, option name, and default boolean, returning the parsed boolean.
+///
+/// ## Errors
+/// Returns `Err` if value is neither "true" nor "false".
 fn parse_bool(
     values: &BTreeMap<String, String>,
     name: &str,
@@ -507,14 +501,13 @@ fn parse_bool(
     }
 }
 
-/// ## 処理内容
-/// パスを絶対化し、入力ファイルまたはディレクトリとして検証する。
-/// ## 引数・戻り値
-/// 利用者入力 `&str` を受け、既存の絶対`PathBuf`を返す。
-/// ## エラー
-/// 不存在、非ファイル/ディレクトリ、canonicalize失敗でErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): 検索入力パス検証を追加。
+/// Normalizes path to absolute path and validates it as existing file or directory.
+///
+/// ## Arguments / Returns
+/// Accepts user input `&str` and returns existing canonical `PathBuf`.
+///
+/// ## Errors
+/// Returns `Err` on non-existence, non-file/directory, or canonicalization failure.
 fn resolve_input_path(input: &str) -> Result<PathBuf, String> {
     let path = expand_home(input)?;
     let path =
@@ -525,14 +518,13 @@ fn resolve_input_path(input: &str) -> Result<PathBuf, String> {
     Ok(path)
 }
 
-/// ## 処理内容
-/// 出力先を既存親ディレクトリ内の絶対ファイルパスとして検証する。
-/// ## 引数・戻り値
-/// 利用者入力 `&str` を受け、親を正規化した`PathBuf`を返す。
-/// ## エラー
-/// 親がない、ファイル名がない、既存出力がsymlink/ディレクトリの場合はErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): 出力パス検証を追加。
+/// Validates destination output path as an absolute file path within an existing parent directory.
+///
+/// ## Arguments / Returns
+/// Accepts user input `&str` and returns canonicalized parent `PathBuf`.
+///
+/// ## Errors
+/// Returns `Err` if missing parent, missing filename, or existing output is directory / symlink.
 fn resolve_output_path(input: &str) -> Result<PathBuf, String> {
     let path = expand_home(input)?;
     let file_name = path
@@ -553,16 +545,15 @@ fn resolve_output_path(input: &str) -> Result<PathBuf, String> {
     Ok(output)
 }
 
-/// ## 処理内容
-/// `~` で始まるパスをOSホーム環境変数から展開する。
-/// ## 引数・戻り値
-/// 入力パス`&str`を受け、展開した`PathBuf`を返す。
-/// ## エラー
-/// ホーム環境変数がない場合はErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): ホーム省略パス対応を追加。
+/// Expands leading `~` in path using home directory environment variables.
+///
+/// ## Arguments / Returns
+/// Accepts input path `&str` and returns expanded `PathBuf`.
+///
+/// ## Errors
+/// Returns `Err` if home directory environment variable is absent.
 fn expand_home(input: &str) -> Result<PathBuf, String> {
-    // 定数参照: constants::HOME_PATH_PREFIX_UNIX, constants::HOME_ENVIRONMENT_VARIABLE
+    // Constant reference: constants::HOME_PATH_PREFIX_UNIX, constants::HOME_ENVIRONMENT_VARIABLE
     if let Some(suffix) = input.strip_prefix(constants::HOME_PATH_PREFIX_UNIX) {
         let home = std::env::var_os(constants::HOME_ENVIRONMENT_VARIABLE)
             .or_else(|| std::env::var_os(constants::WINDOWS_HOME_ENVIRONMENT_VARIABLE))
@@ -572,14 +563,13 @@ fn expand_home(input: &str) -> Result<PathBuf, String> {
     Ok(PathBuf::from(input))
 }
 
-/// ## 処理内容
-/// 言語コードが翻訳対応言語のいずれかであることを確認する。
-/// ## 引数・戻り値
-/// 言語コード`&str`を受け、妥当ならunitを返す。
-/// ## エラー
-/// ja/en以外でErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): 言語検証を追加。
+/// Validates that language code corresponds to supported translation locales.
+///
+/// ## Arguments / Returns
+/// Accepts language code `&str` and returns `Ok(())` if valid.
+///
+/// ## Errors
+/// Returns `Err` if language is not "ja" or "en".
 fn validate_language(language: &str) -> Result<(), String> {
     if language == constants::CLI_LOCALE_JA || language == constants::CLI_LOCALE_EN {
         Ok(())
@@ -594,14 +584,13 @@ mod tests {
     use crate::constants;
     use exlgrep_core::models::ExportFormat;
 
-    /// ## 処理内容
-    /// リポジトリルートの絶対パスを解決する。
-    /// ## 引数・戻り値
-    /// 引数なし。`PathBuf` を返す。
-    /// ## エラー
-    /// ルートが見つからない場合は panic する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-29, Antigravity): クレート分離に伴うルートパス解決。
+    /// Resolves the absolute path to the repository root.
+    ///
+    /// ## Arguments / Returns
+    /// Takes no arguments; returns `PathBuf`.
+    ///
+    /// ## Errors
+    /// Panics if repository root cannot be determined.
     fn repo_root() -> std::path::PathBuf {
         let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         if manifest.join("../../tests/fixtures").exists() {
@@ -614,15 +603,13 @@ mod tests {
         }
     }
 
-    /// ## 処理内容
-    /// 必須引数と固定既定値からCLI検索要求を構築し、ハイフン始まりの検索語を保つ。
-    /// ## 引数・戻り値
-    /// 引数なし。解析結果と既定SearchQuery各項目を検証する。
-    /// ## エラー
-    /// カタログ・パス・解析・期待値が不正ならテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-29, Codex): CLI既定値解析テストを追加。
-    /// - v1.1.0 (2026-09-29, AI Agent): input_paths, output_target に追従。
+    /// Verifies parsing of required CLI arguments and fixed default parameters.
+    ///
+    /// ## Arguments / Returns
+    /// Tests argument resolution against expected SearchQuery defaults.
+    ///
+    /// ## Errors
+    /// Panics if catalogs or arguments fail to parse.
     #[test]
     fn parses_required_arguments_and_fixed_defaults() {
         let root = repo_root();
@@ -666,14 +653,13 @@ mod tests {
         assert!(!options.overwrite);
     }
 
-    /// ## 処理内容
-    /// 位置引数（第1=クエリ、第2以降=複数パス）と出力先省略時の標準出力（stdout）モード判定を検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。位置引数からクエリ・複数パスが抽出され、output_target が Stdout、format が Csv になることを確認する。
-    /// ## エラー
-    /// 解析結果が不一致の場合にテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-29, AI Agent): 位置引数と標準出力テストを追加。
+    /// Tests positional arguments (query, multiple paths) and default stdout streaming mode.
+    ///
+    /// ## Arguments / Returns
+    /// Verifies extracted query, input paths, stdout output target, and default CSV format.
+    ///
+    /// ## Errors
+    /// Panics if assertions fail.
     #[test]
     fn parses_positional_arguments_and_stdout() {
         let root = repo_root();
@@ -694,14 +680,13 @@ mod tests {
         assert_eq!(options.format, ExportFormat::Csv);
     }
 
-    /// ## 処理内容
-    /// 短縮オプション（-q, -p, -o, -f, -w, -c, -r, -l, -e）およびフォーマット自動推論を検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。短縮オプションの値が反映され、拡張子からXlsx形式が自動推論されることを確認する。
-    /// ## エラー
-    /// 解析結果が不一致の場合にテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-29, AI Agent): 短縮オプションとフォーマット推論テストを追加。
+    /// Verifies parsing of short options (-q, -p, -o, -f, -w, -c, -r, -l) and format auto-inference.
+    ///
+    /// ## Arguments / Returns
+    /// Tests short options resolution and XLSX format inference from output file extension.
+    ///
+    /// ## Errors
+    /// Panics if parsing fails.
     #[test]
     fn parses_short_options_and_infers_format() {
         let root = repo_root();
@@ -730,21 +715,20 @@ mod tests {
         assert_eq!(options.language, "en");
     }
 
-    /// ## 処理内容
-    /// 位置引数と名前付き引数（-q, -p）の重複指定時にエラーが返されることを検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。重複エラーが返されることを確認する。
-    /// ## エラー
-    /// 想定通りのエラーが返されない場合にテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-29, AI Agent): 重複指定拒否テストを追加。
+    /// Verifies rejection when positional arguments duplicate named options.
+    ///
+    /// ## Arguments / Returns
+    /// Verifies duplicate error responses.
+    ///
+    /// ## Errors
+    /// Panics if duplicate input is erroneously accepted.
     #[test]
     fn rejects_duplicate_positional_and_named() {
         let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
         let root = repo_root();
         let input = root.join("tests/fixtures/sample_report.xlsx");
 
-        // クエリ重複
+        // Duplicate query
         let args1 = [
             "pos_query".to_string(),
             "-q".to_string(),
@@ -754,7 +738,7 @@ mod tests {
         ];
         assert!(parse_args(args1, &catalogs).is_err());
 
-        // パス重複
+        // Duplicate path
         let args2 = [
             "pos_query".to_string(),
             input.to_string_lossy().into_owned(),
@@ -764,14 +748,13 @@ mod tests {
         assert!(parse_args(args2, &catalogs).is_err());
     }
 
-    /// ## 処理内容
-    /// 未知の短縮オプションが指定された場合にエラーが返されることを検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。未知オプションエラーが返されることを確認する。
-    /// ## エラー
-    /// 想定通りのエラーが返されない場合にテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-29, AI Agent): 未知短縮オプション拒否テストを追加。
+    /// Verifies that unknown short flags are rejected.
+    ///
+    /// ## Arguments / Returns
+    /// Tests rejection of unknown flag.
+    ///
+    /// ## Errors
+    /// Panics if unknown flag is accepted.
     #[test]
     fn rejects_unknown_short_option() {
         let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
@@ -779,14 +762,13 @@ mod tests {
         assert!(parse_args(args, &catalogs).is_err());
     }
 
-    /// ## 処理内容
-    /// 英語ヘルプ指定を検索引数なしで受け付け、検索実行を要求しない。
-    /// ## 引数・戻り値
-    /// 引数なし。ヘルプ文面が英語であることを検証する。
-    /// ## エラー
-    /// 翻訳欠落または解析結果不一致でテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-29, Codex): 言語付きヘルプテストを追加。
+    /// Verifies that `--help` with `--language=en` succeeds without requiring search arguments.
+    ///
+    /// ## Arguments / Returns
+    /// Verifies returned help text starts with English usage.
+    ///
+    /// ## Errors
+    /// Panics if help request fails or runs search.
     #[test]
     fn help_accepts_language_without_search_options() {
         let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();

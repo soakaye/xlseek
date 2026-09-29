@@ -1,15 +1,10 @@
-//! # 検索コマンドハンドラ (commands/search_cmd.rs)
+//! # Search Command Handler (commands/search_cmd.rs)
 //!
-//! ## 処理内容
-//! フロントエンドからの検索開始リクエスト（start_search）および中断リクエスト（cancel_search）を
-//! 受信し、バックグラウンドスレッドで検索エンジンを起動して結果および進捗をイベント送信する。
-//! 憲章原則I（日本語ログ・通知）、原則II（定数参照）、原則III（ヘッダコメント）に準拠。
-//!
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化、4要素ヘッダコメント付与。
-//! - v1.1.0 (2026-09-27, Codex): 検索開始前のパス・正規表現検証を追加。
-//! - v1.2.0 (2026-09-27, Codex): 必須条件の事前検証とパス補完 IPC を追加。
-//! - v1.3.0 (2026-09-28, AI Agent): 検索マッチのバッチ送信によるWebView2 IPC過負荷防止とエラー詳細出力。
+//! ## Description
+//! Receives search start requests (start_search) and cancellation requests (cancel_search) from the frontend,
+//! running the search engine in background threads and emitting matches and progress events.
+//! Conforms to Constitution Principle I (English comments/logs), Principle II (Constant references),
+//! and Principle III (Header comments).
 
 use crate::models::CommandError;
 use crate::models::{ErrorCode, ScanProgress, ScanState, SearchMatch, SearchQuery};
@@ -22,32 +17,26 @@ use regex::RegexBuilder;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager, State};
 
-/// ## 処理内容
-/// Tauriアプリケーション全体で共有されるステート構造体。検索エンジンインスタンスを保持する。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// ## Description
+/// Shared state struct across the Tauri application holding the search engine instance.
 pub struct AppState {
     pub engine: Arc<SearchEngine>,
 }
 
-/// ## 処理内容
-/// 検索リクエストを受信し、パスと正規表現を検証後に非同期スレッド上で検索エンジンを起動する。
-/// ヒットしたセル情報は `search-match` イベント、進捗状況は `scan-progress` イベントとしてフロントエンドへ通知する。
+/// ## Description
+/// Receives search requests, validates path and regex, and spawns the search engine on background threads.
+/// Emits matching cell info as `search-match` events and progress as `scan-progress` events.
 ///
-/// ## 引数
-/// - `app`: `AppHandle` - イベント送信用Tauriハンドル
-/// - `query`: `SearchQuery` - 検索クエリ（キーワード、ディレクトリ、オプション）
-/// - `state`: `State<'_, AppState>` - 共有アプリケーション状態
+/// ## Arguments
+/// - `app`: `AppHandle` - Tauri handle for emitting events
+/// - `query`: `SearchQuery` - Search query parameters
+/// - `state`: `State<'_, AppState>` - Shared application state
 ///
-/// ## 戻り値
-/// - `Result<(), String>`: コマンド受付成功時は `Ok(())`
+/// ## Returns
+/// - `Result<(), CommandError>`: `Ok(())` on successful acceptance
 ///
-/// ## エラー / 例外発生条件
-/// panicは発生しない。検索エンジンのエラーは `scan-progress` イベント（State: Error）で通知される。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
+/// ## Errors / Exceptions
+/// Does not panic. Search errors are emitted via `scan-progress` events (State: Error).
 #[tauri::command]
 pub async fn start_search(
     app: AppHandle,
@@ -89,7 +78,7 @@ pub async fn start_search(
                 return;
             }
             let batch: Vec<SearchMatch> = std::mem::take(buf);
-            // 定数参照: crate::constants::EVENT_SEARCH_MATCH を使用
+            // Constant reference: crate::constants::EVENT_SEARCH_MATCH
             if let Err(e) = app_handle.emit(crate::constants::EVENT_SEARCH_MATCH, &batch) {
                 eprintln!("{}: {:?}", crate::constants::LOG_EVENT_EMIT_FAILED, e);
             }
@@ -101,7 +90,7 @@ pub async fn start_search(
                 let mut buf = match_buffer_clone.lock().unwrap();
                 buf.push(search_match);
                 let mut last = last_emit_clone.lock().unwrap();
-                // 定数参照: crate::constants::SEARCH_MATCH_BATCH_SIZE, crate::constants::SEARCH_MATCH_BATCH_INTERVAL_MS を使用
+                // Constant reference: crate::constants::SEARCH_MATCH_BATCH_SIZE, crate::constants::SEARCH_MATCH_BATCH_INTERVAL_MS
                 if buf.len() >= crate::constants::SEARCH_MATCH_BATCH_SIZE
                     || last.elapsed().as_millis()
                         >= crate::constants::SEARCH_MATCH_BATCH_INTERVAL_MS
@@ -111,7 +100,7 @@ pub async fn start_search(
                 }
             },
             move |progress| {
-                // 定数参照: crate::constants::EVENT_SCAN_PROGRESS を使用
+                // Constant reference: crate::constants::EVENT_SCAN_PROGRESS
                 if let Err(e) =
                     app_handle_prog.emit(crate::constants::EVENT_SCAN_PROGRESS, &progress)
                 {
@@ -136,7 +125,7 @@ pub async fn start_search(
                 } else {
                     crate::models::ErrorCode::SearchFailed
                 };
-                // 定数参照: crate::constants::EVENT_SCAN_PROGRESS を使用
+                // Constant reference: crate::constants::EVENT_SCAN_PROGRESS
                 let _ = app_handle_err.emit(
                     crate::constants::EVENT_SCAN_PROGRESS,
                     ScanProgress {
@@ -157,10 +146,17 @@ pub async fn start_search(
     Ok(())
 }
 
-/// 処理内容: 検索キーワード、対象パス、拡張子の必須値を検索受付前に検証する。
-/// 引数・戻り値: SearchQuery を受け、すべて指定されていれば Ok、欠落時は SearchFailed を返す。
-/// エラー: 空白だけのキーワード・パスまたは拡張子なしを SearchFailed として拒否する。
-/// 変更履歴: v1.0.0 (2026-09-27, Codex): 検索必須値の受付前検証を追加。
+/// ## Description
+/// Validates required search parameters (keyword, target path, extensions) prior to accepting search.
+///
+/// ## Arguments
+/// - `query`: `&SearchQuery` - Query to inspect
+///
+/// ## Returns
+/// - `Result<(), CommandError>`: Ok(()) if valid, Err(CommandError) if missing or whitespace-only
+///
+/// ## Errors / Exceptions
+/// Does not panic.
 fn validate_required_search_fields(query: &SearchQuery) -> Result<(), CommandError> {
     if query.keyword.trim().is_empty()
         || query.target_dir.trim().is_empty()
@@ -173,10 +169,18 @@ fn validate_required_search_fields(query: &SearchQuery) -> Result<(), CommandErr
     Ok(())
 }
 
-/// 処理内容: ディレクトリ入力に対する補完候補をブロッキング用スレッドで取得する。
-/// 引数・戻り値: `path_input` を受け、候補文字列の配列を返す。Tauri 実行環境からホームパスを取得する。
-/// エラー: ホーム取得・スレッド起動に失敗した場合は空配列を返す。
-/// 変更履歴: v1.0.0 (2026-09-27, Codex): パス補完 IPC を追加。
+/// ## Description
+/// Retrieves directory path completion candidates on a blocking thread.
+///
+/// ## Arguments
+/// - `app`: `AppHandle` - Tauri handle for home directory access
+/// - `path_input`: `String` - Directory input string
+///
+/// ## Returns
+/// - `Vec<String>`: Candidate path strings
+///
+/// ## Errors / Exceptions
+/// Returns empty vector on failure; does not panic.
 #[tauri::command]
 pub async fn complete_directory_path(app: AppHandle, path_input: String) -> Vec<String> {
     let home_dir = app.path().home_dir().ok();
@@ -185,10 +189,17 @@ pub async fn complete_directory_path(app: AppHandle, path_input: String) -> Vec<
         .unwrap_or_default()
 }
 
-/// 処理内容: 検索条件に含まれる正規表現を検索起動前にコンパイルして検証する。
-/// 引数・戻り値: SearchQuery を受け、妥当なら Ok、無効なら InvalidRegex を返す。
-/// エラー: 正規表現モードで構文が不正な場合は InvalidRegex を返す。
-/// 変更履歴: v1.0.0 (2026-09-27, Codex): 検索受付前検証を追加。
+/// ## Description
+/// Validates regular expression syntax by precompiling prior to launching search.
+///
+/// ## Arguments
+/// - `query`: `&SearchQuery` - Query containing keyword and regex flag
+///
+/// ## Returns
+/// - `Result<(), ErrorCode>`: Ok(()) if valid, Err(ErrorCode::InvalidRegex) if malformed
+///
+/// ## Errors / Exceptions
+/// Does not panic.
 fn validate_search_regex(query: &SearchQuery) -> Result<(), ErrorCode> {
     if !query.use_regex {
         return Ok(());
@@ -200,10 +211,17 @@ fn validate_search_regex(query: &SearchQuery) -> Result<(), ErrorCode> {
         .map_err(|_| ErrorCode::InvalidRegex)
 }
 
-/// 処理内容: 内部パス検証エラーを Tauri が返す構造化エラーへ変換する。
-/// 引数・戻り値: PathError を受け、対応する CommandError を返す。
-/// エラー: なし。未知のパス状態は SearchFailed として扱う。
-/// 変更履歴: v1.0.0 (2026-09-27, Codex): 構造化パスエラー変換を追加。
+/// ## Description
+/// Converts internal PathError into structured CommandError for Tauri IPC.
+///
+/// ## Arguments
+/// - `error`: `PathError` - Internal path error
+///
+/// ## Returns
+/// - `CommandError`: Mapped command error
+///
+/// ## Errors / Exceptions
+/// Does not panic.
 fn path_error_to_command_error(error: PathError) -> CommandError {
     let code = match error {
         PathError::NotFound => ErrorCode::PathNotFound,
@@ -213,20 +231,17 @@ fn path_error_to_command_error(error: PathError) -> CommandError {
     CommandError { code }
 }
 
-/// ## 処理内容
-/// 実行中の検索処理の中断フラグを設定し、スキャン処理を停止させる。
+/// ## Description
+/// Sets the cancellation flag on running search operations to halt scanning.
 ///
-/// ## 引数
-/// - `state`: `State<'_, AppState>` - 共有アプリケーション状態
+/// ## Arguments
+/// - `state`: `State<'_, AppState>` - Shared application state
 ///
-/// ## 戻り値
-/// - `Result<(), String>`: 成功時は `Ok(())`
+/// ## Returns
+/// - `Result<(), CommandError>`: Ok(()) on success
 ///
-/// ## エラー / 例外発生条件
-/// panicは発生しない。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// ## Errors / Exceptions
+/// Does not panic.
 #[tauri::command]
 pub fn cancel_search(state: State<'_, AppState>) -> Result<(), CommandError> {
     println!("{}", crate::constants::LOG_CANCEL_REQUESTED);
@@ -239,17 +254,21 @@ mod tests {
     use super::{validate_required_search_fields, validate_search_regex};
     use crate::models::{CommandError, ErrorCode, SearchQuery};
 
-    /// 処理内容: 正規表現検索の不正パターンを開始前に識別する。
-    /// 引数・戻り値: なし。検索クエリの妥当性検証結果を確認する。
-    /// エラー: 不正パターンが受理される場合にテストを失敗させる。
-    /// 変更履歴: v1.0.0 (2026-09-27, Codex): 検索受付前の正規表現テストを追加。
+    /// ## Description
+    /// Verifies detecting invalid regex patterns before starting search execution.
+    ///
+    /// ## Arguments / Returns
+    /// None
+    ///
+    /// ## Errors / Exceptions
+    /// Panics if assertions fail.
     #[test]
     fn rejects_invalid_regex_before_search_is_started() {
         let query = SearchQuery {
             keyword: "(".to_string(),
             target_dir: String::new(),
             match_case: false,
-            // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+            // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
             include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
             use_regex: true,
             include_formula: true,
@@ -265,17 +284,21 @@ mod tests {
         ));
     }
 
-    /// 処理内容: 必須検索条件が空の場合は受付エラーにする。
-    /// 引数・戻り値: なし。必須値の検証結果を確認する。
-    /// エラー: 欠落した条件が受理される場合にテストを失敗させる。
-    /// 変更履歴: v1.0.0 (2026-09-27, Codex): 必須条件検証を追加。
+    /// ## Description
+    /// Verifies that empty or whitespace-only required search parameters are rejected.
+    ///
+    /// ## Arguments / Returns
+    /// None
+    ///
+    /// ## Errors / Exceptions
+    /// Panics if assertions fail.
     #[test]
     fn rejects_missing_required_search_fields() {
         let query = SearchQuery {
             keyword: " ".to_string(),
             target_dir: "/tmp".to_string(),
             match_case: false,
-            // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+            // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
             include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
             use_regex: false,
             include_formula: true,
