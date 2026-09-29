@@ -16,18 +16,22 @@ use std::collections::HashMap;
 /// ## 引数・戻り値
 /// キーワード、対象フォルダ、検索オプション、対象拡張子を保持する。
 /// `include_shape` は Shape テキスト検索の有効状態を表し、既定値は true。
+/// `include_value` はセル値検索を表し、既定値は true。
 /// ## エラー / 例外発生条件
 /// Serde のデシリアライズで必須キーワードまたは対象フォルダが欠けると失敗する。
 ///
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
 /// - v1.3.0 (2026-09-28, Codex): Shape 検索条件を追加。
+/// - v1.4.0 (2026-09-29, Codex): JSON互換の値検索条件を追加。
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchQuery {
     pub keyword: String,
     pub target_dir: String,
     #[serde(default)]
     pub match_case: bool,
+    #[serde(default = "default_include_value")]
+    pub include_value: bool,
     #[serde(default)]
     pub use_regex: bool,
     #[serde(default = "default_true")]
@@ -40,6 +44,19 @@ pub struct SearchQuery {
     pub include_hidden: bool,
     #[serde(default = "default_extensions")]
     pub extensions: Vec<String>,
+}
+
+/// ## 処理内容
+/// 旧JSON要求で省略された値検索フラグの既定値を返す。
+/// ## 引数・戻り値
+/// 引数なし。定数 `DEFAULT_INCLUDE_VALUE` のbool値を返す。
+/// ## エラー
+/// panicは発生しない。
+/// ## 変更履歴
+/// - v1.4.0 (2026-09-29, Codex): 値検索のJSON互換既定値を追加。
+fn default_include_value() -> bool {
+    // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+    crate::constants::DEFAULT_INCLUDE_VALUE
 }
 
 /// ## 処理内容
@@ -129,6 +146,55 @@ pub struct SearchMatch {
     pub full_content: String,
     pub formula: Option<String>,
     pub sheets_in_workbook: Vec<String>,
+}
+
+/// ## 処理内容
+/// ファイル検索から得た一致結果とファイル内の部分問題を保持する。
+/// ## 引数・戻り値
+/// matchesは`Vec<SearchMatch>`、issuesは`Vec<SearchIssue>`。
+/// ## エラー
+/// 値保持のみでエラーは発生しない。ブック全体を開けない失敗は呼び出し側がErrとする。
+/// ## 変更履歴
+/// - v1.0.0 (2026-09-29, Codex): 詳細検索ファイル結果を追加。
+#[derive(Debug, Default)]
+pub struct FileSearchResult {
+    pub matches: Vec<SearchMatch>,
+    pub issues: Vec<SearchIssue>,
+}
+
+/// ## 処理内容
+/// 検索中に発生した入力ファイル・シート・抽出段階の問題を記録する。
+/// ## 引数・戻り値
+/// PathBuf、stage文字列、任意のシート名、原因文字列を保持する。
+/// ## エラー
+/// 値保持のみでエラーは発生しない。
+/// ## 変更履歴
+/// - v1.0.0 (2026-09-29, Codex): 検索問題モデルを追加。
+#[derive(Debug)]
+pub struct SearchIssue {
+    pub path: std::path::PathBuf,
+    pub stage: String,
+    pub sheet_name: Option<String>,
+    pub cause: String,
+}
+
+/// ## 処理内容
+/// 一回の検索における対象数、成功数、一致数、時間、問題を集計する。
+/// ## 引数・戻り値
+/// 件数はusize、経過時間はu64ミリ秒、問題は`Vec<SearchIssue>`。
+/// ## エラー
+/// 値保持のみでエラーは発生しない。failed_filesはブック単位で集計する。
+/// ## 変更履歴
+/// - v1.0.0 (2026-09-29, Codex): 検索実行レポートを追加。
+#[derive(Debug, Default)]
+pub struct SearchReport {
+    pub discovered_files: usize,
+    pub scanned_files: usize,
+    pub readable_files: usize,
+    pub failed_files: usize,
+    pub matches_found: usize,
+    pub elapsed_ms: u64,
+    pub issues: Vec<SearchIssue>,
 }
 
 /// ## 処理内容
@@ -324,7 +390,9 @@ pub struct SupportedApp {
 
 #[cfg(test)]
 mod localization_tests {
-    use super::{CommandError, ErrorCode, ExportRequest, ScanPhase, ScanProgress, ScanState};
+    use super::{
+        CommandError, ErrorCode, ExportRequest, ScanPhase, ScanProgress, ScanState, SearchQuery,
+    };
 
     /// ## 処理内容
     /// API 進捗段階とエラーコードがロケール非依存の snake_case で出力されることを確認する。
@@ -384,5 +452,39 @@ mod localization_tests {
         let legacy: ExportRequest =
             serde_json::from_str(r#"{"format":"csv","output_path":"","items":[]}"#).unwrap();
         assert_eq!(legacy.language, crate::constants::DEFAULT_EXPORT_LANGUAGE);
+    }
+
+    /// ## 処理内容
+    /// 旧JSON要求で値検索が有効になり、明示falseは維持されることを検証する。
+    /// ## 引数・戻り値
+    /// 引数なし。SearchQueryをJSONへ変換して値検索フィールドを確認する。
+    /// ## エラー
+    /// JSON変換失敗または期待値不一致でテストが失敗する。
+    /// ## 変更履歴
+    /// - v1.4.0 (2026-09-29, Codex): CLI検索互換の回帰テストを追加。
+    #[test]
+    fn legacy_search_query_defaults_value_search_to_true() {
+        let legacy: SearchQuery = serde_json::from_value(serde_json::json!({
+            "keyword": "needle",
+            "target_dir": "input",
+        }))
+        .unwrap();
+        let serialized = serde_json::to_value(legacy).unwrap();
+        assert_eq!(
+            serialized[crate::constants::SEARCH_QUERY_INCLUDE_VALUE_FIELD],
+            true
+        );
+
+        let explicit: SearchQuery = serde_json::from_value(serde_json::json!({
+            "keyword": "needle",
+            "target_dir": "input",
+            (crate::constants::SEARCH_QUERY_INCLUDE_VALUE_FIELD): false,
+        }))
+        .unwrap();
+        let serialized = serde_json::to_value(explicit).unwrap();
+        assert_eq!(
+            serialized[crate::constants::SEARCH_QUERY_INCLUDE_VALUE_FIELD],
+            false
+        );
     }
 }

@@ -249,6 +249,8 @@ mod tests {
             keyword: "(".to_string(),
             target_dir: String::new(),
             match_case: false,
+            // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+            include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
             use_regex: true,
             include_formula: true,
             include_comment: true,
@@ -273,6 +275,8 @@ mod tests {
             keyword: " ".to_string(),
             target_dir: "/tmp".to_string(),
             match_case: false,
+            // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+            include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
             use_regex: false,
             include_formula: true,
             include_comment: true,

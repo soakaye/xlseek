@@ -4,6 +4,7 @@ version = "0.1.0"
 description = "Super fast Excel Grep Desktop Application"
 authors = ["soakaye"]
 edition = "2021"
+default-run = "exlgrep"
 
 [lib]
 name = "exlgrep_lib"
@@ -20,6 +21,8 @@ tauri-plugin-shell = "2.0.0"
 tauri-plugin-i18n = "2.0.2"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
+serde_yaml = "0.9.34"
+same-file = "1.0.6"
 calamine = "0.36"
 rayon = "1.10"
 regex = "1.10"

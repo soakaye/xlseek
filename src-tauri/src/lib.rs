@@ -7,7 +7,9 @@
 //! ## 変更履歴
 //! - v1.0.0 (2026-09-26, AI Agent): 初版策定。constantsモジュールの公開と憲章準拠ヘッダコメントの追加。
 //! - v1.1.0 (2026-09-26, AI Agent): macOSシステムメニューのカスタム構築 (create_app_menu) および About ダイアログ用メニューイベントハンドラ (on_menu_event) の追加。
+//! - v1.3.0 (2026-09-29, Codex): GUIと独立したCLIモジュールを公開。
 
+pub mod cli;
 pub mod commands;
 pub mod constants;
 pub mod export;

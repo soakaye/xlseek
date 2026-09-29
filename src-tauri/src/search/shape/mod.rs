@@ -41,15 +41,28 @@ pub struct ShapeText {
 /// ZIP/XML の破損や未対応形式ではエラー文字列を返す。
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-28, Codex): 共通 Shape 抽出入口を追加。
+/// - v1.1.0 (2026-09-29, Codex): 拡張子大小文字を正規化。
 pub fn extract_shapes(
     path: &Path,
     sheet_names: &[String],
     cancel_flag: Option<&AtomicBool>,
 ) -> Result<Vec<ShapeText>, String> {
-    match path.extension().and_then(|value| value.to_str()) {
-        Some("xlsx" | "xlsm") => ooxml::extract(path, cancel_flag),
-        Some("xlsb") => xlsb::extract(path, sheet_names, cancel_flag),
-        Some("xls") => xls::extract(path, sheet_names, cancel_flag),
+    let extension = path
+        .extension()
+        .and_then(|value| value.to_str())
+        .map(|value| {
+            format!(
+                "{}{}",
+                crate::constants::CLI_EXTENSION_PREFIX,
+                value.to_ascii_lowercase()
+            )
+        });
+    match extension.as_deref() {
+        Some(crate::constants::EXT_XLSX | crate::constants::EXT_XLSM) => {
+            ooxml::extract(path, cancel_flag)
+        }
+        Some(crate::constants::EXT_XLSB) => xlsb::extract(path, sheet_names, cancel_flag),
+        Some(crate::constants::EXT_XLS) => xls::extract(path, sheet_names, cancel_flag),
         _ => Ok(Vec::new()),
     }
 }

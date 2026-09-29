@@ -15,11 +15,34 @@ use exlgrep_lib::search::parser::parse_and_search_file;
 use exlgrep_lib::search::shape::extract_shapes;
 use std::io::{Cursor, Write};
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use zip::write::FileOptions;
 use zip::{CompressionMethod, ZipWriter};
 
 const TEST_FILE_NAME: &str = "exlgrep-shape-contract.xlsx";
+const TEST_UPPERCASE_FILE_NAME: &str = "exlgrep-shape-contract-upper.XLSX";
 const XLSB_TEST_FILE_NAME: &str = "exlgrep-shape-contract.xlsb";
+const TEST_FILE_EXTENSION_SEPARATOR: char = '.';
+static FIXTURE_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
+
+/// ## 処理内容
+/// 並行テスト間で上書きされない一意な一時フィクスチャパスを生成する。
+/// ## 引数・戻り値
+/// ファイル名定数を受け、プロセスIDと連番を含む一時`PathBuf`を返す。
+/// ## エラー
+/// パス生成のみを行い、I/Oエラーやpanicは発生しない。
+/// ## 変更履歴
+/// - v1.0.0 (2026-09-29, Codex): 並行実行時のフィクスチャ競合を回避。
+fn unique_fixture_path(file_name: &str) -> PathBuf {
+    let sequence = FIXTURE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
+    let (stem, extension) = file_name
+        .rsplit_once(TEST_FILE_EXTENSION_SEPARATOR)
+        .unwrap_or((file_name, ""));
+    std::env::temp_dir().join(format!(
+        "{stem}-{}-{sequence}.{extension}",
+        std::process::id()
+    ))
+}
 
 /// ## 処理内容
 /// 検査用テキストを持つシンプルな DrawingML テキストボックスを含む一時 OOXML ブックを生成する。
@@ -72,10 +95,13 @@ fn make_fixture() -> PathBuf {
             .write_all(contents.as_bytes())
             .expect("zip contents must write");
     }
-    let path = std::env::temp_dir().join(TEST_FILE_NAME);
-    std::fs::write(path, writer.finish().expect("zip must finish").into_inner())
-        .expect("fixture must write");
-    std::env::temp_dir().join(TEST_FILE_NAME)
+    let path = unique_fixture_path(TEST_FILE_NAME);
+    std::fs::write(
+        &path,
+        writer.finish().expect("zip must finish").into_inner(),
+    )
+    .expect("fixture must write");
+    path
 }
 
 /// ## 処理内容
@@ -136,10 +162,13 @@ fn make_xlsb_fixture() -> PathBuf {
             .write_all(&contents)
             .expect("zip contents must write");
     }
-    let path = std::env::temp_dir().join(XLSB_TEST_FILE_NAME);
-    std::fs::write(path, writer.finish().expect("zip must finish").into_inner())
-        .expect("fixture must write");
-    std::env::temp_dir().join(XLSB_TEST_FILE_NAME)
+    let path = unique_fixture_path(XLSB_TEST_FILE_NAME);
+    std::fs::write(
+        &path,
+        writer.finish().expect("zip must finish").into_inner(),
+    )
+    .expect("fixture must write");
+    path
 }
 
 /// ## 処理内容
@@ -196,6 +225,8 @@ fn extracts_text_shape_with_sheet_and_anchor() {
         keyword: "needle".to_string(),
         target_dir: path.to_string_lossy().to_string(),
         match_case: false,
+        // 定数参照: exlgrep_lib::constants::DEFAULT_INCLUDE_VALUE を使用。
+        include_value: exlgrep_lib::constants::DEFAULT_INCLUDE_VALUE,
         use_regex: false,
         include_formula: false,
         include_comment: true,
@@ -229,6 +260,96 @@ fn extracts_text_shape_with_sheet_and_anchor() {
         .all(|item| item.match_type != MatchType::Shape));
 
     std::fs::remove_file(path).expect("fixture must be removed");
+}
+
+/// ## 処理内容
+/// rangeがA1以外から始まるブックで値検索のセル座標が実位置になることを検証する。
+/// ## 引数・戻り値
+/// 引数なし。既知フィクスチャから該当セル番地を照合する。
+/// ## エラー
+/// ブック読取、検索、期待座標の不一致でテストが失敗する。
+/// ## 変更履歴
+/// - v1.1.0 (2026-09-29, Codex): range原点の回帰テストを追加。
+#[test]
+fn uses_real_cell_coordinates_for_ranges_starting_after_a1() {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("repository root must exist")
+        .to_path_buf();
+    let path = root.join("tests/fixtures/sample_report.xlsx");
+    let query = SearchQuery {
+        keyword: "Financial Report Q3".to_string(),
+        target_dir: path.to_string_lossy().into_owned(),
+        match_case: false,
+        // 定数参照: exlgrep_lib::constants::DEFAULT_INCLUDE_VALUE を使用。
+        include_value: exlgrep_lib::constants::DEFAULT_INCLUDE_VALUE,
+        use_regex: false,
+        include_formula: false,
+        include_comment: false,
+        include_shape: false,
+        include_hidden: false,
+        extensions: exlgrep_lib::constants::DEFAULT_EXTENSIONS
+            .iter()
+            .map(|extension| extension.to_string())
+            .collect(),
+    };
+    let results = parse_and_search_file(path, &query, None, None).unwrap();
+    assert!(results.iter().any(|item| item.cell_address == "A12"));
+}
+
+/// ## 処理内容
+/// 大文字拡張子のExcelブックでもShape抽出形式を正しく選択する。
+/// ## 引数・戻り値
+/// 引数なし。抽出したShape本文の件数をアサートする。
+/// ## エラー
+/// ファイル操作または抽出結果の不一致でテストが失敗する。
+/// ## 変更履歴
+/// - v1.2.0 (2026-09-29, Codex): 拡張子大小文字の回帰テストを追加。
+#[test]
+fn extracts_shapes_when_extension_is_uppercase() {
+    let original = make_fixture();
+    let uppercase = std::env::temp_dir().join(TEST_UPPERCASE_FILE_NAME);
+    std::fs::copy(&original, &uppercase).unwrap();
+    let shapes = extract_shapes(&uppercase, &["Sheet1".to_string()], None).unwrap();
+    assert_eq!(shapes.len(), 1);
+    let _ = std::fs::remove_file(uppercase);
+}
+
+/// ## 処理内容
+/// 既存OOXMLブックのセルメモがコメント一致として返ることを検証する。
+/// ## 引数・戻り値
+/// 引数なし。A12にある既知メモの検索結果を照合する。
+/// ## エラー
+/// ブック解析、検索、期待セル座標の不一致でテストが失敗する。
+/// ## 変更履歴
+/// - v1.3.0 (2026-09-29, Codex): OOXMLメモ検索回帰テストを追加。
+#[test]
+fn searches_legacy_cell_comments() {
+    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .parent()
+        .expect("repository root must exist")
+        .to_path_buf();
+    let path = root.join("tests/fixtures/sample_report.xlsx");
+    let query = SearchQuery {
+        keyword: exlgrep_lib::constants::CLI_TEST_COMMENT_QUERY.to_string(),
+        target_dir: path.to_string_lossy().into_owned(),
+        match_case: false,
+        // 定数参照: exlgrep_lib::constants::DEFAULT_INCLUDE_VALUE を使用。
+        include_value: exlgrep_lib::constants::DEFAULT_INCLUDE_VALUE,
+        use_regex: false,
+        include_formula: false,
+        include_comment: true,
+        include_shape: false,
+        include_hidden: false,
+        extensions: exlgrep_lib::constants::DEFAULT_EXTENSIONS
+            .iter()
+            .map(|extension| extension.to_string())
+            .collect(),
+    };
+    let results = parse_and_search_file(path, &query, None, None).unwrap();
+    assert!(results
+        .iter()
+        .any(|item| { item.match_type == MatchType::Comment && item.cell_address == "A12" }));
 }
 
 /// ## 処理内容

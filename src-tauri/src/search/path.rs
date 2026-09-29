@@ -174,9 +174,10 @@ fn is_supported_completion_path(path: &Path, is_home_input: bool) -> bool {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(windows)]
+    use super::is_supported_completion_path;
     use super::{
-        complete_directory_path, is_supported_completion_path, resolve_search_path,
-        validate_search_directory, PathError,
+        complete_directory_path, resolve_search_path, validate_search_directory, PathError,
     };
     use std::fs;
     #[cfg(windows)]

@@ -22,6 +22,25 @@ ui.EXPORT_SAVED_PREFIX: "ファイルを保存しました: "
 ui.EXPORT_CSV_SAVED: "CSVファイルを保存しました: {path}"
 ui.EXPORT_XLSX_SAVED: "Excelファイルを保存しました: {path}"
 ui.EXPORT_CSV_FILTER_NAME: CSVファイル
+cli.HELP: |
+  使用方法: exlgrep-cli --path PATH --query TEXT --format csv|xlsx --output PATH [OPTIONS]
+  オプション: --match-case BOOL --regex BOOL --values BOOL --formulas BOOL
+             --comments BOOL --shapes BOOL --hidden-sheets BOOL
+             --extensions LIST --language ja|en --overwrite --help
+  既定値: match-case=false regex=false values=true formulas=true comments=true
+          shapes=false hidden-sheets=false extensions=.xlsx,.xlsm,.xlsb,.xls language=ja
+  --help と -h は --language ja|en だけ併用できます。
+cli.ERROR: エラー
+cli.SUMMARY: "検索完了: {scanned} ファイル、{matches} 件一致、保存先 {path}"
+cli.ISSUES: "一部の対象で問題が発生しました: {count} 件"
+cli.ERROR_REQUIRED: "必須オプションがありません: {option}"
+cli.ERROR_UNKNOWN: "不明なオプション: {option}"
+cli.ERROR_DUPLICATE: "オプションが重複しています: {option}"
+cli.ERROR_VALUE: "オプション値が不正です: {option}"
+cli.ERROR_PATH: "検索対象を読み取れません: {path}"
+cli.ERROR_OUTPUT: "出力先を保存できません: {path}"
+cli.ERROR_REGEX: 正規表現が不正です
+cli.ERROR_NO_TYPES: 検索対象種別を1つ以上有効にしてください
 ui.EXPORT_XLSX_FILTER_NAME: Excelブック
 ui.EXPORT_DEFAULT_FILENAME_PREFIX: ExcelGrep_Results_
 ui.COMPLETED: 検索完了

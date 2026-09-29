@@ -22,6 +22,25 @@ ui.EXPORT_SAVED_PREFIX: "Saved file: "
 ui.EXPORT_CSV_SAVED: "CSV file saved: {path}"
 ui.EXPORT_XLSX_SAVED: "Excel file saved: {path}"
 ui.EXPORT_CSV_FILTER_NAME: CSV file
+cli.HELP: |
+  Usage: exlgrep-cli --path PATH --query TEXT --format csv|xlsx --output PATH [OPTIONS]
+  Options: --match-case BOOL --regex BOOL --values BOOL --formulas BOOL
+           --comments BOOL --shapes BOOL --hidden-sheets BOOL
+           --extensions LIST --language ja|en --overwrite --help
+  Defaults: match-case=false regex=false values=true formulas=true comments=true
+            shapes=false hidden-sheets=false extensions=.xlsx,.xlsm,.xlsb,.xls language=ja
+  --help and -h may be combined only with --language ja|en.
+cli.ERROR: Error
+cli.SUMMARY: "Search complete: {scanned} files, {matches} matches, saved to {path}"
+cli.ISSUES: "Some inputs had issues: {count}"
+cli.ERROR_REQUIRED: "Missing required option: {option}"
+cli.ERROR_UNKNOWN: "Unknown option: {option}"
+cli.ERROR_DUPLICATE: "Duplicate option: {option}"
+cli.ERROR_VALUE: "Invalid option value: {option}"
+cli.ERROR_PATH: "Cannot read search input: {path}"
+cli.ERROR_OUTPUT: "Cannot save output: {path}"
+cli.ERROR_REGEX: Invalid regular expression
+cli.ERROR_NO_TYPES: Enable at least one search type
 ui.EXPORT_XLSX_FILTER_NAME: Excel workbook
 ui.EXPORT_DEFAULT_FILENAME_PREFIX: ExcelGrep_Results_
 ui.COMPLETED: Search completed

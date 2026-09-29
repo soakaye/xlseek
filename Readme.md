@@ -10,6 +10,7 @@ Excel Grep は、Excel ブックをフォルダ単位で検索するデスクト
 - 結果一覧から一致内容と周辺セルをプレビューし、元ファイルを関連付けアプリで開く
 - 検索キーワードとフォルダの履歴、フォルダパスの入力補完
 - 検索結果を CSV または XLSX にエクスポート
+- GUIを起動しない `exlgrep-cli` コマンドで検索し、CSVまたはXLSXへ保存
 - 日本語・英語の表示と、既定の検索オプション・履歴件数の設定
 - About 画面でアプリ情報と依存パッケージのライセンスを表示
 
@@ -37,6 +38,23 @@ Excel Grep は、Excel ブックをフォルダ単位で検索するデスクト
 npm install
 npm run tauri dev
 ```
+
+## コマンドライン検索
+
+CLIはGUIとは別のバイナリです。リポジトリルートからビルドして実行します。
+
+```bash
+cargo build -p exlgrep --release --bin exlgrep-cli
+./target/release/exlgrep-cli --help
+./target/release/exlgrep-cli --path ./reports --query '売上' \
+  --format xlsx --output ./results.xlsx
+./target/release/exlgrep-cli --path ./reports --query '売上' \
+  --format csv --output ./results.csv --language en
+```
+
+必須指定は `--path`、`--query`、`--format csv|xlsx`、`--output` です。値検索・数式・コメント・Shapeを含め、非表示シートを除外する設定が既定です。コメント抽出は `.xlsx` / `.xlsm` の従来メモに対応します。スレッドコメントと `.xls` / `.xlsb` のメモは未対応です。`--help` で全オプションを表示します。出力ファイルが既にある場合は終了コード2で拒否し、`--overwrite` を指定した場合のみ置換します。入力ファイルとの同一パスまたはハードリンクは常に拒否します。終了コードは0が成功（0件を含む）、1が部分失敗、2が要求・全体処理・保存失敗です。
+
+明示上書きでは、公開直前に出力先を再検査します。検査とrenameの間に別プロセスが保存先を変更しないことが前提です。実行中は入力ファイルと出力先の親ディレクトリも変更しないでください。
 
 ## ビルド
 

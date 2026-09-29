@@ -509,6 +509,8 @@ mod tests {
             keyword: "Financial".to_string(),
             target_dir: fixtures_dir.to_str().unwrap().to_string(),
             match_case: false,
+            // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+            include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
             use_regex: false,
             include_formula: true,
             include_comment: true,
@@ -662,6 +664,8 @@ mod tests {
             keyword: "Financial".to_string(),
             target_dir: fixtures_dir.to_str().unwrap().to_string(),
             match_case: false,
+            // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+            include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
             use_regex: false,
             include_formula: true,
             include_comment: true,
@@ -763,6 +767,8 @@ mod tests {
             keyword: "Total".to_string(),
             target_dir: fixtures_dir.to_str().unwrap().to_string(),
             match_case: false,
+            // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+            include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
             use_regex: false,
             include_formula: true,
             include_comment: true,
@@ -829,6 +835,8 @@ mod tests {
             keyword: "a".to_string(),
             target_dir: fixtures_dir.to_str().unwrap().to_string(),
             match_case: false,
+            // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+            include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
             use_regex: false,
             include_formula: true,
             include_comment: true,

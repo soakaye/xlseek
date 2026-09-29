@@ -194,6 +194,8 @@ pub fn make_snippet(text: &str, mat_start: usize, mat_end: usize) -> String {
 /// ## 変更履歴
 /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化、Clippy指摘修正（is_some_and）。
 /// - v1.3.0 (2026-09-28, Codex): Shape 検索と実シート可視状態を追加。
+/// - v1.4.0 (2026-09-29, Codex): 値検索切替とrange原点を反映。
+/// - v1.5.0 (2026-09-29, Codex): OOXMLコメント検索を接続。
 pub fn parse_and_search_file<P: AsRef<Path>>(
     path: P,
     query: &SearchQuery,
@@ -230,7 +232,12 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
     let mut matches = Vec::new();
     let shape_texts = if query.include_shape {
         crate::search::shape::extract_shapes(path_ref, &sheet_names, cancel_flag)
-            .unwrap_or_default()
+            .map_err(|error| format!("{}: {}", crate::constants::ERR_SHAPE_READ, error))?
+    } else {
+        Vec::new()
+    };
+    let comments = if query.include_comment {
+        crate::search::comments::extract(path_ref)?
     } else {
         Vec::new()
     };
@@ -248,71 +255,104 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
         }
 
         // ワークシートのセル値読み込み
-        if let Ok(range) = workbook.worksheet_range(sheet_name) {
-            for (row_idx, row) in range.rows().enumerate() {
-                // 定数参照: crate::constants::CANCEL_CHECK_ROW_INTERVAL を使用
-                if (row_idx & crate::constants::CANCEL_CHECK_ROW_INTERVAL) == 0
-                    && cancel_flag.is_some_and(|f| f.load(Ordering::Relaxed))
-                {
-                    return Ok(matches);
-                }
-
-                for (col_idx, cell) in row.iter().enumerate() {
-                    let cell_str = match cell {
-                        Data::Empty => continue,
-                        Data::String(s) => s.clone(),
-                        Data::Float(f) => f.to_string(),
-                        Data::Int(i) => i.to_string(),
-                        Data::Bool(b) => b.to_string(),
-                        Data::DateTime(d) => d.to_string(),
-                        Data::DateTimeIso(d) => d.clone(),
-                        Data::DurationIso(d) => d.clone(),
-                        Data::Error(e) => format!("{:?}", e),
-                    };
-
-                    if cell_str.is_empty() {
-                        continue;
+        if query.include_value {
+            if let Ok(range) = workbook.worksheet_range(sheet_name) {
+                let (range_start_row, range_start_col) = range.start().unwrap_or_default();
+                for (row_idx, row) in range.rows().enumerate() {
+                    // 定数参照: crate::constants::CANCEL_CHECK_ROW_INTERVAL を使用
+                    if (row_idx & crate::constants::CANCEL_CHECK_ROW_INTERVAL) == 0
+                        && cancel_flag.is_some_and(|f| f.load(Ordering::Relaxed))
+                    {
+                        return Ok(matches);
                     }
 
-                    // 一致判定 (正規表現 or テキスト部分一致)
-                    let match_pos = find_match_position(&cell_str, query, regex_opt);
-
-                    if let Some((start, end)) = match_pos {
-                        let (address, col_name) =
-                            format_cell_address(row_idx as u32, col_idx as u32);
-                        let snippet = make_snippet(&cell_str, start, end);
-                        let match_type = if is_hidden_sheet {
-                            MatchType::HiddenSheet
-                        } else {
-                            MatchType::CellValue
+                    for (col_idx, cell) in row.iter().enumerate() {
+                        let cell_str = match cell {
+                            Data::Empty => continue,
+                            Data::String(s) => s.clone(),
+                            Data::Float(f) => f.to_string(),
+                            Data::Int(i) => i.to_string(),
+                            Data::Bool(b) => b.to_string(),
+                            Data::DateTime(d) => d.to_string(),
+                            Data::DateTimeIso(d) => d.clone(),
+                            Data::DurationIso(d) => d.clone(),
+                            Data::Error(e) => format!("{:?}", e),
                         };
 
-                        let id = MATCH_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
-                        matches.push(SearchMatch {
-                            id,
-                            file_name: file_name.clone(),
-                            full_path: full_path.clone(),
-                            sheet_name: sheet_name.clone(),
-                            cell_address: address,
-                            row_index: (row_idx + 1) as u32,
-                            col_index: (col_idx + 1) as u32,
-                            col_name,
-                            match_type,
-                            shape_name: None,
-                            sheet_hidden: is_hidden_sheet,
-                            snippet,
-                            full_content: cell_str.clone(),
-                            formula: None,
-                            sheets_in_workbook: sheet_names.clone(),
-                        });
+                        if cell_str.is_empty() {
+                            continue;
+                        }
+
+                        // 一致判定 (正規表現 or テキスト部分一致)
+                        let match_pos = find_match_position(&cell_str, query, regex_opt);
+
+                        if let Some((start, end)) = match_pos {
+                            let absolute_row = row_idx as u32 + range_start_row;
+                            let absolute_col = col_idx as u32 + range_start_col;
+                            let (address, col_name) =
+                                format_cell_address(absolute_row, absolute_col);
+                            let snippet = make_snippet(&cell_str, start, end);
+                            let match_type = if is_hidden_sheet {
+                                MatchType::HiddenSheet
+                            } else {
+                                MatchType::CellValue
+                            };
+
+                            let id = MATCH_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
+                            matches.push(SearchMatch {
+                                id,
+                                file_name: file_name.clone(),
+                                full_path: full_path.clone(),
+                                sheet_name: sheet_name.clone(),
+                                cell_address: address,
+                                row_index: absolute_row + 1,
+                                col_index: absolute_col + 1,
+                                col_name,
+                                match_type,
+                                shape_name: None,
+                                sheet_hidden: is_hidden_sheet,
+                                snippet,
+                                full_content: cell_str.clone(),
+                                formula: None,
+                                sheets_in_workbook: sheet_names.clone(),
+                            });
+                        }
                     }
                 }
+            }
+        }
+
+        for comment in comments
+            .iter()
+            .filter(|comment| comment.sheet_name == *sheet_name)
+        {
+            if let Some((start, end)) = find_match_position(&comment.text, query, regex_opt) {
+                let (cell_address, col_name) =
+                    format_cell_address(comment.row - 1, comment.col - 1);
+                matches.push(SearchMatch {
+                    id: MATCH_ID_COUNTER.fetch_add(1, Ordering::Relaxed),
+                    file_name: file_name.clone(),
+                    full_path: full_path.clone(),
+                    sheet_name: sheet_name.clone(),
+                    cell_address,
+                    row_index: comment.row,
+                    col_index: comment.col,
+                    col_name,
+                    match_type: MatchType::Comment,
+                    shape_name: None,
+                    sheet_hidden: is_hidden_sheet,
+                    snippet: make_snippet(&comment.text, start, end),
+                    full_content: comment.text.clone(),
+                    formula: None,
+                    sheets_in_workbook: sheet_names.clone(),
+                });
             }
         }
 
         // 数式 (Formula) の検索
         if query.include_formula {
             if let Ok(formula_range) = workbook.worksheet_formula(sheet_name) {
+                let (range_start_row, range_start_col) = formula_range.start().unwrap_or_default();
                 for (row_idx, row) in formula_range.rows().enumerate() {
                     // 定数参照: crate::constants::CANCEL_CHECK_ROW_INTERVAL を使用
                     if (row_idx & crate::constants::CANCEL_CHECK_ROW_INTERVAL) == 0
@@ -328,8 +368,10 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
                         let match_pos = find_match_position(formula_str, query, regex_opt);
 
                         if let Some((start, end)) = match_pos {
+                            let absolute_row = row_idx as u32 + range_start_row;
+                            let absolute_col = col_idx as u32 + range_start_col;
                             let (address, col_name) =
-                                format_cell_address(row_idx as u32, col_idx as u32);
+                                format_cell_address(absolute_row, absolute_col);
                             let snippet = make_snippet(formula_str, start, end);
                             let id = MATCH_ID_COUNTER.fetch_add(1, Ordering::Relaxed);
 
@@ -339,8 +381,8 @@ pub fn parse_and_search_file<P: AsRef<Path>>(
                                 full_path: full_path.clone(),
                                 sheet_name: sheet_name.clone(),
                                 cell_address: address,
-                                row_index: (row_idx + 1) as u32,
-                                col_index: (col_idx + 1) as u32,
+                                row_index: absolute_row + 1,
+                                col_index: absolute_col + 1,
                                 col_name,
                                 match_type: MatchType::Formula,
                                 shape_name: None,
