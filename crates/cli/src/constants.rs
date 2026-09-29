@@ -1,18 +1,16 @@
-//! # CLI定数定義モジュール (constants.rs)
+//! # CLI Constants Module (constants.rs)
 //!
-//! ## 処理内容
-//! 独立したCLIツール (exlgrep-cli) のコマンドライン引数解析、オプション指定、終了ステータス、
-//! 一時ファイル命名、および出力フォーマットに関する固定値・設定値を一元管理する。
-//! 共有コア定数 (exlgrep_core::constants) を再公開しつつ、CLI固有の定数を定義する。
-//! 憲章原則II（定数の外部抽出とハードコード禁止）に準拠。
+//! ## Description
+//! Centralizes constant and configuration values for command line argument parsing,
+//! option specifications, exit statuses, temporary file naming, and output formats
+//! for the standalone CLI tool (exlgrep-cli).
+//! Re-exports shared core constants (`exlgrep_core::constants`) while defining CLI-specific constants.
+//! Conforms to Constitution Principle II (No Hardcoded Constants).
 //!
-//! ## 引数・戻り値
-//! 各種CLI定数値を公開する。
+//! ## Arguments / Returns
+//! Exposes public CLI constant values.
 //!
-//! ## エラー
-//! 定数定義モジュールのためエラーは発生しない。
-//!
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-29, Antigravity): 初版策定。crates/cli用定数モジュールを新設。
+//! ## Errors
+//! As a constant definition module, this does not produce runtime errors.
 
 pub use exlgrep_core::constants::*;

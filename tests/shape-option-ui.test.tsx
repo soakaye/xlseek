@@ -1,8 +1,7 @@
 /**
- * 処理内容: Shape 検索トグルの既定状態と検索条件の独立更新を検証する。
- * 引数・戻り値: Vitest が SearchBar の操作を実行する。値の受け渡しはモックで確認する。
- * エラー: 表示、既定値、トグル反映が契約と異なる場合にテストが失敗する。
- * 変更履歴: v1.0.0 (2026-09-28, Codex): Shape オプション UI テストを追加。
+ * Description: Unit and integration tests for shape-option-ui.test.tsx.
+ * Arguments & Returns: Vitest runs test suites; no public arguments or return values.
+ * Errors: Test assertions fail if behavior deviates from requirements.
  */
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";

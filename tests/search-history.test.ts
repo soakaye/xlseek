@@ -1,8 +1,7 @@
 /**
- * 処理内容: 検索履歴の保存・検証・件数制限を確認する。
- * 引数・戻り値: Vitest がテストを実行する。公開引数・戻り値はない。
- * エラー: 履歴の値や保存動作が契約と異なるとテストを失敗させる。
- * 変更履歴: v1.0.0 (2026-09-27, Codex): 検索履歴フックの振る舞いを追加。
+ * Description: Unit and integration tests for search-history.test.ts.
+ * Arguments & Returns: Vitest runs test suites; no public arguments or return values.
+ * Errors: Test assertions fail if behavior deviates from requirements.
  */
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

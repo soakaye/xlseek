@@ -1,11 +1,15 @@
-//! ## 処理内容
-//! 検索入力を保護し、結果を一時保存して完成ファイルだけ出力先へ公開する。
-//! ## 引数・戻り値
-//! 出力先、上書き指定、結果一覧、形式、言語、カタログを受けて保存結果を返す。
-//! ## エラー
-//! 入力衝突、出力競合、エクスポート、公開、ファイルシステム操作はErrで返す。
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-29, Codex): 安全なCLI結果公開を追加。
+//! # CLI Output Safety & Publication
+//!
+//! ## Description
+//! Protects search inputs, temporarily stages results, and publishes completed export files
+//! to the target destination.
+//!
+//! ## Arguments / Returns
+//! Receives target path, overwrite flag, search matches, export format, language, and translation catalogs,
+//! returning the saved file path.
+//!
+//! ## Errors
+//! Returns `Err` on input collision, output conflict, export error, publication failure, or file system error.
 
 use crate::constants;
 use exlgrep_core::models::{ExportFormat, SearchMatch};
@@ -13,14 +17,13 @@ use same_file::Handle;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
-/// ## 処理内容
-/// 実行開始時の出力ファイルidentityと上書き方針を保持する。
-/// ## 引数・戻り値
-/// 出力先とoverwriteを受け、検査可能なOutputGuardを返す。
-/// ## エラー
-/// 上書き禁止時の既存出力、symlinkや取得不能metadataはErrとする。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): 出力ガードを追加。
+/// Retains initial output file identity and overwrite policy.
+///
+/// ## Arguments / Returns
+/// Accepts target output path and overwrite flag, returning an inspectable `OutputGuard`.
+///
+/// ## Errors
+/// Returns `Err` if destination already exists and overwrite is false, or if file is symlink / metadata is unreadable.
 pub struct OutputGuard {
     output: PathBuf,
     initial_identity: Option<Handle>,
@@ -28,14 +31,13 @@ pub struct OutputGuard {
 }
 
 impl OutputGuard {
-    /// ## 処理内容
-    /// 出力先が安全に公開可能な状態か検証して初期identityを記録する。
-    /// ## 引数・戻り値
-    /// 絶対出力パスとoverwriteを受け、`Result<Self, String>` を返す。
-    /// ## エラー
-    /// symlink、非通常ファイル、既定拒否対象、metadata取得失敗ではErrを返す。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-29, Codex): 出力先初期検証を追加。
+    /// Validates whether the destination is safe for publication and records the initial file identity.
+    ///
+    /// ## Arguments / Returns
+    /// Accepts output `PathBuf` and overwrite flag, returning `Result<Self, String>`.
+    ///
+    /// ## Errors
+    /// Returns `Err` on symlink, non-regular file, existing file without overwrite flag, or metadata retrieval failure.
     pub fn new(output: PathBuf, overwrite: bool) -> Result<Self, String> {
         let initial_identity = match std::fs::symlink_metadata(&output) {
             Ok(metadata) if metadata.file_type().is_symlink() || !metadata.is_file() => {
@@ -63,14 +65,13 @@ impl OutputGuard {
         })
     }
 
-    /// ## 処理内容
-    /// 発見した検索入力が出力先と同一ファイルか検査する。
-    /// ## 引数・戻り値
-    /// 入力`&Path`を受け、同一ならErr、異なるならunitを返す。
-    /// ## エラー
-    /// hardlinkを含む同一性、またはidentity比較失敗でErrを返す。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-29, Codex): 入力と出力の同一性検査を追加。
+    /// Verifies that a discovered search input path is not identical to the target output destination.
+    ///
+    /// ## Arguments / Returns
+    /// Accepts input `&Path`, returning `Ok(())` if distinct or `Err` if paths collide.
+    ///
+    /// ## Errors
+    /// Returns `Err` if file handles match (including hard links) or canonical paths are identical.
     pub fn check_input(&self, input: &Path) -> Result<(), String> {
         if let Some(output_identity) = &self.initial_identity {
             let input_identity = Handle::from_path(input).map_err(|error| error.to_string())?;
@@ -91,14 +92,13 @@ impl OutputGuard {
         Ok(())
     }
 
-    /// ## 処理内容
-    /// 検索結果を同一親内の一時ファイルへ保存し、競合検査後に完成品を公開する。
-    /// ## 引数・戻り値
-    /// SearchMatch一覧、形式、言語、翻訳カタログを受け、公開パスを返す。
-    /// ## エラー
-    /// 一時領域作成、書出し、競合検査、hard_link、rename失敗ではErrを返す。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-29, Codex): 一時保存と原子的公開を追加。
+    /// Exports search matches to a temporary file in the destination's parent directory, checks for conflicts, and publishes.
+    ///
+    /// ## Arguments / Returns
+    /// Accepts search matches, format, language, and translation catalogs, returning the published `PathBuf`.
+    ///
+    /// ## Errors
+    /// Returns `Err` on temporary directory creation, write failure, conflict verification, hard-link, or rename failure.
     pub fn publish(
         &self,
         matches: &[SearchMatch],
@@ -138,14 +138,13 @@ impl OutputGuard {
         Ok(self.output.clone())
     }
 
-    /// ## 処理内容
-    /// 公開直前に出力先identityが開始時から変わっていないことを検証する。
-    /// ## 引数・戻り値
-    /// OutputGuardを参照し、同一ならunitを返す。
-    /// ## エラー
-    /// 予期しない作成・置換・削除・metadata失敗時にErrを返す。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-29, Codex): 公開直前の出力競合検査を追加。
+    /// Verifies that the destination file identity has not changed since execution began.
+    ///
+    /// ## Arguments / Returns
+    /// Borrows `self` and returns `Ok(())` if destination identity matches expected state.
+    ///
+    /// ## Errors
+    /// Returns `Err` if file was unexpectedly created, replaced, deleted, or metadata read fails.
     fn verify_output_identity(&self) -> Result<(), String> {
         match (
             &self.initial_identity,
@@ -167,27 +166,19 @@ impl OutputGuard {
     }
 }
 
-/// ## 処理内容
-/// 検索完了後に出力親の中へ排他的な一時ディレクトリを作成し、スコープ終了時に削除する。
-/// ## 引数・戻り値
-/// 既存親パスを受け、作成したディレクトリを保持するガードを返す。
-/// ## エラー
-/// 親metadataまたは上限回数内のディレクトリ作成失敗でErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): 一時ディレクトリ管理を追加。
+/// RAII manager that creates an exclusive temporary directory next to the output destination and cleans it up on drop.
 struct TemporaryDirectory {
     path: PathBuf,
 }
 
 impl TemporaryDirectory {
-    /// ## 処理内容
-    /// 衝突しない一時ディレクトリを出力先の隣に作成する。
-    /// ## 引数・戻り値
-    /// 出力親パスを受け、RAII削除ガードを返す。
-    /// ## エラー
-    /// 作成試行上限到達、またはI/O失敗でErrを返す。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-29, Codex): 排他的な一時領域作成を追加。
+    /// Creates a non-colliding temporary directory next to the target output path.
+    ///
+    /// ## Arguments / Returns
+    /// Accepts parent path and returns RAII cleanup guard `Result<Self, String>`.
+    ///
+    /// ## Errors
+    /// Returns `Err` if maximum attempt limit is reached or directory creation fails.
     fn create(parent: &Path) -> Result<Self, String> {
         for attempt in 0..constants::CLI_TEMP_CREATE_ATTEMPTS {
             let path = parent.join(format!(
@@ -207,14 +198,13 @@ impl TemporaryDirectory {
 }
 
 impl Drop for TemporaryDirectory {
-    /// ## 処理内容
-    /// 一時領域内のファイルとディレクトリをスコープ終了時に削除する。
-    /// ## 引数・戻り値
-    /// `&mut self`を受け、戻り値はない。
-    /// ## エラー
-    /// cleanup失敗はデストラクターから返せないため無視する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-29, Codex): RAII一時領域清掃を追加。
+    /// Cleans up temporary directory contents when scope ends.
+    ///
+    /// ## Arguments / Returns
+    /// Borrows `&mut self`; returns nothing.
+    ///
+    /// ## Errors
+    /// Any removal failure is silently ignored in destructor.
     fn drop(&mut self) {
         let _ = std::fs::remove_dir_all(&self.path);
     }

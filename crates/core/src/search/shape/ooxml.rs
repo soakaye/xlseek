@@ -1,13 +1,11 @@
-//! # OOXML Shape 抽出器
+//! # OOXML Shape Extractor
 //!
-//! ## 処理内容
-//! `.xlsx` と `.xlsm` のワークシート関係を辿り、DrawingML の図形テキストとアンカーを読む。
-//! ## 引数・戻り値
-//! 内部関数は ZIP エントリ名または XML バイト列を受け取り、関係情報または Shape 一覧を返す。
-//! ## エラー / 例外発生条件
-//! ZIP エントリ欠損、XML 不正、展開上限超過、深さ上限超過をエラーとして返す。
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-28, Codex): OOXML 描画パーツの基本読取を追加。
+//! ## Description
+//! Traverses worksheet relationships in `.xlsx` and `.xlsm` to read DrawingML shape text and anchors.
+//! ## Arguments / Returns
+//! Internal functions accept ZIP entry names or XML bytes, returning relationships or shape lists.
+//! ## Errors / Exceptions
+//! Returns errors on missing ZIP entries, malformed XML, expansion limit exceeded, or depth limit exceeded.
 
 use super::ShapeText;
 use quick_xml::events::{BytesStart, Event};
@@ -19,14 +17,12 @@ use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 use zip::ZipArchive;
 
-/// ## 処理内容
-/// OOXML ブックのシートと DrawingML 描画を辿り、テキストを持つ子 Shape を抽出する。
-/// ## 引数・戻り値
-/// `path` は `.xlsx` / `.xlsm` ファイル、`cancel_flag` は任意のキャンセル状態。戻り値は共通 Shape 一覧。
-/// ## エラー / 例外発生条件
-/// 必須 XML が不正、展開上限超過、ZIP 読取失敗時にエラーを返す。キャンセル時は取得済み一覧を返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): OOXML シート関係と DrawingML Shape 抽出を実装。
+/// ## Description
+/// Traverses OOXML sheets and DrawingML drawings to extract child shapes containing text.
+/// ## Arguments / Returns
+/// `path` is an `.xlsx` / `.xlsm` file, `cancel_flag` is an optional cancellation flag. Returns a common shape list.
+/// ## Errors / Exceptions
+/// Returns error on invalid XML, expansion limit exceeded, or ZIP read failure. Returns collected shapes on cancellation.
 pub(super) fn extract(
     path: &Path,
     cancel_flag: Option<&AtomicBool>,
@@ -67,14 +63,12 @@ pub(super) fn extract(
     Ok(shapes)
 }
 
-/// ## 処理内容
-/// ZIP 内の XML パーツを上限付きで読み込み、累積展開量を確認する。
-/// ## 引数・戻り値
-/// `archive` は ZIP、`part` は ZIP 内パス、`total_size` は累積サイズ。戻り値は XML バイト列。
-/// ## エラー / 例外発生条件
-/// パーツ欠損、読み込み失敗、単体または累積サイズ上限超過時にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): XML パーツ読み込み制限を追加。
+/// ## Description
+/// Reads XML parts within a ZIP archive with limits and tracks cumulative expansion.
+/// ## Arguments / Returns
+/// `archive` is the ZIP archive, `part` is the internal path, `total_size` is cumulative size. Returns XML bytes.
+/// ## Errors / Exceptions
+/// Returns error on missing part, read failure, or single/cumulative size limit exceeded.
 pub(super) fn read_part(
     archive: &mut ZipArchive<File>,
     part: &str,
@@ -84,7 +78,7 @@ pub(super) fn read_part(
         .by_name(part)
         .map_err(|_| crate::constants::ERR_SHAPE_READ.to_string())?;
     let size = entry.size();
-    // 定数参照: SHAPE_MAX_XML_BYTES / SHAPE_MAX_TOTAL_XML_BYTES を使用。
+    // Constant reference: SHAPE_MAX_XML_BYTES / SHAPE_MAX_TOTAL_XML_BYTES
     if size > crate::constants::SHAPE_MAX_XML_BYTES
         || total_size.saturating_add(size) > crate::constants::SHAPE_MAX_TOTAL_XML_BYTES
     {
@@ -98,14 +92,12 @@ pub(super) fn read_part(
     Ok(bytes)
 }
 
-/// ## 処理内容
-/// ブック関係またはシート関係の XML から relationship ID とターゲットを取得する。
-/// ## 引数・戻り値
-/// `xml` は関係 XML、戻り値は ID からターゲットへのマップ。
-/// ## エラー / 例外発生条件
-/// XML が不正または深さ上限を超えた場合にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): 関係テーブルの読取を追加。
+/// ## Description
+/// Extracts relationship IDs and targets from workbook or worksheet relationship XML.
+/// ## Arguments / Returns
+/// `xml` is the relationship XML. Returns a map from ID to target path.
+/// ## Errors / Exceptions
+/// Returns error if XML is malformed or exceeds max depth.
 pub(super) fn parse_relationships(xml: &[u8]) -> Result<HashMap<String, String>, String> {
     let mut reader = Reader::from_reader(xml);
     reader.config_mut().trim_text(true);
@@ -142,14 +134,12 @@ pub(super) fn parse_relationships(xml: &[u8]) -> Result<HashMap<String, String>,
     Ok(relationships)
 }
 
-/// ## 処理内容
-/// `workbook.xml` からワークシート名と relationship ID を抽出する。
-/// ## 引数・戻り値
-/// `xml` はブック XML、戻り値は `(sheet_name, relationship_id)` の一覧。
-/// ## エラー / 例外発生条件
-/// XML が不正または深さ上限を超えた場合にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): シート対応表の読取を追加。
+/// ## Description
+/// Extracts worksheet names and relationship IDs from `workbook.xml`.
+/// ## Arguments / Returns
+/// `xml` is the workbook XML. Returns a list of `(sheet_name, relationship_id)` pairs.
+/// ## Errors / Exceptions
+/// Returns error if XML is malformed or exceeds max depth.
 fn parse_sheets(xml: &[u8]) -> Result<Vec<(String, String)>, String> {
     let mut reader = Reader::from_reader(xml);
     let mut buf = Vec::new();
@@ -185,14 +175,12 @@ fn parse_sheets(xml: &[u8]) -> Result<Vec<(String, String)>, String> {
     Ok(sheets)
 }
 
-/// ## 処理内容
-/// DrawingML 内の通常 Shape ごとに名前、文字列、アンカーを収集する。
-/// ## 引数・戻り値
-/// `xml` は描画 XML、`sheet_name` は実際のシート名、戻り値は Shape 一覧。
-/// ## エラー / 例外発生条件
-/// XML が不正または深さ上限を超えた場合にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): 図形テキスト・名前・アンカー解析を追加。
+/// ## Description
+/// Collects names, strings, and anchors for regular shapes within DrawingML.
+/// ## Arguments / Returns
+/// `xml` is drawing XML, `sheet_name` is worksheet name. Returns list of ShapeText items.
+/// ## Errors / Exceptions
+/// Returns error if XML is malformed or exceeds max depth.
 pub(super) fn parse_drawing(xml: &[u8], sheet_name: &str) -> Result<Vec<ShapeText>, String> {
     let mut reader = Reader::from_reader(xml);
     reader.config_mut().trim_text(false);
@@ -323,14 +311,12 @@ pub(super) fn parse_drawing(xml: &[u8], sheet_name: &str) -> Result<Vec<ShapeTex
     Ok(output)
 }
 
-/// ## 処理内容
-/// XML の属性をローカル名で文字列化して返す。
-/// ## 引数・戻り値
-/// XML リーダーと開始要素を受け取り、属性名と値のマップを返す。
-/// ## エラー / 例外発生条件
-/// 不正な属性または XML 値の場合にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): XML 属性ユーティリティを追加。
+/// ## Description
+/// Returns XML attributes stringified by local name.
+/// ## Arguments / Returns
+/// Accepts XML reader and start element; returns a map of attribute names and values.
+/// ## Errors / Exceptions
+/// Returns error on malformed attribute or XML value.
 fn attributes<R: std::io::BufRead>(
     reader: &Reader<R>,
     element: &BytesStart<'_>,
@@ -350,26 +336,22 @@ fn attributes<R: std::io::BufRead>(
         .collect()
 }
 
-/// ## 処理内容
-/// XML の修飾名からローカル名のバイト列を取得する。
-/// ## 引数・戻り値
-/// `name` は修飾名、戻り値はコロン以降の要素名。
-/// ## エラー / 例外発生条件
-/// 入力保持のみで panic は発生しない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): ローカル名抽出を追加。
+/// ## Description
+/// Extracts local name byte slice from a qualified XML name.
+/// ## Arguments / Returns
+/// `name` is qualified name; returns element name after colon.
+/// ## Errors / Exceptions
+/// Does not panic.
 fn local_name(name: &[u8]) -> &[u8] {
     name.rsplit(|value| *value == b':').next().unwrap_or(name)
 }
 
-/// ## 処理内容
-/// OOXML の相対 relationship target を含む ZIP パーツ名へ正規化する。
-/// ## 引数・戻り値
-/// `source` は参照元パーツ、`target` は relationship target、戻り値は正規化パス。
-/// ## エラー / 例外発生条件
-/// パス正規化のみで I/O エラーや panic は発生しない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): relationship target 解決を追加。
+/// ## Description
+/// Normalizes an OOXML relative relationship target into a canonical ZIP part path.
+/// ## Arguments / Returns
+/// `source` is source part, `target` is relationship target; returns normalized path.
+/// ## Errors / Exceptions
+/// Pure path normalization; no I/O errors or panics occur.
 pub(super) fn resolve_target(source: &str, target: &str) -> String {
     if target.starts_with('/') {
         return target.trim_start_matches('/').to_string();
@@ -392,29 +374,25 @@ pub(super) fn resolve_target(source: &str, target: &str) -> String {
     components.join("/")
 }
 
-/// ## 処理内容
-/// ワークシートの relationships パーツ名を生成する。
-/// ## 引数・戻り値
-/// `sheet_part` はワークシートパーツ名、戻り値は対応する `.rels` パーツ名。
-/// ## エラー / 例外発生条件
-/// 文字列変換のみで panic は発生しない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): シート関係パス生成を追加。
+/// ## Description
+/// Generates relationships part path for a worksheet part.
+/// ## Arguments / Returns
+/// `sheet_part` is worksheet part path; returns corresponding `.rels` part path.
+/// ## Errors / Exceptions
+/// Pure string conversion; does not panic.
 pub(super) fn relationship_part(sheet_part: &str) -> String {
     let (parent, name) = sheet_part.rsplit_once('/').unwrap_or(("xl", sheet_part));
     format!("{parent}/_rels/{name}.rels")
 }
 
-/// ## 処理内容
-/// XML 入れ子の深さが許容上限内であることを確認する。
-/// ## 引数・戻り値
-/// `depth` は現在の深さ、戻り値は正常時 `Ok(())`。
-/// ## エラー / 例外発生条件
-/// 最大深さを超えた場合にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): XML 深さ制限を追加。
+/// ## Description
+/// Verifies that XML nesting depth is within allowed limits.
+/// ## Arguments / Returns
+/// `depth` is current depth; returns `Ok(())` on success.
+/// ## Errors / Exceptions
+/// Returns error if max depth is exceeded.
 fn check_depth(depth: usize) -> Result<(), String> {
-    // 定数参照: SHAPE_MAX_XML_DEPTH を使用。
+    // Constant reference: SHAPE_MAX_XML_DEPTH
     if depth > crate::constants::SHAPE_MAX_XML_DEPTH {
         Err(crate::constants::ERR_SHAPE_LIMIT.to_string())
     } else {
@@ -422,14 +400,12 @@ fn check_depth(depth: usize) -> Result<(), String> {
     }
 }
 
-/// ## 処理内容
-/// 図形組み立て中の名前・テキストと識別子を保持する。
-/// ## 引数・戻り値
-/// `new` はグループ名経路を受け、`finish` はシート名とアンカーを受け ShapeText を返す。
-/// ## エラー / 例外発生条件
-/// 文字列構築のみで panic は発生しない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): Shape 構築用内部状態を追加。
+/// ## Description
+/// Holds shape name, text, and identifier during construction.
+/// ## Arguments / Returns
+/// `new` accepts group path; `finish` accepts sheet name and anchor, returning ShapeText.
+/// ## Errors / Exceptions
+/// String construction only; does not panic.
 struct ShapeBuilder {
     id: String,
     name: String,
@@ -473,14 +449,12 @@ impl ShapeBuilder {
 mod tests {
     use super::parse_drawing;
 
-    /// ## 処理内容
-    /// 文字列ランを順序どおり結合し、Shape 名と1始まりアンカーを抽出できることを検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。XML 文字列から得た Shape をアサーションで検証する。
-    /// ## エラー / 例外発生条件
-    /// XML が不正、または抽出値が異なる場合にテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-28, Codex): DrawingML テキストとアンカーのテストを追加。
+    /// ## Description
+    /// Verifies concatenating text runs in order and extracting shape name and 1-based anchor.
+    /// ## Arguments / Returns
+    /// No arguments. Verifies shapes from XML string via assertions.
+    /// ## Errors / Exceptions
+    /// Fails if XML is malformed or extracted values mismatch expectations.
     #[test]
     fn extracts_text_runs_name_and_anchor() {
         let xml = br#"<xdr:wsDr xmlns:xdr="x" xmlns:a="a"><xdr:twoCellAnchor><xdr:from><xdr:col>1</xdr:col><xdr:row>2</xdr:row></xdr:from><xdr:sp><xdr:nvSpPr><xdr:cNvPr id="4" name="Text Box 3"/></xdr:nvSpPr><xdr:txBody><a:p><a:r><a:t>find </a:t></a:r><a:r><a:t>shape</a:t></a:r></a:p></xdr:txBody></xdr:sp></xdr:twoCellAnchor></xdr:wsDr>"#;
@@ -494,14 +468,12 @@ mod tests {
         assert_eq!(shapes[0].anchor, Some((3, 2)));
     }
 
-    /// ## 処理内容
-    /// グループ内の子図形を個別に返し、アンカー欠損を `None` で保つことを検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。抽出結果をアサーションで確認する。
-    /// ## エラー / 例外発生条件
-    /// XML が不正、子図形数・名前・文字が異なる場合にテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-28, Codex): グループ子図形の分離確認を追加。
+    /// ## Description
+    /// Verifies returning child shapes within groups individually and keeping missing anchors as None.
+    /// ## Arguments / Returns
+    /// No arguments. Verifies extraction results via assertions.
+    /// ## Errors / Exceptions
+    /// Fails if XML is malformed or shape count, names, or text mismatch.
     #[test]
     fn returns_group_children_separately_without_anchor() {
         let xml = br#"<xdr:wsDr xmlns:xdr="x" xmlns:a="a"><xdr:twoCellAnchor><xdr:from><xdr:col>0</xdr:col><xdr:row>0</xdr:row></xdr:from><xdr:grpSp><xdr:nvGrpSpPr><xdr:cNvPr id="8" name="Group"/></xdr:nvGrpSpPr><xdr:sp><xdr:nvSpPr><xdr:cNvPr id="9" name="Child A"/></xdr:nvSpPr><xdr:txBody><a:p><a:r><a:t>first</a:t></a:r></a:p></xdr:txBody></xdr:sp><xdr:sp><xdr:nvSpPr><xdr:cNvPr id="10" name="Child B"/></xdr:nvSpPr><xdr:txBody><a:p><a:r><a:t>second</a:t></a:r></a:p></xdr:txBody></xdr:sp></xdr:grpSp></xdr:twoCellAnchor><xdr:sp><xdr:nvSpPr><xdr:cNvPr id="11" name="No anchor"/></xdr:nvSpPr><xdr:txBody><a:p><a:r><a:t>outside</a:t></a:r></a:p></xdr:txBody></xdr:sp></xdr:wsDr>"#;

@@ -1,28 +1,25 @@
-//! # 定数定義モジュール (constants.rs)
+//! # Core Constants Module (constants.rs)
 //!
-//! ## 処理内容
-//! アプリケーション全体（検索エンジン、パーサー、プレビュー、エクスポート、Tauriコマンド）で
-//! 使用される固定値、設定値、ファイル拡張子、イベント名、および日本語エラーメッセージを一元管理する。
-//! 憲章原則II（定数の外部抽出とハードコード禁止）に準拠。
+//! ## Description
+//! Centralizes constant definitions, configuration parameters, supported file extensions,
+//! event identifiers, and localized error messages across the application.
+//! Conforms to Constitution Principle II (No Hardcoded Constants).
 //!
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-26, AI Agent): 初版策定。全定数の外部化および整合性テストの実装。
-//! - v1.1.0 (2026-09-26, AI Agent): Aboutダイアログメニューおよびイベント定数の追加。
-//! - v1.2.0 (2026-09-26, AI Agent): 並行パイプライン用バッファ定数および検出中メッセージ定数の追加。
-//! - v1.3.0 (2026-09-27, Codex): ホーム省略表記とパス補完上限の定数を追加。
-//! - v1.4.0 (2026-09-28, AI Agent): 検索マッチのバッチ送信定数を追加。
-//! - v1.5.0 (2026-09-29, Codex): CLI実行設定を追加。
-//! - v1.5.0 (2026-09-29, Codex): CLI引数、既定値、出力、終了状態の定数を追加。
+//! ## Arguments / Returns
+//! Exposes public constant values used across search, extraction, export, and preview engines.
+//!
+//! ## Errors
+//! As a constant definition module, this does not produce runtime errors.
 
 // ==============================================================================
-// 1. ファイル拡張子定数 (File Extensions)
+// 1. File Extensions
 // ==============================================================================
 
-/// デフォルトの検索対象 Excel 拡張子リスト
+/// Default list of target Excel extensions
 pub const DEFAULT_EXTENSIONS: [&str; 4] = [".xlsx", ".xlsm", ".xlsb", ".xls"];
-/// SearchQueryの値検索を有効にする互換既定値。
+/// Backward-compatible default setting for enabling cell value search in SearchQuery.
 pub const DEFAULT_INCLUDE_VALUE: bool = true;
-/// SearchQuery JSONにおける値検索設定のフィールド名。
+/// Field name for value search option in SearchQuery JSON.
 pub const SEARCH_QUERY_INCLUDE_VALUE_FIELD: &str = "include_value";
 pub const CLI_QUERY_FIELD: &str = "query";
 pub const CLI_PATH_FIELD: &str = "path";
@@ -227,26 +224,26 @@ pub const LANGUAGE_EN: &str = "en";
 pub const TRANSLATION_UNAVAILABLE_KEY: &str = "common.translationUnavailable";
 pub const ERR_TRANSLATION_MISSING: &str = "A required translation is missing";
 
-/// 個別拡張子定数
+/// Individual extension constants
 pub const EXT_XLSX: &str = ".xlsx";
 pub const EXT_XLSM: &str = ".xlsm";
 pub const EXT_XLSB: &str = ".xlsb";
 pub const EXT_XLS: &str = ".xls";
 
 // ==============================================================================
-// 2. 検索・スキャン設定定数 (Scan & Search Settings)
+// 2. Scan & Search Settings
 // ==============================================================================
 
-/// スキャン進捗通知の最小送信間隔 (ミリ秒)
+/// Minimum throttle interval for scan progress notifications (ms)
 pub const PROGRESS_NOTIFY_INTERVAL_MS: u64 = 50;
 
-/// スキャン中のキャンセルチェック行間隔 (ビットマスク: 0x7F = 127行ごと)
+/// Row interval for checking cancellation during scanning (bitmask: 0x7F = every 127 rows)
 pub const CANCEL_CHECK_ROW_INTERVAL: usize = 0x7F;
 
-/// スニペット生成時の前後コンテキスト文字数
+/// Surrounding context character count for snippet generation
 pub const SNIPPET_CONTEXT_CHARS: usize = 30;
 
-/// スニペット省略記号
+/// Snippet ellipsis marker
 pub const SNIPPET_ELLIPSIS: &str = "...";
 pub const SNIPPET_MARK_OPEN: &str =
     "<mark class='bg-yellow-500/30 text-yellow-300 px-0.5 rounded font-semibold'>";
@@ -280,39 +277,39 @@ pub const XLS_SHAPE_NAME_PREFIX: &str = "Shape ";
 pub const ERR_SHAPE_READ: &str = "Failed to read Shape drawing data";
 pub const ERR_SHAPE_LIMIT: &str = "Shape drawing data exceeds the safety limit";
 
-/// 検索一致アイテムIDの初期値
+/// Initial ID for search match items
 pub const DEFAULT_MATCH_ID_START: u64 = 1;
 
-/// Excelの一時ロックファイルプレフィックス（除外対象）
+/// Excel temporary lock file prefix (excluded from scanning)
 pub const EXCEL_TEMP_FILE_PREFIX: &str = "~$";
 
-/// パイプライン並行処理における有界同期チャネルのバッファ容量
+/// Buffer capacity for bounded sync channel in pipeline parallel processing
 pub const CHANNEL_BUFFER_SIZE: usize = 1024;
 
 // ==============================================================================
-// 3. プレビュー表示設定定数 (Preview Settings)
+// 3. Preview Settings
 // ==============================================================================
 
-/// プレビュー表示時の対象セル前後の行半径
+/// Row radius surrounding target cell in preview grid
 pub const PREVIEW_ROW_RADIUS: u32 = 3;
 
-/// プレビュー表示時の対象セル前後の列半径
+/// Column radius surrounding target cell in preview grid
 pub const PREVIEW_COL_RADIUS: u32 = 2;
 
 // ==============================================================================
-// 4. Tauri イベント名およびメニュー定数 (Events & Menus)
+// 4. Events & Menus
 // ==============================================================================
 
-/// 検索一致通知イベント名
+/// Event name for search match notification
 pub const EVENT_SEARCH_MATCH: &str = "search-match";
 
-/// 検索進捗通知イベント名
+/// Event name for scan progress notification
 pub const EVENT_SCAN_PROGRESS: &str = "scan-progress";
 
-/// Aboutダイアログ表示イベント名
+/// Event name for opening About dialog
 pub const EVENT_OPEN_ABOUT_DIALOG: &str = "open-about-dialog";
 
-/// メニュー項目ID: Aboutダイアログ
+/// Menu item ID for opening About dialog
 pub const MENU_ITEM_ABOUT_ID: &str = "open_about";
 
 pub const MENU_KEY_ABOUT: &str = "menu.about";
@@ -323,16 +320,16 @@ pub const MENU_KEY_WINDOW: &str = "menu.window";
 pub const MENU_KEY_HELP: &str = "menu.help";
 
 // ==============================================================================
-// 5. エクスポート設定定数 (Export Settings)
+// 5. Export Settings
 // ==============================================================================
 
-/// Excelエクスポート時のヘッダ背景色 (Teal 700)
+/// Header background color for Excel export (Teal 700)
 pub const XLSX_HEADER_BG_COLOR: u32 = 0x000F_766E;
 
-/// Excelエクスポート時のヘッダ文字色 (White)
+/// Header foreground color for Excel export (White)
 pub const XLSX_HEADER_FG_COLOR: u32 = 0x00FF_FFFF;
 
-/// エクスポート列幅。翻訳見出しは共有カタログから取得する。
+/// Export column widths. Translated headers are retrieved from shared catalogs.
 pub const XLSX_COLUMN_WIDTHS: [f64; 9] = [8.0, 25.0, 40.0, 20.0, 12.0, 22.0, 14.0, 45.0, 30.0];
 pub const ERR_INVALID_LANGUAGE: &str = "Unsupported export language";
 pub const EXPORT_HEADER_KEYS: [&str; 9] = [
@@ -354,7 +351,7 @@ pub const EXPORT_MATCH_HIDDEN_SHEET_KEY: &str = "export.match.hiddenSheet";
 pub const EXPORT_MATCH_SHAPE_KEY: &str = "export.match.shape";
 
 // ==============================================================================
-// 6. アプリケーション識別子・表示名定数 (Supported Apps)
+// 6. Supported Apps
 // ==============================================================================
 
 pub const APP_ID_EXCEL: &str = "excel";
@@ -371,7 +368,7 @@ pub const ICON_HINT_CALC: &str = "calc";
 pub const ICON_HINT_GENERIC: &str = "generic";
 
 // ==============================================================================
-// 7. 日本語エラーメッセージテンプレート (Localized Error Messages)
+// 7. Error Messages & Log Templates
 // ==============================================================================
 
 pub const ERR_WORKBOOK_OPEN: &str = "Could not open workbook";
@@ -393,45 +390,38 @@ pub const ERR_PATH_NOT_DIR: &str = "Path is not a directory";
 pub const LOG_SEARCH_STARTED: &str = "[start_search] Search request received";
 pub const LOG_SEARCH_COMPLETED: &str = "[start_search] Search completed";
 pub const LOG_SEARCH_FAILED: &str = "[start_search] Search engine failed";
-/// 定数参照: ホーム省略表記のパス接頭辞。
+/// Constant reference: Home abbreviation path prefix.
 pub const HOME_PATH_PREFIX_UNIX: &str = "~/";
-/// 定数参照: Windows のホーム省略表記のパス接頭辞。
+/// Constant reference: Windows home abbreviation path prefix.
 pub const HOME_PATH_PREFIX_WINDOWS: &str = "~\\";
-/// 定数参照: ディレクトリ補完で返す候補の上限。
+/// Constant reference: Maximum suggestions returned for directory completion.
 pub const MAX_PATH_COMPLETION_RESULTS: usize = 10;
 pub const LOG_EVENT_EMIT_FAILED: &str = "Failed to emit Tauri event";
 pub const LOG_CANCEL_REQUESTED: &str = "[cancel_search] Cancellation requested";
-/// 定数参照: 検索マッチのバッチ送信最大件数
+/// Constant reference: Maximum batch size for search matches
 pub const SEARCH_MATCH_BATCH_SIZE: usize = 50;
-/// 定数参照: 検索マッチのバッチ送信インターバル (ミリ秒)
+/// Constant reference: Batch send interval for search matches (ms)
 pub const SEARCH_MATCH_BATCH_INTERVAL_MS: u128 = 25;
 
-/// macOS アプリケーションバンドル識別子
+/// macOS application bundle identifiers
 pub const MAC_BUNDLE_EXCEL: &str = "com.microsoft.Excel";
 pub const MAC_BUNDLE_NUMBERS: &str = "com.apple.iWork.Numbers";
 
 // ==============================================================================
-// 8. 単体テスト (Unit Tests)
+// 8. Unit Tests
 // ==============================================================================
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    /// ## 処理内容
-    /// 拡張子定数およびデフォルトリストの妥当性を検証する。
+    /// Validates supported extension constants and default extensions list.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments / Returns
+    /// None.
     ///
-    /// ## 戻り値
-    /// なし
-    ///
-    /// ## エラー / 例外発生条件
-    /// アサーション失敗時にpanic
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版作成
+    /// ## Errors
+    /// Panics on assertion failure.
     #[test]
     fn test_default_extensions_validity() {
         assert_eq!(DEFAULT_EXTENSIONS.len(), 4);
@@ -441,20 +431,13 @@ mod tests {
         assert!(DEFAULT_EXTENSIONS.contains(&EXT_XLS));
     }
 
-    /// ## 処理内容
-    /// CSVエクスポートヘッダーの列数と主要列名の存在を検証する。
+    /// Validates CSV/Excel export header column counts and key mappings.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments / Returns
+    /// None.
     ///
-    /// ## 戻り値
-    /// なし
-    ///
-    /// ## エラー / 例外発生条件
-    /// アサーション失敗時にpanic
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版作成
+    /// ## Errors
+    /// Panics on assertion failure.
     #[test]
     fn test_csv_export_headers() {
         assert_eq!(EXPORT_HEADER_KEYS.len(), XLSX_COLUMN_WIDTHS.len());
@@ -465,20 +448,13 @@ mod tests {
         assert_eq!(EXPORT_MATCH_HIDDEN_SHEET_KEY, "export.match.hiddenSheet");
     }
 
-    /// ## 処理内容
-    /// 各種エラーメッセージが空でなく、日本語として定義されていることを検証する。
+    /// Validates that error messages are non-empty strings.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments / Returns
+    /// None.
     ///
-    /// ## 戻り値
-    /// なし
-    ///
-    /// ## エラー / 例外発生条件
-    /// アサーション失敗時にpanic
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版作成
+    /// ## Errors
+    /// Panics on assertion failure.
     #[test]
     fn test_error_messages_non_empty() {
         assert!(!ERR_WORKBOOK_OPEN.is_empty());
@@ -488,20 +464,13 @@ mod tests {
         assert!(!ERR_LOCK_FAILED.is_empty());
     }
 
-    /// ## 処理内容
-    /// メニューおよびイベント関連定数が空でなく想定通りの値であることを検証する。
+    /// Validates menu item IDs and event channel constants.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments / Returns
+    /// None.
     ///
-    /// ## 戻り値
-    /// なし
-    ///
-    /// ## エラー / 例外発生条件
-    /// アサーション失敗時にpanic
-    ///
-    /// ## 変更履歴
-    /// - v1.1.0 (2026-09-26, AI Agent): Aboutダイアログメニューおよびイベント定数のテスト追加
+    /// ## Errors
+    /// Panics on assertion failure.
     #[test]
     fn test_menu_and_event_constants() {
         assert_eq!(EVENT_OPEN_ABOUT_DIALOG, "open-about-dialog");
@@ -514,20 +483,13 @@ mod tests {
         assert_eq!(MENU_KEY_HELP, "menu.help");
     }
 
-    /// ## 処理内容
-    /// パイプライン並行処理用のバッファ定数およびメッセージ定数が適切に定義されていることを検証する。
+    /// Validates pipeline parallel processing buffer and batch interval constants.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments / Returns
+    /// None.
     ///
-    /// ## 戻り値
-    /// なし
-    ///
-    /// ## エラー / 例外発生条件
-    /// アサーション失敗時にpanic
-    ///
-    /// ## 変更履歴
-    /// - v1.2.0 (2026-09-26, AI Agent): 初版作成
+    /// ## Errors
+    /// Panics on assertion failure.
     #[test]
     fn test_pipeline_constants() {
         assert_eq!(CHANNEL_BUFFER_SIZE, 1024);

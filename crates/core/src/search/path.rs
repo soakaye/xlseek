@@ -1,16 +1,14 @@
-//! 処理内容: 検索ディレクトリの解決・読取検証・候補取得を提供する。
-//! 入出力: 利用者入力とホームディレクトリから検証済みパスまたは候補を返す。
-//! エラー: 不正・不存在・読取拒否のパスは型付きエラーで返す。
-//! 変更履歴: v1.0.0 (2026-09-27, Codex): パス機能テストを先行追加。v1.1.0 (2026-09-27, Codex): パス検証・解決・補完を実装。v1.1.1 (2026-09-28, AI Agent): Prefix::UNC パターンマッチの不整合修正。
+//! Description: Provides search directory resolution, read validation, and completion candidates.
+//! Arguments/Returns: Resolves validated paths or returns candidates from user input and home directory.
+//! Errors: Returns typed errors for invalid, nonexistent, or unreadable paths.
 
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
 
-/// 処理内容: ディレクトリ検証時に発生する失敗を分類する。
-/// 引数・戻り値: なし。各エラー種別を保持する。
-/// エラー: なし。
-/// 変更履歴: v1.0.0 (2026-09-27, Codex): パス検証エラーを追加。
+/// Description: Classifies failures occurring during directory validation.
+/// Arguments/Returns: None. Holds error variants.
+/// Errors: None.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum PathError {
     NotFound,
@@ -18,10 +16,9 @@ pub enum PathError {
     SearchFailed,
 }
 
-/// 処理内容: 入力パスのホーム省略表記を展開して検索用パスを返す。
-/// 引数・戻り値: 入力文字列と任意のホームパスを受け、解決した PathBuf を返す。
-/// エラー: 省略表記にホームパスが必要なのに渡されない場合は SearchFailed を返す。
-/// 変更履歴: v1.0.0 (2026-09-27, Codex): ホーム省略表記の解決を追加。
+/// Description: Expands home shorthand prefix in input path and returns search path.
+/// Arguments/Returns: Accepts input string and optional home path, returns resolved PathBuf.
+/// Errors: Returns SearchFailed if home shorthand is present but home path is not provided.
 pub fn resolve_search_path(input: &str, home_dir: Option<&Path>) -> Result<PathBuf, PathError> {
     #[cfg(windows)]
     let prefixes = [
@@ -42,10 +39,9 @@ pub fn resolve_search_path(input: &str, home_dir: Option<&Path>) -> Result<PathB
     Ok(PathBuf::from(input))
 }
 
-/// 処理内容: 検索対象ディレクトリを開いて読取可能であることを確認する。
-/// 引数・戻り値: 検証する Path を受け、成功時は unit、失敗時は分類済みエラーを返す。
-/// エラー: 不存在・非ディレクトリ・権限拒否・その他の I/O エラーを PathError に変換する。
-/// 変更履歴: v1.0.0 (2026-09-27, Codex): 検索前の読取検証を追加。
+/// Description: Verifies that the search target directory exists and can be read.
+/// Arguments/Returns: Accepts Path to validate; returns Ok(()) on success, or classified error on failure.
+/// Errors: Converts nonexistent, non-directory, permission denied, or other I/O errors into PathError.
 pub fn validate_search_directory(path: &Path) -> Result<(), PathError> {
     let mut entries = fs::read_dir(path).map_err(classify_io_error)?;
     if let Some(entry) = entries.next() {
@@ -54,10 +50,9 @@ pub fn validate_search_directory(path: &Path) -> Result<(), PathError> {
     Ok(())
 }
 
-/// 処理内容: I/O エラーを検索パスの公開エラー種別へ変換する。
-/// 引数・戻り値: std::io::Error を受け、PathError を返す。
-/// エラー: なし。未知の I/O エラーは SearchFailed として扱う。
-/// 変更履歴: v1.0.0 (2026-09-27, Codex): I/O エラー分類を追加。
+/// Description: Converts std::io::Error into the public PathError type.
+/// Arguments/Returns: Accepts std::io::Error, returns PathError.
+/// Errors: None. Unknown I/O errors are classified as SearchFailed.
 fn classify_io_error(error: io::Error) -> PathError {
     match error.kind() {
         io::ErrorKind::NotFound | io::ErrorKind::NotADirectory => PathError::NotFound,
@@ -66,10 +61,9 @@ fn classify_io_error(error: io::Error) -> PathError {
     }
 }
 
-/// 処理内容: 絶対パスまたはホーム省略表記の親直下から一致するディレクトリを列挙する。
-/// 引数・戻り値: パス入力と任意のホームパスを受け、表示用候補の文字列配列を返す。
-/// エラー: 対象外・読取不可・不正な入力では空配列を返し、例外は送出しない。
-/// 変更履歴: v1.0.0 (2026-09-27, Codex): ディレクトリ補完を追加。
+/// Description: Lists matching directories directly under parent of absolute path or home shorthand.
+/// Arguments/Returns: Accepts path input and optional home path; returns string array of candidate paths.
+/// Errors: Returns empty vector on unreadable, invalid, or unsupported input; never panics.
 pub fn complete_directory_path(input: &str, home_dir: Option<&Path>) -> Vec<String> {
     if input.is_empty() {
         return Vec::new();
@@ -133,22 +127,18 @@ pub fn complete_directory_path(input: &str, home_dir: Option<&Path>) -> Vec<Stri
         .collect()
 }
 
-/// ## 処理内容
-/// 補完対象パスが絶対パス、またはホーム省略表記由来で安全な接頭辞か確認する。
+/// ## Description
+/// Checks whether completion target path is an absolute path or has a safe home-shorthand prefix.
 ///
-/// ## 引数
-/// - `path`: `&Path` - 検査対象のパス
-/// - `is_home_input`: `bool` - ホーム省略表記由来の判定フラグ
+/// ## Arguments
+/// - `path`: `&Path` - Path to check
+/// - `is_home_input`: `bool` - Flag indicating whether input originated from home shorthand
 ///
-/// ## 戻り値
-/// - `bool`: 対象の安全なプレフィックスであれば true、それ以外は false
+/// ## Returns
+/// - `bool`: true if valid and safe prefix, false otherwise
 ///
-/// ## エラー / 例外発生条件
-/// なし。対象外の形式は false を返す。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-27, Codex): 補完対象パス判定を追加。
-/// - v1.0.1 (2026-09-28, AI Agent): WindowsのPrefix::UNCパターン不整合(E0023)をPrefix::UNC(..)に修正。
+/// ## Errors / Exceptions
+/// None. Unsupported paths return false.
 fn is_supported_completion_path(path: &Path, is_home_input: bool) -> bool {
     if !path.is_absolute() {
         return false;
@@ -188,10 +178,9 @@ mod tests {
     const TEST_DIRECTORY_COUNT: usize = 12;
     const EXPECTED_COMPLETION_COUNT: usize = 10;
 
-    /// 処理内容: テスト専用の一時ディレクトリを作り、実ファイルシステムでパス動作を確認する。
-    /// 引数・戻り値: なし。作成した一時ディレクトリを返す。
-    /// エラー: 一時ディレクトリを作れない場合はテストを失敗させる。
-    /// 変更履歴: v1.0.0 (2026-09-27, Codex): パステスト用一時領域を追加。
+    /// Description: Creates a test-only temporary directory to verify path behavior on real filesystem.
+    /// Arguments/Returns: None. Returns created temporary PathBuf.
+    /// Errors: Panics if temporary directory creation fails.
     fn temp_dir() -> PathBuf {
         let unique = SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -203,10 +192,9 @@ mod tests {
         path
     }
 
-    /// 処理内容: ホーム省略表記を指定したホームディレクトリへ解決する。
-    /// 引数・戻り値: なし。解決結果の実パスを検証する。
-    /// エラー: 期待するパスへ解決されない場合は失敗する。
-    /// 変更履歴: v1.0.0 (2026-09-27, Codex): ホームパス解決テストを追加。
+    /// Description: Verifies that home shorthand resolves to the specified home directory.
+    /// Arguments/Returns: None. Validates resolved path.
+    /// Errors: Panics if resolved path does not match expectation.
     #[test]
     fn resolves_home_shorthand_to_the_home_directory() {
         let root = temp_dir();
@@ -220,10 +208,9 @@ mod tests {
         let _ = fs::remove_dir_all(root);
     }
 
-    /// 処理内容: 存在しない検索対象と通常ファイルを拒否する。
-    /// 引数・戻り値: なし。検証関数のエラー種別を確認する。
-    /// エラー: 対象が拒否されない場合は失敗する。
-    /// 変更履歴: v1.0.0 (2026-09-27, Codex): 検索パス拒否テストを追加。
+    /// Description: Verifies rejection of missing search targets and regular files.
+    /// Arguments/Returns: None. Validates error variant from validation function.
+    /// Errors: Panics if invalid target is not rejected.
     #[test]
     fn rejects_missing_and_non_directory_search_targets() {
         let root = temp_dir();
@@ -241,10 +228,9 @@ mod tests {
         let _ = fs::remove_dir_all(root);
     }
 
-    /// 処理内容: 親直下の一致するディレクトリだけを整列して返す。
-    /// 引数・戻り値: なし。候補一覧を検証する。
-    /// エラー: 通常ファイルや順序違いが候補に含まれる場合に失敗する。
-    /// 変更履歴: v1.0.0 (2026-09-27, Codex): 候補列挙の振る舞いテストを追加。
+    /// Description: Verifies returning only matching directories under parent in sorted order.
+    /// Arguments/Returns: None. Validates candidate list.
+    /// Errors: Panics if candidate list includes files or is out of order.
     #[test]
     fn returns_sorted_matching_directories_and_excludes_files() {
         let root = temp_dir();
@@ -263,10 +249,9 @@ mod tests {
         let _ = fs::remove_dir_all(root);
     }
 
-    /// 処理内容: 候補を名前順に並べた後で最大件数に制限する。
-    /// 引数・戻り値: なし。上限内の先頭候補を検証する。
-    /// エラー: 返却数超過または順序違いで失敗する。
-    /// 変更履歴: v1.0.0 (2026-09-27, Codex): 候補上限テストを追加。
+    /// Description: Verifies sorting candidates by name before limiting to max results.
+    /// Arguments/Returns: None. Validates prefix candidates within limit.
+    /// Errors: Panics if count exceeds limit or ordering is wrong.
     #[test]
     fn sorts_before_limiting_completion_results() {
         let root = temp_dir();
@@ -288,10 +273,9 @@ mod tests {
         let _ = fs::remove_dir_all(root);
     }
 
-    /// 処理内容: ホーム省略表記の補完候補を同じ表記で返す。
-    /// 引数・戻り値: なし。表示用候補の文字列を検証する。
-    /// エラー: 実パス表記へ置換される場合に失敗する。
-    /// 変更履歴: v1.0.0 (2026-09-27, Codex): ホーム表記維持テストを追加。
+    /// Description: Verifies that completion results for home shorthand retain the shorthand notation.
+    /// Arguments/Returns: None. Validates candidate string.
+    /// Errors: Panics if replaced with resolved real path.
     #[test]
     fn preserves_home_shorthand_in_completion_results() {
         let root = temp_dir();
@@ -305,10 +289,9 @@ mod tests {
         let _ = fs::remove_dir_all(root);
     }
 
-    /// 処理内容: 空白と日本語を含むディレクトリ名を候補として維持する。
-    /// 引数・戻り値: なし。候補文字列の完全一致を検証する。
-    /// エラー: 候補が欠落・変質する場合に失敗する。
-    /// 変更履歴: v1.0.0 (2026-09-27, Codex): Unicode パス候補テストを追加。
+    /// Description: Verifies that directory names containing spaces and non-ASCII characters are preserved.
+    /// Arguments/Returns: None. Validates candidate string exact match.
+    /// Errors: Panics if candidates are missing or corrupted.
     #[test]
     fn preserves_spaces_and_japanese_directory_names() {
         let root = temp_dir();
@@ -323,10 +306,9 @@ mod tests {
         let _ = fs::remove_dir_all(root);
     }
 
-    /// 処理内容: 末尾区切り文字がある入力では入力先の直下を列挙する。
-    /// 引数・戻り値: なし。候補一覧を検証する。
-    /// エラー: 末尾区切り文字を名前として扱う場合に失敗する。
-    /// 変更履歴: v1.0.0 (2026-09-27, Codex): 末尾区切り文字のテストを追加。
+    /// Description: Verifies listing items directly under target when input has trailing separator.
+    /// Arguments/Returns: None. Validates candidate list.
+    /// Errors: Panics if trailing separator is treated as name prefix.
     #[test]
     fn treats_trailing_separator_as_an_empty_name_prefix() {
         let root = temp_dir();
@@ -341,19 +323,17 @@ mod tests {
         let _ = fs::remove_dir_all(root);
     }
 
-    /// 処理内容: 相対パスを補完対象から除外する。
-    /// 引数・戻り値: なし。候補が空であることを検証する。
-    /// エラー: 相対パスから候補が返る場合に失敗する。
-    /// 変更履歴: v1.0.0 (2026-09-27, Codex): 相対入力拒否テストを追加。
+    /// Description: Verifies that relative paths are excluded from directory completion.
+    /// Arguments/Returns: None. Validates empty candidate vector.
+    /// Errors: Panics if candidates are returned for relative path.
     #[test]
     fn ignores_relative_completion_input() {
         assert!(complete_directory_path("reports/Al", None).is_empty());
     }
 
-    /// 処理内容: 検索可能なディレクトリを受付前検証で受け付ける。
-    /// 引数・戻り値: なし。既存ディレクトリの検証結果を確認する。
-    /// エラー: 読取可能なディレクトリが拒否された場合に失敗する。
-    /// 変更履歴: v1.0.0 (2026-09-27, Codex): 読取可能パスの検証テストを追加。
+    /// Description: Verifies that readable directory passes preliminary validation.
+    /// Arguments/Returns: None. Checks validation result on existing directory.
+    /// Errors: Panics if readable directory is rejected.
     #[test]
     fn accepts_readable_search_directory() {
         let root = temp_dir();
@@ -362,10 +342,9 @@ mod tests {
     }
 
     #[cfg(windows)]
-    /// 処理内容: Windows の対象パス種別だけを補完し、相対・デバイス系を除く。
-    /// 引数・戻り値: なし。各パス形式の候補有無を検証する。
-    /// エラー: 非対応の Windows パスに候補が出た場合に失敗する。
-    /// 変更履歴: v1.0.0 (2026-09-27, Codex): Windows パス種別テストを追加。
+    /// Description: Verifies completion for Windows-supported path types, excluding relative/device paths.
+    /// Arguments/Returns: None. Validates candidates for various path forms.
+    /// Errors: Panics if unsupported Windows paths produce candidates.
     #[test]
     fn accepts_windows_absolute_paths_and_ignores_unsupported_prefixes() {
         let home = Path::new(r"C:\Users\test");

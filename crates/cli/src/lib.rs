@@ -1,14 +1,17 @@
-//! ## 処理内容
-//! 引数、共通Excel検索、翻訳済み診断、一時保存と結果公開をつなぐCLI実行層。
-//! 複数パスの非同期パイプライン走査、マルチスレッド並列検索、即時エラー通知、
-//! および標準出力へのCSVストリーミング出力をサポートする。
-//! ## 引数・戻り値
-//! OS引数を受け、プロセス終了コード`i32`を返す。
-//! ## エラー
-//! 不正要求・全体検索失敗・保存失敗は2、部分失敗は結果を保存して1。
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-29, Codex): CLI実行処理を追加。
-//! - v1.1.0 (2026-09-29, AI Agent): 非同期パイプライン、標準出力CSV、即時エラー出力対応。
+//! # CLI Execution Layer
+//!
+//! ## Description
+//! Connects arguments, common Excel search, translated diagnostics, temporary storage,
+//! and result publication.
+//! Supports multi-path asynchronous pipelined scanning, multi-threaded parallel search,
+//! immediate stderr error notifications, and CSV streaming to stdout.
+//!
+//! ## Arguments / Returns
+//! Receives operating system arguments and returns process exit code `i32`.
+//!
+//! ## Errors
+//! Returns 2 for invalid requests, total search failures, or storage errors;
+//! returns 1 for partial failures where results are still published.
 
 pub mod args;
 pub mod constants;
@@ -25,16 +28,14 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use walkdir::WalkDir;
 
-/// ## 処理内容
-/// プロセス引数を解析し、GUIを起動せずExcel検索・保存を実行する。
-/// 出力先省略時は標準出力へ直接CSVを出力し、サマリー文言を抑制する。
-/// ## 引数・戻り値
-/// OS引数イテレーターを受け、終了状態を表す`i32`を返す。
-/// ## エラー
-/// 翻訳・解析・検索・保存失敗は標準エラーへ出し、失敗終了コードを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): CLI実行フローを実装。
-/// - v1.1.0 (2026-09-29, AI Agent): 標準出力モード時のサマリー抑制を実装。
+/// Parses process arguments and executes Excel search/save without initializing a GUI.
+/// Suppresses summary text when streaming directly to stdout.
+///
+/// ## Arguments / Returns
+/// Accepts OS arguments iterator and returns exit status code `i32`.
+///
+/// ## Errors
+/// Outputs translation, parsing, search, and save errors to stderr and returns a non-zero exit code.
 pub fn run<I, S>(args: I) -> i32
 where
     I: IntoIterator<Item = S>,
@@ -57,7 +58,7 @@ where
             let is_stdout = matches!(options.output_target, CliOutputTarget::Stdout);
             match execute(options, &catalogs) {
                 Ok((report, output_path, exit_code, language)) => {
-                    // 標準出力モード時はパイプラインを壊さないためサマリーを出力しない
+                    // Do not print summary in stdout mode to avoid breaking pipe streams
                     if !is_stdout {
                         if let Some(ref path) = output_path {
                             let summary = translate(
@@ -116,16 +117,14 @@ where
     }
 }
 
-/// ## 処理内容
-/// 複数パスを非同期パイプラインで探索・並行解析し、SearchReportの集計と結果出力を行う。
-/// 探索・解析時のエラーはリアルタイムでstderrへ出力する。
-/// ## 引数・戻り値
-/// 検証済みCliOptionsと翻訳辞書を受け、レポート・公開パス（stdout時はNone）・終了コード・言語を返す。
-/// ## エラー
-/// 入出力競合、ルート走査不能、または結果公開失敗時にErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): CLI検索と出力接続を追加。
-/// - v1.1.0 (2026-09-29, AI Agent): 非同期パイプライン探索、Rayon並列解析、即時stderr通知、標準出力出力を実装。
+/// Explores and parses multiple input paths in parallel using an async pipeline, aggregating SearchReport and outputting results.
+/// Reports discovery and parsing errors in real time to stderr.
+///
+/// ## Arguments / Returns
+/// Accepts validated `CliOptions` and translation catalogs, returning report, published path (or None if stdout), exit code, and language.
+///
+/// ## Errors
+/// Returns `Err` on I/O collisions, root walk failure, or result publication failure.
 fn execute(
     options: CliOptions,
     catalogs: &std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>,
@@ -149,7 +148,7 @@ fn execute(
         None
     };
 
-    // 定数参照: constants::CHANNEL_BUFFER_SIZE
+    // Constant reference: constants::CHANNEL_BUFFER_SIZE
     let (sender, receiver) = sync_channel::<PathBuf>(constants::CHANNEL_BUFFER_SIZE);
     let issues = Arc::new(Mutex::new(Vec::<SearchIssue>::new()));
     let matches = Arc::new(Mutex::new(Vec::<SearchMatch>::new()));
@@ -158,9 +157,9 @@ fn execute(
     let discovered_files = Arc::new(AtomicUsize::new(0));
     let root_error = Arc::new(Mutex::new(None::<String>));
 
-    // スレッドスコープ内で探索スレッド（プロデューサー）とRayon並列解析（コンシューマー）を実行
+    // Run discovery thread (producer) and Rayon parallel parsing (consumers) within a thread scope
     std::thread::scope(|scope| {
-        // 探索スレッド (プロデューサー)
+        // Discovery thread (Producer)
         let issues_for_producer = Arc::clone(&issues);
         let discovered_for_producer = Arc::clone(&discovered_files);
         let root_error_for_producer = Arc::clone(&root_error);
@@ -198,7 +197,7 @@ fn execute(
                     continue;
                 }
 
-                // ディレクトリ探索
+                // Directory discovery
                 let entries = WalkDir::new(input).follow_links(false).into_iter();
                 for entry in entries {
                     let entry = match entry {
@@ -210,7 +209,7 @@ fn execute(
                                 .map(Path::to_path_buf)
                                 .unwrap_or_else(|| input.clone());
 
-                            // 即座にstderrへ出力
+                            // Emit immediately to stderr
                             eprintln!(
                                 "{}{}{}",
                                 path.display(),
@@ -290,7 +289,7 @@ fn execute(
             }
         });
 
-        // 解析スレッドプール (コンシューマー: Rayon)
+        // Parallel parsing pool (Consumers: Rayon)
         let receiver = Arc::new(Mutex::new(receiver));
         rayon::scope(|rayon_scope| {
             let num_threads = rayon::current_num_threads();
@@ -309,7 +308,7 @@ fn execute(
                             let lock = rx.lock().unwrap();
                             match lock.recv() {
                                 Ok(p) => p,
-                                Err(_) => break, // senderがdropされ完了
+                                Err(_) => break, // sender was dropped, work finished
                             }
                         };
                         scanned_consumer.fetch_add(1, Ordering::Relaxed);
@@ -324,7 +323,7 @@ fn execute(
                                 m.append(&mut found);
                             }
                             Ok(Err(cause)) => {
-                                // 即座にstderrへ出力
+                                // Emit immediately to stderr
                                 eprintln!(
                                     "{}{}{}",
                                     path.display(),
@@ -367,8 +366,8 @@ fn execute(
     }
 
     let mut matches_list = matches.lock().unwrap();
-    // 一致アイテムIDを1からの連番に再整列
-    // 定数参照: constants::DEFAULT_MATCH_ID_START
+    // Re-index matched item IDs starting sequentially from 1
+    // Constant reference: constants::DEFAULT_MATCH_ID_START
     for (index, item) in matches_list.iter_mut().enumerate() {
         item.id = constants::DEFAULT_MATCH_ID_START + index as u64;
     }
@@ -422,14 +421,13 @@ fn execute(
     Ok((report, published_path, exit_code, options.language))
 }
 
-/// ## 処理内容
-/// 指定言語のカタログから文字列を取得し、必須フォールバックを返す。
-/// ## 引数・戻り値
-/// カタログ、言語、キーを受け、翻訳文字列を返す。
-/// ## エラー
-/// キー欠落時は必須英語フォールバックを使う。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): CLI翻訳参照を追加。
+/// Retrieves a translated text from catalogs with English fallback.
+///
+/// ## Arguments / Returns
+/// Accepts catalogs, language code, and translation key, returning the resolved string.
+///
+/// ## Errors
+/// Falls back to English if the key is missing from the catalog.
 fn translate(
     catalogs: &std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>,
     language: &str,
@@ -439,14 +437,13 @@ fn translate(
         .unwrap_or_else(|| constants::CLI_FALLBACK_ENGLISH.to_string())
 }
 
-/// ## 処理内容
-/// CLI処理エラーを指定言語で表示可能な文面へ変換する。
-/// ## 引数・戻り値
-/// エラー文面、翻訳辞書、言語を受け、翻訳済み文字列を返す。
-/// ## エラー
-/// 対応する翻訳がない場合は元のエラー文面を返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): CLIエラー文面の翻訳を追加。
+/// Translates a CLI error message into the designated display language.
+///
+/// ## Arguments / Returns
+/// Accepts error string, catalogs, and language code, returning the translated message.
+///
+/// ## Errors
+/// Returns the original error string if no matching translation template is found.
 fn translate_error(
     error: &str,
     catalogs: &std::collections::BTreeMap<String, std::collections::BTreeMap<String, String>>,

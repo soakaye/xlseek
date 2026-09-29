@@ -1,19 +1,17 @@
-//! # Excel Grep 共有コアライブラリ (exlgrep_core)
+//! # Excel Grep Shared Core Library (exlgrep_core)
 //!
-//! ## 処理内容
-//! Excelブック（.xlsx, .xlsm, .xls, .xlsb）の高速並列検索エンジン、セル・コメント・図形内テキストの解析、
-//! 検索結果のCSV/Excelエクスポート、共通データモデル、埋め込み翻訳カタログ、および共通定数を提供する。
-//! Tauriデスクトップアプリケーションおよび独立CLIツールの双方が共有する最下位基盤クレートであり、
-//! GUIフレームワークへの依存を一切持たない。
+//! ## Description
+//! Provides high-speed parallel search engine for Excel workbooks (.xlsx, .xlsm, .xls, .xlsb),
+//! parsing of cell values, comments, and drawing shape text, CSV/Excel export facilities,
+//! shared data models, embedded translation catalogs, and common constants.
+//! Serves as the foundational crate shared by both the Tauri desktop application and the standalone CLI tool,
+//! with zero dependencies on GUI frameworks.
 //!
-//! ## 引数・戻り値
-//! モジュール群（search, export, models, i18n, constants）を公開するライブラリルート。
+//! ## Arguments / Returns
+//! Root module exposing submodules (`constants`, `export`, `i18n`, `models`, `search`).
 //!
-//! ## エラー
-//! 各モジュール内のResult型を通じてエラー情報を伝播し、予期しないパニックを排除する。
-//!
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-29, Antigravity): 初版策定。src-tauriから独立した共有クレートとして抽出。
+//! ## Errors
+//! Propagates errors via module-specific `Result` types, eliminating unexpected panics.
 
 pub mod constants;
 pub mod export;

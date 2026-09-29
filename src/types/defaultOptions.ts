@@ -1,17 +1,14 @@
 /**
- * @fileoverview デフォルト検索オプションの型定義 (src/types/defaultOptions.ts)
+ * @fileoverview Default search options type definition (src/types/defaultOptions.ts)
  *
- * ## 処理内容
- * ユーザーが設定ダイアログからカスタマイズ可能で、ローカルストレージに永続化される
- * デフォルト検索オプションのデータ型を定義する。
- * 憲章原則III（ヘッダコメント）に準拠。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-28, AI Agent): 初版策定。
+ * ## Description
+ * Defines the data type for default search options that can be customized by
+ * the user via the settings dialog and persisted in local storage.
+ * Complies with Constitution Principle III (comprehensive documentation).
  */
 
 /**
- * デフォルト検索オプション型
+ * Default search options interface
  */
 export interface DefaultSearchOptions {
   match_case: boolean;

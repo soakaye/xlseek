@@ -1,13 +1,11 @@
-//! # BIFF8 / CFB Shape 抽出器
+//! # BIFF8 / CFB Shape Extractor
 //!
-//! ## 処理内容
-//! CFB の Workbook/Book ストリーム、シート範囲、TxO と Continue を読み、テキストボックス文字列を抽出する。
-//! ## 引数・戻り値
-//! ブックパスとシート名一覧を受け取り、Shape テキスト一覧を返す。
-//! ## エラー / 例外発生条件
-//! CFB・BIFF レコード・文字列の破損、またはサイズ上限超過時にエラーを返す。
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-28, Codex): BIFF TxO と Continue のテキスト抽出を追加。
+//! ## Description
+//! Reads Workbook/Book streams, sheet ranges, TxO, and Continue records from CFB to extract text box strings.
+//! ## Arguments / Returns
+//! Accepts workbook path and sheet name list; returns list of ShapeText items.
+//! ## Errors / Exceptions
+//! Returns error on corrupted CFB, BIFF records, strings, or exceeded size limits.
 
 use super::ShapeText;
 use encoding_rs::WINDOWS_1252;
@@ -15,14 +13,12 @@ use std::io::Read;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-/// ## 処理内容
-/// CFB 内の BIFF ワークブックからシートごとのテキストオブジェクトを抽出する。
-/// ## 引数・戻り値
-/// `path` は `.xls` ファイル、`sheet_names` は Reader が返したシート名、`cancel_flag` は任意の中断フラグ、戻り値は Shape 一覧。
-/// ## エラー / 例外発生条件
-/// CFB ストリーム欠損、上限超過、BIFF 構造不正時にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): CFB/BIFF シート走査を実装。
+/// ## Description
+/// Extracts text objects per sheet from a BIFF workbook in CFB.
+/// ## Arguments / Returns
+/// `path` is an `.xls` file, `sheet_names` is list of sheet names from reader, `cancel_flag` is optional cancellation flag. Returns list of shapes.
+/// ## Errors / Exceptions
+/// Returns error on missing CFB stream, exceeded limits, or invalid BIFF structure.
 pub(super) fn extract(
     path: &Path,
     sheet_names: &[String],
@@ -31,7 +27,7 @@ pub(super) fn extract(
     if cancel_flag.is_some_and(|flag| flag.load(Ordering::Relaxed)) {
         return Ok(Vec::new());
     }
-    // 定数参照: SHAPE_MAX_BINARY_BYTES で CFB Workbook ストリームを制限する。
+    // Constant reference: SHAPE_MAX_BINARY_BYTES
     let mut compound = cfb::open(path).map_err(|_| crate::constants::ERR_SHAPE_READ.to_string())?;
     let stream_path = if compound.exists("/Workbook") {
         "/Workbook"
@@ -76,16 +72,14 @@ pub(super) fn extract(
     Ok(output)
 }
 
-/// ## 処理内容
-/// Workbook グローバル領域から BoundSheet8 のシート名とストリーム位置を取得する。
-/// ## 引数・戻り値
-/// `bytes` は BIFF Workbook ストリーム、戻り値はシート定義一覧。
-/// ## エラー / 例外発生条件
-/// BIFF レコード境界または文字列が不正な場合にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): BoundSheet8 の読取を追加。
+/// ## Description
+/// Extracts BoundSheet8 sheet names and stream offsets from workbook global stream.
+/// ## Arguments / Returns
+/// `bytes` is BIFF workbook stream; returns list of sheet definitions.
+/// ## Errors / Exceptions
+/// Returns error if BIFF record boundaries or strings are malformed.
 fn parse_bound_sheets(bytes: &[u8]) -> Result<Vec<BoundSheet>, String> {
-    // 定数参照: XLS_BOUNDSHEET_RECORD_ID と XLS_MAX_BIFF_RECORD_BYTES を使う。
+    // Constant reference: XLS_BOUNDSHEET_RECORD_ID and XLS_MAX_BIFF_RECORD_BYTES
     let mut offset = 0;
     let mut sheets = Vec::new();
     while offset < bytes.len() {
@@ -110,20 +104,18 @@ fn parse_bound_sheets(bytes: &[u8]) -> Result<Vec<BoundSheet>, String> {
     Ok(sheets)
 }
 
-/// ## 処理内容
-/// Worksheet BIFF 領域の TxO レコードと直後の Continue 群を Shape テキストへ変換する。
-/// ## 引数・戻り値
-/// `bytes` は単一シート領域、`sheet_name` は所属シート、`shape_number` は一意な表示 ID の連番。
-/// ## エラー / 例外発生条件
-/// 不正レコードや不完全な TxO テキスト時にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): TxO と Continue のシート走査を実装。
+/// ## Description
+/// Converts TxO records and subsequent Continue records in worksheet BIFF stream into shape text.
+/// ## Arguments / Returns
+/// `bytes` is single sheet stream slice, `sheet_name` is target sheet name, `shape_number` is sequence counter for unique IDs.
+/// ## Errors / Exceptions
+/// Returns error on malformed records or incomplete TxO text.
 fn parse_sheet_objects(
     bytes: &[u8],
     sheet_name: &str,
     shape_number: &mut u32,
 ) -> Result<Vec<ShapeText>, String> {
-    // 定数参照: XLS_TXO_* / XLS_CONTINUE_RECORD_ID でテキストオブジェクトを識別する。
+    // Constant reference: XLS_TXO_* / XLS_CONTINUE_RECORD_ID
     let mut offset = 0;
     let mut output = Vec::new();
     while offset < bytes.len() {
@@ -173,20 +165,18 @@ fn parse_sheet_objects(
     Ok(output)
 }
 
-/// ## 処理内容
-/// TxO に続く Continue 内の XLUnicodeStringNoCch を、指定された文字数まで復号する。
-/// ## 引数・戻り値
-/// `continues` は Continue payload 一覧、`text_count` は期待文字数、`run_bytes` は書式領域サイズ。
-/// ## エラー / 例外発生条件
-/// 文字列が欠損、UTF-16 が不正、または書式領域上限超過時にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): TxO 文字列と分割 Continue の復号を追加。
+/// ## Description
+/// Decodes XLUnicodeStringNoCch from Continue records following TxO up to specified character count.
+/// ## Arguments / Returns
+/// `continues` is Continue payload list, `text_count` is expected character count, `run_bytes` is format run area size.
+/// ## Errors / Exceptions
+/// Returns error on missing text, invalid UTF-16, or exceeded format run area limit.
 fn decode_txo_text(
     continues: &[&[u8]],
     text_count: usize,
     run_bytes: usize,
 ) -> Result<String, String> {
-    // 定数参照: XLS_MAX_BIFF_RECORD_BYTES で書式ラン領域を制限する。
+    // Constant reference: XLS_MAX_BIFF_RECORD_BYTES
     if text_count == 0 {
         return Ok(String::new());
     }
@@ -216,14 +206,12 @@ fn decode_txo_text(
     Ok(output)
 }
 
-/// ## 処理内容
-/// BIFF の compressed single-byte または UTF-16LE 文字列を Unicode 文字列へ変換する。
-/// ## 引数・戻り値
-/// `bytes` は文字データ、`wide` は UTF-16LE 指定、戻り値は UTF-8 文字列。
-/// ## エラー / 例外発生条件
-/// 奇数バイト UTF-16 または不正なサロゲート列時にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): BIFF 文字データ復号を追加。
+/// ## Description
+/// Converts BIFF compressed single-byte or UTF-16LE character bytes to a Unicode String.
+/// ## Arguments / Returns
+/// `bytes` is character byte slice, `wide` indicates UTF-16LE, returns UTF-8 String.
+/// ## Errors / Exceptions
+/// Returns error on odd-length UTF-16 or invalid surrogates.
 fn decode_chars(bytes: &[u8], wide: bool) -> Result<String, String> {
     if wide {
         if !bytes
@@ -248,16 +236,14 @@ fn decode_chars(bytes: &[u8], wide: bool) -> Result<String, String> {
     }
 }
 
-/// ## 処理内容
-/// BIFF レコードの type、size、data を境界確認して返す。
-/// ## 引数・戻り値
-/// バイト列と可変オフセットを受け取り、レコード ID とデータ slice を返す。
-/// ## エラー / 例外発生条件
-/// ヘッダー欠損、レコード長上限超過、または範囲外時にエラーを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): BIFF レコード境界確認を追加。
+/// ## Description
+/// Returns BIFF record type, size, and data slice with boundary checking.
+/// ## Arguments / Returns
+/// Accepts byte slice and mutable offset; returns record ID and payload slice.
+/// ## Errors / Exceptions
+/// Returns error on missing header, exceeded length limit, or out-of-bounds offset.
 fn next_biff_record<'a>(bytes: &'a [u8], offset: &mut usize) -> Result<(u16, &'a [u8]), String> {
-    // 定数参照: XLS_BIFF_RECORD_HEADER_BYTES と XLS_MAX_BIFF_RECORD_BYTES を使う。
+    // Constant reference: XLS_BIFF_RECORD_HEADER_BYTES and XLS_MAX_BIFF_RECORD_BYTES
     let header_end = offset
         .checked_add(crate::constants::XLS_BIFF_RECORD_HEADER_BYTES)
         .filter(|end| *end <= bytes.len())
@@ -276,14 +262,12 @@ fn next_biff_record<'a>(bytes: &'a [u8], offset: &mut usize) -> Result<(u16, &'a
     Ok((record_id, record))
 }
 
-/// ## 処理内容
-/// BoundSheet8 から抽出したシート名と Workbook ストリーム内位置を保持する。
-/// ## 引数・戻り値
-/// `name` はシート名、`stream_offset` はサブストリームの開始位置。
-/// ## エラー / 例外発生条件
-/// データ保持のみでエラーや panic は発生しない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): BIFF シート定義モデルを追加。
+/// ## Description
+/// Holds sheet name and workbook stream offset extracted from BoundSheet8.
+/// ## Arguments / Returns
+/// `name` is sheet name, `stream_offset` is substream start offset.
+/// ## Errors / Exceptions
+/// Data holder only; does not generate errors or panics.
 struct BoundSheet {
     name: String,
     stream_offset: usize,
@@ -296,14 +280,12 @@ mod tests {
     use std::sync::atomic::AtomicBool;
     use std::time::{SystemTime, UNIX_EPOCH};
 
-    /// ## 処理内容
-    /// Continue に分割された圧縮文字列と UTF-16LE 文字列を正しく復号することを確認する。
-    /// ## 引数・戻り値
-    /// 引数なし。異なる文字列エンコードの結果をアサーションで検証する。
-    /// ## エラー / 例外発生条件
-    /// 復号結果が期待値と一致しない場合にテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-28, Codex): TxO の分割文字列テストを追加。
+    /// ## Description
+    /// Verifies correctly decoding compressed and UTF-16LE strings split across Continue records.
+    /// ## Arguments / Returns
+    /// No arguments. Verifies decoded strings via assertions.
+    /// ## Errors / Exceptions
+    /// Fails if decoded results mismatch expectations.
     #[test]
     fn decodes_split_compressed_and_wide_text() {
         assert_eq!(
@@ -316,14 +298,12 @@ mod tests {
         );
     }
 
-    /// ## 処理内容
-    /// TxO と Continue の BIFF レコードから Shape テキスト結果を作ることを確認する。
-    /// ## 引数・戻り値
-    /// 引数なし。レコード列を解析し、文字列とシート名を検証する。
-    /// ## エラー / 例外発生条件
-    /// レコードが不正または期待値が異なる場合にテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-28, Codex): BIFF TxO の Shape 結果テストを追加。
+    /// ## Description
+    /// Verifies constructing shape text results from TxO and Continue BIFF records.
+    /// ## Arguments / Returns
+    /// No arguments. Verifies parsed string and sheet name.
+    /// ## Errors / Exceptions
+    /// Fails if records are malformed or results mismatch expectations.
     #[test]
     fn returns_txo_text_as_sheet_shape() {
         let mut bytes = Vec::new();
@@ -349,14 +329,12 @@ mod tests {
         assert_eq!(shapes[0].anchor, None);
     }
 
-    /// ## 処理内容
-    /// CFB Workbook ストリームからシート名と TxO を経由して Shape テキストを抽出する。
-    /// ## 引数・戻り値
-    /// 引数なし。仮の `.xls` ファイルを作成し、抽出結果を検証する。
-    /// ## エラー / 例外発生条件
-    /// 一時ファイル作成、書込、抽出、または期待値検証に失敗するとテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-28, Codex): CFB 統合テストを追加。
+    /// ## Description
+    /// Verifies extracting shape text from CFB Workbook stream via sheet names and TxO.
+    /// ## Arguments / Returns
+    /// No arguments. Creates temporary `.xls` file and verifies extracted shape results.
+    /// ## Errors / Exceptions
+    /// Fails if temporary file creation, writing, extraction, or assertions fail.
     #[test]
     fn extracts_txo_text_from_cfb_workbook() {
         let mut sheet = Vec::new();
@@ -408,14 +386,12 @@ mod tests {
         assert!(cancelled_shapes.is_empty());
     }
 
-    /// ## 処理内容
-    /// BIFF レコードの little-endian ID、長さ、ペイロードをテスト用ストリームに追加する。
-    /// ## 引数・戻り値
-    /// `record_id` はレコード型、`payload` は本文、`bytes` は追記先。戻り値はない。
-    /// ## エラー / 例外発生条件
-    /// ペイロードが `u16` 長を超える場合にテストが panic するが、固定テストデータで呼び出す。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-28, Codex): BIFF テストレコード生成を追加。
+    /// ## Description
+    /// Appends little-endian record ID, length, and payload of a BIFF record to test stream.
+    /// ## Arguments / Returns
+    /// `record_id` is record type, `payload` is body, `bytes` is destination vector.
+    /// ## Errors / Exceptions
+    /// Panics if payload exceeds `u16::MAX`.
     fn append_record(record_id: u16, payload: &[u8], bytes: &mut Vec<u8>) {
         bytes.extend_from_slice(&record_id.to_le_bytes());
         bytes.extend_from_slice(&(payload.len() as u16).to_le_bytes());

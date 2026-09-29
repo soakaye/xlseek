@@ -1,29 +1,20 @@
-//! # データモデル定義モジュール (models/mod.rs)
+//! # Data Models Module (models/mod.rs)
 //!
-//! ## 処理内容
-//! 検索条件、検索結果、スキャン進捗、プレビュー情報、エクスポート要求、
-//! および連携アプリケーション情報に関するデータ構造体を定義する。
-//! 憲章原則II（定数参照）および原則III（4要素ヘッダコメント）に準拠。
-//!
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照への置換と4要素ヘッダコメントの網羅。
+//! ## Description
+//! Defines shared data structures for search criteria, search matches, scanning progress,
+//! spreadsheet preview information, export requests, and external application associations.
+//! Conforms to Constitution Principle II (No Hardcoded Constants) and Principle III (Comprehensive Header Comments).
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
-/// ## 処理内容
-/// 検索実行時の検索条件を保持するクエリ構造体。
-/// ## 引数・戻り値
-/// キーワード、対象フォルダ、検索オプション、対象拡張子を保持する。
-/// `include_shape` は Shape テキスト検索の有効状態を表し、既定値は true。
-/// `include_value` はセル値検索を表し、既定値は true。
-/// ## エラー / 例外発生条件
-/// Serde のデシリアライズで必須キーワードまたは対象フォルダが欠けると失敗する。
+/// Query structure holding search execution parameters and options.
 ///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
-/// - v1.3.0 (2026-09-28, Codex): Shape 検索条件を追加。
-/// - v1.4.0 (2026-09-29, Codex): JSON互換の値検索条件を追加。
+/// ## Arguments / Returns
+/// Holds search keyword, target folder path, matching flags, and targeted file extensions.
+///
+/// ## Errors
+/// Fails Serde deserialization if mandatory keyword or target directory are missing.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchQuery {
     pub keyword: String,
@@ -46,69 +37,51 @@ pub struct SearchQuery {
     pub extensions: Vec<String>,
 }
 
-/// ## 処理内容
-/// 旧JSON要求で省略された値検索フラグの既定値を返す。
-/// ## 引数・戻り値
-/// 引数なし。定数 `DEFAULT_INCLUDE_VALUE` のbool値を返す。
-/// ## エラー
-/// panicは発生しない。
-/// ## 変更履歴
-/// - v1.4.0 (2026-09-29, Codex): 値検索のJSON互換既定値を追加。
+/// Returns the backward-compatible default value for value search when omitted in legacy JSON.
+///
+/// ## Arguments / Returns
+/// Takes no arguments; returns boolean `DEFAULT_INCLUDE_VALUE`.
+///
+/// ## Errors
+/// Does not panic or fail.
 fn default_include_value() -> bool {
-    // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+    // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
     crate::constants::DEFAULT_INCLUDE_VALUE
 }
 
-/// ## 処理内容
-/// serdeデフォルト値用の真値（true）を返却する補助関数。
+/// Helper function providing boolean `true` as default for Serde deserialization.
 ///
-/// ## 引数
-/// なし
+/// ## Arguments / Returns
+/// None. Returns `true`.
 ///
-/// ## 戻り値
-/// - `bool`: 常に `true`
-///
-/// ## エラー / 例外発生条件
-/// panicは発生しない。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// ## Errors
+/// Does not panic.
 fn default_true() -> bool {
     true
 }
 
-/// ## 処理内容
-/// 検索対象のデフォルトExcel拡張子一覧（.xlsx, .xlsm, .xlsb, .xls）を返却する。
+/// Returns default Excel extensions (.xlsx, .xlsm, .xlsb, .xls) for search.
 ///
-/// ## 引数
-/// なし
+/// ## Arguments / Returns
+/// None. Returns `Vec<String>` of default extensions.
 ///
-/// ## 戻り値
-/// - `Vec<String>`: 定数定義から取得した拡張子リスト
-///
-/// ## エラー / 例外発生条件
-/// panicは発生しない。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
+/// ## Errors
+/// Does not panic.
 fn default_extensions() -> Vec<String> {
-    // 定数参照: crate::constants::DEFAULT_EXTENSIONS を使用
+    // Constant reference: crate::constants::DEFAULT_EXTENSIONS
     crate::constants::DEFAULT_EXTENSIONS
         .iter()
         .map(|&ext| ext.to_string())
         .collect()
 }
 
-/// ## 処理内容
-/// 検索結果がヒットしたセルの要素種別を表す列挙型。
-/// ## 引数・戻り値
-/// バリアントは `SearchMatch.match_type` に保存され、Serde で IPC JSON へ直列化される。
-/// ## エラー / 例外発生条件
-/// 既知バリアント以外をデシリアライズすると失敗する。
+/// Element type indicating where a search match hit occurred.
 ///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
-/// - v1.3.0 (2026-09-28, Codex): Shape バリアントを追加。
+/// ## Arguments / Returns
+/// Variants represent cell value, formula, comment, hidden sheet, or drawing shape.
+///
+/// ## Errors
+/// Deserialization fails if an unknown variant is encountered.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum MatchType {
     CellValue,
@@ -118,17 +91,13 @@ pub enum MatchType {
     Shape,
 }
 
-/// ## 処理内容
-/// 検索に一致したセルまたは Shape の結果を格納する構造体。
-/// ## 引数・戻り値
-/// Shape は `shape_name` を持ち、`sheet_hidden` がシート可視状態を表す。
-/// 未知アンカーではセル番地が空、内部行列が 0、数式は `None` となる。
-/// ## エラー / 例外発生条件
-/// 値保持と Serde 変換のみで、変換不能な型やデータの場合にエラーとなる。
+/// Result structure storing matched cell or drawing shape item.
 ///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
-/// - v1.3.0 (2026-09-28, Codex): Shape 名とシート可視状態を追加。
+/// ## Arguments / Returns
+/// Holds match metadata, row/col index, sheet visibility, snippet, and optional formula.
+///
+/// ## Errors
+/// Simple data carrier; does not generate runtime errors.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SearchMatch {
     pub id: u64,
@@ -148,28 +117,14 @@ pub struct SearchMatch {
     pub sheets_in_workbook: Vec<String>,
 }
 
-/// ## 処理内容
-/// ファイル検索から得た一致結果とファイル内の部分問題を保持する。
-/// ## 引数・戻り値
-/// matchesは`Vec<SearchMatch>`、issuesは`Vec<SearchIssue>`。
-/// ## エラー
-/// 値保持のみでエラーは発生しない。ブック全体を開けない失敗は呼び出し側がErrとする。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): 詳細検索ファイル結果を追加。
+/// Holds search matches and partial non-fatal issues encountered in a single workbook file.
 #[derive(Debug, Default)]
 pub struct FileSearchResult {
     pub matches: Vec<SearchMatch>,
     pub issues: Vec<SearchIssue>,
 }
 
-/// ## 処理内容
-/// 検索中に発生した入力ファイル・シート・抽出段階の問題を記録する。
-/// ## 引数・戻り値
-/// PathBuf、stage文字列、任意のシート名、原因文字列を保持する。
-/// ## エラー
-/// 値保持のみでエラーは発生しない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): 検索問題モデルを追加。
+/// Records non-fatal errors or warnings encountered during discovery, workbook parsing, or sheet extraction.
 #[derive(Debug)]
 pub struct SearchIssue {
     pub path: std::path::PathBuf,
@@ -178,14 +133,7 @@ pub struct SearchIssue {
     pub cause: String,
 }
 
-/// ## 処理内容
-/// 一回の検索における対象数、成功数、一致数、時間、問題を集計する。
-/// ## 引数・戻り値
-/// 件数はusize、経過時間はu64ミリ秒、問題は`Vec<SearchIssue>`。
-/// ## エラー
-/// 値保持のみでエラーは発生しない。failed_filesはブック単位で集計する。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): 検索実行レポートを追加。
+/// Summary report aggregating discovered files, scanned counts, matches found, elapsed time, and issues.
 #[derive(Debug, Default)]
 pub struct SearchReport {
     pub discovered_files: usize,
@@ -197,11 +145,7 @@ pub struct SearchReport {
     pub issues: Vec<SearchIssue>,
 }
 
-/// ## 処理内容
-/// 検索走査エンジンの現在の進捗状態を表す列挙型。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// Status enumeration representing current state of search scanning engine.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum ScanState {
     Scanning,
@@ -210,14 +154,7 @@ pub enum ScanState {
     Error,
 }
 
-/// ## 処理内容
-/// ロケール非依存の進捗段階を表す。
-/// ## 引数・戻り値
-/// 引数なし。シリアライズ可能な段階値を表す。
-/// ## エラー
-/// panic は発生しない。
-/// ## 変更履歴
-/// - v1.1.0 (2026-09-26, AI Agent): UI 文言と進捗段階を分離。
+/// Locale-neutral scan phase identifier.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ScanPhase {
@@ -227,14 +164,7 @@ pub enum ScanPhase {
     Finished,
 }
 
-/// ## 処理内容
-/// 利用者向けに翻訳可能な安定した失敗コード。
-/// ## 引数・戻り値
-/// 引数なし。API 契約用のコードを表す。
-/// ## エラー
-/// panic は発生しない。
-/// ## 変更履歴
-/// - v1.1.0 (2026-09-26, AI Agent): エラーコード契約を追加。
+/// Stable error code identifiers for translatable client responses.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ErrorCode {
@@ -250,14 +180,7 @@ pub enum ErrorCode {
     InternalError,
 }
 
-/// ## 処理内容
-/// Tauri コマンドが利用者へ返す構造化エラーを保持する。
-/// ## 引数・戻り値
-/// `ErrorCode` を受け取り、`code` プロパティを持つシリアライズ可能な値を生成する。
-/// ## エラー
-/// 外部ライブラリの文言やユーザーデータは含めない。
-/// ## 変更履歴
-/// - v1.2.0 (2026-09-26, AI Agent): Tauri エラー応答を JSON コード形式に統一。
+/// Structured error payload returned by Tauri commands.
 #[derive(Debug, Clone, Copy, Serialize)]
 pub struct CommandError {
     pub code: ErrorCode,
@@ -271,11 +194,7 @@ impl From<String> for CommandError {
     }
 }
 
-/// ## 処理内容
-/// 検索進捗通知時にTauriイベントペイロードとして送信される情報構造体。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// Scan progress notification payload emitted during search execution.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScanProgress {
     pub state: ScanState,
@@ -288,11 +207,7 @@ pub struct ScanProgress {
     pub elapsed_ms: u64,
 }
 
-/// ## 処理内容
-/// セル周辺プレビュー機能で返却されるグリッドデータ構造体。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// Grid preview data returned for surrounding cell visualization.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CellPreviewData {
     pub target_row: u32,
@@ -302,33 +217,21 @@ pub struct CellPreviewData {
     pub sheets_in_workbook: Vec<String>,
 }
 
-/// ## 処理内容
-/// プレビューグリッドの列ヘッダー情報構造体。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// Column header metadata for spreadsheet preview grid.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PreviewColumn {
     pub key: String,
     pub label: String,
 }
 
-/// ## 処理内容
-/// プレビューグリッドの1行分のデータ情報構造体。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// Single row representation within the preview grid.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PreviewRow {
     pub row_number: u32,
     pub cells: HashMap<String, CellValueInfo>,
 }
 
-/// ## 処理内容
-/// プレビュー内の単一セルの値およびターゲット判定構造体。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// Cell value and target match status for preview cells.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CellValueInfo {
     pub value: String,
@@ -336,11 +239,7 @@ pub struct CellValueInfo {
     pub formula: Option<String>,
 }
 
-/// ## 処理内容
-/// エクスポート形式（CSVまたはExcel）を指定する列挙型。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// Export format options (CSV or Excel).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ExportFormat {
@@ -348,11 +247,7 @@ pub enum ExportFormat {
     Xlsx,
 }
 
-/// ## 処理内容
-/// フロントエンドからのエクスポート要求パラメータ構造体。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// Export request parameter payload from front-end client.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ExportRequest {
     pub format: ExportFormat,
@@ -362,23 +257,12 @@ pub struct ExportRequest {
     pub items: Vec<SearchMatch>,
 }
 
-/// ## 処理内容
-/// 旧クライアントからのエクスポート要求に英語設定を補う。
-/// ## 引数・戻り値
-/// 引数なし。`String` の `en` を返す。
-/// ## エラー
-/// panic は発生しない。
-/// ## 変更履歴
-/// - v1.1.0 (2026-09-26, AI Agent): ExportRequest 互換デフォルトを追加。
+/// Default language fallback for legacy export requests.
 fn default_export_language() -> String {
     crate::constants::DEFAULT_EXPORT_LANGUAGE.to_string()
 }
 
-/// ## 処理内容
-/// OS上で利用可能な連携アプリケーション（Excel等）の情報構造体。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+/// Information model representing a supported external application (Excel, Numbers, Calc).
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SupportedApp {
     pub id: String,
@@ -394,14 +278,7 @@ mod localization_tests {
         CommandError, ErrorCode, ExportRequest, ScanPhase, ScanProgress, ScanState, SearchQuery,
     };
 
-    /// ## 処理内容
-    /// API 進捗段階とエラーコードがロケール非依存の snake_case で出力されることを確認する。
-    /// ## 引数・戻り値
-    /// 引数なし。アサーションのみを実行する。
-    /// ## エラー
-    /// シリアライズ失敗または期待値不一致でテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.1.0 (2026-09-26, AI Agent): ローカライズ契約テストを追加。
+    /// Verifies that progress phases and error codes serialize to language-neutral snake_case.
     #[test]
     fn serializes_language_neutral_codes() {
         assert_eq!(
@@ -435,14 +312,7 @@ mod localization_tests {
         assert!(serialized["error_code"].is_null());
     }
 
-    /// ## 処理内容
-    /// エクスポート言語コードの明示値と旧要求用デフォルトを検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。JSON 契約のアサーションを実行する。
-    /// ## エラー
-    /// 不正なデータ形状または期待値でテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.2.0 (2026-09-26, AI Agent): 出力言語のシリアライズ契約を追加。
+    /// Verifies export request language code resolution and default English fallback.
     #[test]
     fn export_request_reads_language_and_defaults_legacy_requests_to_english() {
         let request: ExportRequest =
@@ -454,14 +324,7 @@ mod localization_tests {
         assert_eq!(legacy.language, crate::constants::DEFAULT_EXPORT_LANGUAGE);
     }
 
-    /// ## 処理内容
-    /// 旧JSON要求で値検索が有効になり、明示falseは維持されることを検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。SearchQueryをJSONへ変換して値検索フィールドを確認する。
-    /// ## エラー
-    /// JSON変換失敗または期待値不一致でテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.4.0 (2026-09-29, Codex): CLI検索互換の回帰テストを追加。
+    /// Verifies that legacy JSON requests default value search to true while preserving explicit false.
     #[test]
     fn legacy_search_query_defaults_value_search_to_true() {
         let legacy: SearchQuery = serde_json::from_value(serde_json::json!({

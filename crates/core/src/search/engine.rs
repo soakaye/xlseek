@@ -1,12 +1,11 @@
-//! # 検索エンジンコアモジュール (search/engine.rs)
+//! # Search Engine Core Module (search/engine.rs)
 //!
-//! ## 処理内容
-//! 指定ディレクトリ配下のExcelファイルを再帰的に探索し、rayonを用いたマルチスレッド並列処理で
-//! 高速走査を実行する。進捗状況のスロットル通知、キャンセル制御、およびパニック安全性を担保する。
-//! 憲章原則I（日本語メッセージ）、原則II（定数参照）、原則III（ヘッダコメント）、原則IV（Clippy完全準拠）に準拠。
-//!
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-26, AI Agent): 初版策定。Default実装、定数参照化、4要素ヘッダコメントの付与。
+//! ## Description
+//! Recursively scans Excel files under a specified directory and executes high-speed traversal
+//! using Rayon multi-threaded parallel processing. Provides throttled progress notifications,
+//! cancellation control, and panic safety.
+//! Conforms to Constitution Principle I (English code/comments), Principle II (Constant references),
+//! Principle III (Header comments), and Principle IV (Clippy compliance).
 
 use crate::models::{ScanProgress, ScanState, SearchMatch, SearchQuery};
 use crate::search::parser::parse_and_search_file;
@@ -18,129 +17,107 @@ use std::sync::Arc;
 use std::time::Instant;
 use walkdir::WalkDir;
 
-/// ## 処理内容
-/// 並列検索スキャンおよびキャンセル制御を管理する検索エンジン構造体。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
+/// ## Description
+/// Search engine struct managing parallel search scans and cancellation control.
 pub struct SearchEngine {
     is_cancelled: Arc<AtomicBool>,
 }
 
 impl Default for SearchEngine {
-    /// ## 処理内容
-    /// 検索エンジンのデフォルトインスタンスを生成する。
+    /// ## Description
+    /// Creates a default instance of the search engine.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments
+    /// None
     ///
-    /// ## 戻り値
-    /// - `Self`: 初期化された検索エンジン
+    /// ## Returns
+    /// - `Self`: Initialized search engine
     ///
-    /// ## エラー / 例外発生条件
-    /// panicは発生しない。
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版策定（Clippy new_without_default 解消）。
+    /// ## Errors / Exceptions
+    /// Does not panic.
     fn default() -> Self {
         Self::new()
     }
 }
 
 impl SearchEngine {
-    /// ## 処理内容
-    /// 新規の検索エンジンインスタンスを生成する。
+    /// ## Description
+    /// Creates a new search engine instance.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments
+    /// None
     ///
-    /// ## 戻り値
-    /// - `Self`: キャンセルフラグが未設定の検索エンジン
+    /// ## Returns
+    /// - `Self`: Search engine with unflagged cancellation state
     ///
-    /// ## エラー / 例外発生条件
-    /// panicは発生しない。
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+    /// ## Errors / Exceptions
+    /// Does not panic.
     pub fn new() -> Self {
         Self {
             is_cancelled: Arc::new(AtomicBool::new(false)),
         }
     }
 
-    /// ## 処理内容
-    /// キャンセルフラグのアトミック参照を取得する。
+    /// ## Description
+    /// Retrieves an atomic reference to the cancellation flag.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments
+    /// None
     ///
-    /// ## 戻り値
-    /// - `Arc<AtomicBool>`: キャンセルフラグへの参照
+    /// ## Returns
+    /// - `Arc<AtomicBool>`: Reference to the cancellation flag
     ///
-    /// ## エラー / 例外発生条件
-    /// panicは発生しない。
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+    /// ## Errors / Exceptions
+    /// Does not panic.
     pub fn get_cancel_flag(&self) -> Arc<AtomicBool> {
         Arc::clone(&self.is_cancelled)
     }
 
-    /// ## 処理内容
-    /// 実行中のスキャン処理に中断を指示する。
+    /// ## Description
+    /// Requests cancellation of the running scan process.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments
+    /// None
     ///
-    /// ## 戻り値
-    /// なし
+    /// ## Returns
+    /// None
     ///
-    /// ## エラー / 例外発生条件
-    /// panicは発生しない。
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+    /// ## Errors / Exceptions
+    /// Does not panic.
     pub fn cancel(&self) {
         self.is_cancelled.store(true, Ordering::Relaxed);
     }
 
-    /// ## 処理内容
-    /// キャンセルフラグをリセットし、新たなスキャンを実行可能な状態にする。
+    /// ## Description
+    /// Resets the cancellation flag, preparing the engine for a new scan execution.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments
+    /// None
     ///
-    /// ## 戻り値
-    /// なし
+    /// ## Returns
+    /// None
     ///
-    /// ## エラー / 例外発生条件
-    /// panicは発生しない。
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+    /// ## Errors / Exceptions
+    /// Does not panic.
     pub fn reset_cancel(&self) {
         self.is_cancelled.store(false, Ordering::Relaxed);
     }
 
-    /// ## 処理内容
-    /// 対象ディレクトリ配下を再帰的に走査し、指定拡張子に合致するファイルパス一覧を収集する。
-    /// Excelの一時ファイル（~$で始まるロックファイル等）は除外する。
-    /// 中断フラグが指定された場合は、反復ごとに中断状態を検査し、中断時は直ちに走査を打ち切る。
+    /// ## Description
+    /// Recursively scans target directory and collects file paths matching specified extensions.
+    /// Temporary files (e.g. Excel lock files starting with `~$`) are excluded.
+    /// When cancellation flag is provided, checks cancellation status on each iteration and aborts immediately if signalled.
     ///
-    /// ## 引数
-    /// - `target_dir`: `&str` - 探索対象ディレクトリパス
-    /// - `extensions`: `&[String]` - 検索対象とする拡張子一覧（ドット付き）
-    /// - `cancel_flag`: `Option<&AtomicBool>` - 中断指示を監視するアトミックフラグ（None時は中断検査なし）
+    /// ## Arguments
+    /// - `target_dir`: `&str` - Target directory path
+    /// - `extensions`: `&[String]` - List of file extensions to include (with leading dot)
+    /// - `cancel_flag`: `Option<&AtomicBool>` - Optional atomic cancellation flag
     ///
-    /// ## 戻り値
-    /// - `Vec<PathBuf>`: 収集されたファイルパス一覧
+    /// ## Returns
+    /// - `Vec<PathBuf>`: List of collected file paths
     ///
-    /// ## エラー / 例外発生条件
-    /// ディレクトリ走査時の個別エラーは無視して走査を継続する。panicは発生しない。
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
-    /// - v1.1.0 (2026-09-26, AI Agent): cancel_flag による即時中断対応。
+    /// ## Errors / Exceptions
+    /// Ignores individual directory read errors and continues scan. Does not panic.
     pub fn collect_files(
         target_dir: &str,
         extensions: &[String],
@@ -162,9 +139,9 @@ impl SearchEngine {
 
             if entry.file_type().is_file() {
                 let path = entry.path();
-                // 一時ファイル（~$で始まるExcelロックファイル等）は除外
+                // Exclude temporary files (e.g. ~$ Excel lock files)
                 if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                    // 定数参照: crate::constants::EXCEL_TEMP_FILE_PREFIX を使用
+                    // Constant reference: crate::constants::EXCEL_TEMP_FILE_PREFIX
                     if file_name.starts_with(crate::constants::EXCEL_TEMP_FILE_PREFIX) {
                         continue;
                     }
@@ -182,26 +159,21 @@ impl SearchEngine {
         files
     }
 
-    /// ## 処理内容
-    /// 指定された検索クエリに基づき、有界同期チャネルを用いたプロデューサー・コンシューマー・パイプライン並行処理で
-    /// Excelブックの検出とセル走査を同時並行で実行する。
-    /// 一致セルが見つかるごとにコールバックを実行し、進捗状況を一定間隔（50ms以上）で通知する。
+    /// ## Description
+    /// Executes parallel producer-consumer pipeline search using bounded synchronous channels based on query criteria.
+    /// Emits matches via callbacks and throttles progress notifications (at least 50ms interval).
     ///
-    /// ## 引数
-    /// - `query`: `SearchQuery` - 検索キーワード、パス、拡張子等の検索条件
-    /// - `on_match`: `FMatch` - ヒットした一致アイテムを受け取るコールバック
-    /// - `on_progress`: `FProgress` - スキャン進捗情報を受け取るコールバック
+    /// ## Arguments
+    /// - `query`: `SearchQuery` - Search criteria including keyword, directory, and extensions
+    /// - `on_match`: `FMatch` - Callback receiving each matched search item
+    /// - `on_progress`: `FProgress` - Callback receiving scan progress updates
     ///
-    /// ## 戻り値
-    /// - `Result<ScanProgress, String>`: 最終進捗状態、または日本語エラー文字列
+    /// ## Returns
+    /// - `Result<ScanProgress, String>`: Final scan progress state or error string
     ///
-    /// ## エラー / 例外発生条件
-    /// - 対象ディレクトリが存在しない場合、または正規表現が不正な場合に `Err` を返却する。
-    /// - 個別ファイルの破損によるパニックは `catch_unwind` で安全に捕捉しスキップする。
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化および日本語メッセージ統合。
-    /// - v1.1.0 (2026-09-26, AI Agent): 有界同期チャネルによるパイプライン並行化および高速キャンセル対応。
+    /// ## Errors / Exceptions
+    /// - Returns `Err` if target directory does not exist or regex is invalid.
+    /// - Catches panics from individual corrupted files using `catch_unwind` and skips them safely.
     pub fn execute_search<FMatch, FProgress>(
         &self,
         query: SearchQuery,
@@ -215,13 +187,13 @@ impl SearchEngine {
         self.reset_cancel();
         let cancel_flag = Arc::clone(&self.is_cancelled);
 
-        // 正規表現コンパイル (オプション時)
+        // Compile regex if requested
         let regex_obj = if query.use_regex {
             let re = RegexBuilder::new(&query.keyword)
                 .case_insensitive(!query.match_case)
                 .build()
                 .map_err(|e| {
-                    // 定数参照: crate::constants::ERR_INVALID_REGEX を使用
+                    // Constant reference: crate::constants::ERR_INVALID_REGEX
                     format!("{}: {}", crate::constants::ERR_INVALID_REGEX, e)
                 })?;
             Some(re)
@@ -232,7 +204,7 @@ impl SearchEngine {
         let start_time = Instant::now();
         let target_path = Path::new(&query.target_dir);
         if !target_path.exists() || !target_path.is_dir() {
-            // 定数参照: crate::constants::ERR_FILE_NOT_FOUND を使用
+            // Constant reference: crate::constants::ERR_FILE_NOT_FOUND
             return Err(format!(
                 "{}: {}",
                 crate::constants::ERR_FILE_NOT_FOUND,
@@ -248,9 +220,9 @@ impl SearchEngine {
         let on_match = Arc::new(std::sync::Mutex::new(on_match));
         let on_progress = Arc::new(std::sync::Mutex::new(on_progress));
 
-        // 初期進捗送信 (スキャン未確定時は total_files: 0)
+        // Initial progress notification (total_files: 0 while discovering)
         if let Ok(mut prog) = on_progress.lock() {
-            // 固定メッセージは current_file に含めず、phase から画面側で生成する。
+            // Fixed message is derived on UI side from phase rather than current_file.
             prog(ScanProgress {
                 state: ScanState::Scanning,
                 phase: crate::models::ScanPhase::Discovering,
@@ -263,22 +235,22 @@ impl SearchEngine {
             });
         }
 
-        // サードパーティライブラリ等のパニック時にstderrへの大量ダンプを抑制
+        // Suppress standard stderr dumps on third-party library panics handled by catch_unwind
         static INIT_HOOK: std::sync::Once = std::sync::Once::new();
         INIT_HOOK.call_once(|| {
             std::panic::set_hook(Box::new(|_info| {
-                // catch_unwind 側でキャッチしてハンドリングするため、標準stderrダンプを抑止
+                // Suppress stderr dump since catch_unwind handles the panic safely
             }));
         });
 
         let last_notify_ms = Arc::new(std::sync::atomic::AtomicU64::new(0));
 
-        // 定数参照: crate::constants::CHANNEL_BUFFER_SIZE を使用
+        // Constant reference: crate::constants::CHANNEL_BUFFER_SIZE
         let (tx, rx) =
             std::sync::mpsc::sync_channel::<PathBuf>(crate::constants::CHANNEL_BUFFER_SIZE);
         let rx = Arc::new(std::sync::Mutex::new(rx));
 
-        // プロデューサー: ディレクトリスキャンを別スレッドで並行実行
+        // Producer: Directory scan in separate background thread
         let target_dir = query.target_dir.clone();
         let extensions = query.extensions.clone();
         let cancel_flag_scanner = Arc::clone(&cancel_flag);
@@ -299,9 +271,9 @@ impl SearchEngine {
 
                 if entry.file_type().is_file() {
                     let path = entry.path();
-                    // 一時ファイル（~$で始まるExcelロックファイル等）は除外
+                    // Exclude temporary files (e.g. ~$ Excel lock files)
                     if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                        // 定数参照: crate::constants::EXCEL_TEMP_FILE_PREFIX を使用
+                        // Constant reference: crate::constants::EXCEL_TEMP_FILE_PREFIX
                         if file_name.starts_with(crate::constants::EXCEL_TEMP_FILE_PREFIX) {
                             continue;
                         }
@@ -312,7 +284,7 @@ impl SearchEngine {
                         if exts_lower.contains(&ext_with_dot) {
                             discovered_count_clone.fetch_add(1, Ordering::Relaxed);
                             if tx.send(path.to_path_buf()).is_err() {
-                                // 受信側がクローズされた（中断または完了）ため脱出
+                                // Receiver closed (cancelled or finished), abort
                                 break;
                             }
                         }
@@ -323,10 +295,10 @@ impl SearchEngine {
             if !cancel_flag_scanner.load(Ordering::Relaxed) {
                 scan_completed_clone.store(true, Ordering::Relaxed);
             }
-            // tx はここでドロップされ、受信側チャネルがクローズされる
+            // tx drops here, closing the channel for receivers
         });
 
-        // コンシューマー: rayon によるマルチスレッド並列処理で受信パスを即時走査
+        // Consumer: Rayon multi-threaded parallel processing immediately scans incoming paths
         let num_threads = rayon::current_num_threads();
         (0..num_threads).into_par_iter().for_each(|_| {
             loop {
@@ -340,7 +312,7 @@ impl SearchEngine {
                     };
                     match rx_guard.recv() {
                         Ok(p) => p,
-                        Err(_) => break, // 全パス取得完了かつキュー消化完了
+                        Err(_) => break, // All paths received and queue drained
                     }
                 };
 
@@ -353,7 +325,7 @@ impl SearchEngine {
                     .map(|f| f.to_string_lossy().to_string())
                     .unwrap_or_default();
 
-                // Excelファイルパース (破損ファイルやcalamineパニックは安全にスキップして全体を停止させない)
+                // Parse Excel file (corrupted files or panics are safely caught without aborting)
                 let cancel_flag_ref = Arc::clone(&cancel_flag);
                 let parse_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
                     parse_and_search_file(
@@ -381,10 +353,10 @@ impl SearchEngine {
                         }
                     }
                     Ok(Err(_err_msg)) => {
-                        // 破損・読み込み不可ファイルはスキップして継続
+                        // Skip unreadable or corrupted files and continue
                     }
                     Err(_) => {
-                        // calamine 内部などのパニックから安全に回復
+                        // Safely recover from library internal panics
                     }
                 }
 
@@ -392,12 +364,12 @@ impl SearchEngine {
                 let current_matches = match_count.load(Ordering::Relaxed);
                 let elapsed = start_time.elapsed().as_millis() as u64;
 
-                // 中断要求後は Scanning 状態の進捗通知を送信しない
+                // Do not emit Scanning progress events after cancellation
                 if cancel_flag.load(Ordering::Relaxed) {
                     break;
                 }
 
-                // スキャン完了前は total_files = 0, 完了後は確定件数
+                // Before scan completion total_files = 0; after completion it is exact count
                 let is_scan_done = scan_completed.load(Ordering::Relaxed);
                 let current_total = if is_scan_done {
                     discovered_count.load(Ordering::Relaxed)
@@ -405,9 +377,9 @@ impl SearchEngine {
                     0
                 };
 
-                // 1件目、全完了、または前回通知から50ms以上経過した時に進捗通知
+                // Notify on first file, on completion, or after progress interval
                 let last = last_notify_ms.load(Ordering::Relaxed);
-                // 定数参照: crate::constants::PROGRESS_NOTIFY_INTERVAL_MS を使用
+                // Constant reference: crate::constants::PROGRESS_NOTIFY_INTERVAL_MS
                 let should_notify = scanned == 1
                     || (is_scan_done && scanned == current_total)
                     || (elapsed.saturating_sub(last)
@@ -435,7 +407,7 @@ impl SearchEngine {
             }
         });
 
-        // スキャナースレッドの終了待機
+        // Wait for scanner thread to complete
         let _ = scanner_handle.join();
 
         let is_cancelled = cancel_flag.load(Ordering::Relaxed);
@@ -446,7 +418,7 @@ impl SearchEngine {
         };
         let final_total = discovered_count.load(Ordering::Relaxed);
 
-        // phase と state を使って画面側が完了・中断メッセージを生成する。
+        // UI generates completion/cancellation messages using phase and state.
         let final_progress = ScanProgress {
             state: final_state,
             phase: crate::models::ScanPhase::Finished,
@@ -458,7 +430,7 @@ impl SearchEngine {
             elapsed_ms: start_time.elapsed().as_millis() as u64,
         };
 
-        // 最終通知
+        // Final notification
         if let Ok(mut prog_cb) = on_progress.lock() {
             prog_cb(final_progress.clone());
         }
@@ -473,20 +445,17 @@ mod tests {
     use crate::export::{export_to_csv, export_to_xlsx};
     use crate::search::preview::extract_cell_preview;
     use std::collections::BTreeMap;
-    /// ## 処理内容
-    /// ワークスペースのテスト用フィクスチャディレクトリ (tests/fixtures) の絶対パスを解決する。
+    /// ## Description
+    /// Resolves the absolute path to workspace test fixtures directory (tests/fixtures).
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments
+    /// None
     ///
-    /// ## 戻り値
-    /// - `PathBuf`: 存在するフィクスチャディレクトリのパス
+    /// ## Returns
+    /// - `PathBuf`: Existing fixtures directory path
     ///
-    /// ## エラー / 例外発生条件
-    /// フィクスチャディレクトリが見つからない場合はパニックする。
-    ///
-    /// ## 変更履歴
-    /// - v1.1.0 (2026-09-29, Antigravity): クレート分離に伴うマルチ階層探索に対応。
+    /// ## Errors / Exceptions
+    /// Panics if fixtures directory cannot be found.
     fn fixtures_dir() -> PathBuf {
         let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         let candidate_grandparent = manifest
@@ -504,22 +473,15 @@ mod tests {
         }
     }
 
-    /// ## 処理内容
-    /// テスト用フィクスチャディレクトリ内のExcelファイルに対して検索を実行し、
-    /// 一致セル、プレビュー抽出、エクスポート処理が正常に機能することを統合テストする。
+    /// ## Description
+    /// Executes search against Excel files in test fixtures directory, verifying
+    /// that matching cells, preview extraction, and export work properly.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments / Returns
+    /// None
     ///
-    /// ## 戻り値
-    /// なし
-    ///
-    /// ## エラー / 例外発生条件
-    /// アサーション失敗時にpanic
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
-    /// - v1.1.0 (2026-09-29, Antigravity): fixtures_dirヘルパーを利用。
+    /// ## Errors / Exceptions
+    /// Panics if assertions fail.
     #[test]
     fn test_search_engine_on_fixtures() {
         let fixtures_dir = fixtures_dir();
@@ -529,7 +491,7 @@ mod tests {
             keyword: "Financial".to_string(),
             target_dir: fixtures_dir.to_str().unwrap().to_string(),
             match_case: false,
-            // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+            // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
             include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
             use_regex: false,
             include_formula: true,
@@ -556,7 +518,7 @@ mod tests {
         let first = &found[0];
         assert_eq!(first.sheet_name, "Data");
 
-        // プレビュー抽出のテスト
+        // Test preview extraction
         let preview = extract_cell_preview(
             &first.full_path,
             &first.sheet_name,
@@ -571,7 +533,7 @@ mod tests {
             "Preview columns should not be empty"
         );
 
-        // エクスポートのテスト
+        // Test exports
         let temp_csv = std::env::temp_dir().join("test_export.csv");
         let temp_xlsx = std::env::temp_dir().join("test_export.xlsx");
         let test_keys = crate::constants::EXPORT_HEADER_KEYS.iter().copied().chain([
@@ -603,30 +565,23 @@ mod tests {
         let _ = std::fs::remove_file(temp_xlsx);
     }
 
-    /// ## 処理内容
-    /// 日本語文字列に対するスニペット生成処理が、UTF-8文字境界で正しく動作し
-    /// パニックしないことを検証する。
+    /// ## Description
+    /// Verifies that snippet generation on multibyte strings operates safely at UTF-8 boundaries without panicking.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments / Returns
+    /// None
     ///
-    /// ## 戻り値
-    /// なし
-    ///
-    /// ## エラー / 例外発生条件
-    /// アサーション失敗時にpanic
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+    /// ## Errors / Exceptions
+    /// Panics if assertions fail.
     #[test]
     fn test_snippet_utf8_boundary_safety() {
         use crate::search::parser::make_snippet;
 
-        // 日本語文字列の任意の位置でスニペット生成を行い、パニックしないことを検証
+        // Verify snippet generation at arbitrary positions without panicking
         let japanese_text =
             "財務報告書2026年第3四半期における監査報告書の承認およびシステム移行計画の進捗状況確認";
 
-        // "監査報告書" をマッチ対象にする
+        // Match on sample keyword
         let mat_start = japanese_text.find("監査報告書").unwrap();
         let mat_end = mat_start + "監査報告書".len();
 
@@ -635,34 +590,27 @@ mod tests {
         assert!(snippet.contains("監査報告書"));
         assert!(snippet.contains("</mark>"));
 
-        // 先頭マッチのテスト
+        // Test prefix match
         let mat_start_head = 0;
         let mat_end_head = "財務".len();
         let snippet_head = make_snippet(japanese_text, mat_start_head, mat_end_head);
         assert!(snippet_head.contains("財務"));
 
-        // 末尾マッチのテスト
+        // Test suffix match
         let mat_start_tail = japanese_text.rfind("確認").unwrap();
         let mat_end_tail = japanese_text.len();
         let snippet_tail = make_snippet(japanese_text, mat_start_tail, mat_end_tail);
         assert!(snippet_tail.contains("確認"));
     }
 
-    /// ## 処理内容
-    /// 検索実行中にcancel()が呼び出された際、スキャンが安全に中断され
-    /// 最終ステータスがCancelledとなることを検証する。
+    /// ## Description
+    /// Verifies that when cancel() is invoked during search, scanning is aborted safely and final status is Cancelled.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments / Returns
+    /// None
     ///
-    /// ## 戻り値
-    /// なし
-    ///
-    /// ## エラー / 例外発生条件
-    /// アサーション失敗時にpanic
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版策定。
+    /// ## Errors / Exceptions
+    /// Panics if assertions fail.
     #[test]
     fn test_search_engine_cancellation() {
         let fixtures_dir = fixtures_dir();
@@ -674,7 +622,7 @@ mod tests {
             keyword: "Financial".to_string(),
             target_dir: fixtures_dir.to_str().unwrap().to_string(),
             match_case: false,
-            // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+            // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
             include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
             use_regex: false,
             include_formula: true,
@@ -684,11 +632,11 @@ mod tests {
             extensions: vec![".xlsx".to_string()],
         };
 
-        // 検索実行中に中断フラグをセット
+        // Set cancellation flag during search execution
         let result = engine.execute_search(
             query,
             move |_m| {
-                // 1件マッチした時点で中断
+                // Cancel once first match is received
                 engine_clone.cancel();
             },
             |_| {},
@@ -699,34 +647,26 @@ mod tests {
         assert_eq!(final_prog.state, ScanState::Cancelled);
     }
 
-    /// ## 処理内容
-    /// collect_files において、中断フラグが true に設定された際に
-    /// 直ちに走査が打ち切られて空または最小限のファイル一覧が返却されることを検証する。
+    /// ## Description
+    /// Verifies that collect_files aborts immediately and returns empty or minimal files when cancel flag is set.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments / Returns
+    /// None
     ///
-    /// ## 戻り値
-    /// なし
-    ///
-    /// ## エラー / 例外発生条件
-    /// アサーション失敗時にpanic
-    ///
-    /// ## 変更履歴
-    /// - v1.1.0 (2026-09-26, AI Agent): 初版策定。
-    /// - v1.1.1 (2026-09-29, Antigravity): fixtures_dirヘルパーを利用。
+    /// ## Errors / Exceptions
+    /// Panics if assertions fail.
     #[test]
     fn test_collect_files_cancellation() {
         let fixtures_dir = fixtures_dir();
 
         let extensions = vec![".xlsx".to_string()];
 
-        // 1. キャンセルフラグなし (None): ファイルが収集されること
+        // 1. Without cancel flag (None): Files should be collected
         let all_files =
             SearchEngine::collect_files(fixtures_dir.to_str().unwrap(), &extensions, None);
         assert!(!all_files.is_empty(), "Fixtures files should be collected");
 
-        // 2. 開始時点で既にキャンセルされている場合: 直ちに打ち切られて0件であること
+        // 2. Pre-cancelled at start: Must abort immediately and return 0 files
         let cancelled_flag = AtomicBool::new(true);
         let cancelled_files = SearchEngine::collect_files(
             fixtures_dir.to_str().unwrap(),
@@ -740,21 +680,14 @@ mod tests {
         );
     }
 
-    /// ## 処理内容
-    /// 有界同期チャネルを用いたパイプライン並行検索が正常に動作し、
-    /// 全ファイルの検出・解析が完了して整合性のある結果が返却されることを検証する。
+    /// ## Description
+    /// Verifies that pipeline parallel search using bounded channels completes scanning and returns consistent results.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments / Returns
+    /// None
     ///
-    /// ## 戻り値
-    /// なし
-    ///
-    /// ## エラー / 例外発生条件
-    /// アサーション失敗時にpanic
-    ///
-    /// ## 変更履歴
-    /// - v1.1.0 (2026-09-26, AI Agent): 初版策定。
+    /// ## Errors / Exceptions
+    /// Panics if assertions fail.
     #[test]
     fn test_search_engine_parallel_pipeline() {
         let fixtures_dir = fixtures_dir();
@@ -764,7 +697,7 @@ mod tests {
             keyword: "Total".to_string(),
             target_dir: fixtures_dir.to_str().unwrap().to_string(),
             match_case: false,
-            // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+            // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
             include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
             use_regex: false,
             include_formula: true,
@@ -798,26 +731,18 @@ mod tests {
 
         let events = progress_events.lock().unwrap();
         assert!(!events.is_empty(), "Progress events should be emitted");
-        // 初期進捗イベントでは total_files が 0 であることを検証 (未確定状態)
+        // Verify initial progress event has total_files: 0 (discovering state)
         assert_eq!(events[0].total_files, 0);
     }
 
-    /// ## 処理内容
-    /// ディレクトリスキャン進行中の段階でキャンセル要求が発行された際、
-    /// 1秒未満で安全に走査・検索が停止し、最終状態が Cancelled となることを検証する。
+    /// ## Description
+    /// Verifies that when cancellation is requested during active directory scanning, execution halts safely within 1 second.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments / Returns
+    /// None
     ///
-    /// ## 戻り値
-    /// なし
-    ///
-    /// ## エラー / 例外発生条件
-    /// アサーション失敗時にpanic
-    ///
-    /// ## 変更履歴
-    /// - v1.1.0 (2026-09-26, AI Agent): 初版策定。
-    /// - v1.1.1 (2026-09-29, Antigravity): fixtures_dirヘルパーを利用。
+    /// ## Errors / Exceptions
+    /// Panics if assertions fail.
     #[test]
     fn test_search_engine_cancellation_during_scan() {
         let fixtures_dir = fixtures_dir();
@@ -829,7 +754,7 @@ mod tests {
             keyword: "a".to_string(),
             target_dir: fixtures_dir.to_str().unwrap().to_string(),
             match_case: false,
-            // 定数参照: crate::constants::DEFAULT_INCLUDE_VALUE を使用。
+            // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
             include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
             use_regex: false,
             include_formula: true,
@@ -839,7 +764,7 @@ mod tests {
             extensions: vec![".xlsx".to_string()],
         };
 
-        // 初期進捗通知を受け取った直後（スキャン開始直後）に即時キャンセル
+        // Cancel immediately upon receiving initial progress notification
         let result = engine.execute_search(
             query,
             |_| {},

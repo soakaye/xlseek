@@ -1,11 +1,9 @@
-//! ## 処理内容
-//! OOXML workbookとsheet relationshipsから従来コメントXMLを解決して抽出する。
-//! ## 引数・戻り値
-//! ブックパスを受け、sheet名・セル座標・本文の配列を返す。
-//! ## エラー
-//! 参照パーツ欠落、外部relationship、破損XML、上限超過時にErrを返す。
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-29, Codex): OOXMLメモXML抽出を追加。
+//! ## Description
+//! Resolves and extracts legacy comment XML from OOXML workbook and sheet relationships.
+//! ## Arguments / Returns
+//! Accepts workbook path and returns an array of (sheet name, cell coordinates, text).
+//! ## Errors / Exceptions
+//! Returns Err on missing reference parts, external relationships, corrupted XML, or exceeded limits.
 
 use super::CommentText;
 use quick_xml::events::Event;
@@ -16,14 +14,12 @@ use std::io::Read;
 use std::path::Path;
 use zip::ZipArchive;
 
-/// ## 処理内容
-/// workbookと各worksheetのrelationshipsを辿り、コメントXMLにある本文・座標を抽出する。
-/// ## 引数・戻り値
-/// OOXMLブックパスを受け、セルコメントのベクターを返す。
-/// ## エラー
-/// 必須パーツの読み込み、XML解析、外部参照、セル参照解析に失敗するとErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): OOXMLの既存コメント抽出を追加。
+/// ## Description
+/// Traverses workbook and worksheet relationships to extract comment text and coordinates from comment XML.
+/// ## Arguments / Returns
+/// Accepts OOXML workbook path and returns a vector of cell comments.
+/// ## Errors / Exceptions
+/// Returns Err if reading required parts, XML parsing, external references, or cell reference parsing fails.
 pub(super) fn extract(path: &Path) -> Result<Vec<CommentText>, String> {
     let file = File::open(path).map_err(|error| error.to_string())?;
     let mut archive = ZipArchive::new(file).map_err(|error| error.to_string())?;
@@ -77,14 +73,12 @@ pub(super) fn extract(path: &Path) -> Result<Vec<CommentText>, String> {
     Ok(comments)
 }
 
-/// ## 処理内容
-/// ZIP内XMLパーツを展開上限付きで読み込む。
-/// ## 引数・戻り値
-/// ZIP、パーツ名、累積サイズを受け、XMLバイト列を返す。
-/// ## エラー
-/// 欠落、I/O、単体・累積サイズ超過でErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): コメントXMLの安全読込を追加。
+/// ## Description
+/// Reads XML parts within a ZIP archive with expansion limits.
+/// ## Arguments / Returns
+/// Accepts ZIP archive, part name, and cumulative size pointer, returning XML bytes.
+/// ## Errors / Exceptions
+/// Returns Err on missing part, I/O error, or individual/cumulative size limit exceeded.
 fn read_part(
     archive: &mut ZipArchive<File>,
     part: &str,
@@ -105,14 +99,12 @@ fn read_part(
     Ok(bytes)
 }
 
-/// ## 処理内容
-/// relationshipパーツをIdからType・Target・TargetModeへ対応づける。
-/// ## 引数・戻り値
-/// XMLバイト列を受け、relationship IDをキーとするHashMapを返す。
-/// ## エラー
-/// XML構文または必須属性が不正な場合にErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): relationship詳細解析を追加。
+/// ## Description
+/// Maps relationship parts from Id to Type, Target, and TargetMode.
+/// ## Arguments / Returns
+/// Accepts XML bytes and returns a HashMap keyed by relationship ID.
+/// ## Errors / Exceptions
+/// Returns Err if XML syntax or required attributes are invalid.
 fn parse_relationships(xml: &[u8]) -> Result<HashMap<String, Relationship>, String> {
     let mut reader = Reader::from_reader(xml);
     reader.config_mut().trim_text(true);
@@ -183,14 +175,12 @@ fn parse_relationships(xml: &[u8]) -> Result<HashMap<String, Relationship>, Stri
     Ok(relationships)
 }
 
-/// ## 処理内容
-/// Workbook XMLからシート名とrelationship IDを抽出する。
-/// ## 引数・戻り値
-/// XMLバイト列を受け、(sheet name, relation id)の一覧を返す。
-/// ## エラー
-/// XML構文または必須属性が不正ならErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): ワークシート対応表の解析を追加。
+/// ## Description
+/// Extracts sheet names and relationship IDs from workbook XML.
+/// ## Arguments / Returns
+/// Accepts XML bytes and returns a list of (sheet name, relationship id) pairs.
+/// ## Errors / Exceptions
+/// Returns Err if XML syntax or required attributes are invalid.
 fn parse_sheets(xml: &[u8]) -> Result<Vec<(String, String)>, String> {
     let mut reader = Reader::from_reader(xml);
     let mut buffer = Vec::new();
@@ -240,14 +230,12 @@ fn parse_sheets(xml: &[u8]) -> Result<Vec<(String, String)>, String> {
     Ok(sheets)
 }
 
-/// ## 処理内容
-/// 既存コメントXMLのcomment要素からセル参照と複数run本文を抽出する。
-/// ## 引数・戻り値
-/// XMLバイト列とシート名を受け、CommentText一覧を返す。
-/// ## エラー
-/// XML・セル参照・座標が不正な場合にErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): コメント本文抽出を追加。
+/// ## Description
+/// Extracts cell references and multiple run text from comment elements in legacy comment XML.
+/// ## Arguments / Returns
+/// Accepts XML bytes and sheet name, returning a list of CommentText items.
+/// ## Errors / Exceptions
+/// Returns Err if XML, cell references, or coordinates are invalid.
 fn parse_comments(xml: &[u8], sheet_name: &str) -> Result<Vec<CommentText>, String> {
     let mut reader = Reader::from_reader(xml);
     let mut buffer = Vec::new();
@@ -346,14 +334,12 @@ fn parse_comments(xml: &[u8], sheet_name: &str) -> Result<Vec<CommentText>, Stri
     Ok(output)
 }
 
-/// ## 処理内容
-/// A1形式のセル番地をExcel上の1始まり行列へ変換する。
-/// ## 引数・戻り値
-/// セル参照`&str`を受け、(row, col)のu32対を返す。
-/// ## エラー
-/// 空、列文字・行数字の欠落、整数オーバーフローでErrを返す。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): コメント参照座標変換を追加。
+/// ## Description
+/// Converts an A1-style cell reference to 1-based row and column indices.
+/// ## Arguments / Returns
+/// Accepts cell reference string slice and returns (row, col) u32 tuple.
+/// ## Errors / Exceptions
+/// Returns Err if reference is empty, lacks column letters/row digits, or overflows u32.
 fn parse_cell_reference(reference: &str) -> Result<(u32, u32), String> {
     let split = reference
         .find(|character: char| character.is_ascii_digit())
@@ -387,42 +373,36 @@ fn parse_cell_reference(reference: &str) -> Result<(u32, u32), String> {
     Ok((row, column))
 }
 
-/// ## 処理内容
-/// XMLタグ名からnamespace prefixを除いたローカル名を返す。
-/// ## 引数・戻り値
-/// XML名のbyte sliceを受け、末尾のローカル名sliceを返す。
-/// ## エラー
-/// 区切りがなければ入力全体を返しpanicしない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): XMLローカル名処理を追加。
+/// ## Description
+/// Returns the local name of an XML tag without namespace prefix.
+/// ## Arguments / Returns
+/// Accepts XML name byte slice and returns the trailing local name slice.
+/// ## Errors / Exceptions
+/// Returns full slice if no separator is present; does not panic.
 fn local_name(name: &[u8]) -> &[u8] {
     name.rsplit(|value| *value == crate::constants::XML_NAMESPACE_SEPARATOR)
         .next()
         .unwrap_or(name)
 }
 
-/// ## 処理内容
-/// OOXML relationshipのTargetと種類・外部参照状態を保持する。
-/// ## 引数・戻り値
-/// target・kindはString、externalはbool。
-/// ## エラー
-/// 値保持のみでエラーは発生しない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): OOXML relationship型を追加。
+/// ## Description
+/// Holds Target, kind, and external reference state of an OOXML relationship.
+/// ## Arguments / Returns
+/// `target` and `kind` are Strings; `external` is a bool.
+/// ## Errors / Exceptions
+/// Value holder only; does not generate errors.
 struct Relationship {
     target: String,
     kind: String,
     external: bool,
 }
 
-/// ## 処理内容
-/// sourceパーツの相対位置からOOXML relationship targetを正規化する。
-/// ## 引数・戻り値
-/// 参照元とtargetを受け、ZIPパーツ名文字列を返す。
-/// ## エラー
-/// 純粋な文字列変換でI/Oエラーはない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): relationship target解決を追加。
+/// ## Description
+/// Normalizes an OOXML relationship target path relative to the source part location.
+/// ## Arguments / Returns
+/// Accepts source part path and target string, returning normalized ZIP part path.
+/// ## Errors / Exceptions
+/// Pure string manipulation; no I/O errors occur.
 fn resolve_target(source: &str, target: &str) -> String {
     if target.starts_with(crate::constants::OOXML_ABSOLUTE_PATH_PREFIX) {
         return target
@@ -447,14 +427,12 @@ fn resolve_target(source: &str, target: &str) -> String {
     parts.join(crate::constants::PATH_SEPARATOR)
 }
 
-/// ## 処理内容
-/// worksheetパーツに対応するrelationshipパーツ名を作成する。
-/// ## 引数・戻り値
-/// worksheet ZIPパーツ名を受け、relationship ZIPパーツ名を返す。
-/// ## エラー
-/// 文字列連結のみでエラーは発生しない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): worksheet relationship名生成を追加。
+/// ## Description
+/// Constructs the relationship part path corresponding to a worksheet part.
+/// ## Arguments / Returns
+/// Accepts worksheet ZIP part path and returns relationship ZIP part path.
+/// ## Errors / Exceptions
+/// Pure string formatting; does not generate errors.
 fn relationship_part(part: &str) -> String {
     let (parent, name) = part
         .rsplit_once(crate::constants::PATH_SEPARATOR)

@@ -1,13 +1,7 @@
 /**
- * 処理内容: 検索欄の履歴・補完リスト操作を検証する。
- * 引数・戻り値: Vitest が SearchBar の操作テストを実行する。
- * エラー: 選択時に検索が始まる、またはリスト操作に失敗するとテストを失敗させる。
- * 変更履歴: v1.0.0 (2026-09-27, Codex): 履歴・補完 UI テストを追加。
- * 変更履歴: v1.1.0 (2026-09-27, Codex): フォーカス離脱と遅延補完の回帰テストを追加。
- * 変更履歴: v1.2.0 (2026-09-27, Codex): フォルダ選択時の履歴非表示を検証する。
- * 変更履歴: v1.3.0 (2026-09-27, Codex): 両履歴のキー移動、循環、20件選択を追加。
- * 変更履歴: v1.4.0 (2026-09-27, Codex): 履歴項目の取消しと IME ガードを検証する。
- * 変更履歴: v1.5.0 (2026-09-27, Codex): クリック後の入力欄フォーカスから下矢印で履歴へ移動する回帰テストを追加。
+ * Description: Unit and integration tests for search-history-ui.test.tsx.
+ * Arguments & Returns: Vitest runs test suites; no public arguments or return values.
+ * Errors: Test assertions fail if behavior deviates from requirements.
  */
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
