@@ -23,6 +23,9 @@ import { useTranslation } from "../../i18n";
 import { DefaultSearchOptions } from "../../types/defaultOptions";
 import { resetDefaultSearchOptions } from "../../default-options-core";
 
+// 定数参照: 初期デフォルト検索オプションの固定参照（レンダー毎のオブジェクト再生成による無限再描画ループを防止）
+const FALLBACK_DEFAULT_OPTIONS: DefaultSearchOptions = resetDefaultSearchOptions();
+
 /**
  * 処理内容: 設定ダイアログへ渡す表示状態、言語、履歴上限、デフォルト検索オプションを定義する。
  * 引数・戻り値: 各種設定値および値更新・閉じるコールバックを保持する。
@@ -55,6 +58,7 @@ interface SettingsDialogProps {
  * - v1.0.0 (2026-09-26, AI Agent): 言語設定画面を追加。
  * - v1.1.0 (2026-09-27, Codex): 検索履歴の保存件数設定を追加。
  * - v1.2.0 (2026-09-28, AI Agent): デフォルト検索オプション編集・リセット・保存を追加。
+ * - v1.2.1 (2026-09-29, Antigravity): defaultOptions 未指定時のオブジェクト再生成による無限再描画ループを修正。
  */
 export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   isOpen,
@@ -64,19 +68,19 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   onClose,
   maxEntries,
   onSetMaxEntries,
-  defaultOptions = resetDefaultSearchOptions(),
+  defaultOptions = FALLBACK_DEFAULT_OPTIONS,
   onSaveDefaultOptions,
 }) => {
   const t = useTranslation();
   const [entryCount, setEntryCount] = useState(String(maxEntries));
-  const [optDraft, setOptDraft] = useState<DefaultSearchOptions>(defaultOptions ?? resetDefaultSearchOptions());
+  const [optDraft, setOptDraft] = useState<DefaultSearchOptions>(defaultOptions ?? FALLBACK_DEFAULT_OPTIONS);
 
   useEffect(() => {
     setEntryCount(String(maxEntries));
   }, [maxEntries, isOpen]);
 
   useEffect(() => {
-    setOptDraft(defaultOptions ?? resetDefaultSearchOptions());
+    setOptDraft(defaultOptions ?? FALLBACK_DEFAULT_OPTIONS);
   }, [defaultOptions, isOpen]);
 
   if (!isOpen) return null;
