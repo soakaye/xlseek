@@ -129,10 +129,16 @@ cargo fmt --check
 ## リリース成果物
 
 ```sh
-npm run build
-cargo build -p exlgrep --release --bin exlgrep-cli
+# フロントエンドおよび CLI の一括ビルド
+npm run build:all
+
+# または CLI 単体ビルド
+npm run build:cli
+
+# デスクトップアプリ & インストーラー生成 (GUI本体とCLIが自動同梱されます)
+npm run tauri build
 ```
 
-macOSは `target/release/exlgrep-cli`、Windowsは `target/release/exlgrep-cli.exe` をCLI成果物として使う。翻訳は同梱されるため実行時にlocalesフォルダーを置く必要はない。GUIのインストーラーへの自動同梱はこの計画に含めない。
+macOSは `target/release/exlgrep-cli`、Windowsは `target/release/exlgrep-cli.exe` をCLI成果物として使う。翻訳は同梱されるため実行時にlocalesフォルダーを置く必要はない。`npm run tauri build` によるインストーラー（MSI / NSIS）生成時には、GUI 本体（`exlgrep.exe`）とともに `exlgrep-cli.exe` も自動同梱される。
 
 検索・保存時間、入力件数、結果件数、測定環境を記録し、CLI専用の全走査や再検索が発生していないことを確認する。測定結果に根拠なく固定秒数の合格を付けない。

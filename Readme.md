@@ -41,10 +41,13 @@ npm run tauri dev
 
 ## コマンドライン検索
 
-CLIはGUIとは別のバイナリです。リポジトリルートからビルドして実行します。
+CLI（`exlgrep-cli`）は GUI とは別の実行バイナリです。リポジトリルートから以下のスクリプトでビルドして実行できます。
 
 ```bash
-cargo build -p exlgrep --release --bin exlgrep-cli
+# CLI のみをビルド
+npm run build:cli
+
+# 実行
 ./target/release/exlgrep-cli --help
 ./target/release/exlgrep-cli --path ./reports --query '売上' \
   --format xlsx --output ./results.xlsx
@@ -59,10 +62,14 @@ cargo build -p exlgrep --release --bin exlgrep-cli
 ## ビルド
 
 ```bash
+# フロントエンドおよび CLI の一括ビルド
+npm run build:all
+
+# デスクトップアプリ & インストーラー生成 (GUI本体とCLIが自動同梱されます)
 npm run tauri build
 ```
 
-Tauri が現在の OS 向けアプリケーションバンドルを `src-tauri/target/release/bundle/` に生成します。
+Tauri が現在の OS 向けアプリケーションバンドルおよびインストーラーを `target/release/bundle/` に生成します。生成されたインストーラー（Windows: MSI / NSIS）には `exlgrep`（GUI）と `exlgrep-cli`（CLI）の双方が同梱されます。
 
 ## 検証
 
