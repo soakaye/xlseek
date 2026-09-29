@@ -108,6 +108,31 @@ pub const ERR_CLI_INPUT_COLLISION: &str = "Output must not alias a search input"
 pub const ERR_CLI_OUTPUT_CHANGED: &str = "Output changed while the search was running";
 pub const ERR_CLI_OUTPUT: &str = "Failed to publish output";
 pub const ERR_CLI_TEMP_LIMIT: &str = "Could not create a unique temporary directory";
+pub const CLI_SHORT_OPTION_PREFIX: &str = "-";
+pub const CLI_OPTION_TERMINATOR: &str = "--";
+pub const CLI_SHORT_PATH: &str = "-p";
+pub const CLI_SHORT_QUERY: &str = "-q";
+pub const CLI_SHORT_FORMAT: &str = "-f";
+pub const CLI_SHORT_OUTPUT: &str = "-o";
+pub const CLI_SHORT_MATCH_CASE: &str = "-c";
+pub const CLI_SHORT_REGEX: &str = "-r";
+pub const CLI_SHORT_OVERWRITE: &str = "-w";
+pub const CLI_SHORT_LANGUAGE: &str = "-l";
+pub const CLI_SHORT_EXTENSIONS: &str = "-e";
+
+pub const CLI_SHORT_TO_LONG_OPTIONS: [(&str, &str); 10] = [
+    (CLI_SHORT_PATH, CLI_PATH_FIELD),
+    (CLI_SHORT_QUERY, CLI_QUERY_FIELD),
+    (CLI_SHORT_FORMAT, CLI_FORMAT_FIELD),
+    (CLI_SHORT_OUTPUT, CLI_OUTPUT_FIELD),
+    (CLI_SHORT_MATCH_CASE, CLI_MATCH_CASE_FIELD),
+    (CLI_SHORT_REGEX, CLI_REGEX_FIELD),
+    (CLI_SHORT_OVERWRITE, CLI_OVERWRITE_FIELD),
+    (CLI_SHORT_LANGUAGE, CLI_LANGUAGE_FIELD),
+    (CLI_SHORT_EXTENSIONS, CLI_EXTENSIONS_FIELD),
+    (CLI_SHORT_HELP, CLI_HELP_FIELD),
+];
+
 pub const CLI_VALUE_OPTIONS: [&str; 13] = [
     CLI_PATH_FIELD,
     CLI_QUERY_FIELD,
@@ -122,12 +147,6 @@ pub const CLI_VALUE_OPTIONS: [&str; 13] = [
     CLI_HIDDEN_SHEETS_FIELD,
     CLI_EXTENSIONS_FIELD,
     CLI_LANGUAGE_FIELD,
-];
-pub const CLI_REQUIRED_OPTIONS: [&str; 4] = [
-    CLI_PATH_FIELD,
-    CLI_QUERY_FIELD,
-    CLI_FORMAT_FIELD,
-    CLI_OUTPUT_FIELD,
 ];
 pub const CLI_TEST_OUTPUT_NAME: &str = "exlgrep-cli-args-test.csv";
 pub const CLI_TEST_OVERWRITE_OPTION: &str = "--overwrite";
