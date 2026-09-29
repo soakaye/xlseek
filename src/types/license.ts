@@ -41,7 +41,7 @@ export interface PackageLicenseRecord {
  * Basic application metadata interface
  *
  * ## Field Definitions
- * - `name`: Application name ("Excel Grep")
+ * - `name`: Application name ("Excel Seek")
  * - `version`: Application version string (e.g. "0.1.0")
  * - `description`: Application description summary
  * - `copyright`: Full application copyright notice string

@@ -1,10 +1,10 @@
-# Excel Grep (`xlseek`)
+# Excel Seek (`xlseek`)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 **English** | [日本語](README_ja.md)
 
-**Excel Grep (`xlseek`)** is a fast, lightweight, and secure desktop search application and CLI tool for recursive searching across Excel workbooks (`.xlsx`, `.xlsm`, `.xlsb`, `.xls`). It enables users to search cell values, formulas, notes, and shape text using plain text queries or regular expressions.
+**Excel Seek (`xlseek`)** is a fast, lightweight, and secure desktop search application and CLI tool for recursive searching across Excel workbooks (`.xlsx`, `.xlsm`, `.xlsb`, `.xls`). It enables users to search cell values, formulas, notes, and shape text using plain text queries or regular expressions.
 
 ---
 

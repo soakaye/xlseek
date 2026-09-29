@@ -126,7 +126,7 @@ describe("localized application UI", () => {
     cleanup();
 
     render(<LocaleProvider value="ja"><AboutDialog isOpen onClose={() => undefined} onShowToast={() => undefined} /></LocaleProvider>);
-    expect(screen.getByText("Excel Grep について")).toBeTruthy();
+    expect(screen.getByText("Excel Seek について")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "閉じる" }).length).toBeGreaterThan(0);
   });
 

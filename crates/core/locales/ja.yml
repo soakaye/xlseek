@@ -2,7 +2,7 @@
 # Arguments & Returns: Accepts dotted keys and string values, outputting locale maps for plugins.
 # Errors: Invalid YAML fails during plugin loading and falls back to default catalog.
 _version: 1
-ui.APP_TITLE: Excel Grep
+ui.APP_TITLE: Excel Seek
 ui.SEARCHING: 検索中...
 ui.SEARCHING_DIR: 探索中
 ui.STATUS_IDLE: 検索待機中
@@ -172,8 +172,8 @@ ui.STATUS_DISCOVERING_DETAIL: 検出・走査中
 ui.STATUS_SCANNING_DETAIL: スキャン中
 ui.STATUS_CANCELLED_DETAIL: 検索中断
 ui.STATUS_ERROR_DETAIL: エラーが発生しました
-about.TITLE: Excel Grep について
-about.APP_NAME: Excel Grep
+about.TITLE: Excel Seek について
+about.APP_NAME: Excel Seek
 about.APP_VERSION: 0.1.0
 about.APP_DESCRIPTION: 高速・セキュアなExcel専用ファイル内検索デスクトップアプリケーション
 about.COPYRIGHT: Copyright © 2026 soakaye
@@ -187,7 +187,7 @@ about.PACKAGE_COUNT_SUFFIX: " 件のパッケージ"
 about.BUTTON_COPY_LICENSE: ライセンス本文をコピー
 about.BUTTON_COPIED: コピー完了
 about.BUTTON_CLOSE: 閉じる
-about.BUTTON_ABOUT_TOOLTIP: Excel Grep について
+about.BUTTON_ABOUT_TOOLTIP: Excel Seek について
 about.AUTHOR_LABEL: "著作者 / 著作権表記:"
 about.LICENSE_TYPE_LABEL: "ライセンス種別:"
 about.REPOSITORY_LABEL: "リポジトリ / 公式サイト:"
@@ -204,7 +204,7 @@ about.PACKAGE_LIST_LINK: オープンソースライセンス一覧を確認す�
 about.PACKAGE_COUNT_UNIT: 件
 about.FILTER_ACTIVE: フィルタ適用中
 common.translationUnavailable: 一部の文言を翻訳できませんでした。
-menu.about: Excel Grep について
+menu.about: Excel Seek について
 menu.file: ファイル
 menu.edit: 編集
 menu.view: 表示

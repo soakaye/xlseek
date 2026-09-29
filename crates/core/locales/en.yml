@@ -2,7 +2,7 @@
 # Arguments & Returns: Accepts dotted keys and string values, outputting locale maps for plugins.
 # Errors: Invalid YAML fails during plugin loading and falls back to default catalog.
 _version: 1
-ui.APP_TITLE: Excel Grep
+ui.APP_TITLE: Excel Seek
 ui.SEARCHING: Searching...
 ui.SEARCHING_DIR: Discovering
 ui.STATUS_IDLE: Ready
@@ -172,8 +172,8 @@ ui.STATUS_DISCOVERING_DETAIL: Discovering
 ui.STATUS_SCANNING_DETAIL: Scanning
 ui.STATUS_CANCELLED_DETAIL: Search cancelled
 ui.STATUS_ERROR_DETAIL: An error occurred
-about.TITLE: About Excel Grep
-about.APP_NAME: Excel Grep
+about.TITLE: About Excel Seek
+about.APP_NAME: Excel Seek
 about.APP_DESCRIPTION: Fast and secure desktop search for Excel files
 about.COPYRIGHT: Copyright © 2026 soakaye
 about.APP_LICENSE_LABEL: "Distribution license: MIT License"
@@ -186,7 +186,7 @@ about.PACKAGE_COUNT_SUFFIX: " packages"
 about.BUTTON_COPY_LICENSE: Copy license text
 about.BUTTON_COPIED: Copied
 about.BUTTON_CLOSE: Close
-about.BUTTON_ABOUT_TOOLTIP: About Excel Grep
+about.BUTTON_ABOUT_TOOLTIP: About Excel Seek
 about.AUTHOR_LABEL: "Author / Copyright:"
 about.LICENSE_TYPE_LABEL: "License type:"
 about.REPOSITORY_LABEL: "Repository / Website:"
@@ -204,7 +204,7 @@ about.PACKAGE_COUNT_UNIT: packages
 about.FILTER_ACTIVE: Filter active
 about.APP_VERSION: 0.1.0
 common.translationUnavailable: Some text could not be translated.
-menu.about: About Excel Grep
+menu.about: About Excel Seek
 menu.file: File
 menu.edit: Edit
 menu.view: View

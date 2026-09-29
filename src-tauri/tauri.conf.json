@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/tauri-apps/tauri/dev/crates/tauri-cli/schema.json",
-  "productName": "Excel Grep",
+  "productName": "Excel Seek",
   "version": "0.1.0",
   "identifier": "com.xlseek.app",
   "build": {
@@ -13,7 +13,7 @@
     "windows": [
       {
         "label": "main",
-        "title": "Excel Grep",
+        "title": "Excel Seek",
         "width": 1280,
         "height": 850,
         "minWidth": 960,

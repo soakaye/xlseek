@@ -1,10 +1,10 @@
-# Excel Grep (`xlseek`)
+# Excel Seek (`xlseek`)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 [English](README.md) | **日本語**
 
-**Excel Grep (`xlseek`)** は、Excel ワークブック（`.xlsx`、`.xlsm`、`.xlsb`、`.xls`）をフォルダ単位で高速・軽量かつセキュアに再帰検索できるデスクトップ検索アプリケーションおよび CLI ツールです。セルの値、数式、コメント/メモ、図形（Shape）内テキストを、通常の文字列または正規表現を用いて横断検索できます。
+**Excel Seek (`xlseek`)** は、Excel ワークブック（`.xlsx`、`.xlsm`、`.xlsb`、`.xls`）をフォルダ単位で高速・軽量かつセキュアに再帰検索できるデスクトップ検索アプリケーションおよび CLI ツールです。セルの値、数式、コメント/メモ、図形（Shape）内テキストを、通常の文字列または正規表現を用いて横断検索できます。
 
 ---
 

@@ -123,7 +123,7 @@ mod tests {
         let catalogs = BTreeMap::from([(
             crate::constants::LANGUAGE_EN.to_string(),
             BTreeMap::from([
-                ("menu.about".to_string(), "About Excel Grep".to_string()),
+                ("menu.about".to_string(), "About Excel Seek".to_string()),
                 (
                     crate::constants::TRANSLATION_UNAVAILABLE_KEY.to_string(),
                     "Some text could not be translated.".to_string(),
@@ -133,7 +133,7 @@ mod tests {
 
         assert_eq!(
             super::resolve_catalog_text(&catalogs, active_locale, "menu.about"),
-            Some("About Excel Grep".to_string())
+            Some("About Excel Seek".to_string())
         );
         assert_eq!(active_locale, crate::constants::LANGUAGE_JA);
     }

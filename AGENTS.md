@@ -1,12 +1,12 @@
-# AGENTS.md — Excel Grep 開発ガイドライン & エージェント行動規範
+# AGENTS.md — Excel Seek 開発ガイドライン & エージェント行動規範
 
-本ファイルは、Excel Grep リポジトリで作業するすべての AI エージェント（Antigravity, Claude, Codex, Cursor 等）が遵守すべき最上位の行動指針、コーディング規約、アーキテクチャ、および開発手順を定義します。
+本ファイルは、Excel Seek リポジトリで作業するすべての AI エージェント（Antigravity, Claude, Codex, Cursor 等）が遵守すべき最上位の行動指針、コーディング規約、アーキテクチャ、および開発手順を定義します。
 
 ---
 
 ## 1. プロジェクト概要
 
-- **名称**: Excel Grep (`xlseek`)
+- **名称**: Excel Seek (`xlseek`)
 - **目的**: 大量の Excel ファイル（`.xlsx`, `.xlsm`, `.xls`, `.xlsb`）から、指定キーワードや正規表現に一致するセル、シート、コメントを高速かつセキュアに横断検索するデスクトップアプリケーション。
 - **アーキテクチャ**:
   - **GUI / フロントエンド**: React 18, TypeScript, Tailwind CSS, Lucide React, Tauri v2 API
