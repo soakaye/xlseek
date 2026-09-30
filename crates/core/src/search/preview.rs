@@ -1,12 +1,10 @@
-//! # セル周辺プレビュー抽出モジュール (search/preview.rs)
+//! # Cell Surrounding Preview Extraction Module (search/preview.rs)
 //!
-//! ## 処理内容
-//! 指定されたExcelファイルの特定シート・特定セル番地を中心として、
-//! 前後の行・列（バウンディングボックス）のセル値および数式を高速抽出してプレビューグリッドを生成する。
-//! 憲章原則I（日本語エラー）、原則II（定数参照）、原則III（ヘッダコメント）、原則V（堅牢なエラーハンドリング）に準拠。
-//!
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化、4要素ヘッダコメント追加、異常系単体テスト追加。
+//! ## Description
+//! Generates a preview grid centered around a specific sheet and cell address
+//! in an Excel file by extracting cell values and formulas within bounding rows and columns.
+//! Conforms to Constitution Principle I (English comments/errors), Principle II (Constant references),
+//! Principle III (Header comments), and Principle V (Robust error handling).
 
 use crate::models::{CellPreviewData, CellValueInfo, PreviewColumn, PreviewRow};
 use crate::search::parser::col_to_name;
@@ -14,25 +12,22 @@ use calamine::{open_workbook_auto, Data, Reader, Sheets};
 use std::collections::HashMap;
 use std::path::Path;
 
-/// ## 処理内容
-/// 指定セル周辺（定数で定義された前後行・前後列の範囲）のワークシートデータを抽出し、
-/// 列ヘッダー、行データ、およびブック内の全シート名を含むプレビュー構造体を生成する。
+/// ## Description
+/// Extracts worksheet data surrounding a target cell (radius defined by constants)
+/// and builds a preview struct containing column headers, row data, and all sheet names.
 ///
-/// ## 引数
-/// - `file_path`: `P` - 対象Excelファイルのパス
-/// - `sheet_name`: `&str` - プレビュー対象のシート名
-/// - `target_row_1based`: `u32` - 1始まりの対象セル行番号
-/// - `target_col_1based`: `u32` - 1始まりの対象セル列番号
+/// ## Arguments
+/// - `file_path`: `P` - Path to the Excel file
+/// - `sheet_name`: `&str` - Name of the worksheet to preview
+/// - `target_row_1based`: `u32` - 1-based target cell row index
+/// - `target_col_1based`: `u32` - 1-based target cell column index
 ///
-/// ## 戻り値
-/// - `Result<CellPreviewData, String>`: 成功時はプレビューグリッドデータ、失敗時は日本語エラーメッセージ
+/// ## Returns
+/// - `Result<CellPreviewData, String>`: Preview grid data on success, or an English error message on failure
 ///
-/// ## エラー / 例外発生条件
-/// - 指定ファイルが開けない場合、または指定シートが存在しない場合に `Err` を返却する。
-/// - panicは発生しない。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化および日本語エラーメッセージ化。
+/// ## Errors / Exceptions
+/// - Returns `Err` if the file cannot be opened or the specified sheet does not exist.
+/// - Does not panic.
 pub fn extract_cell_preview<P: AsRef<Path>>(
     file_path: P,
     sheet_name: &str,
@@ -41,7 +36,7 @@ pub fn extract_cell_preview<P: AsRef<Path>>(
 ) -> Result<CellPreviewData, String> {
     let path_ref = file_path.as_ref();
     let mut workbook: Sheets<_> = open_workbook_auto(path_ref).map_err(|e| {
-        // 定数参照: crate::constants::ERR_WORKBOOK_OPEN を使用
+        // Constant reference: crate::constants::ERR_WORKBOOK_OPEN
         format!(
             "{}: {} ({})",
             crate::constants::ERR_WORKBOOK_OPEN,
@@ -55,15 +50,15 @@ pub fn extract_cell_preview<P: AsRef<Path>>(
     let target_row_0based = target_row_1based.saturating_sub(1);
     let target_col_0based = target_col_1based.saturating_sub(1);
 
-    // 定数参照: crate::constants::PREVIEW_ROW_RADIUS を使用
+    // Constant reference: crate::constants::PREVIEW_ROW_RADIUS
     let min_row = target_row_0based.saturating_sub(crate::constants::PREVIEW_ROW_RADIUS);
     let max_row = target_row_0based + crate::constants::PREVIEW_ROW_RADIUS;
 
-    // 定数参照: crate::constants::PREVIEW_COL_RADIUS を使用
+    // Constant reference: crate::constants::PREVIEW_COL_RADIUS
     let min_col = target_col_0based.saturating_sub(crate::constants::PREVIEW_COL_RADIUS);
     let max_col = target_col_0based + crate::constants::PREVIEW_COL_RADIUS;
 
-    // 列ヘッダー定義
+    // Define column headers
     let mut columns = Vec::new();
     for col_idx in min_col..=max_col {
         let label = col_to_name(col_idx);
@@ -73,9 +68,9 @@ pub fn extract_cell_preview<P: AsRef<Path>>(
         });
     }
 
-    // ワークシートのセル値読み込み
+    // Read worksheet cell values
     let range = workbook.worksheet_range(sheet_name).map_err(|e| {
-        // 定数参照: crate::constants::ERR_SHEET_NOT_FOUND を使用
+        // Constant reference: crate::constants::ERR_SHEET_NOT_FOUND
         format!(
             "{}: '{}' ({})",
             crate::constants::ERR_SHEET_NOT_FOUND,
@@ -84,13 +79,18 @@ pub fn extract_cell_preview<P: AsRef<Path>>(
         )
     })?;
 
-    // 数式マップの読み込み (任意)
+    let (range_start_row, range_start_col) = range.start().unwrap_or_default();
+
+    // Read formula map if available
     let formula_map = if let Ok(f_range) = workbook.worksheet_formula(sheet_name) {
+        let (f_start_row, f_start_col) = f_range.start().unwrap_or_default();
         let mut map: HashMap<(u32, u32), String> = HashMap::new();
         for (r, row) in f_range.rows().enumerate() {
             for (c, formula) in row.iter().enumerate() {
                 if !formula.is_empty() {
-                    map.insert((r as u32, c as u32), formula.clone());
+                    let absolute_r = r as u32 + f_start_row;
+                    let absolute_c = c as u32 + f_start_col;
+                    map.insert((absolute_r, absolute_c), formula.clone());
                 }
             }
         }
@@ -109,17 +109,23 @@ pub fn extract_cell_preview<P: AsRef<Path>>(
             let col_name = col_to_name(c);
             let is_target = r == target_row_0based && c == target_col_0based;
 
-            let value_str = if let Some(cell_data) = range.get((r as usize, c as usize)) {
-                match cell_data {
-                    Data::Empty => String::new(),
-                    Data::String(s) => s.clone(),
-                    Data::Float(f) => f.to_string(),
-                    Data::Int(i) => i.to_string(),
-                    Data::Bool(b) => b.to_string(),
-                    Data::DateTime(d) => d.to_string(),
-                    Data::DateTimeIso(d) => d.clone(),
-                    Data::DurationIso(d) => d.clone(),
-                    Data::Error(e) => format!("{:?}", e),
+            let value_str = if r >= range_start_row && c >= range_start_col {
+                let rel_r = (r - range_start_row) as usize;
+                let rel_c = (c - range_start_col) as usize;
+                if let Some(cell_data) = range.get((rel_r, rel_c)) {
+                    match cell_data {
+                        Data::Empty => String::new(),
+                        Data::String(s) => s.clone(),
+                        Data::Float(f) => f.to_string(),
+                        Data::Int(i) => i.to_string(),
+                        Data::Bool(b) => b.to_string(),
+                        Data::DateTime(d) => d.to_string(),
+                        Data::DateTimeIso(d) => d.clone(),
+                        Data::DurationIso(d) => d.clone(),
+                        Data::Error(e) => format!("{:?}", e),
+                    }
+                } else {
+                    String::new()
                 }
             } else {
                 String::new()
@@ -154,21 +160,18 @@ mod tests {
     use super::*;
     use std::path::PathBuf;
 
-    /// ## 処理内容
-    /// 存在しないファイルパスに対してextract_cell_previewを呼び出した際、
-    /// パニックせず日本語エラーメッセージを含むErrが安全に返却されることを検証する。
+    /// ## Description
+    /// Verifies that calling extract_cell_preview with a nonexistent file path
+    /// returns an Err containing an error message safely without panicking.
     ///
-    /// ## 引数
-    /// なし
+    /// ## Arguments
+    /// None
     ///
-    /// ## 戻り値
-    /// なし
+    /// ## Returns
+    /// None
     ///
-    /// ## エラー / 例外発生条件
-    /// アサーション失敗時にpanic
-    ///
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, AI Agent): 初版作成（憲章原則V準拠テスト）
+    /// ## Errors / Exceptions
+    /// Panics if an assertion fails.
     #[test]
     fn test_extract_cell_preview_nonexistent_file() {
         let invalid_path = PathBuf::from("nonexistent_test_workbook_12345.xlsx");
@@ -176,5 +179,40 @@ mod tests {
         assert!(result.is_err());
         let err_msg = result.unwrap_err();
         assert!(err_msg.contains(crate::constants::ERR_WORKBOOK_OPEN));
+    }
+
+    /// ## Description
+    /// Verifies that extract_cell_preview extracts cells correctly even when the worksheet range
+    /// begins after A1 (non-zero start offset).
+    ///
+    /// ## Arguments
+    /// None
+    ///
+    /// ## Returns
+    /// None
+    ///
+    /// ## Errors / Exceptions
+    /// Panics if an assertion fails or fixture cannot be read.
+    #[test]
+    fn test_extract_cell_preview_range_with_start_offset() {
+        let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        let root = if manifest.join("../../tests/fixtures").exists() {
+            manifest.join("../..")
+        } else {
+            manifest.parent().unwrap().to_path_buf()
+        };
+        let fixture = root.join("tests/fixtures/sample_report.xlsx");
+        // In sample_report.xlsx, Data range starts at A12 (0-based row 11)
+        let result = extract_cell_preview(&fixture, "Data", 12, 1).expect("preview should succeed");
+        assert_eq!(result.target_row, 12);
+        assert_eq!(result.target_col, 1);
+        let target_row = result
+            .rows
+            .iter()
+            .find(|r| r.row_number == 12)
+            .expect("row 12 must be present");
+        let target_cell = target_row.cells.get("A").expect("cell A must be present");
+        assert!(target_cell.is_target);
+        assert_eq!(target_cell.value, "Financial Report Q3");
     }
 }

@@ -1,15 +1,8 @@
-//! # Excel Grep コアライブラリ (lib.rs)
+//! # Excel Grep Core Library (lib.rs)
 //!
-//! ## 処理内容
-//! Tauriデスクトップアプリケーションの初期化、プラグイン（dialog, shell, i18n）の登録、
-//! 各種IPCコマンドハンドラの登録、およびアプリケーション実行ループを管理する。
-//!
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-26, AI Agent): 初版策定。constantsモジュールの公開と憲章準拠ヘッダコメントの追加。
-//! - v1.1.0 (2026-09-26, AI Agent): macOSシステムメニューのカスタム構築 (create_app_menu) および About ダイアログ用メニューイベントハンドラ (on_menu_event) の追加。
-//! - v1.3.0 (2026-09-29, Codex): GUIと独立したCLIモジュールを公開。
-//! - v1.4.0 (2026-09-29, Antigravity): CLIモジュールをcrates/cliへ分離し、共有モジュールをexlgrep_coreから再エクスポート。
-
+//! ## Description
+//! Initializes the Tauri desktop application, registers plugins (dialog, os, shell, i18n),
+//! registers IPC command handlers, and manages the application event loop.
 pub mod commands;
 pub mod constants;
 
@@ -21,22 +14,19 @@ use std::sync::Arc;
 #[cfg(target_os = "macos")]
 use tauri_plugin_i18n::PluginI18nExt;
 
-/// ## 処理内容
-/// macOS向けのアプリケーションメニューを構築する。
-/// 標準の About 項目をカスタムメニュー項目に置き換え、クリック時にアプリ内
-/// About ダイアログを開くためのイベント発行を可能にする。
+/// ## Description
+/// Constructs the application menu for macOS.
+/// Replaces the default About item with a custom menu item that emits an event to open the in-app About dialog.
 ///
-/// ## 引数
+/// ## Arguments
 /// - `app_handle`: &tauri::AppHandle<R>
+/// - `language`: &str - Current UI language code (`ja` or `en`)
 ///
-/// ## 戻り値
-/// - `tauri::Result<tauri::menu::Menu<R>>`: 構築されたメニュー構造体
+/// ## Returns
+/// - `tauri::Result<tauri::menu::Menu<R>>`: Constructed menu struct
 ///
-/// ## エラー / 例外発生条件
-/// メニュー要素の生成やOS側メニュー登録時にエラーが発生した場合は Err を返す。
-///
-/// ## 変更履歴
-/// - v1.1.0 (2026-09-26, AI Agent): 初版作成。カスタムAboutメニュー項目の統合。
+/// ## Errors / Exceptions
+/// Returns Err if menu item construction or OS registration fails.
 #[cfg(target_os = "macos")]
 fn create_app_menu<R: tauri::Runtime>(
     app_handle: &tauri::AppHandle<R>,
@@ -60,8 +50,8 @@ fn create_app_menu<R: tauri::Runtime>(
         })
     };
 
-    // 1. アプリケーションサブメニュー (App Submenu)
-    // 定数参照: constants::MENU_ITEM_ABOUT_ID と MENU_KEY_ABOUT
+    // 1. App Submenu
+    // Constant reference: constants::MENU_ITEM_ABOUT_ID and MENU_KEY_ABOUT
     let about_item = MenuItem::with_id(
         app_handle,
         MENU_ITEM_ABOUT_ID,
@@ -86,8 +76,8 @@ fn create_app_menu<R: tauri::Runtime>(
         ],
     )?;
 
-    // 2. ファイルサブメニュー (File Submenu)
-    // 定数参照: constants::MENU_KEY_FILE
+    // 2. File Submenu
+    // Constant reference: constants::MENU_KEY_FILE
     let file_submenu = Submenu::with_items(
         app_handle,
         menu_text(MENU_KEY_FILE)?,
@@ -95,8 +85,8 @@ fn create_app_menu<R: tauri::Runtime>(
         &[&PredefinedMenuItem::close_window(app_handle, None)?],
     )?;
 
-    // 3. 編集サブメニュー (Edit Submenu)
-    // 定数参照: constants::MENU_KEY_EDIT
+    // 3. Edit Submenu
+    // Constant reference: constants::MENU_KEY_EDIT
     let edit_submenu = Submenu::with_items(
         app_handle,
         menu_text(MENU_KEY_EDIT)?,
@@ -112,8 +102,8 @@ fn create_app_menu<R: tauri::Runtime>(
         ],
     )?;
 
-    // 4. 表示サブメニュー (View Submenu)
-    // 定数参照: constants::MENU_KEY_VIEW
+    // 4. View Submenu
+    // Constant reference: constants::MENU_KEY_VIEW
     let view_submenu = Submenu::with_items(
         app_handle,
         menu_text(MENU_KEY_VIEW)?,
@@ -121,8 +111,8 @@ fn create_app_menu<R: tauri::Runtime>(
         &[&PredefinedMenuItem::fullscreen(app_handle, None)?],
     )?;
 
-    // 5. ウィンドウサブメニュー (Window Submenu)
-    // 定数参照: constants::MENU_KEY_WINDOW
+    // 5. Window Submenu
+    // Constant reference: constants::MENU_KEY_WINDOW
     let window_submenu = Submenu::with_items(
         app_handle,
         menu_text(MENU_KEY_WINDOW)?,
@@ -135,8 +125,8 @@ fn create_app_menu<R: tauri::Runtime>(
         ],
     )?;
 
-    // 6. ヘルプサブメニュー (Help Submenu)
-    // 定数参照: constants::MENU_KEY_HELP
+    // 6. Help Submenu
+    // Constant reference: constants::MENU_KEY_HELP
     let help_submenu = Submenu::with_items(app_handle, menu_text(MENU_KEY_HELP)?, true, &[])?;
 
     Menu::with_items(
@@ -152,24 +142,18 @@ fn create_app_menu<R: tauri::Runtime>(
     )
 }
 
-/// ## 処理内容
-/// Tauriアプリケーションを構築し、ステート管理、プラグイン、メニュー、
-/// コマンドハンドラを登録してメインイベントループを実行する。
+/// ## Description
+/// Builds the Tauri application, registers state management, plugins, menus,
+/// and command handlers, and starts the main event loop.
 ///
-/// ## 引数
-/// なし
+/// ## Arguments
+/// None
 ///
-/// ## 戻り値
-/// なし
+/// ## Returns
+/// None
 ///
-/// ## エラー / 例外発生条件
-/// アプリケーション起動時のコンテキスト生成やランタイムエラー時にパニックする。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
-/// - v1.1.0 (2026-09-26, AI Agent): カスタムAboutメニューの登録とメニューイベントハンドラ (on_menu_event) の追加。
-/// - v1.1.1 (2026-09-27, AI Agent): non-macOS向けに PluginI18nExt の import をスコープ化、setup クロージャの unused variable を解消。
-/// - v1.2.0 (2026-09-27, Codex): ディレクトリ補完コマンドを invoke handler に登録。
+/// ## Errors / Exceptions
+/// Panics on context generation or runtime error during application launch.
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let engine = Arc::new(SearchEngine::new());
@@ -191,7 +175,7 @@ pub fn run() {
             use constants::{EVENT_OPEN_ABOUT_DIALOG, MENU_ITEM_ABOUT_ID};
             use tauri::Emitter;
 
-            // 定数参照: constants::MENU_ITEM_ABOUT_ID, constants::EVENT_OPEN_ABOUT_DIALOG
+            // Constant reference: constants::MENU_ITEM_ABOUT_ID, constants::EVENT_OPEN_ABOUT_DIALOG
             if event.id() == MENU_ITEM_ABOUT_ID {
                 let _ = app_handle.emit(EVENT_OPEN_ABOUT_DIALOG, ());
             }
@@ -215,14 +199,12 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-/// ## 処理内容
-/// macOS アプリメニューを現在の表示言語に合わせて再構築する。
-/// ## 引数・戻り値
-/// Tauri アプリハンドルと `ja` または `en` を受け取り、成功時 `Ok(())` を返す。
-/// ## エラー
-/// 不正な言語コードおよび macOS メニュー更新失敗時は英語エラーコードを返す。他 OS では成功する。
-/// ## 変更履歴
-/// - v1.2.0 (2026-09-26, AI Agent): 言語別メニュー更新を追加。
+/// ## Description
+/// Rebuilds the macOS application menu according to the current display language.
+/// ## Arguments / Returns
+/// Accepts Tauri AppHandle and language string (`ja` or `en`), returning `Ok(())` on success.
+/// ## Errors / Exceptions
+/// Returns error on invalid language code or menu update failure; succeeds on other OSes.
 #[tauri::command]
 fn set_menu_locale(
     app_handle: tauri::AppHandle,

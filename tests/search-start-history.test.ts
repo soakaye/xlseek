@@ -1,8 +1,7 @@
 /**
- * 処理内容: 検索 IPC の受付結果に応じた履歴通知を検証する。
- * 引数・戻り値: Vitest がフックのテストを実行する。公開引数・戻り値はない。
- * エラー: 受付失敗後に通知が発生する、またはエラー分類が誤ると失敗する。
- * 変更履歴: v1.0.0 (2026-09-27, Codex): 検索履歴との接続テストを追加。
+ * Description: Unit and integration tests for search-start-history.test.ts.
+ * Arguments & Returns: Vitest runs test suites; no public arguments or return values.
+ * Errors: Test assertions fail if behavior deviates from requirements.
  */
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";

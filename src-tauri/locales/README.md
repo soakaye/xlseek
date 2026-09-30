@@ -1,4 +1,4 @@
-<!-- 処理内容: Rust側のCLI翻訳カタログの編集規約と対応範囲を説明する。入力・出力: locales/ja.yml と locales/en.yml を入力として、翻訳キーの追加・保守方法を示す。エラー: YAML構文不正や言語間のキー不一致はCLIカタログ読込検証で検出する。変更履歴: v1.0.0 2026-09-29 Codex CLI翻訳の管理手順を追加。 -->
+<!-- Description: Explains editing conventions and scope for the Rust-side CLI translation catalogs. Arguments & Returns: Documents how to add and maintain translation keys using locales/ja.yml and locales/en.yml as inputs. Errors / Exceptions: Invalid YAML syntax and key mismatches between languages are caught during CLI catalog load verification. -->
 # Rust CLI 翻訳カタログ
 
 `ja.yml` と `en.yml` はGUIの翻訳とCLIの翻訳を共有します。CLI用のキーを追加・変更するときは両ファイルのキーを揃え、`_version` を除く項目に文字列値を設定してください。CLIはビルド時に両YAMLを実行ファイルへ埋め込むため、配布先にカタログファイルは不要です。

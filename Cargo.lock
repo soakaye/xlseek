@@ -253,6 +253,8 @@ dependencies = [
 [[package]]
 name = "calamine"
 version = "0.36.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fa68281b1a76b54a62156474adb06bb380a67e07dd60656e3217152b42183f3"
 dependencies = [
  "atoi_simd",
  "byteorder",
@@ -887,48 +889,6 @@ checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
  "windows-sys 0.61.2",
-]
-
-[[package]]
-name = "exlgrep"
-version = "0.1.0"
-dependencies = [
- "calamine",
- "cfb",
- "chrono",
- "csv",
- "encoding_rs",
- "exlgrep-core",
- "open",
- "quick-xml 0.41.0",
- "rayon",
- "regex",
- "rust_xlsxwriter",
- "same-file",
- "serde",
- "serde_json",
- "serde_yaml",
- "tauri",
- "tauri-build",
- "tauri-plugin-dialog",
- "tauri-plugin-i18n",
- "tauri-plugin-os",
- "tauri-plugin-shell",
- "walkdir",
- "winreg",
- "zip 0.6.6",
-]
-
-[[package]]
-name = "exlgrep-cli"
-version = "0.1.0"
-dependencies = [
- "calamine",
- "exlgrep-core",
- "rayon",
- "regex",
- "same-file",
- "walkdir",
 ]
 
 [[package]]
@@ -5100,6 +5060,48 @@ dependencies = [
  "libc",
  "once_cell",
  "pkg-config",
+]
+
+[[package]]
+name = "xlseek"
+version = "0.1.0"
+dependencies = [
+ "calamine",
+ "cfb",
+ "chrono",
+ "csv",
+ "encoding_rs",
+ "exlgrep-core",
+ "open",
+ "quick-xml 0.41.0",
+ "rayon",
+ "regex",
+ "rust_xlsxwriter",
+ "same-file",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "tauri",
+ "tauri-build",
+ "tauri-plugin-dialog",
+ "tauri-plugin-i18n",
+ "tauri-plugin-os",
+ "tauri-plugin-shell",
+ "walkdir",
+ "winreg",
+ "zip 0.6.6",
+]
+
+[[package]]
+name = "xlseek-cli"
+version = "0.1.0"
+dependencies = [
+ "calamine",
+ "exlgrep-core",
+ "rayon",
+ "regex",
+ "same-file",
+ "walkdir",
 ]
 
 [[package]]

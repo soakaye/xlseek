@@ -1,8 +1,7 @@
 /**
- * 処理内容: 翻訳済み UI と進捗表示の回帰テスト。
- * 引数・戻り値: Vitest がテストケースを実行する。公開引数・戻り値はない。
- * エラー: 期待する表示やレイアウト制約が欠けるとテストが失敗する。
- * 変更履歴: v1.1.0 (2026-09-27, Codex): ステータスバーの表示重なり回帰テストを追加。v1.2.0 (2026-09-27, Codex): 設定ダイアログへ履歴件数を追加。
+ * Description: Unit and integration tests for locale-ui.test.tsx.
+ * Arguments & Returns: Vitest runs test suites; no public arguments or return values.
+ * Errors: Test assertions fail if behavior deviates from requirements.
  */
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -85,10 +84,9 @@ describe("localized application UI", () => {
   });
 
   /**
-   * 処理内容: 総数未確定・確定・待機時の進捗欄が短い表示と省略制約を持つことを検証する。
-   * 引数・戻り値: locale は表示言語。戻り値はない。
-   * エラー: 進捗欄の文字が冗長、または縮小・省略できなければ失敗する。
-   * 変更履歴: v1.0.0 (2026-09-27, Codex): ステータスバー重なり防止用に追加。
+   * Description: Verifies progress indicator renders within fixed width without overflow across phases.
+   * Arguments & Returns: locale indicates display language. Returns void.
+   * Errors: Fails if progress text overflows its allocated slot.
    */
   it.each(["en", "ja"] as const)("keeps %s progress inside its fixed slot", async (locale) => {
     plugin.language = locale;
@@ -128,7 +126,7 @@ describe("localized application UI", () => {
     cleanup();
 
     render(<LocaleProvider value="ja"><AboutDialog isOpen onClose={() => undefined} onShowToast={() => undefined} /></LocaleProvider>);
-    expect(screen.getByText("Excel Grep について")).toBeTruthy();
+    expect(screen.getByText("Excel Seek について")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "閉じる" }).length).toBeGreaterThan(0);
   });
 

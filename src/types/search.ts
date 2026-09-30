@@ -1,22 +1,19 @@
 /**
- * @fileoverview 検索・プレビュー・エクスポート共通型定義 (src/types/search.ts)
+ * @fileoverview Search, preview, and export common type definitions (src/types/search.ts)
  *
- * ## 処理内容
- * フロントエンド全体で使用される検索クエリ、検索結果一致アイテム、
- * スキャン進捗、セルプレビューデータ、エクスポート要求、および外部連携アプリの型を定義する。
- * 憲章原則III（ヘッダコメント）に準拠。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。JSDocによる4要素ドキュメントの網羅。
+ * ## Description
+ * Defines search queries, search result matches, scan progress,
+ * cell preview data, export requests, and external application integration types.
+ * Complies with Constitution Principle III (comprehensive documentation).
  */
 
 /**
- * 一致箇所の種別
+ * Match type enumeration
  */
 export type MatchType = "CellValue" | "Formula" | "Comment" | "HiddenSheet" | "Shape";
 
 /**
- * 検索条件パラメータインターフェース
+ * Search query parameter interface
  */
 export interface SearchQuery {
   keyword: string;
@@ -31,7 +28,7 @@ export interface SearchQuery {
 }
 
 /**
- * 検索一致アイテムインターフェース
+ * Search match item interface
  */
 export interface SearchMatch {
   id: number;
@@ -52,13 +49,23 @@ export interface SearchMatch {
 }
 
 /**
- * スキャン状態列挙型
+ * Scan state union type
  */
 export type ScanState = "Scanning" | "Completed" | "Cancelled" | "Error";
-export type ErrorCode = "invalid_regex" | "path_not_found" | "workbook_open_failed" | "preview_failed" | "export_failed" | "app_launch_failed" | "folder_open_failed" | "permission_denied" | "search_failed" | "internal_error";
+export type ErrorCode =
+  | "invalid_regex"
+  | "path_not_found"
+  | "workbook_open_failed"
+  | "preview_failed"
+  | "export_failed"
+  | "app_launch_failed"
+  | "folder_open_failed"
+  | "permission_denied"
+  | "search_failed"
+  | "internal_error";
 
 /**
- * スキャン進捗イベント情報インターフェース
+ * Scan progress event information interface
  */
 export interface ScanProgress {
   state: ScanState;
@@ -72,7 +79,7 @@ export interface ScanProgress {
 }
 
 /**
- * プレビュー列ヘッダーインターフェース
+ * Preview column header interface
  */
 export interface PreviewColumn {
   key: string;
@@ -80,7 +87,7 @@ export interface PreviewColumn {
 }
 
 /**
- * プレビュー単一セル情報インターフェース
+ * Preview cell information interface
  */
 export interface CellValueInfo {
   value: string;
@@ -89,7 +96,7 @@ export interface CellValueInfo {
 }
 
 /**
- * プレビュー行データインターフェース
+ * Preview row data interface
  */
 export interface PreviewRow {
   row_number: number;
@@ -97,7 +104,7 @@ export interface PreviewRow {
 }
 
 /**
- * 周辺セルプレビュー全体データインターフェース
+ * Full surrounding cell preview data interface
  */
 export interface CellPreviewData {
   target_row: number;
@@ -108,12 +115,12 @@ export interface CellPreviewData {
 }
 
 /**
- * エクスポート出力フォーマット
+ * Export output format union type
  */
 export type ExportFormat = "csv" | "xlsx";
 
 /**
- * エクスポート要求パラメータインターフェース
+ * Export request parameter interface
  */
 import type { DisplayLanguage } from "../locale-core";
 
@@ -125,7 +132,7 @@ export interface ExportRequest {
 }
 
 /**
- * 連携対象アプリケーション情報インターフェース
+ * Supported external application info interface
  */
 export interface SupportedApp {
   id: string;

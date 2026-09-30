@@ -1,13 +1,11 @@
-//! # Shape 抽出統合テスト
+//! # Shape Extraction Integration Test
 //!
-//! ## 処理内容
-//! 最小 OOXML ブックを生成し、Shape テキストが検索結果へ合流することを検証する。
-//! ## 引数・戻り値
-//! テストは一時 `.xlsx` を作成して抽出器を呼び、結果をアサートする。
-//! ## エラー / 例外発生条件
-//! ZIP 作成、ファイル処理、抽出、または期待値が失敗した場合にテストが失敗する。
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-28, Codex): OOXML Shape 検索統合テストを追加。
+//! ## Description
+//! Generates minimal OOXML workbooks and verifies that shape text is merged into search results.
+//! ## Arguments / Returns
+//! Creates temporary `.xlsx` files, invokes extractors, and asserts results.
+//! ## Errors / Exceptions
+//! Fails if ZIP creation, file handling, extraction, or assertions fail.
 
 use exlgrep_core::constants::*;
 use exlgrep_core::models::{MatchType, SearchQuery};
@@ -25,14 +23,12 @@ const XLSB_TEST_FILE_NAME: &str = "exlgrep-shape-contract.xlsb";
 const TEST_FILE_EXTENSION_SEPARATOR: char = '.';
 static FIXTURE_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
 
-/// ## 処理内容
-/// 並行テスト間で上書きされない一意な一時フィクスチャパスを生成する。
-/// ## 引数・戻り値
-/// ファイル名定数を受け、プロセスIDと連番を含む一時`PathBuf`を返す。
-/// ## エラー
-/// パス生成のみを行い、I/Oエラーやpanicは発生しない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): 並行実行時のフィクスチャ競合を回避。
+/// ## Description
+/// Generates a unique temporary fixture path to prevent overwrites during parallel test execution.
+/// ## Arguments / Returns
+/// Accepts file name constant and returns temporary `PathBuf` containing process ID and sequence number.
+/// ## Errors / Exceptions
+/// Path generation only; no I/O errors or panics occur.
 fn unique_fixture_path(file_name: &str) -> PathBuf {
     let sequence = FIXTURE_SEQUENCE.fetch_add(1, Ordering::Relaxed);
     let (stem, extension) = file_name
@@ -44,14 +40,12 @@ fn unique_fixture_path(file_name: &str) -> PathBuf {
     ))
 }
 
-/// ## 処理内容
-/// リポジトリルートの絶対パスを解決する。
-/// ## 引数・戻り値
-/// 引数なし。`PathBuf` を返す。
-/// ## エラー
-/// ルートが見つからない場合は panic する。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Antigravity): クレート分離に伴うルートパス解決。
+/// ## Description
+/// Resolves absolute path to repository root.
+/// ## Arguments / Returns
+/// No arguments. Returns `PathBuf`.
+/// ## Errors / Exceptions
+/// Panics if repository root is not found.
 fn repo_root() -> PathBuf {
     let manifest = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     if manifest.join("../../tests/fixtures").exists() {
@@ -64,14 +58,12 @@ fn repo_root() -> PathBuf {
     }
 }
 
-/// ## 処理内容
-/// 検査用テキストを持つシンプルな DrawingML テキストボックスを含む一時 OOXML ブックを生成する。
-/// ## 引数・戻り値
-/// 引数なし。生成した一時ファイルのパスを返す。
-/// ## エラー / 例外発生条件
-/// 一時ファイル生成や ZIP 書き込みに失敗するとテストが panic する。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): 手製 OOXML テストブックの生成を追加。
+/// ## Description
+/// Generates a temporary OOXML workbook containing a simple DrawingML text box with test text.
+/// ## Arguments / Returns
+/// No arguments. Returns path to created temporary file.
+/// ## Errors / Exceptions
+/// Panics if temporary file creation or ZIP writing fails.
 fn make_fixture() -> PathBuf {
     let parts = [
         (
@@ -124,14 +116,12 @@ fn make_fixture() -> PathBuf {
     path
 }
 
-/// ## 処理内容
-/// BrtBundleSh と BrtDrawing を持つ最小 XLSB パッケージを一時ファイルへ書き込む。
-/// ## 引数・戻り値
-/// 引数なし。生成した XLSB ファイルの一時パスを返す。
-/// ## エラー / 例外発生条件
-/// ZIP または一時ファイル出力に失敗するとテストが panic する。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): XLSB 描画関係テスト用パッケージを追加。
+/// ## Description
+/// Writes a minimal XLSB package containing BrtBundleSh and BrtDrawing to a temporary file.
+/// ## Arguments / Returns
+/// No arguments. Returns path to created temporary XLSB file.
+/// ## Errors / Exceptions
+/// Panics if ZIP writing or temporary file output fails.
 fn make_xlsb_fixture() -> PathBuf {
     let mut workbook_record = Vec::new();
     let mut bundle = vec![0, 0, 0, 0, 1, 0, 0, 0];
@@ -191,14 +181,12 @@ fn make_xlsb_fixture() -> PathBuf {
     path
 }
 
-/// ## 処理内容
-/// BIFF12 の長さ付き UTF-16LE 文字列をテスト用レコードへ追加する。
-/// ## 引数・戻り値
-/// `value` は文字列、`bytes` は追記先。戻り値はない。
-/// ## エラー / 例外発生条件
-/// 固定テスト文字列のみを使い panic しない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): XLSB テストデータ文字列生成を追加。
+/// ## Description
+/// Appends length-prefixed UTF-16LE string to BIFF12 test record.
+/// ## Arguments / Returns
+/// `value` is string, `bytes` is target vector. No return value.
+/// ## Errors / Exceptions
+/// Does not panic for test strings.
 fn append_wide_string(value: &str, bytes: &mut Vec<u8>) {
     bytes.extend_from_slice(&(value.encode_utf16().count() as u32).to_le_bytes());
     for unit in value.encode_utf16() {
@@ -206,14 +194,12 @@ fn append_wide_string(value: &str, bytes: &mut Vec<u8>) {
     }
 }
 
-/// ## 処理内容
-/// BIFF12 の `u32` 可変長整数をテスト用レコードへ追加する。
-/// ## 引数・戻り値
-/// `value` は整数、`bytes` は追記先。戻り値はない。
-/// ## エラー / 例外発生条件
-/// `u32` の範囲内の固定テスト値のみを受け取り panic しない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): XLSB テストデータ varint 生成を追加。
+/// ## Description
+/// Appends `u32` BIFF12 variable-length integer to test record.
+/// ## Arguments / Returns
+/// `value` is integer, `bytes` is target vector. No return value.
+/// ## Errors / Exceptions
+/// Does not panic for test integers.
 fn append_varint(mut value: u32, bytes: &mut Vec<u8>) {
     while value >= u32::from(XLSB_VARINT_CONTINUATION_MASK) {
         bytes.push((value as u8 & XLSB_VARINT_VALUE_MASK) | XLSB_VARINT_CONTINUATION_MASK);
@@ -222,14 +208,12 @@ fn append_varint(mut value: u32, bytes: &mut Vec<u8>) {
     bytes.push(value as u8);
 }
 
-/// ## 処理内容
-/// OOXML ブック内の Shape をシート・名前・文字・アンカー付きで抽出できることを確認する。
-/// ## 引数・戻り値
-/// 引数なし。期待する抽出値が異なる場合にテストが失敗する。
-/// ## エラー / 例外発生条件
-/// 抽出に失敗した場合、または一時ファイルの削除に失敗した場合にテストが失敗する。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): Shape 抽出の形式統合テストを追加。
+/// ## Description
+/// Verifies extracting shapes within OOXML workbook with sheet name, shape name, text, and anchor.
+/// ## Arguments / Returns
+/// No arguments. Fails if extracted values mismatch expectations.
+/// ## Errors / Exceptions
+/// Fails if extraction fails or temporary file removal fails.
 #[test]
 fn extracts_text_shape_with_sheet_and_anchor() {
     let path = make_fixture();
@@ -245,7 +229,7 @@ fn extracts_text_shape_with_sheet_and_anchor() {
         keyword: "needle".to_string(),
         target_dir: path.to_string_lossy().to_string(),
         match_case: false,
-        // 定数参照: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE を使用。
+        // Constant reference: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE
         include_value: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE,
         use_regex: false,
         include_formula: false,
@@ -282,14 +266,12 @@ fn extracts_text_shape_with_sheet_and_anchor() {
     std::fs::remove_file(path).expect("fixture must be removed");
 }
 
-/// ## 処理内容
-/// rangeがA1以外から始まるブックで値検索のセル座標が実位置になることを検証する。
-/// ## 引数・戻り値
-/// 引数なし。既知フィクスチャから該当セル番地を照合する。
-/// ## エラー
-/// ブック読取、検索、期待座標の不一致でテストが失敗する。
-/// ## 変更履歴
-/// - v1.1.0 (2026-09-29, Codex): range原点の回帰テストを追加。
+/// ## Description
+/// Verifies that value search cell coordinates reflect real positions in workbooks where ranges start after A1.
+/// ## Arguments / Returns
+/// No arguments. Matches cell address from known test fixture.
+/// ## Errors / Exceptions
+/// Fails on workbook read error, search failure, or coordinate mismatch.
 #[test]
 fn uses_real_cell_coordinates_for_ranges_starting_after_a1() {
     let root = repo_root();
@@ -298,7 +280,7 @@ fn uses_real_cell_coordinates_for_ranges_starting_after_a1() {
         keyword: "Financial Report Q3".to_string(),
         target_dir: path.to_string_lossy().into_owned(),
         match_case: false,
-        // 定数参照: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE を使用。
+        // Constant reference: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE
         include_value: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE,
         use_regex: false,
         include_formula: false,
@@ -314,14 +296,12 @@ fn uses_real_cell_coordinates_for_ranges_starting_after_a1() {
     assert!(results.iter().any(|item| item.cell_address == "A12"));
 }
 
-/// ## 処理内容
-/// 大文字拡張子のExcelブックでもShape抽出形式を正しく選択する。
-/// ## 引数・戻り値
-/// 引数なし。抽出したShape本文の件数をアサートする。
-/// ## エラー
-/// ファイル操作または抽出結果の不一致でテストが失敗する。
-/// ## 変更履歴
-/// - v1.2.0 (2026-09-29, Codex): 拡張子大小文字の回帰テストを追加。
+/// ## Description
+/// Verifies correct shape extraction format selection for uppercase extension Excel workbooks.
+/// ## Arguments / Returns
+/// No arguments. Asserts count of extracted shape text.
+/// ## Errors / Exceptions
+/// Fails on file error or extraction count mismatch.
 #[test]
 fn extracts_shapes_when_extension_is_uppercase() {
     let original = make_fixture();
@@ -332,14 +312,12 @@ fn extracts_shapes_when_extension_is_uppercase() {
     let _ = std::fs::remove_file(uppercase);
 }
 
-/// ## 処理内容
-/// 既存OOXMLブックのセルメモがコメント一致として返ることを検証する。
-/// ## 引数・戻り値
-/// 引数なし。A12にある既知メモの検索結果を照合する。
-/// ## エラー
-/// ブック解析、検索、期待セル座標の不一致でテストが失敗する。
-/// ## 変更履歴
-/// - v1.3.0 (2026-09-29, Codex): OOXMLメモ検索回帰テストを追加。
+/// ## Description
+/// Verifies that cell notes in existing OOXML workbooks are returned as comment matches.
+/// ## Arguments / Returns
+/// No arguments. Compares search results for known note at A12.
+/// ## Errors / Exceptions
+/// Fails on workbook parse failure, search error, or coordinate mismatch.
 #[test]
 fn searches_legacy_cell_comments() {
     let root = repo_root();
@@ -348,7 +326,7 @@ fn searches_legacy_cell_comments() {
         keyword: exlgrep_core::constants::CLI_TEST_COMMENT_QUERY.to_string(),
         target_dir: path.to_string_lossy().into_owned(),
         match_case: false,
-        // 定数参照: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE を使用。
+        // Constant reference: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE
         include_value: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE,
         use_regex: false,
         include_formula: false,
@@ -366,14 +344,12 @@ fn searches_legacy_cell_comments() {
         .any(|item| { item.match_type == MatchType::Comment && item.cell_address == "A12" }));
 }
 
-/// ## 処理内容
-/// XLSB の BrtBundleSh → worksheet relationship → BrtDrawing → DrawingML 関係を辿れることを検証する。
-/// ## 引数・戻り値
-/// 引数なし。Shape 抽出結果をアサーションで確認する。
-/// ## エラー / 例外発生条件
-/// ZIP 読取または期待したシート・名前・文字列が得られない場合にテストが失敗する。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-28, Codex): XLSB 抽出統合テストを追加。
+/// ## Description
+/// Verifies traversing XLSB BrtBundleSh -> worksheet relationship -> BrtDrawing -> DrawingML relationships.
+/// ## Arguments / Returns
+/// No arguments. Verifies shape extraction results via assertions.
+/// ## Errors / Exceptions
+/// Fails on ZIP read failure or missing sheet/name/text.
 #[test]
 fn extracts_text_shape_from_xlsb_drawing_relationship() {
     let path = make_xlsb_fixture();

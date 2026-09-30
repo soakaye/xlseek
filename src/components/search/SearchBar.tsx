@@ -1,23 +1,11 @@
 /**
- * @fileoverview 検索条件入力・実行バーコンポーネント (src/components/search/SearchBar.tsx)
+ * @fileoverview Search parameters input and execution bar component (src/components/search/SearchBar.tsx)
  *
- * ## 処理内容
- * 検索キーワード、対象フォルダ、各種検索オプション（大文字小文字区別、正規表現、数式、コメント、非表示シート）の
- * 入力フォームを提供し、検索の開始・中断アクションをトリガーする。フォルダのドラッグ＆ドロップによる
- * パス自動設定機能もサポートする。
- * 憲章原則I（自然かつ正確な日本語）、原則II（定数の一元化）、原則III（網羅的なヘッダコメント）に準拠。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。
- * - v1.1.0 (2026-09-26, AI Agent): 憲章準拠改修。IPCコマンド名およびUI文言を外部定数化、4要素ヘッダコメントを付与。
- * - v1.2.0 (2026-09-26, AI Agent): 検索対象拡張子のトグル選択ボタンを実装。
- * - v1.3.0 (2026-09-26, AI Agent): 検索キーワード入力欄で日本語入力(IME)確定時のEnter誤爆を防止。フォルダ入力欄でのEnter検索は行わず入力中のEnterを無視するよう制御。
- * - v1.4.0 (2026-09-27, Codex): 検索履歴・ディレクトリ補完 UI を追加。
- * - v1.5.0 (2026-09-27, Codex): フォーカス離脱時に履歴・候補を閉じる。
- * - v1.5.1 (2026-09-27, Codex): フォルダ選択ダイアログを開く際にも履歴・候補を閉じる。
- * - v1.6.0 (2026-09-27, Codex): 履歴ボタンと項目のキー移動・循環・取消しを追加。
- * - v1.7.0 (2026-09-27, Codex): 入力欄から下矢印で履歴先頭へ移動できるよう修正。
- * - v1.8.0 (2026-09-27, Codex): クリック後に履歴ボタンへフォーカスを明示する。
+ * ## Description
+ * Provides input fields for search keyword, target folder, and search options (match case, regex,
+ * formula, comments, hidden sheets). Triggers search execution and cancellation. Supports folder
+ * drag-and-drop path resolution and search history suggestions.
+ * Complies with Constitution Principle I (English documentation), Principle II (constant reference), and Principle III (comprehensive documentation).
  */
 
 import React, { KeyboardEvent, useState, useRef, useEffect } from "react";
@@ -30,16 +18,6 @@ import { SEARCH_LABELS } from "../../constants";
 import { COMMANDS, FILE_EXTENSIONS, KEYBOARD_KEYS, PATH_COMPLETION_CONSTANTS } from "../../constants";
 import { useTranslation } from "../../i18n";
 
-/**
- * 検索バーコンポーネントのプロパティ定義
- *
- * ## プロパティ一覧
- * - `query`: SearchQuery - 現在の検索条件
- * - `onChangeQuery`: (newQuery: Partial<SearchQuery>) => void - 検索条件変更コールバック
- * - `onSearch`: () => void - 検索実行コールバック
- * - `onCancel`: () => void - 検索中断コールバック
- * - `isScanning`: boolean - 現在スキャン実行中かどうかのフラグ
- */
 interface SearchBarProps {
   query: SearchQuery;
   onChangeQuery: (newQuery: Partial<SearchQuery>) => void;
@@ -51,24 +29,17 @@ interface SearchBarProps {
 }
 
 /**
- * 検索バーコンポーネント
+ * ## Description
+ * Search bar UI component.
  *
- * ## 処理詳細
- * ユーザーからのキーワード入力、フォルダ選択（ダイアログまたはドラッグ＆ドロップ）、検索オプションの変更を受け付け、
- * 検索開始または中断のハンドラを呼び出す。
+ * ## Arguments
+ * @param props - SearchBarProps
  *
- * ## 引数
- * - `props`: SearchBarProps - コンポーネントプロパティ
+ * ## Returns
+ * @returns Rendered search bar element
  *
- * ## 戻り値
- * - `React.ReactElement`: 検索バーUI要素
- *
- * ## エラー・例外条件
- * - ドラッグ＆ドロップやフォルダ選択ダイアログのIPC通信失敗時は、コンソールにエラーを出力しUIクラッシュを防止する。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版作成。
- * - v1.1.0 (2026-09-26, AI Agent): 憲章原則に準拠し、定数参照と4要素コメントを追加。
+ * ## Errors / Exceptions
+ * IPC errors during drag-and-drop or folder selection dialog are caught and logged to console to prevent crashes.
  */
 export const SearchBar: React.FC<SearchBarProps> = ({
   query,
@@ -91,16 +62,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const completionRequestRef = useRef(0);
 
   /**
-   * ディレクトリ入力の補完候補を取得する。
-   * 引数はなく、戻り値は void。IPC 失敗時は候補を空にし、古い要求結果は破棄する。
-   * 変更履歴: v1.0.0 (2026-09-27, Codex): 入力補完を追加。
-  */
+   * Fetches path completion suggestions for directory input.
+   */
   useEffect(() => {
     const request = ++completionRequestRef.current;
     if (!directoryFocused || completionDismissed || !query.target_dir) return;
     const timer = window.setTimeout(async () => {
       try {
-        // 定数参照: COMMANDS.COMPLETE_DIRECTORY_PATH
+        // Constant reference: COMMANDS.COMPLETE_DIRECTORY_PATH
         const values = await invoke<string[]>(COMMANDS.COMPLETE_DIRECTORY_PATH, { pathInput: query.target_dir });
         if (request === completionRequestRef.current) {
           setDirectorySuggestions(values);
@@ -113,19 +82,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     return () => window.clearTimeout(timer);
   }, [query.target_dir, completionDismissed, directoryFocused]);
 
-  /**
-   * 履歴または補完リストを閉じる。
-   * 引数はなく、戻り値は void。例外は発生しない。
-   * 変更履歴: v1.0.0 (2026-09-27, Codex): リスト操作を追加。
-   */
+  /** Closes active history or suggestion dropdown list. */
   const closeList = () => { setOpenList(null); setActiveOption(null); };
 
-  /**
-   * 処理内容: 入力欄と対応する履歴・候補の操作領域からフォーカスが外れた時に一覧を閉じる。
-   * 引数・戻り値: フォーカスイベントと対象欄を受け、void を返す。
-   * エラー: 領域内の項目への移動は閉じず、補完の未完了応答は無効化する。
-   * 変更履歴: v1.0.0 (2026-09-27, Codex): フォーカス離脱の処理を追加。
-   */
+  /** Handles blur on search or directory input field to close dropdown. */
   const handleFieldBlur = (event: React.FocusEvent<HTMLDivElement>, field: "keyword" | "directory") => {
     if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
     completionRequestRef.current++;
@@ -133,12 +93,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     closeList();
   };
 
-  /**
-   * 処理内容: フォーカスが移らない領域へのクリックでも一覧と待機中の補完を閉じる。
-   * 引数・戻り値: なし。イベント購読の解除関数を返す。
-   * エラー: 操作領域内のクリックは無視し、フォーカス状態を維持する。
-   * 変更履歴: v1.0.0 (2026-09-27, Codex): 領域外クリックの処理を追加。
-   */
+  /** Closes dropdown on pointerdown outside field region. */
   useEffect(() => {
     if (!openList && !directoryFocused) return;
     const handlePointerDown = (event: PointerEvent) => {
@@ -153,11 +108,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     return () => document.removeEventListener("pointerdown", handlePointerDown);
   }, [openList, directoryFocused]);
 
-  /**
-   * 表示中リストの項目を選択する。
-   * 引数は項目インデックス、戻り値は void。範囲外は何もせず、履歴選択は検索を開始しない。
-   * 変更履歴: v1.0.0 (2026-09-27, Codex): リスト選択を追加。
-   */
+  /** Selects an item from the open history or suggestions list. */
   const selectOption = (index: number) => {
     const values = openList === "keyword" ? history.keywords : openList === "directory-history" ? history.directories : openList === "directory" ? directorySuggestions : [];
     const value = values[index];
@@ -168,13 +119,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     closeList();
   };
 
-  /**
-   * 履歴ボタンからキーボードで最初の項目へ移動する。
-   * 引数はキーイベントと対象欄、戻り値は void。履歴が空または未表示なら既定の Tab 動作を保つ。
-   * エラー: 対象項目が見つからない場合はフォーカスを変更しない。
-   * 変更履歴: v1.0.0 (2026-09-27, Codex): 履歴一覧へのキー移動を追加。
-   */
-  // 定数参照: KEYBOARD_KEYS.TAB / KEYBOARD_KEYS.ARROW_DOWN
+  /** Handles keyboard navigation from history button into dropdown list. */
+  // Constant reference: KEYBOARD_KEYS.TAB / KEYBOARD_KEYS.ARROW_DOWN
   const handleHistoryButtonKeyDown = (event: KeyboardEvent<HTMLButtonElement>, field: "keyword" | "directory") => {
     const isOpen = field === "keyword" ? openList === "keyword" : openList === "directory-history";
     if (!isOpen || (event.key !== KEYBOARD_KEYS.TAB && event.key !== KEYBOARD_KEYS.ARROW_DOWN)) return;
@@ -187,16 +133,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     firstOption.focus();
   };
 
-  /**
-   * 履歴項目の矢印・Tab・Enter・Escape 操作を処理する。
-   * 引数はキーイベント、項目位置、対象欄。戻り値は void。選択は既存の selectOption を使う。
-   * エラー: IME 変換中、一覧外、範囲外の項目では操作しない。
-   * 変更履歴: v1.0.0 (2026-09-27, Codex): 履歴項目のキー操作を追加。
-   */
+  /** Handles key navigation (arrows, Enter, Esc) within dropdown list items. */
   const handleHistoryOptionKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number, field: "keyword" | "directory") => {
     const isOpen = field === "keyword" ? openList === "keyword" : openList === "directory-history";
     if (!isOpen) return;
-    // 定数参照: KEYBOARD_KEYS.IME_COMPOSITION / KEYBOARD_KEYS.IME_COMPOSITION_KEY_CODE
+    // Constant reference: KEYBOARD_KEYS.IME_COMPOSITION / KEYBOARD_KEYS.IME_COMPOSITION_KEY_CODE
     if (event.nativeEvent.isComposing || event.key === KEYBOARD_KEYS.IME_COMPOSITION || event.keyCode === KEYBOARD_KEYS.IME_COMPOSITION_KEY_CODE) {
       if (event.key === KEYBOARD_KEYS.ENTER) event.preventDefault();
       return;
@@ -232,16 +173,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     options[nextIndex]?.focus();
   };
 
-  /**
-   * 開いている候補リストのキーボード操作を処理する。
-   * 引数はキーボードイベント、戻り値は処理済みかを示す boolean。リスト外では false。
-   * エラー: 空の一覧では既定の移動や確定を行わず false または true を返して安全に終了する。
-   * 変更履歴: v1.0.0 (2026-09-27, Codex): アクセシブルなキー操作を追加。
-   */
+  /** Handles list keyboard navigation in input fields. */
   const handleListKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (!openList) return false;
     const values = openList === "keyword" ? history.keywords : openList === "directory-history" ? history.directories : directorySuggestions;
-    // 定数参照: KEYBOARD_KEYS.ESCAPE / ARROW_DOWN / ARROW_UP / ENTER
+    // Constant reference: KEYBOARD_KEYS.ESCAPE / ARROW_DOWN / ARROW_UP / ENTER
     if (e.key === KEYBOARD_KEYS.ESCAPE) { e.preventDefault(); closeList(); return true; }
     if (e.key === KEYBOARD_KEYS.ARROW_DOWN || e.key === KEYBOARD_KEYS.ARROW_UP) {
       e.preventDefault();
@@ -260,7 +196,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     return false;
   };
 
-  /** 履歴表示を切り替える。引数は対象欄、戻り値は void。例外は発生しない。変更履歴: v1.0.0 (2026-09-27, Codex)。 */
+  /** Toggles history list visibility. */
   const toggleHistory = (field: "keyword" | "directory") => {
     completionRequestRef.current += 1;
     if (field === "directory") setCompletionDismissed(true);
@@ -268,7 +204,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     setActiveOption(null);
   };
 
-  // Tauri ネイティブのドラッグ＆ドロップイベントの購読
+  // Tauri native drag-and-drop listener
   useEffect(() => {
     let unlisten: (() => void) | undefined;
 
@@ -308,7 +244,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
 
               if (isInside && payload.paths && payload.paths.length > 0) {
                 try {
-                  // 定数参照: COMMANDS.RESOLVE_DROPPED_PATH (ドロップパス解決コマンド)
+                  // Constant reference: COMMANDS.RESOLVE_DROPPED_PATH
                   const resolvedPath = await invoke<string>(COMMANDS.RESOLVE_DROPPED_PATH, {
                     path: payload.paths[0],
                   });
@@ -337,7 +273,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     };
   }, [onChangeQuery]);
 
-  // HTML5 標準のドラッグ＆ドロップ（ブラウザ環境向けフォールバック）
+  // Standard HTML5 drag-and-drop fallback
   const handleHtmlDragOver = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -360,7 +296,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       const filePath = (file as File & { path?: string }).path;
       if (filePath) {
         try {
-          // 定数参照: COMMANDS.RESOLVE_DROPPED_PATH (ドロップパス解決コマンド)
+          // Constant reference: COMMANDS.RESOLVE_DROPPED_PATH
           const resolvedPath = await invoke<string>(COMMANDS.RESOLVE_DROPPED_PATH, {
             path: filePath,
           });
@@ -385,7 +321,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    // 日本語入力(IME)確定時のEnterによる誤爆発火を防止 (WebKit/SafariおよびChromium両対応)
+    // Avoid triggering search on Enter key when IME composition finishes
     if (
       e.nativeEvent.isComposing ||
       isComposingRef.current ||
@@ -404,7 +340,6 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   const handleFolderKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    // IME変換確定時はIME側の処理に任せ、入力中のEnterキー押下は無視（検索実行は行わない）
     if (e.nativeEvent.isComposing || e.key === "Process" || e.keyCode === 229) {
       return;
     }
@@ -414,19 +349,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }
   };
 
-  /**
-   * 処理内容: 履歴・補完を閉じてフォルダ選択ダイアログを開き、選択されたパスを反映する。
-   * 引数・戻り値: 引数なし。Promise<void> を返す。
-   * エラー: ダイアログの失敗はログへ記録し、キャンセル時は検索条件を変更しない。
-   * 変更履歴: v1.1.0 (2026-09-27, Codex): ダイアログ表示前に一覧と補完要求を閉じる。
-   */
+  /** Closes suggestions and opens the system folder selection dialog. */
   const handleBrowseFolder = async () => {
     completionRequestRef.current++;
     setCompletionDismissed(true);
     setDirectoryFocused(false);
     closeList();
     try {
-      // 定数参照: t("ui.SELECT_FOLDER_DIALOG_TITLE") (ダイアログタイトル)
+      // Constant reference: t("ui.SELECT_FOLDER_DIALOG_TITLE")
       const selected = await open({
         directory: true,
         multiple: false,
@@ -445,7 +375,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const handleToggleExtension = (ext: string) => {
     const isSelected = currentExtensions.includes(ext);
     if (isSelected) {
-      // 最低1つの拡張子は選択維持
+      // Keep at least one extension selected
       if (currentExtensions.length <= 1) {
         return;
       }
@@ -462,9 +392,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   return (
     <header className="bg-[#18181b] border-b border-zinc-800 p-4 shadow-md flex-shrink-0">
       <div className="max-w-[1920px] mx-auto space-y-3">
-        {/* 上段: 検索キーワード入力 & フォルダ選択 & 検索実行/中断ボタン */}
+        {/* Row 1: Keyword, Folder, and Search/Cancel Button */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
-          {/* 検索キーワード入力 */}
+          {/* Keyword input */}
           <div ref={keywordInputRef} onBlur={(event) => handleFieldBlur(event, "keyword")} className="lg:col-span-6 relative">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-zinc-400">
               <Search className="w-4 h-4" />
@@ -476,7 +406,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               onKeyDown={handleKeyDown}
               onCompositionStart={handleCompositionStart}
               onCompositionEnd={handleCompositionEnd}
-              /* 定数参照: t("ui.KEYWORD_INPUT_PLACEHOLDER") */
+              /* Constant reference: t("ui.KEYWORD_INPUT_PLACEHOLDER") */
               placeholder={t("ui.KEYWORD_INPUT_PLACEHOLDER")}
               className="w-full pl-9 pr-24 py-2 bg-[#202024] border border-zinc-700 rounded-lg text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:border-excel-light focus:ring-1 focus:ring-excel-light transition"
             />
@@ -485,7 +415,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 <button
                   type="button"
                   onClick={() => onChangeQuery({ keyword: "" })}
-                  /* 定数参照: t("ui.CLEAR_TOOLTIP") */
+                  /* Constant reference: t("ui.CLEAR_TOOLTIP") */
                   title={t("ui.CLEAR_TOOLTIP")}
                   className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded"
                 >
@@ -508,7 +438,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             )}
           </div>
 
-          {/* フォルダパス選択 & DnD ドロップゾーン */}
+          {/* Folder path input & drag-and-drop zone */}
           <div
             ref={folderInputRef}
             onFocus={() => setDirectoryFocused(true)}
@@ -535,7 +465,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               value={query.target_dir}
               onChange={(e) => { setCompletionDismissed(false); setOpenList(null); onChangeQuery({ target_dir: e.target.value }); }}
               onKeyDown={handleFolderKeyDown}
-              /* 定数参照: t("ui.FOLDER_DROP_PLACEHOLDER") / FOLDER_INPUT_PLACEHOLDER */
+              /* Constant reference: t("ui.FOLDER_DROP_PLACEHOLDER") / FOLDER_INPUT_PLACEHOLDER */
               placeholder={isDragOver ? t("ui.FOLDER_DROP_PLACEHOLDER") : t("ui.FOLDER_INPUT_PLACEHOLDER")}
               className={`w-full pl-9 pr-20 py-2 border rounded-lg text-sm placeholder-zinc-500 focus:outline-none font-mono text-xs transition ${
                 isDragOver
@@ -546,14 +476,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             {isDragOver && (
               <div className="absolute inset-0 flex items-center justify-center bg-emerald-900/80 border-2 border-dashed border-emerald-400 rounded-lg pointer-events-none text-xs font-medium text-emerald-100 gap-2 z-10 backdrop-blur-[1px]">
                 <ArrowDownToLine className="w-4 h-4 text-emerald-300 animate-bounce" />
-                {/* 定数参照: t("ui.FOLDER_DROP_PROMPT") */}
+                {/* Constant reference: t("ui.FOLDER_DROP_PROMPT") */}
                 <span>{t("ui.FOLDER_DROP_PROMPT")}</span>
               </div>
             )}
             <button
               type="button"
               onClick={handleBrowseFolder}
-              /* 定数参照: t("ui.SELECT_FOLDER_TOOLTIP") */
+              /* Constant reference: t("ui.SELECT_FOLDER_TOOLTIP") */
               title={t("ui.SELECT_FOLDER_TOOLTIP")}
               className="absolute inset-y-1 right-1 px-2.5 flex items-center justify-center bg-zinc-700 hover:bg-zinc-600 rounded text-zinc-200 transition z-0"
             >
@@ -571,7 +501,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
             )}
           </div>
 
-          {/* 検索開始 / 中断ボタン */}
+          {/* Search Start / Cancel Button */}
           <div className="lg:col-span-2">
             {isScanning ? (
               <button
@@ -580,7 +510,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 className="w-full py-2 px-4 bg-red-600 hover:bg-red-500 active:scale-[0.99] text-white font-semibold text-sm rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-red-950/40 transition"
               >
                 <Square className="w-4 h-4 fill-white" />
-                {/* 定数参照: t("ui.BUTTON_CANCEL") */}
+                {/* Constant reference: t("ui.BUTTON_CANCEL") */}
                 <span>{t("ui.BUTTON_CANCEL")}</span>
               </button>
             ) : (
@@ -590,22 +520,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 className="w-full py-2 px-4 bg-excel hover:bg-excel-hover active:scale-[0.99] text-white font-semibold text-sm rounded-lg flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/40 transition"
               >
                 <Search className="w-4 h-4" />
-                {/* 定数参照: t("ui.BUTTON_SEARCH") */}
+                {/* Constant reference: t("ui.BUTTON_SEARCH") */}
                 <span>{t("ui.BUTTON_SEARCH")}</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* 下段: 検索オプション (トグルピル) */}
+        {/* Row 2: Search Options (Toggle Pills) */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs select-none">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-zinc-400 mr-1 font-medium flex items-center gap-1">
-              {/* 定数参照: t("ui.OPTIONS_LABEL") */}
+              {/* Constant reference: t("ui.OPTIONS_LABEL") */}
               <SlidersHorizontal className="w-3.5 h-3.5" /> {t("ui.OPTIONS_LABEL")}
             </span>
 
-            {/* 大文字/小文字 */}
+            {/* Match case */}
             <label
               className={`cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition ${
                 query.match_case
@@ -619,11 +549,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onChange={(e) => onChangeQuery({ match_case: e.target.checked })}
                 className="accent-excel rounded cursor-pointer"
               />
-              {/* 定数参照: t("ui.OPTION_MATCH_CASE") */}
+              {/* Constant reference: t("ui.OPTION_MATCH_CASE") */}
               <span>{t("ui.OPTION_MATCH_CASE")}</span>
             </label>
 
-            {/* 正規表現 */}
+            {/* Regex */}
             <label
               className={`cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition ${
                 query.use_regex
@@ -637,11 +567,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onChange={(e) => onChangeQuery({ use_regex: e.target.checked })}
                 className="accent-emerald-500 rounded cursor-pointer"
               />
-              {/* 定数参照: t("ui.OPTION_USE_REGEX") */}
+              {/* Constant reference: t("ui.OPTION_USE_REGEX") */}
               <span>{t("ui.OPTION_USE_REGEX")}</span>
             </label>
 
-            {/* 数式 */}
+            {/* Formula */}
             <label
               className={`cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition ${
                 query.include_formula ?? true
@@ -655,11 +585,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onChange={(e) => onChangeQuery({ include_formula: e.target.checked })}
                 className="accent-excel rounded cursor-pointer"
               />
-              {/* 定数参照: t("ui.OPTION_INCLUDE_FORMULA") */}
+              {/* Constant reference: t("ui.OPTION_INCLUDE_FORMULA") */}
               <span>{t("ui.OPTION_INCLUDE_FORMULA")}</span>
             </label>
 
-            {/* Shape 内テキスト */}
+            {/* Shape text */}
             <label
               className={`cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition ${
                 query.include_shape ?? true
@@ -673,11 +603,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onChange={(event) => onChangeQuery({ include_shape: event.target.checked })}
                 className="accent-excel rounded cursor-pointer"
               />
-              {/* 定数参照: SEARCH_LABELS.INCLUDE_SHAPE */}
+              {/* Constant reference: SEARCH_LABELS.INCLUDE_SHAPE */}
               <span>{t(SEARCH_LABELS.INCLUDE_SHAPE)}</span>
             </label>
 
-            {/* コメント */}
+            {/* Comment */}
             <label
               className={`cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition ${
                 query.include_comment ?? true
@@ -691,11 +621,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onChange={(e) => onChangeQuery({ include_comment: e.target.checked })}
                 className="accent-excel rounded cursor-pointer"
               />
-              {/* 定数参照: t("ui.OPTION_INCLUDE_COMMENT") */}
+              {/* Constant reference: t("ui.OPTION_INCLUDE_COMMENT") */}
               <span>{t("ui.OPTION_INCLUDE_COMMENT")}</span>
             </label>
 
-            {/* 非表示シート */}
+            {/* Hidden sheet */}
             <label
               className={`cursor-pointer flex items-center gap-1.5 px-2.5 py-1 rounded-full border transition ${
                 query.include_hidden
@@ -709,14 +639,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
                 onChange={(e) => onChangeQuery({ include_hidden: e.target.checked })}
                 className="accent-excel rounded cursor-pointer"
               />
-              {/* 定数参照: t("ui.OPTION_INCLUDE_HIDDEN") */}
+              {/* Constant reference: t("ui.OPTION_INCLUDE_HIDDEN") */}
               <span>{t("ui.OPTION_INCLUDE_HIDDEN")}</span>
             </label>
           </div>
 
-          {/* 対象拡張子トグルボタン群 */}
+          {/* Target file extension toggle buttons */}
           <div className="flex items-center gap-2 text-zinc-400 text-xs">
-            {/* 定数参照: t("ui.LABEL_TARGET_EXTENSIONS") */}
+            {/* Constant reference: t("ui.LABEL_TARGET_EXTENSIONS") */}
             <span>{t("ui.LABEL_TARGET_EXTENSIONS")}</span>
             <div className="flex gap-1">
               {FILE_EXTENSIONS.DEFAULT_LIST.map((ext) => {

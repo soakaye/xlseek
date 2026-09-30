@@ -1,56 +1,34 @@
-//! # CSVエクスポートモジュール (export/csv_export.rs)
+//! # CSV Export Module (export/csv_export.rs)
 //!
-//! ## 処理内容
-//! 検索一致アイテムの一覧をBOM付きUTF-8のCSVファイルとして書き出す。
-//! Excelでの日本語文字化け防止のためBOMを付与し、列ヘッダーおよびデータ行を整形出力する。
-//! 憲章原則I（日本語出力）、原則II（定数参照）、原則III（ヘッダコメント）、原則IV（Clippy完全準拠）に準拠。
-//!
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化、Clippy借用指摘修正、4要素ヘッダコメント付与。
+//! ## Description
+//! Writes matched search items as a UTF-8 CSV file with BOM.
+//! Prepends a BOM to prevent garbled characters in Excel, and formats column headers and data rows.
+//! Conforms to Constitution Principle I (English code/comments), Principle II (Constant references),
+//! Principle III (Header comments), and Principle IV (Clippy compliance).
 
 use crate::models::{MatchType, SearchMatch};
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::Write;
 
-/// ## 処理内容
-/// 検索結果アイテムのスライスをBOM付きUTF-8のCSVファイルに出力する。
+/// ## Description
+/// Outputs a slice of search result items to any `Write` stream in CSV format.
+/// Attaches a UTF-8 BOM if include_bom is true, then outputs column headers and data rows.
 ///
-/// ## 引数
-/// - `path`: `&str` - 出力先CSVファイルのファイルパス
-/// - `items`: `&[SearchMatch]` - エクスポート対象の検索一致アイテムスライス
-/// - `language`: `&str` - `ja` または `en` の出力言語
-/// - `catalogs`: `&BTreeMap<String, BTreeMap<String, String>>` - プラグインから取得した翻訳カタログ
+/// ## Arguments
+/// - `writer`: `&mut W` - Target writable stream
+/// - `items`: `&[SearchMatch]` - Slice of search match items to export
+/// - `language`: `&str` - Output language (`ja` or `en`)
+/// - `catalogs`: `&BTreeMap<String, BTreeMap<String, String>>` - Translation catalogs
+/// - `include_bom`: `bool` - Whether to prepend a UTF-8 BOM (true for files, false for stdout)
 ///
-/// ## 戻り値
-/// - `Result<(), String>`: 成功時は `Ok(())`、言語・翻訳・ファイル操作の失敗時は英語エラーコード
+/// ## Returns
+/// - `Result<(), String>`: `Ok(())` on success, or an error string on failure
 ///
-/// ## エラー / 例外発生条件
-/// - 対応外言語、必要な翻訳の欠落、ファイル作成、BOM書き込み、レコード書き込み、またはフラッシュの失敗時に `Err` を返却する。
-/// - panicは発生しない。
-///
-/// ## 変更履歴
-/// - v1.1.0 (2026-09-26, Codex): 要求言語のカタログから列見出しと一致種別を取得。
-/// ## 処理内容
-/// 検索結果アイテムのスライスを任意の `Write` 実装ストリームへ CSV 形式で出力する。
-/// BOM付与フラグに応じて先頭に UTF-8 BOM を付与し、列ヘッダーおよびデータ行を出力する。
-///
-/// ## 引数
-/// - `writer`: `&mut W` - 出力先の書き込み可能ストリーム
-/// - `items`: `&[SearchMatch]` - エクスポート対象の検索一致アイテムスライス
-/// - `language`: `&str` - `ja` または `en` の出力言語
-/// - `catalogs`: `&BTreeMap<String, BTreeMap<String, String>>` - 翻訳カタログ
-/// - `include_bom`: `bool` - UTF-8 BOM を付与するかどうか（ファイル時は true、標準出力時は false）
-///
-/// ## 戻り値
-/// - `Result<(), String>`: 成功時は `Ok(())`、言語・翻訳・書き込み・フラッシュ失敗時はエラー文字列
-///
-/// ## エラー / 例外発生条件
-/// - 対応外言語、必要な翻訳の欠落、BOM書き込み、レコード書き込み、またはフラッシュの失敗時に `Err` を返却する。
-/// - panicは発生しない。
-///
-/// ## 変更履歴
-/// - v1.2.0 (2026-09-29, AI Agent): 汎用ストリームへのCSV書き出しとBOMフラグ制御を追加。
+/// ## Errors / Exceptions
+/// - Returns `Err` if an unsupported language is provided, required translations are missing,
+///   or BOM/record writing/flushing fails.
+/// - Does not panic.
 pub fn write_csv_to_writer<W: Write>(
     writer: &mut W,
     items: &[SearchMatch],
@@ -63,19 +41,19 @@ pub fn write_csv_to_writer<W: Write>(
     }
 
     if include_bom {
-        // Excelで日本語が文字化けしないようにUTF-8 BOMを付与
-        // 定数参照: crate::constants::CSV_UTF8_BOM を使用
+        // Prepend UTF-8 BOM to prevent character corruption in Excel
+        // Constant reference: crate::constants::CSV_UTF8_BOM
         writer
             .write_all(&crate::constants::CSV_UTF8_BOM)
             .map_err(|e| {
-                // 定数参照: crate::constants::ERR_CSV_HEADER_WRITE を使用
+                // Constant reference: crate::constants::ERR_CSV_HEADER_WRITE
                 format!("{}: {}", crate::constants::ERR_CSV_HEADER_WRITE, e)
             })?;
     }
 
     let mut csv_writer = csv::Writer::from_writer(writer);
 
-    // 定数参照: constants::EXPORT_HEADER_KEYS を使用し、要求言語のカタログから見出しを取得する。
+    // Constant reference: crate::constants::EXPORT_HEADER_KEYS
     let headers = crate::constants::EXPORT_HEADER_KEYS
         .iter()
         .map(|key| {
@@ -84,13 +62,13 @@ pub fn write_csv_to_writer<W: Write>(
         })
         .collect::<Result<Vec<_>, _>>()?;
     csv_writer.write_record(&headers).map_err(|e| {
-        // 定数参照: crate::constants::ERR_CSV_HEADER_WRITE を使用
+        // Constant reference: crate::constants::ERR_CSV_HEADER_WRITE
         format!("{}: {}", crate::constants::ERR_CSV_HEADER_WRITE, e)
     })?;
 
-    // データ行
+    // Data rows
     for item in items {
-        // 定数参照: constants::EXPORT_MATCH_*_KEY を使用。
+        // Constant reference: crate::constants::EXPORT_MATCH_*_KEY
         let match_key = match item.match_type {
             MatchType::CellValue => crate::constants::EXPORT_MATCH_VALUE_KEY,
             MatchType::Formula => crate::constants::EXPORT_MATCH_FORMULA_KEY,
@@ -101,7 +79,7 @@ pub fn write_csv_to_writer<W: Write>(
         let match_type_str = crate::i18n::resolve_catalog_text(catalogs, language, match_key)
             .ok_or_else(|| crate::constants::ERR_TRANSLATION_MISSING.to_string())?;
 
-        // Clippy: needless_borrows_for_generic_args 回避のため配列を直接渡す
+        // Pass array directly to avoid Clippy needless_borrows_for_generic_args
         csv_writer
             .write_record([
                 item.id.to_string(),
@@ -115,37 +93,34 @@ pub fn write_csv_to_writer<W: Write>(
                 item.formula.clone().unwrap_or_default(),
             ])
             .map_err(|e| {
-                // 定数参照: crate::constants::ERR_CSV_RECORD_WRITE を使用
+                // Constant reference: crate::constants::ERR_CSV_RECORD_WRITE
                 format!("{}: {}", crate::constants::ERR_CSV_RECORD_WRITE, e)
             })?;
     }
 
     csv_writer.flush().map_err(|e| {
-        // 定数参照: crate::constants::ERR_CSV_RECORD_WRITE を使用
+        // Constant reference: crate::constants::ERR_CSV_RECORD_WRITE
         format!("{}: {}", crate::constants::ERR_CSV_RECORD_WRITE, e)
     })?;
     Ok(())
 }
 
-/// ## 処理内容
-/// 検索結果アイテムのスライスをBOM付きUTF-8のCSVファイルに出力する。
+/// ## Description
+/// Outputs a slice of search result items to a UTF-8 CSV file with BOM.
 ///
-/// ## 引数
-/// - `path`: `&str` - 出力先CSVファイルのファイルパス
-/// - `items`: `&[SearchMatch]` - エクスポート対象の検索一致アイテムスライス
-/// - `language`: `&str` - `ja` または `en` の出力言語
-/// - `catalogs`: `&BTreeMap<String, BTreeMap<String, String>>` - プラグインから取得した翻訳カタログ
+/// ## Arguments
+/// - `path`: `&str` - Output CSV file path
+/// - `items`: `&[SearchMatch]` - Slice of search match items to export
+/// - `language`: `&str` - Output language (`ja` or `en`)
+/// - `catalogs`: `&BTreeMap<String, BTreeMap<String, String>>` - Translation catalogs
 ///
-/// ## 戻り値
-/// - `Result<(), String>`: 成功時は `Ok(())`、言語・翻訳・ファイル操作の失敗時は英語エラーコード
+/// ## Returns
+/// - `Result<(), String>`: `Ok(())` on success, or an English error string on failure
 ///
-/// ## エラー / 例外発生条件
-/// - 対応外言語、必要な翻訳の欠落、ファイル作成、BOM書き込み、レコード書き込み、またはフラッシュの失敗時に `Err` を返却する。
-/// - panicは発生しない。
-///
-/// ## 変更履歴
-/// - v1.1.0 (2026-09-26, Codex): 要求言語のカタログから列見出しと一致種別を取得。
-/// - v1.2.0 (2026-09-29, AI Agent): write_csv_to_writer への委譲ラッパーに変更。
+/// ## Errors / Exceptions
+/// - Returns `Err` if an unsupported language is provided, required translations are missing,
+///   or file creation/writing fails.
+/// - Does not panic.
 pub fn export_to_csv(
     path: &str,
     items: &[SearchMatch],
@@ -156,7 +131,7 @@ pub fn export_to_csv(
         return Err(crate::constants::ERR_INVALID_LANGUAGE.to_string());
     }
     let file = File::create(path).map_err(|e| {
-        // 定数参照: crate::constants::ERR_CSV_RECORD_WRITE を使用
+        // Constant reference: crate::constants::ERR_CSV_RECORD_WRITE
         format!("{}: {}", crate::constants::ERR_CSV_RECORD_WRITE, e)
     })?;
     let mut writer = std::io::BufWriter::new(file);
@@ -169,14 +144,14 @@ mod localization_tests {
 
     const TEST_OUTPUT_PREFIX: &str = "exlgrep-i18n-test";
 
-    /// ## 処理内容
-    /// CSV の列見出しが指定されたカタログ言語になることを検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。日英の出力ファイルを読み、2列目の見出しを比較する。
-    /// ## エラー
-    /// ファイル操作、CSV解析、または見出し不一致時にテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.2.0 (2026-09-26, Codex): カタログによるCSV見出し選択テストを追加。
+    /// ## Description
+    /// Verifies that CSV column headers use the requested catalog language.
+    ///
+    /// ## Arguments / Returns
+    /// No arguments. Reads output files and compares the second column header.
+    ///
+    /// ## Errors / Exceptions
+    /// Fails if file operations, CSV parsing, or header matching fails.
     #[test]
     fn uses_requested_catalog_for_headers() {
         let mut english = BTreeMap::from([(
@@ -207,7 +182,7 @@ mod localization_tests {
             (crate::constants::LANGUAGE_EN, "File name"),
             (crate::constants::LANGUAGE_JA, "ファイル名"),
         ] {
-            // 定数参照: TEST_OUTPUT_PREFIX を使用
+            // Constant reference: TEST_OUTPUT_PREFIX
             let path = std::env::temp_dir().join(format!("{TEST_OUTPUT_PREFIX}-{language}.csv"));
             super::export_to_csv(path.to_str().unwrap(), &[], language, &catalogs).unwrap();
             let mut reader = csv::Reader::from_path(&path).unwrap();
@@ -216,14 +191,14 @@ mod localization_tests {
         }
     }
 
-    /// ## 処理内容
-    /// 未対応言語の CSV 出力を、ファイル作成前に拒否する。
-    /// ## 引数・戻り値
-    /// 引数なし。アサーションのみを実行する。
-    /// ## エラー
-    /// 想定外の出力結果でテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.1.0 (2026-09-26, AI Agent): 不正な出力言語の検証を追加。
+    /// ## Description
+    /// Verifies that CSV export rejects unsupported languages before creating files.
+    ///
+    /// ## Arguments / Returns
+    /// No arguments. Executes assertions.
+    ///
+    /// ## Errors / Exceptions
+    /// Fails on unexpected export result.
     #[test]
     fn rejects_unsupported_language() {
         assert_eq!(
@@ -232,14 +207,14 @@ mod localization_tests {
         );
     }
 
-    /// ## 処理内容
-    /// `write_csv_to_writer` において BOM 付与有無フラグが正しく反映されることを検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。メモリバッファへ出力し先頭バイト列を検証する。
-    /// ## エラー
-    /// カタログ解決失敗、書き込み失敗、または先頭バイト列不一致時にテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.2.0 (2026-09-29, AI Agent): BOM制御テストを追加。
+    /// ## Description
+    /// Verifies that `write_csv_to_writer` respects the BOM inclusion flag.
+    ///
+    /// ## Arguments / Returns
+    /// No arguments. Outputs to memory buffer and inspects leading bytes.
+    ///
+    /// ## Errors / Exceptions
+    /// Fails if catalog resolution, writing, or byte matching fails.
     #[test]
     fn write_csv_to_writer_respects_bom_flag() {
         let mut japanese = BTreeMap::new();
@@ -248,7 +223,7 @@ mod localization_tests {
         }
         let catalogs = BTreeMap::from([(crate::constants::LANGUAGE_JA.to_string(), japanese)]);
 
-        // BOM あり
+        // With BOM
         let mut buffer_with_bom = Vec::new();
         super::write_csv_to_writer(
             &mut buffer_with_bom,
@@ -260,7 +235,7 @@ mod localization_tests {
         .unwrap();
         assert!(buffer_with_bom.starts_with(&crate::constants::CSV_UTF8_BOM));
 
-        // BOM なし
+        // Without BOM
         let mut buffer_without_bom = Vec::new();
         super::write_csv_to_writer(
             &mut buffer_without_bom,

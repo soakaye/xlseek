@@ -1,20 +1,17 @@
 /**
- * @fileoverview フロントエンド共通型定義エクスポートモジュール (src/types/index.ts)
+ * @fileoverview Frontend common types export module (src/types/index.ts)
  *
- * ## 処理内容
- * フロントエンド全体で使用される型定義を集約・再エクスポートする。
- * 検索フェーズ型、検索入力状態型、およびプレビュー用モデルのインターフェースを提供する。
- * 憲章原則III（ヘッダコメント）に準拠。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。search.ts からの再エクスポートおよび SearchPhase, SearchInputState の定義。
+ * ## Description
+ * Aggregates and re-exports type definitions used throughout the frontend.
+ * Provides search phase types, search input state types, and preview model interfaces.
+ * Complies with Constitution Principle III (comprehensive documentation).
  */
 
 export * from "./search";
 export * from "./defaultOptions";
 
 /**
- * 検索進行フェーズ型 (SearchPhase)
+ * Search progress phase type (SearchPhase)
  */
 export type SearchPhase =
   | "idle"
@@ -25,7 +22,7 @@ export type SearchPhase =
   | "error";
 
 /**
- * 検索入力状態インターフェース (SearchInputState)
+ * Search input state interface (SearchInputState)
  */
 export interface SearchInputState {
   keyword: string;
@@ -36,7 +33,7 @@ export interface SearchInputState {
 }
 
 /**
- * 検索進行状態インターフェース (SearchProgressState)
+ * Search progress state interface (SearchProgressState)
  */
 export interface SearchProgressState {
   phase: SearchPhase;

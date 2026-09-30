@@ -1,17 +1,14 @@
 # Tauri capability configuration
 
-## 処理内容
+## Description
 
-`default.json` はアプリ画面が利用する Tauri プラグイン権限をまとめる。`i18n:default` は同梱翻訳カタログの読込と表示言語の参照・変更に使う。
+`default.json` consolidates Tauri plugin capabilities and permissions required by the web frontend. `i18n:default` allows reading embedded translation catalogs and referencing/updating the display language.
 
-## 入力・出力
+## Arguments & Returns
 
-Tauri は `default.json` を起動時に読み込み、宣言されたプラグイン権限だけを WebView に公開する。
+Tauri loads `default.json` at startup and exposes only explicitly declared plugin permissions to the WebView.
 
-## エラー
+## Errors / Exceptions
 
-不正な JSON や未宣言の権限は Tauri の起動・ビルド検証を失敗させる。
+Invalid JSON or undeclared permissions cause Tauri startup and build validation to fail.
 
-## 変更履歴
-
-- v1.0.0 (2026-09-26, Codex): i18n 権限追加の説明を記録。

@@ -1,15 +1,11 @@
 /**
- * @fileoverview 検索結果一覧テーブルコンポーネント (src/components/results/ResultTable.tsx)
+ * @fileoverview Search results table component (src/components/results/ResultTable.tsx)
  *
- * ## 処理内容
- * 検索に一致したセルアイテム一覧を TanStack Virtual を用いて高速仮想スクロール表示する。
- * 列ヘッダークリックによるソート（昇順/降順）、キーワードによる結果内絞り込み、
- * 上下キーによる選択行移動、および各セル一致バッジの描画を提供する。
- * 憲章原則II（定数参照）および原則III（ヘッダコメント）に準拠。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化（LAYOUT_CONSTANTS）およびJSDoc付与。
- * - v1.1.0 (2026-09-27, Codex): 翻訳済みタイプバッジの折返し防止と省略表示を追加。
+ * ## Description
+ * Displays matched cell items in a high-performance virtualized scroll list using TanStack Virtual.
+ * Supports sorting by column headers (ascending/descending), in-result text filtering,
+ * keyboard arrow row navigation, and match type badges.
+ * Complies with Constitution Principle II (constant reference) and Principle III (comprehensive documentation).
  */
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
@@ -29,20 +25,17 @@ type SortField = "file_name" | "sheet_name" | "cell_address" | "match_type";
 type SortOrder = "asc" | "desc";
 
 /**
- * ## 処理内容
- * 検索結果テーブルを表示し、選択や絞り込み、ソートを管理するUIコンポーネント。
+ * ## Description
+ * Search results table UI component managing selection, filtering, and sorting.
  *
- * ## 引数
- * @param props - 検索結果リスト、選択中アイテムID、選択ハンドラ
+ * ## Arguments
+ * @param props - Search match list, active selection ID, selection handler
  *
- * ## 戻り値
- * @returns レンダリング要素
+ * ## Returns
+ * @returns Rendered element
  *
- * ## エラー / 例外発生条件
- * panicや例外は発生しない。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化。
+ * ## Errors / Exceptions
+ * No panic or exceptions occur.
  */
 export const ResultTable: React.FC<ResultTableProps> = ({
   items,
@@ -56,7 +49,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
 
   const parentRef = useRef<HTMLDivElement>(null);
 
-  // 絞り込み & ソート処理
+  // In-table filtering and sorting
   const filteredItems = useMemo(() => {
     let result = items;
     if (filterText.trim()) {
@@ -89,9 +82,9 @@ export const ResultTable: React.FC<ResultTableProps> = ({
   const rowVirtualizer = useVirtualizer({
     count: filteredItems.length,
     getScrollElement: () => parentRef.current,
-    // 定数参照: LAYOUT_CONSTANTS.RESULT_ROW_HEIGHT_PX を使用
+    // Constant reference: LAYOUT_CONSTANTS.RESULT_ROW_HEIGHT_PX
     estimateSize: () => LAYOUT_CONSTANTS.RESULT_ROW_HEIGHT_PX,
-    // 定数参照: LAYOUT_CONSTANTS.VIRTUAL_OVERSCAN を使用
+    // Constant reference: LAYOUT_CONSTANTS.VIRTUAL_OVERSCAN
     overscan: LAYOUT_CONSTANTS.VIRTUAL_OVERSCAN,
   });
 
@@ -104,7 +97,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
     }
   };
 
-  // キーボード上下矢印キーでの選択移動
+  // Keyboard navigation with Up/Down arrow keys
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (filteredItems.length === 0) return;
@@ -131,19 +124,13 @@ export const ResultTable: React.FC<ResultTableProps> = ({
   }, [filteredItems, selectedId, onSelectItem, rowVirtualizer]);
 
   /**
-   * ## 処理内容
-   * 一致種別の翻訳文を1行のバッジで描画し、列幅を超える文言は省略しつつ全文を提供する。
-   * ## 引数・戻り値
-   * `matchType: MatchType` を受け取り、翻訳ラベルを持つ `React.ReactElement` を返す。
-   * ## エラー
-   * 対応外の種別は型で排除され、翻訳欠落は翻訳フックが英語へフォールバックする。
-   * ## 変更履歴
-   * - v1.1.0 (2026-09-27, Codex): 長い翻訳の折返しを抑え、ツールチップとアクセシブル名を追加。
+   * ## Description
+   * Renders single-line match type badge with truncation and accessibility labels.
    */
   const renderBadge = (matchType: MatchType) => {
     switch (matchType) {
       case "CellValue": {
-        // 定数参照: t("ui.RESULT_MATCH_TYPE_CELL_VALUE")
+        // Constant reference: t("ui.RESULT_MATCH_TYPE_CELL_VALUE")
         const label = t("ui.RESULT_MATCH_TYPE_CELL_VALUE");
         return (
           <span className="inline-block max-w-full truncate whitespace-nowrap align-middle px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-950/80 text-blue-300 border border-blue-800/60" title={label} aria-label={label}>
@@ -152,7 +139,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
         );
       }
       case "Formula": {
-        // 定数参照: t("ui.RESULT_MATCH_TYPE_FORMULA")
+        // Constant reference: t("ui.RESULT_MATCH_TYPE_FORMULA")
         const label = t("ui.RESULT_MATCH_TYPE_FORMULA");
         return (
           <span className="inline-block max-w-full truncate whitespace-nowrap align-middle px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-950/80 text-purple-300 border border-purple-800/60" title={label} aria-label={label}>
@@ -177,7 +164,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
         );
       }
       case "Shape": {
-        // 定数参照: SEARCH_LABELS.SHAPE_RESULT_TYPE
+        // Constant reference: SEARCH_LABELS.SHAPE_RESULT_TYPE
         const label = t(SEARCH_LABELS.SHAPE_RESULT_TYPE);
         return (
           <span className="inline-block max-w-full truncate whitespace-nowrap align-middle px-1.5 py-0.5 rounded text-[10px] font-medium bg-cyan-950/80 text-cyan-300 border border-cyan-800/60" title={label} aria-label={label}>
@@ -190,7 +177,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
 
   return (
     <div className="w-[58%] border-r border-zinc-800 flex flex-col bg-[#141416]">
-      {/* テーブル操作ヘッダー */}
+      {/* Table operation header */}
       <div className="p-2.5 bg-[#18181b] border-b border-zinc-800 flex items-center justify-between text-xs flex-shrink-0">
         <div className="flex items-center gap-2 text-zinc-400">
           <ListFilter className="w-4 h-4 text-zinc-400" />
@@ -200,7 +187,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
           </span>
         </div>
         <div className="flex items-center gap-2">
-          {/* 簡易フィルタ */}
+          {/* Quick filter input */}
           <div className="relative">
             <input
               type="text"
@@ -214,7 +201,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
         </div>
       </div>
 
-      {/* 固定テーブルヘッダー */}
+      {/* Fixed table header */}
       <div className="bg-[#1e1e22] text-zinc-400 font-semibold border-b border-zinc-800 shadow-sm z-10 text-xs flex-shrink-0">
         <div className="flex items-center">
           <button
@@ -269,7 +256,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
         </div>
       </div>
 
-      {/* 仮想スクロールコンテナ */}
+      {/* Virtualized list container */}
       <div ref={parentRef} className="flex-1 overflow-auto">
         {filteredItems.length === 0 ? (
           <div className="h-full flex items-center justify-center text-xs text-zinc-500">

@@ -1,10 +1,7 @@
 /**
- * 処理内容: Shape 結果表示とアンカー有無に応じたセルプレビューの選択経路を検証する。
- * 引数・戻り値: Vitest が ResultTable、MetaInfoCard、useSearch の振る舞いを確認する。
- * エラー: Shape 名・全文が欠ける、またはアンカー判定時のプレビュー呼び出し制御が崩れた場合にテストが失敗する。
- * 変更履歴:
- *   - v1.0.0 (2026-09-28, Codex): Shape 結果 UI テストを追加。
- *   - v1.1.0 (2026-09-28, Antigravity): アンカー付き Shape でセルプレビューが読み込まれる動作への更新。
+ * Description: Unit and integration tests for shape-results-ui.test.tsx.
+ * Arguments & Returns: Vitest runs test suites; no public arguments or return values.
+ * Errors: Test assertions fail if behavior deviates from requirements.
  */
 import { act, cleanup, render, renderHook, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";

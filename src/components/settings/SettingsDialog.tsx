@@ -1,14 +1,12 @@
 /**
- * ## 処理内容
- * 表示言語、検索履歴、およびデフォルト検索オプションを設定するアクセシブルなダイアログ。
- * ## 引数・戻り値
- * 表示状態、現在の設定、各設定更新・閉じるコールバックを受け、React 要素を返す。
- * ## エラー
- * 設定保存の失敗は呼び出し元が通知し、ダイアログは例外を送出しない。
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 言語設定画面を追加。
- * - v1.1.0 (2026-09-27, Codex): 検索履歴の保存件数設定を追加。
- * - v1.2.0 (2026-09-28, AI Agent): デフォルト検索オプション設定および初期値リセットボタンを追加。
+ * ## Description
+ * Accessible dialog for configuring display language, search history limits, and default search options.
+ *
+ * ## Arguments & Returns
+ * Accepts open state, active preferences, update handlers, and close callback; returns React modal element.
+ *
+ * ## Errors / Exceptions
+ * Persistence failures are notified by callers via toast; dialog does not throw exceptions.
  */
 import React, { useEffect, useState } from "react";
 import {
@@ -23,17 +21,13 @@ import { useTranslation } from "../../i18n";
 import { DefaultSearchOptions } from "../../types/defaultOptions";
 import { resetDefaultSearchOptions } from "../../default-options-core";
 
-// 定数参照: 初期デフォルト検索オプションの固定参照（レンダー毎のオブジェクト再生成による無限再描画ループを防止）
+// Constant reference: Stable fallback default search options to prevent infinite re-render loops from object recreation
 const FALLBACK_DEFAULT_OPTIONS: DefaultSearchOptions = resetDefaultSearchOptions();
 
 /**
- * 処理内容: 設定ダイアログへ渡す表示状態、言語、履歴上限、デフォルト検索オプションを定義する。
- * 引数・戻り値: 各種設定値および値更新・閉じるコールバックを保持する。
- * エラー: 保存処理の失敗は各コールバックの呼び出し元で通知する。
- * 変更履歴:
- * - v1.0.0 (2026-09-26, AI Agent): 言語設定プロパティを定義。
- * - v1.1.0 (2026-09-27, Codex): 履歴件数を追加。
- * - v1.2.0 (2026-09-28, AI Agent): デフォルト検索オプションプロパティを追加。
+ * Description: Defines property types passed to SettingsDialog.
+ * Arguments & Returns: Holds settings state and update/close callbacks.
+ * Errors: Storage failures are handled by callback callers.
  */
 interface SettingsDialogProps {
   isOpen: boolean;
@@ -48,17 +42,14 @@ interface SettingsDialogProps {
 }
 
 /**
- * ## 処理内容
- * 言語選択肢、検索履歴上限、およびデフォルト検索オプション設定をキーボード操作可能なダイアログで表示する。
- * ## 引数・戻り値
- * `SettingsDialogProps` を受け取り、開いていればダイアログ要素、閉じていれば null を返す。
- * ## エラー
- * 保存失敗は親へ委譲し、Esc と閉じる操作は閉じるコールバックを呼ぶ。
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 言語設定画面を追加。
- * - v1.1.0 (2026-09-27, Codex): 検索履歴の保存件数設定を追加。
- * - v1.2.0 (2026-09-28, AI Agent): デフォルト検索オプション編集・リセット・保存を追加。
- * - v1.2.1 (2026-09-29, Antigravity): defaultOptions 未指定時のオブジェクト再生成による無限再描画ループを修正。
+ * ## Description
+ * Renders language options, history limit configuration, and default search options in a keyboard-accessible modal dialog.
+ *
+ * ## Arguments & Returns
+ * Accepts `SettingsDialogProps`; returns rendered dialog when open, null otherwise.
+ *
+ * ## Errors / Exceptions
+ * Delegates storage failures to parents; Esc key and close button trigger onClose callback.
  */
 export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   isOpen,
@@ -145,7 +136,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
         </div>
         <p className="mb-4 text-sm text-zinc-400">{t("ui.SETTINGS_DESCRIPTION")}</p>
 
-        {/* 1. 表示言語設定 */}
+        {/* 1. Display Language Preference */}
         <fieldset>
           <legend className="mb-2 text-sm font-medium">{t("ui.DISPLAY_LANGUAGE")}</legend>
           <div className="space-y-2">
@@ -167,7 +158,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           </div>
         </fieldset>
 
-        {/* 2. 検索履歴件数設定 */}
+        {/* 2. Search History Limit */}
         <fieldset className="mt-4">
           <label
             htmlFor={SEARCH_HISTORY_CONSTANTS.INPUT_ID}
@@ -199,13 +190,13 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           </button>
         </fieldset>
 
-        {/* 3. デフォルト検索オプション設定 */}
+        {/* 3. Default Search Options */}
         <fieldset className="mt-6 border-t border-zinc-800 pt-4">
           <legend className="mb-1 text-sm font-medium">{t("ui.DEFAULT_OPTIONS_TITLE")}</legend>
           <p className="mb-3 text-xs text-zinc-400">{t("ui.DEFAULT_OPTIONS_DESCRIPTION")}</p>
 
           <div className="space-y-2 text-xs">
-            {/* 大文字/小文字 */}
+            {/* Match case */}
             <label className="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
               <input
                 type="checkbox"
@@ -218,7 +209,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               <span>{t("ui.OPTION_MATCH_CASE")}</span>
             </label>
 
-            {/* 正規表現 */}
+            {/* Regex */}
             <label className="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
               <input
                 type="checkbox"
@@ -231,7 +222,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               <span>{t("ui.OPTION_USE_REGEX")}</span>
             </label>
 
-            {/* 数式 */}
+            {/* Formula */}
             <label className="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
               <input
                 type="checkbox"
@@ -244,7 +235,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               <span>{t("ui.OPTION_INCLUDE_FORMULA")}</span>
             </label>
 
-            {/* Shape内テキスト */}
+            {/* Shape text */}
             <label className="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
               <input
                 type="checkbox"
@@ -257,7 +248,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               <span>{t(SEARCH_LABELS.INCLUDE_SHAPE)}</span>
             </label>
 
-            {/* コメント/メモ */}
+            {/* Comment */}
             <label className="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
               <input
                 type="checkbox"
@@ -270,7 +261,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               <span>{t("ui.OPTION_INCLUDE_COMMENT")}</span>
             </label>
 
-            {/* 非表示シート */}
+            {/* Hidden sheet */}
             <label className="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
               <input
                 type="checkbox"
@@ -283,7 +274,7 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
               <span>{t("ui.OPTION_INCLUDE_HIDDEN")}</span>
             </label>
 
-            {/* 対象拡張子選択 */}
+            {/* Target extension selector */}
             <div className="mt-3 pt-2">
               <span className="block mb-1.5 text-zinc-300 font-medium">
                 {t("ui.LABEL_TARGET_EXTENSIONS")}

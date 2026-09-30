@@ -1,19 +1,11 @@
 /**
- * @fileoverview 検索・プレビュー管理カスタムフック (src/hooks/useSearch.ts)
+ * @fileoverview Search and preview management custom hook (src/hooks/useSearch.ts)
  *
- * ## 処理内容
- * 検索クエリの管理、Tauriバックエンドへの検索開始・中断コマンド発行、
- * バックグラウンド走査進捗およびヒット結果イベントの購読とバッファリング処理、
- * 選択行に応じたセル周辺プレビューデータの取得・シート切り替えを提供する。
- * 憲章原則I（日本語通知）、原則II（定数参照）、原則III（ヘッダコメント）に準拠。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化および4要素JSDocコメントの付与。
- * - v1.2.0 (2026-09-26, AI Agent): 検索対象拡張子の空チェックバリデーションを追加。
- * - v1.3.0 (2026-09-26, AI Agent): 探索中フェーズおよび中断メッセージの定数参照化。
- * - v1.4.0 (2026-09-27, Codex): 受付成功後の履歴通知と正規表現エラー表示を追加。
- * - v1.5.0 (2026-09-28, AI Agent): バッチ受信対応およびアンカー付きShapeのセルプレビュー読み込み対応。
- * - v1.5.1 (2026-09-28, AI Agent): デフォルト検索オプションの初期反映および applyDefaultOptions メソッドを追加。
+ * ## Description
+ * Manages search query state, issues Tauri backend start/cancel commands,
+ * subscribes to background scanning progress and match hit events with buffering,
+ * and fetches surrounding cell preview data and sheet switching.
+ * Complies with Constitution Principle I (English documentation), Principle II (constant reference), and Principle III (comprehensive documentation).
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
@@ -41,20 +33,17 @@ interface UseSearchOptions {
 }
 
 /**
- * ## 処理内容
- * 検索機能、進捗同期、およびセルプレビュー管理を行うメインカスタムフック。
+ * ## Description
+ * Main custom hook managing search execution, progress synchronization, and cell previews.
  *
- * ## 引数
- * @param options - トースト表示用コールバックを含むオプション設定
+ * ## Arguments
+ * @param options - Configuration options including toast notification callbacks
  *
- * ## 戻り値
- * @returns 検索状態、クエリ、結果リスト、プレビューデータ、および各種ハンドラ関数
+ * ## Returns
+ * @returns Search state, query, result lists, preview data, and action handlers
  *
- * ## エラー / 例外発生条件
- * Tauri IPC呼び出し失敗時はエラーをコンソールログおよびトースト通知で処理し、例外は外部へスローしない。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
+ * ## Errors / Exceptions
+ * IPC invocation failures are handled gracefully via logs and toast notifications; never throws.
  */
 export function useSearch(options?: UseSearchOptions) {
   const [query, setQuery] = useState<SearchQuery>(() => {
@@ -86,13 +75,13 @@ export function useSearch(options?: UseSearchOptions) {
 
   const isScanning = progress?.state === "Scanning";
 
-  // 結果リスト蓄積用のバッファ（大量のマッチ受信時の再レンダリング頻度を抑える）
+  // Result batch buffer to minimize re-renders during high-volume match streams
   const resultsBufferRef = useRef<SearchMatch[]>([]);
   const flushTimerRef = useRef<number | null>(null);
-  // 中断要求中フラグ (中断要求後に届く遅延Scanningイベントを破棄するため)
+  // Cancellation in-progress flag to drop delayed scanning events
   const isCancellingRef = useRef(false);
 
-  // Tauri イベントリスナーの登録 (React 18 StrictMode での2重登録を防止)
+  // Tauri event listener registration (preventing duplicate bindings under React 18 StrictMode)
   useEffect(() => {
     let unlistenMatch: UnlistenFn | undefined;
     let unlistenProg: UnlistenFn | undefined;
@@ -110,7 +99,7 @@ export function useSearch(options?: UseSearchOptions) {
 
     const setupListeners = async () => {
       try {
-        // 定数参照: EVENT_NAMES.SEARCH_MATCH ("search-match") を使用
+        // Constant reference: EVENT_NAMES.SEARCH_MATCH ("search-match")
         const uMatch = await listen<SearchMatch | SearchMatch[]>(EVENT_NAMES.SEARCH_MATCH, (event) => {
           if (isCancelled || isCancellingRef.current) return;
           if (Array.isArray(event.payload)) {
@@ -120,7 +109,7 @@ export function useSearch(options?: UseSearchOptions) {
           }
 
           if (!flushTimerRef.current) {
-            // 定数参照: TIMING_CONSTANTS.PROGRESS_THROTTLE_MS を使用
+            // Constant reference: TIMING_CONSTANTS.PROGRESS_THROTTLE_MS
             flushTimerRef.current = window.setTimeout(() => {
               if (isCancelled || isCancellingRef.current) return;
               const buffered = resultsBufferRef.current;
@@ -131,11 +120,11 @@ export function useSearch(options?: UseSearchOptions) {
           }
         });
 
-        // 定数参照: EVENT_NAMES.SCAN_PROGRESS ("scan-progress") を使用
+        // Constant reference: EVENT_NAMES.SCAN_PROGRESS ("scan-progress")
         const uProg = await listen<ScanProgress>(EVENT_NAMES.SCAN_PROGRESS, (event) => {
           if (isCancelled) return;
 
-          // 中断要求後の遅延 Scanning イベントは破棄して状態の巻き戻りを防止
+          // Discard delayed scanning events after cancellation to prevent state regressions
           if (isCancellingRef.current && event.payload.state === "Scanning") {
             console.log("[useSearch] Ignored delayed scan event after cancellation");
             return;
@@ -148,7 +137,7 @@ export function useSearch(options?: UseSearchOptions) {
             isCancellingRef.current = false;
           }
 
-          // スキャン完了または中断時にバッファを強制フラッシュ
+          // Force flush buffer on scan finish or cancel
           if (event.payload.state !== "Scanning") {
             if (flushTimerRef.current) {
               clearTimeout(flushTimerRef.current);
@@ -188,7 +177,7 @@ export function useSearch(options?: UseSearchOptions) {
     };
   }, []);
 
-  // プレビューの読み込み
+  // Cell preview loading
   const loadPreview = useCallback(
     async (match: SearchMatch, sheetNameOverride?: string) => {
       setLoadingPreview(true);
@@ -196,7 +185,7 @@ export function useSearch(options?: UseSearchOptions) {
       setActiveSheet(targetSheet);
 
       try {
-        // 定数参照: COMMANDS.GET_CELL_PREVIEW を使用
+        // Constant reference: COMMANDS.GET_CELL_PREVIEW
         const data = await invoke<CellPreviewData>(COMMANDS.GET_CELL_PREVIEW, {
           filePath: match.full_path,
           sheetName: targetSheet,
@@ -220,7 +209,7 @@ export function useSearch(options?: UseSearchOptions) {
     [options]
   );
 
-  // アイテム選択時
+  // Match item selection handler
   const handleSelectItem = useCallback(
     (item: SearchMatch) => {
       setSelectedMatch(item);
@@ -237,7 +226,7 @@ export function useSearch(options?: UseSearchOptions) {
     [loadPreview]
   );
 
-  // シート切り替え時
+  // Sheet tab selection handler
   const handleSelectSheet = useCallback(
     (sheetName: string) => {
       if (!selectedMatch) return;
@@ -253,7 +242,7 @@ export function useSearch(options?: UseSearchOptions) {
     [selectedMatch, loadPreview]
   );
 
-  // グリッド内のセルクリック時
+  // Grid cell selection handler
   const handleSelectCell = useCallback(
     (address: string, value: string, formula?: string | null) => {
       setSelectedCell({ address, value });
@@ -262,20 +251,20 @@ export function useSearch(options?: UseSearchOptions) {
     []
   );
 
-  // 検索開始
+  // Search execution
   const startSearch = useCallback(async () => {
     if (!query.keyword.trim()) {
-      // 翻訳参照: ui.KEYWORD_PLACEHOLDER を使用
+      // Translation reference: ui.TOAST_SEARCH_KEYWORD
       options?.onShowToast?.("ui.TOAST_SEARCH_KEYWORD");
       return;
     }
     if (!query.target_dir.trim()) {
-      // 翻訳参照: ui.SELECT_FOLDER_PROMPT を使用
+      // Translation reference: ui.SELECT_FOLDER_PROMPT
       options?.onShowToast?.("ui.SELECT_FOLDER_PROMPT");
       return;
     }
     if (!query.extensions || query.extensions.length === 0) {
-      // 翻訳参照: ui.SELECT_EXTENSION_PROMPT を使用
+      // Translation reference: ui.SELECT_EXTENSION_PROMPT
       options?.onShowToast?.("ui.SELECT_EXTENSION_PROMPT");
       return;
     }
@@ -289,7 +278,7 @@ export function useSearch(options?: UseSearchOptions) {
     setSelectedCell(null);
     setFormulaOrValue("");
 
-    // 翻訳参照: ui.STATUS_SCAN_PREPARING を使用
+    // Progress initialization
     setProgress({
       state: "Scanning",
       phase: "preparing",
@@ -302,7 +291,7 @@ export function useSearch(options?: UseSearchOptions) {
     });
 
     try {
-      // 定数参照: COMMANDS.START_SEARCH を使用
+      // Constant reference: COMMANDS.START_SEARCH
       await invoke(COMMANDS.START_SEARCH, { query });
       options?.onSearchAccepted?.(query);
     } catch (error: unknown) {
@@ -326,14 +315,13 @@ export function useSearch(options?: UseSearchOptions) {
     }
   }, [query, options]);
 
-  // 検索中断
+  // Search cancellation
   const cancelSearch = useCallback(async () => {
     try {
       console.log("[useSearch] Search cancellation requested");
       isCancellingRef.current = true;
 
-      // ユーザーへの即時フィードバック: 中断状態へ切り替えてボタンを即座にSEARCHに戻す
-      // 翻訳参照: ui.SCAN_CANCELLED_MSG を使用
+      // Immediately switch state to Cancelled for responsive UI
       setProgress((prev) =>
         prev
           ? {
@@ -353,7 +341,7 @@ export function useSearch(options?: UseSearchOptions) {
             }
       );
 
-      // バッファに残っている結果を即時フラッシュ
+      // Flush remaining buffered matches
       if (flushTimerRef.current) {
         clearTimeout(flushTimerRef.current);
         flushTimerRef.current = null;
@@ -368,7 +356,7 @@ export function useSearch(options?: UseSearchOptions) {
         });
       }
 
-      // 定数参照: COMMANDS.CANCEL_SEARCH を使用
+      // Constant reference: COMMANDS.CANCEL_SEARCH
       await invoke(COMMANDS.CANCEL_SEARCH);
     } catch {
       console.error("[useSearch] Failed to cancel search");

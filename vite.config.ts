@@ -2,15 +2,14 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
 /**
- * ## 処理内容
- * ライセンス一覧を含む遅延読込 About チャンクの既知サイズをビルド警告上限へ反映する。
- * ## 引数・戻り値
- * 引数なし。Rollup が比較するチャンク警告上限を KiB 単位で返す。
- * ## エラー
- * 小さすぎる値ではライセンス JSON のチャンクについて既知のサイズ警告が発生する。
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, Codex): About のライセンス一覧に合わせて上限を定義。
- * - v1.1.0 (2026-09-29, Antigravity): RustのtargetおよびcratesディレクトリをViteのwatch対象から除外しEBUSYを防止。
+ * ## Description
+ * Sets chunk size warning limit reflecting the known size of lazy-loaded About chunk including licenses.
+ *
+ * ## Arguments & Returns
+ * None. Returns Rollup chunk size limit in KiB.
+ *
+ * ## Errors / Exceptions
+ * Setting too small a value will trigger false warning diagnostics on the license JSON chunk.
  */
 const LICENSE_CATALOG_CHUNK_SIZE_KB = 3500;
 
@@ -22,7 +21,7 @@ export default defineConfig({
     port: 1420,
     strictPort: true,
     watch: {
-      // ViteがRustのtargetディレクトリ、crates、src-tauri配下を監視してEBUSYエラーを起こすのを防止
+      // Prevent Vite from watching Rust target and crates directories to avoid EBUSY errors
       ignored: ["**/src-tauri/**", "**/target/**", "**/crates/**"],
     },
   },
@@ -31,7 +30,7 @@ export default defineConfig({
     target: ["es2021", "chrome105", "safari13"],
     minify: !process.env.TAURI_DEBUG ? "esbuild" : false,
     sourcemap: !!process.env.TAURI_DEBUG,
-    // 定数参照: LICENSE_CATALOG_CHUNK_SIZE_KB。About は遅延読込され、ライセンス一覧を含む。
+    // Constant reference: LICENSE_CATALOG_CHUNK_SIZE_KB. About dialog is lazy loaded and contains full license JSON.
     chunkSizeWarningLimit: LICENSE_CATALOG_CHUNK_SIZE_KB,
   },
 });

@@ -1,13 +1,10 @@
 /**
- * @fileoverview ウィンドウフレームレイアウトコンポーネント (src/components/layout/WindowFrame.tsx)
+ * @fileoverview Window frame layout component (src/components/layout/WindowFrame.tsx)
  *
- * ## 処理内容
- * アプリケーション全体のルート外枠フレームを提供し、ダークテーマスタイル、
- * 全画面高さ固定、テキスト選択抑制、およびメイン領域のオーバーフロー制御を行う。
- * 憲章原則III（ヘッダコメント）に準拠。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。JSDocドキュメントの付与。
+ * ## Description
+ * Provides the root outer frame layout for the entire application, applying dark theme styling,
+ * fixed full-screen height, user-select restrictions, and main content overflow management.
+ * Complies with Constitution Principle III (comprehensive documentation).
  */
 
 import React from "react";
@@ -17,25 +14,22 @@ interface WindowFrameProps {
 }
 
 /**
- * ## 処理内容
- * アプリケーションの最上位コンテナレイアウトコンポーネント。
+ * ## Description
+ * Top-level container layout component for the application.
  *
- * ## 引数
- * @param props - 子要素ノードを含むプロパティ
+ * ## Arguments
+ * @param props - Component properties containing child elements
  *
- * ## 戻り値
- * @returns レンダリング要素
+ * ## Returns
+ * @returns Rendered element
  *
- * ## エラー / 例外発生条件
- * panicや例外は発生しない。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
+ * ## Errors / Exceptions
+ * No panic or exceptions occur.
  */
 export const WindowFrame: React.FC<WindowFrameProps> = ({ children }) => {
   return (
     <div className="bg-[#121214] text-zinc-100 min-h-screen flex flex-col font-sans select-none overflow-hidden h-screen">
-      {/* メインコンテンツ */}
+      {/* Main content container */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {children}
       </div>

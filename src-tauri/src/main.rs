@@ -1,31 +1,22 @@
-//! # Excel Grep デスクトップアプリケーション エントリーポイント (main.rs)
+//! # Excel Grep Desktop Application Entry Point (main.rs)
 //!
-//! ## 処理内容
-//! デスクトップバイナリの起動ポイントであり、Windows環境におけるコンソールウィンドウ抑制を行い、
-//! コアライブラリ `exgrep_lib::run()` を呼び出してGUIイベントループを開始する。
-//!
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-26, AI Agent): 初版策定。憲章原則III準拠ヘッダコメントの付与。
-//! - v1.0.1 (2026-09-26, AI Agent): クレート名変更 (exgrep -> exlgrep) に伴いコアライブラリ参照を exlgrep_lib に更新。
-//!
-//! コアライブラリ `exlgrep_lib::run()` を呼び出してGUIイベントループを開始する。
+//! ## Description
+//! Application startup point for desktop binary. Suppresses console window on Windows
+//! and calls core library `xlseek_lib::run()` to start the GUI event loop.
 
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-/// ## 処理内容
-/// アプリケーションのエントリーポイント関数。
+/// ## Description
+/// Application entry point function.
 ///
-/// ## 引数
-/// なし
+/// ## Arguments
+/// None
 ///
-/// ## 戻り値
-/// なし
+/// ## Returns
+/// None
 ///
-/// ## エラー / 例外発生条件
-/// アプリケーション起動失敗時にパニックする。
-///
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, AI Agent): 初版策定 / 憲章準拠。
+/// ## Errors / Exceptions
+/// Panics if application initialization fails.
 fn main() {
-    exlgrep_lib::run();
+    xlseek_lib::run();
 }

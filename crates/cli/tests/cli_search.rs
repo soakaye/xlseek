@@ -1,18 +1,20 @@
-//! ## 処理内容
-//! CLI実バイナリがGUIを開かずにExcel検索結果を保存する契約を検証する。
-//! ## 引数・戻り値
-//! テストはCargo提供のCLI実行ファイルを起動し、プロセス状態と出力内容を検証する。
-//! ## エラー
-//! プロセス起動・ファイル操作・アサーションの失敗でテストが失敗する。
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-29, Codex): US1 CLI実プロセステストを追加。
+//! # CLI Search Integration Tests
+//!
+//! ## Description
+//! Verifies that the CLI binary exports Excel search results without initializing a GUI.
+//!
+//! ## Arguments / Returns
+//! Executes Cargo-provided CLI binary and verifies process status and output content.
+//!
+//! ## Errors
+//! Fails test if process execution, file operations, or assertions fail.
 
 use calamine::Reader;
 use std::fs;
 use std::process::Command;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
-const TEST_DIRECTORY_PREFIX: &str = "exlgrep-cli-search";
+const TEST_DIRECTORY_PREFIX: &str = "xlseek-cli-search";
 const QUERY_TEXT: &str = "Financial Report Q3";
 const FORMAT_CSV: &str = "csv";
 const OUTPUT_CSV_NAME: &str = "result.csv";
@@ -24,14 +26,13 @@ const TEST_BROKEN_WORKBOOK_NAME: &str = "broken.xlsx";
 const TEST_DIRECTORY_SEPARATOR: &str = "-";
 static TEST_DIRECTORY_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
 
-/// ## 処理内容
-/// 同一テストプロセス内で競合しない一時フォルダーを生成する。
-/// ## 引数・戻り値
-/// 固定prefixを受け、プロセスIDと連番を含むPathBufを返す。
-/// ## エラー
-/// パスの組み立てのみを行い、I/Oエラーやpanicは発生しない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): 並行CLI統合テスト用に追加。
+/// Generates a unique temporary directory that will not conflict across concurrent tests.
+///
+/// ## Arguments / Returns
+/// Returns a `PathBuf` incorporating process ID and atomic sequence number.
+///
+/// ## Errors
+/// Simple path construction; does not fail or panic.
 fn unique_test_directory() -> std::path::PathBuf {
     let sequence = TEST_DIRECTORY_SEQUENCE.fetch_add(1, Ordering::Relaxed);
     std::env::temp_dir().join(format!(
@@ -40,14 +41,13 @@ fn unique_test_directory() -> std::path::PathBuf {
     ))
 }
 
-/// ## 処理内容
-/// リポジトリルートの絶対パスを解決する。
-/// ## 引数・戻り値
-/// 引数なし。`PathBuf` を返す。
-/// ## エラー
-/// ルートが見つからない場合は panic する。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Antigravity): クレート分離に伴うルートパス解決。
+/// Resolves the absolute path to the repository root.
+///
+/// ## Arguments / Returns
+/// Takes no arguments; returns `PathBuf`.
+///
+/// ## Errors
+/// Panics if repository root cannot be determined.
 fn repo_root() -> std::path::PathBuf {
     let manifest = std::path::PathBuf::from(env!("CARGO_MANIFEST_DIR"));
     if manifest.join("../../tests/fixtures").exists() {
@@ -60,14 +60,13 @@ fn repo_root() -> std::path::PathBuf {
     }
 }
 
-/// ## 処理内容
-/// 有効な単一ブックを検索し、GUIなしでCSVへ一致結果を保存する。
-/// ## 引数・戻り値
-/// 引数なし。失敗条件ではassertがテストを失敗させる。
-/// ## エラー
-/// プロセス起動・出力読取失敗、終了コードまたは内容の不一致でテスト失敗。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): CSV CLI検索のREDテストを追加。
+/// Searches a valid single workbook and saves matches to CSV and XLSX without a GUI.
+///
+/// ## Arguments / Returns
+/// Tests CLI CSV and Excel export against expected search hits.
+///
+/// ## Errors
+/// Panics if process fails or output content does not match.
 #[test]
 fn exports_search_results_from_a_single_workbook_without_gui() {
     let root = repo_root();
@@ -76,7 +75,7 @@ fn exports_search_results_from_a_single_workbook_without_gui() {
     fs::create_dir_all(&output_dir).expect("temporary test directory must be created");
     let output = output_dir.join(OUTPUT_CSV_NAME);
 
-    let result = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    let result = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg("--path")
         .arg(fixture)
         .arg("--query")
@@ -92,20 +91,20 @@ fn exports_search_results_from_a_single_workbook_without_gui() {
     let contents = fs::read_to_string(&output).expect("CSV result must be written");
     assert!(contents.contains(QUERY_TEXT));
     let xlsx = output_dir.join(OUTPUT_XLSX_NAME);
-    let excel_result = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    let excel_result = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg("--path")
         .arg(root.join("tests/fixtures/sample_report.xlsx"))
         .arg("--query")
         .arg(QUERY_TEXT)
         .arg("--format")
-        .arg(exlgrep_cli::constants::CLI_FORMAT_XLSX)
+        .arg(xlseek_cli::constants::CLI_FORMAT_XLSX)
         .arg("--output")
         .arg(&xlsx)
         .output()
         .expect("CLI Excel process must start");
     assert_eq!(
         excel_result.status.code(),
-        Some(exlgrep_cli::constants::CLI_EXIT_SUCCESS)
+        Some(xlseek_cli::constants::CLI_EXIT_SUCCESS)
     );
     let mut workbook = calamine::open_workbook_auto(&xlsx).expect("Excel output must open");
     let sheet_name = workbook.sheet_names().first().cloned().unwrap();
@@ -117,14 +116,13 @@ fn exports_search_results_from_a_single_workbook_without_gui() {
     let _ = fs::remove_dir_all(output_dir);
 }
 
-/// ## 処理内容
-/// 空フォルダー、読取不能ブック、部分成功、不正regexを終了コードと保存結果で区別する。
-/// ## 引数・戻り値
-/// 引数なし。各CLIプロセスの終了状態と出力ファイルを検証する。
-/// ## エラー
-/// ファイル操作、CLI起動、終了状態または出力内容の不一致でテストが失敗する。
-/// ## 変更履歴
-/// - v1.1.0 (2026-09-29, Codex): CLI失敗状態のプロセス検証を追加。
+/// Differentiates empty folders, unreadable workbooks, partial successes, and invalid regexes via exit codes.
+///
+/// ## Arguments / Returns
+/// Validates process exit codes and saved output files across diverse edge cases.
+///
+/// ## Errors
+/// Panics if exit codes or file outputs deviate from specification.
 #[test]
 fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
     let root = repo_root();
@@ -139,17 +137,17 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
     let broken_file = broken.join(TEST_BROKEN_WORKBOOK_NAME);
     fs::write(
         &broken_file,
-        exlgrep_cli::constants::CLI_TEST_INVALID_WORKBOOK_BYTES,
+        xlseek_cli::constants::CLI_TEST_INVALID_WORKBOOK_BYTES,
     )
     .unwrap();
     fs::copy(
         &fixture,
-        partial.join(exlgrep_cli::constants::CLI_TEST_VALID_WORKBOOK_NAME),
+        partial.join(xlseek_cli::constants::CLI_TEST_VALID_WORKBOOK_NAME),
     )
     .unwrap();
     fs::copy(&broken_file, partial.join(TEST_BROKEN_WORKBOOK_NAME)).unwrap();
 
-    let empty_output = work.join(exlgrep_cli::constants::CLI_TEST_EMPTY_OUTPUT_NAME);
+    let empty_output = work.join(xlseek_cli::constants::CLI_TEST_EMPTY_OUTPUT_NAME);
     assert_eq!(
         run_cli(&empty, QUERY_TEXT, &empty_output, FORMAT_CSV)
             .status
@@ -158,9 +156,9 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
     );
     assert!(fs::read(&empty_output)
         .unwrap()
-        .starts_with(&exlgrep_cli::constants::CSV_UTF8_BOM));
+        .starts_with(&xlseek_cli::constants::CSV_UTF8_BOM));
 
-    let broken_output = work.join(exlgrep_cli::constants::CLI_TEST_BROKEN_OUTPUT_NAME);
+    let broken_output = work.join(xlseek_cli::constants::CLI_TEST_BROKEN_OUTPUT_NAME);
     assert_eq!(
         run_cli(&broken, QUERY_TEXT, &broken_output, FORMAT_CSV)
             .status
@@ -169,9 +167,9 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
     );
     assert!(fs::read_to_string(&broken_output)
         .unwrap()
-        .contains(exlgrep_cli::constants::CLI_TEST_EXPECTED_HEADER_ID_JA));
+        .contains(xlseek_cli::constants::CLI_TEST_EXPECTED_HEADER_ID_JA));
 
-    let partial_output = work.join(exlgrep_cli::constants::CLI_TEST_PARTIAL_OUTPUT_NAME);
+    let partial_output = work.join(xlseek_cli::constants::CLI_TEST_PARTIAL_OUTPUT_NAME);
     assert_eq!(
         run_cli(&partial, QUERY_TEXT, &partial_output, FORMAT_CSV)
             .status
@@ -182,14 +180,14 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
         .unwrap()
         .contains(QUERY_TEXT));
 
-    let invalid_regex_output = work.join(exlgrep_cli::constants::CLI_TEST_REGEX_OUTPUT_NAME);
-    let invalid_regex = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    let invalid_regex_output = work.join(xlseek_cli::constants::CLI_TEST_REGEX_OUTPUT_NAME);
+    let invalid_regex = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg("--path")
         .arg(&fixture)
         .arg("--query")
-        .arg(exlgrep_cli::constants::CLI_TEST_INVALID_REGEX)
+        .arg(xlseek_cli::constants::CLI_TEST_INVALID_REGEX)
         .arg("--regex")
-        .arg(exlgrep_cli::constants::CLI_BOOLEAN_TRUE)
+        .arg(xlseek_cli::constants::CLI_BOOLEAN_TRUE)
         .arg("--format")
         .arg(FORMAT_CSV)
         .arg("--output")
@@ -201,21 +199,20 @@ fn distinguishes_empty_partial_total_and_invalid_regex_runs() {
     let _ = fs::remove_dir_all(work);
 }
 
-/// ## 処理内容
-/// 位置引数（クエリ＋複数パス）を指定し、標準出力（stdout）へ純粋なCSVが出力され、サマリー文言が抑制されることを検証する。
-/// ## 引数・戻り値
-/// 引数なし。プロセスの stdout/stderr 出力内容と終了コードを検証する。
-/// ## エラー
-/// プロセス起動失敗、サマリー混入、またはCSVフォーマット不一致時にテストが失敗する。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, AI Agent): 位置引数とstdoutストリーミングのテストを追加。
+/// Verifies that positional arguments output plain CSV to stdout with summary text suppressed.
+///
+/// ## Arguments / Returns
+/// Validates process stdout/stderr contents and exit codes.
+///
+/// ## Errors
+/// Panics if summary lines leak into stdout or if CSV content is incorrect.
 #[test]
 fn exports_search_results_to_stdout_with_positional_arguments() {
     let root = repo_root();
     let fixture1 = root.join("tests/fixtures/sample_report.xlsx");
     let fixture2 = root.join("tests/fixtures");
 
-    let result = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    let result = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg(QUERY_TEXT)
         .arg(&fixture1)
         .arg(&fixture2)
@@ -224,27 +221,26 @@ fn exports_search_results_to_stdout_with_positional_arguments() {
 
     assert_eq!(result.status.code(), Some(0));
 
-    // stdoutはBOMなしプレーンUTF-8 CSVであること
+    // Verify stdout is plain UTF-8 CSV without BOM
     assert!(!result
         .stdout
-        .starts_with(&exlgrep_cli::constants::CSV_UTF8_BOM));
+        .starts_with(&xlseek_cli::constants::CSV_UTF8_BOM));
 
     let stdout_str = String::from_utf8(result.stdout).expect("stdout must be valid UTF-8");
     assert!(stdout_str.contains(QUERY_TEXT));
 
-    // サマリー文言が出力されていないこと（UNIXパイプライン保護）
+    // Verify summary text is suppressed for UNIX pipelines
     assert!(!stdout_str.contains("検索完了:"));
     assert!(!stdout_str.contains("Files scanned:"));
 }
 
-/// ## 処理内容
-/// 短縮オプション（-q, -p, -o）および出力拡張子（.xlsx）からのフォーマット自動推論を検証する。
-/// ## 引数・戻り値
-/// 引数なし。プロセスの終了コードと生成されたExcelファイル内容を検証する。
-/// ## エラー
-/// プロセス起動失敗、推論失敗、またはExcel検証失敗時にテストが失敗する。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, AI Agent): 短縮オプションとフォーマット推論テストを追加。
+/// Verifies short options (-q, -p, -o) and automatic format inference from .xlsx extension.
+///
+/// ## Arguments / Returns
+/// Verifies exit codes and generated Excel spreadsheet contents.
+///
+/// ## Errors
+/// Panics if inference fails or output Excel cannot be opened.
 #[test]
 fn supports_short_options_and_format_inference() {
     let root = repo_root();
@@ -253,7 +249,7 @@ fn supports_short_options_and_format_inference() {
     fs::create_dir_all(&output_dir).expect("temporary test directory must be created");
     let xlsx_output = output_dir.join("inferred.xlsx");
 
-    let result = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    let result = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg("-q")
         .arg(QUERY_TEXT)
         .arg("-p")
@@ -266,7 +262,7 @@ fn supports_short_options_and_format_inference() {
     assert_eq!(result.status.code(), Some(0));
     assert!(xlsx_output.exists());
 
-    // ファイル保存時はサマリーがstdoutに出力されること
+    // Verify summary is output to stdout when exporting to file
     let stdout_str = String::from_utf8_lossy(&result.stdout);
     assert!(stdout_str.contains("検索完了:"));
 
@@ -281,15 +277,13 @@ fn supports_short_options_and_format_inference() {
     let _ = fs::remove_dir_all(output_dir);
 }
 
-/// ## 処理内容
-/// 破損ファイルを含むディレクトリを探索・並行解析する際、即時にstderrへエラーが通知され、
-/// かつ正常ファイルの結果が収集されて部分成功（終了コード1）となることを検証する。
-/// ## 引数・戻り値
-/// 引数なし。stderrへの即時エラー出力と終了コードを検証する。
-/// ## エラー
-/// プロセス起動失敗、stderr未出力、または終了コード不一致時にテストが失敗する。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, AI Agent): 非同期パイプライン即時エラー通知テストを追加。
+/// Verifies that errors are reported in real time to stderr during async pipelined traversal.
+///
+/// ## Arguments / Returns
+/// Verifies stderr output and partial success exit code 1.
+///
+/// ## Errors
+/// Panics if broken file is not notified or exit code is not 1.
 #[test]
 fn notifies_errors_in_realtime_during_async_pipeline() {
     let root = repo_root();
@@ -301,50 +295,49 @@ fn notifies_errors_in_realtime_during_async_pipeline() {
     let broken_file = mixed_dir.join(TEST_BROKEN_WORKBOOK_NAME);
     fs::write(
         &broken_file,
-        exlgrep_cli::constants::CLI_TEST_INVALID_WORKBOOK_BYTES,
+        xlseek_cli::constants::CLI_TEST_INVALID_WORKBOOK_BYTES,
     )
     .unwrap();
     fs::copy(
         &fixture,
-        mixed_dir.join(exlgrep_cli::constants::CLI_TEST_VALID_WORKBOOK_NAME),
+        mixed_dir.join(xlseek_cli::constants::CLI_TEST_VALID_WORKBOOK_NAME),
     )
     .unwrap();
 
-    let result = Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    let result = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg(QUERY_TEXT)
         .arg(&mixed_dir)
         .output()
         .expect("CLI process must start");
 
-    // 部分成功で exit_code 1
+    // Partial success exit code 1
     assert_eq!(result.status.code(), Some(1));
 
-    // stderrに壊れたファイルに関するエラーが出力されていること
+    // Error for broken file reported to stderr
     let stderr_str = String::from_utf8_lossy(&result.stderr);
     assert!(stderr_str.contains(TEST_BROKEN_WORKBOOK_NAME));
 
-    // stdoutには正常ファイルの一致結果が出力されていること
+    // Matches from valid file present in stdout
     let stdout_str = String::from_utf8_lossy(&result.stdout);
     assert!(stdout_str.contains(QUERY_TEXT));
 
     let _ = fs::remove_dir_all(work);
 }
 
-/// ## 処理内容
-/// CLIへ必須の入力、検索語、形式、出力引数を渡して検索を実行する。
-/// ## 引数・戻り値
-/// 入力・検索語・出力・形式を受け、OSの`Output`を返す。
-/// ## エラー
-/// CLI起動失敗でテストを失敗させる。
-/// ## 変更履歴
-/// - v1.1.0 (2026-09-29, Codex): 失敗状態テスト実行関数を追加。
+/// Helper that invokes the CLI with path, query, format, and output arguments.
+///
+/// ## Arguments / Returns
+/// Returns process `Output`.
+///
+/// ## Errors
+/// Panics if CLI fails to launch.
 fn run_cli(
     input: &std::path::Path,
     query: &str,
     output: &std::path::Path,
     format: &str,
 ) -> std::process::Output {
-    Command::new(env!("CARGO_BIN_EXE_exlgrep-cli"))
+    Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
         .arg("--path")
         .arg(input)
         .arg("--query")

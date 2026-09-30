@@ -1,37 +1,33 @@
-//! # Excelエクスポートモジュール (export/xlsx_export.rs)
+//! # Excel Export Module (export/xlsx_export.rs)
 //!
-//! ## 処理内容
-//! 検索結果アイテムの一覧を整形されたExcel (.xlsx) ブックに出力する。
-//! ヘッダーの装飾（背景色・フォント色・罫線）、各列の幅調整、オートフィルターの適用、
-//! および英語エラーコードによるエラーハンドリングを提供する。
-//! 憲章原則I（日本語出力）、原則II（定数参照）、原則III（ヘッダコメント）に準拠。
-//!
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化（色・列幅・シート名・メッセージ）、4要素ヘッダコメント付与。
+//! ## Description
+//! Outputs a list of search result items to a formatted Excel (.xlsx) workbook.
+//! Provides header styling (background/font color, borders), column width adjustments,
+//! auto-filter application, and error handling with English error strings.
+//! Conforms to Constitution Principle I (English code/comments), Principle II (Constant references),
+//! and Principle III (Header comments).
 
 use crate::models::{MatchType, SearchMatch};
 use rust_xlsxwriter::{Color, Format, FormatBorder, Workbook};
 use std::collections::BTreeMap;
 
-/// ## 処理内容
-/// 検索結果アイテムのスライスを整形されたExcel (.xlsx) ファイルに出力する。
-/// 列幅の自動設定、ヘッダー書式設定、オートフィルターの設定を行う。
+/// ## Description
+/// Outputs a slice of search result items to a formatted Excel (.xlsx) file.
+/// Performs automatic column width sizing, header styling, and auto-filter configuration.
 ///
-/// ## 引数
-/// - `path`: `&str` - 出力先Excelファイルのファイルパス
-/// - `items`: `&[SearchMatch]` - エクスポート対象の検索一致アイテムスライス
-/// - `language`: `&str` - `ja` または `en` の出力言語
-/// - `catalogs`: `&BTreeMap<String, BTreeMap<String, String>>` - プラグインから取得した翻訳カタログ
+/// ## Arguments
+/// - `path`: `&str` - Target Excel file path
+/// - `items`: `&[SearchMatch]` - Slice of search match items to export
+/// - `language`: `&str` - Output language (`ja` or `en`)
+/// - `catalogs`: `&BTreeMap<String, BTreeMap<String, String>>` - Translation catalogs
 ///
-/// ## 戻り値
-/// - `Result<(), String>`: 成功時は `Ok(())`、言語・翻訳・ワークブック構築・保存失敗時は英語エラーコード
+/// ## Returns
+/// - `Result<(), String>`: `Ok(())` on success, or an English error string on failure
 ///
-/// ## エラー / 例外発生条件
-/// - 対応外言語、必要な翻訳の欠落、ワークシート追加、セル書き込み、またはファイル保存時に `Err` を返却する。
-/// - panicは発生しない。
-///
-/// ## 変更履歴
-/// - v1.1.0 (2026-09-26, Codex): 要求言語のカタログからシート名、列見出し、一致種別を取得。
+/// ## Errors / Exceptions
+/// - Returns `Err` if an unsupported language is provided, required translations are missing,
+///   or worksheet creation/writing/saving fails.
+/// - Does not panic.
 pub fn export_to_xlsx(
     path: &str,
     items: &[SearchMatch],
@@ -44,7 +40,7 @@ pub fn export_to_xlsx(
     let mut workbook = Workbook::new();
     let worksheet = workbook.add_worksheet();
 
-    // 定数参照: constants::EXPORT_SHEET_NAME_KEY を使用。
+    // Constant reference: crate::constants::EXPORT_SHEET_NAME_KEY
     let sheet_name = crate::i18n::resolve_catalog_text(
         catalogs,
         language,
@@ -52,12 +48,12 @@ pub fn export_to_xlsx(
     )
     .ok_or_else(|| crate::constants::ERR_TRANSLATION_MISSING.to_string())?;
     worksheet.set_name(&sheet_name).map_err(|e| {
-        // 定数参照: crate::constants::ERR_XLSX_WORKSHEET を使用
+        // Constant reference: crate::constants::ERR_XLSX_WORKSHEET
         format!("{}: {}", crate::constants::ERR_XLSX_WORKSHEET, e)
     })?;
 
-    // スタイル定義
-    // 定数参照: crate::constants::XLSX_HEADER_BG_COLOR, XLSX_HEADER_FG_COLOR を使用
+    // Style definitions
+    // Constant reference: crate::constants::XLSX_HEADER_BG_COLOR, XLSX_HEADER_FG_COLOR
     let header_format = Format::new()
         .set_bold()
         .set_background_color(Color::RGB(crate::constants::XLSX_HEADER_BG_COLOR))
@@ -70,7 +66,7 @@ pub fn export_to_xlsx(
         .set_align(rust_xlsxwriter::FormatAlign::Center)
         .set_border(FormatBorder::Thin);
 
-    // 定数参照: constants::EXPORT_HEADER_KEYS と XLSX_COLUMN_WIDTHS を使用。
+    // Constant reference: crate::constants::EXPORT_HEADER_KEYS and XLSX_COLUMN_WIDTHS
     let headers = crate::constants::EXPORT_HEADER_KEYS
         .iter()
         .map(|key| {
@@ -86,21 +82,21 @@ pub fn export_to_xlsx(
         worksheet
             .write_string_with_format(0, col_idx as u16, header, &header_format)
             .map_err(|e| {
-                // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
+                // Constant reference: crate::constants::ERR_XLSX_WRITE
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
         worksheet
             .set_column_width(col_idx as u16, *width)
             .map_err(|e| {
-                // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
+                // Constant reference: crate::constants::ERR_XLSX_WRITE
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
     }
 
-    // データ行書き込み
+    // Write data rows
     for (row_idx, item) in items.iter().enumerate() {
         let r = (row_idx + 1) as u32;
-        // 定数参照: constants::EXPORT_MATCH_*_KEY を使用。
+        // Constant reference: crate::constants::EXPORT_MATCH_*_KEY
         let match_key = match item.match_type {
             MatchType::CellValue => crate::constants::EXPORT_MATCH_VALUE_KEY,
             MatchType::Formula => crate::constants::EXPORT_MATCH_FORMULA_KEY,
@@ -114,70 +110,70 @@ pub fn export_to_xlsx(
         worksheet
             .write_number_with_format(r, 0, item.id as f64, &id_format)
             .map_err(|e| {
-                // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
+                // Constant reference: crate::constants::ERR_XLSX_WRITE
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
         worksheet
             .write_string_with_format(r, 1, &item.file_name, &cell_format)
             .map_err(|e| {
-                // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
+                // Constant reference: crate::constants::ERR_XLSX_WRITE
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
         worksheet
             .write_string_with_format(r, 2, &item.full_path, &cell_format)
             .map_err(|e| {
-                // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
+                // Constant reference: crate::constants::ERR_XLSX_WRITE
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
         worksheet
             .write_string_with_format(r, 3, &item.sheet_name, &cell_format)
             .map_err(|e| {
-                // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
+                // Constant reference: crate::constants::ERR_XLSX_WRITE
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
         worksheet
             .write_string_with_format(r, 4, &item.cell_address, &cell_format)
             .map_err(|e| {
-                // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
+                // Constant reference: crate::constants::ERR_XLSX_WRITE
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
         worksheet
             .write_string_with_format(r, 5, item.shape_name.as_deref().unwrap_or(""), &cell_format)
             .map_err(|e| {
-                // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
+                // Constant reference: crate::constants::ERR_XLSX_WRITE
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
         worksheet
             .write_string_with_format(r, 6, &match_type_str, &cell_format)
             .map_err(|e| {
-                // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
+                // Constant reference: crate::constants::ERR_XLSX_WRITE
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
         worksheet
             .write_string_with_format(r, 7, &item.full_content, &cell_format)
             .map_err(|e| {
-                // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
+                // Constant reference: crate::constants::ERR_XLSX_WRITE
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
         worksheet
             .write_string_with_format(r, 8, item.formula.as_deref().unwrap_or(""), &cell_format)
             .map_err(|e| {
-                // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
+                // Constant reference: crate::constants::ERR_XLSX_WRITE
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
     }
 
-    // オートフィルター有効化（データが存在する場合）
+    // Enable auto-filter if items exist
     if !items.is_empty() {
         let last_row = items.len() as u32;
         worksheet.autofilter(0, 0, last_row, 8).map_err(|e| {
-            // 定数参照: crate::constants::ERR_XLSX_WRITE を使用
+            // Constant reference: crate::constants::ERR_XLSX_WRITE
             format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
         })?;
     }
 
     workbook.save(path).map_err(|e| {
-        // 定数参照: crate::constants::ERR_XLSX_SAVE を使用
+        // Constant reference: crate::constants::ERR_XLSX_SAVE
         format!("{}: {}", crate::constants::ERR_XLSX_SAVE, e)
     })?;
     Ok(())
@@ -190,14 +186,14 @@ mod localization_tests {
 
     const TEST_OUTPUT_PREFIX: &str = "exlgrep-i18n-test";
 
-    /// ## 処理内容
-    /// Excel の列見出しが指定されたカタログ言語になることを検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。日英の出力ファイルを読み、2列目の見出しを比較する。
-    /// ## エラー
-    /// ファイル操作、ブック解析、または見出し不一致時にテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.2.0 (2026-09-26, Codex): カタログによるExcel見出し選択テストを追加。
+    /// ## Description
+    /// Verifies that Excel column headers use the requested catalog language.
+    ///
+    /// ## Arguments / Returns
+    /// No arguments. Reads output files and compares the second column header.
+    ///
+    /// ## Errors / Exceptions
+    /// Fails if file operations, workbook parsing, or header matching fails.
     #[test]
     fn uses_requested_catalog_for_headers() {
         let mut english = BTreeMap::from([(
@@ -236,7 +232,7 @@ mod localization_tests {
             (crate::constants::LANGUAGE_EN, "File name"),
             (crate::constants::LANGUAGE_JA, "ファイル名"),
         ] {
-            // 定数参照: TEST_OUTPUT_PREFIX を使用
+            // Constant reference: TEST_OUTPUT_PREFIX
             let path = std::env::temp_dir().join(format!("{TEST_OUTPUT_PREFIX}-{language}.xlsx"));
             super::export_to_xlsx(path.to_str().unwrap(), &[], language, &catalogs).unwrap();
             let mut workbook = calamine::open_workbook_auto(&path).unwrap();
@@ -249,14 +245,14 @@ mod localization_tests {
         }
     }
 
-    /// ## 処理内容
-    /// 未対応言語の Excel 出力を、ブック作成前に拒否する。
-    /// ## 引数・戻り値
-    /// 引数なし。アサーションのみを実行する。
-    /// ## エラー
-    /// 想定外の出力結果でテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.1.0 (2026-09-26, AI Agent): 不正な出力言語の検証を追加。
+    /// ## Description
+    /// Verifies that Excel export rejects unsupported languages before creating workbooks.
+    ///
+    /// ## Arguments / Returns
+    /// No arguments. Executes assertions.
+    ///
+    /// ## Errors / Exceptions
+    /// Fails on unexpected export result.
     #[test]
     fn rejects_unsupported_language() {
         assert_eq!(

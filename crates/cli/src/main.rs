@@ -1,22 +1,21 @@
-//! ## 処理内容
-//! GUIを初期化しない独立スタンドアローンコマンドライン実行バイナリ (exlgrep-cli) の入口。
-//! ## 引数・戻り値
-//! OS引数を受け取り、CLI実行結果をプロセス終了コードへ変換する。
-//! ## エラー
-//! 引数解析・検索・出力エラーは標準エラーと非0終了状態で返す。
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-29, Codex): CLIバイナリ入口を追加。
-//! - v1.1.0 (2026-09-29, Antigravity): exlgrep_cli クレートへ接続先を変更。
+//! # Standalone CLI Entrypoint (main.rs)
+//!
+//! ## Description
+//! Entrypoint for the standalone command-line executable (xlseek-cli) without initializing any GUI.
+//!
+//! ## Arguments / Returns
+//! Receives operating system arguments and converts the CLI execution outcome into a process exit code.
+//!
+//! ## Errors
+//! Argument parsing, search, and output errors are reported to stderr and returned as non-zero exit codes.
 
-/// ## 処理内容
-/// CLI引数を共通CLI実行層へ渡し、返された状態でプロセスを終了する。
-/// ## 引数・戻り値
-/// OS引数を受け取り、明示終了時は戻らない。
-/// ## エラー
-/// 実行層がI/O・引数エラーを終了状態へ変換する。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-29, Codex): CLI処理層へ接続。
-/// - v1.1.0 (2026-09-29, Antigravity): exlgrep_cli::run への接続に更新。
+/// Passes CLI arguments to the shared CLI execution layer and terminates the process with the returned exit status.
+///
+/// ## Arguments / Returns
+/// - Receives OS arguments; does not return upon normal process exit.
+///
+/// ## Errors
+/// The execution layer handles converting I/O and argument errors into appropriate exit codes.
 fn main() {
-    std::process::exit(exlgrep_cli::run(std::env::args_os().skip(1)));
+    std::process::exit(xlseek_cli::run(std::env::args_os().skip(1)));
 }

@@ -1,22 +1,23 @@
-//! ## 処理内容
-//! Rust 側の要求言語別翻訳検索と英語カタログへのフォールバックを提供する。
-//! ## 入力・出力
-//! ロケール別キー対応表、要求言語、翻訳キーを受け取り、翻訳文または欠落を返す。
-//! ## エラー
-//! カタログやキーが欠けている場合は `None` とし、panic を起こさない。
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-26, Codex): 翻訳フォールバックテストを追加。
+//! # Internationalization & Translation Catalogs
+//!
+//! ## Description
+//! Provides language-specific translation resolution and fallback to English catalogs on the Rust side.
+//!
+//! ## Arguments / Returns
+//! Accepts per-locale key maps, requested language code, and translation key, returning translated string or None.
+//!
+//! ## Errors
+//! Returns `None` if catalog or key is missing, without panicking.
 
 use std::collections::BTreeMap;
 
-/// ## 処理内容
-/// コンパイル時に同梱した日本語・英語YAMLをCLI用翻訳カタログへ読み込む。
-/// ## 引数・戻り値
-/// 引数なし。`Result<BTreeMap<String, BTreeMap<String, String>>, String>` を返す。
-/// ## エラー
-/// YAML形式、文字列値、必須翻訳キーが不正・欠落した場合はErrを返す。
-/// ## 変更履歴
-/// - v1.1.0 (2026-09-29, Codex): GUIなしCLI向け埋込カタログ読込を追加。
+/// Loads bundled Japanese and English YAML catalogs for CLI translations at compile time.
+///
+/// ## Arguments / Returns
+/// Takes no arguments; returns `Result<BTreeMap<String, BTreeMap<String, String>>, String>`.
+///
+/// ## Errors
+/// Returns `Err` if YAML format, string values, or mandatory translation keys are invalid or missing.
 pub fn load_embedded_catalogs() -> Result<BTreeMap<String, BTreeMap<String, String>>, String> {
     let japanese = parse_embedded_catalog(include_str!("../locales/ja.yml"))?;
     let english = parse_embedded_catalog(include_str!("../locales/en.yml"))?;
@@ -34,14 +35,13 @@ pub fn load_embedded_catalogs() -> Result<BTreeMap<String, BTreeMap<String, Stri
     ]))
 }
 
-/// ## 処理内容
-/// YAMLカタログのトップレベル文字列項目を翻訳辞書へ変換し、版メタデータを除く。
-/// ## 引数・戻り値
-/// YAMLテキスト `&str` を受け取り、キーと文言の `BTreeMap` を返す。
-/// ## エラー
-/// YAML解析失敗、辞書形式でない値、非文字列キー・文言でErrを返す。
-/// ## 変更履歴
-/// - v1.1.0 (2026-09-29, Codex): 同梱YAML解析を追加。
+/// Converts top-level YAML catalog string entries into a key-value translation map, excluding version metadata.
+///
+/// ## Arguments / Returns
+/// Accepts YAML text `&str` and returns a `BTreeMap` of translation keys and string values.
+///
+/// ## Errors
+/// Returns `Err` on YAML parse failure, non-mapping root, or non-string keys/values.
 fn parse_embedded_catalog(source: &str) -> Result<BTreeMap<String, String>, String> {
     let value: serde_yaml::Value =
         serde_yaml::from_str(source).map_err(|error| error.to_string())?;
@@ -64,14 +64,13 @@ fn parse_embedded_catalog(source: &str) -> Result<BTreeMap<String, String>, Stri
     Ok(catalog)
 }
 
-/// ## 処理内容
-/// 要求言語のキー、英語の同一キー、必須英語フォールバックの順に翻訳文を探す。
-/// ## 引数・戻り値
-/// locale と key の二重マップ、言語コード、翻訳キーを受け取り、見つかった翻訳を複製して返す。
-/// ## エラー
-/// カタログまたは必要なキーが欠けている場合は `None` を返し、panic を起こさない。
-/// ## 変更履歴
-/// - v1.0.0 (2026-09-26, Codex): Rust 側の英語フォールバックを実装。
+/// Resolves translation text in order: requested language key, English catalog key, and finally English unavailable fallback.
+///
+/// ## Arguments / Returns
+/// Accepts double map of locale and key, language code, and translation key, returning cloned string if found.
+///
+/// ## Errors
+/// Returns `None` without panicking if catalogs or keys are missing.
 pub fn resolve_catalog_text(
     catalogs: &BTreeMap<String, BTreeMap<String, String>>,
     language: &str,
@@ -93,14 +92,13 @@ pub fn resolve_catalog_text(
 mod tests {
     use std::collections::BTreeMap;
 
-    /// ## 処理内容
-    /// 埋込カタログを読み込み、版メタデータを翻訳辞書へ混入させないことを検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。ja/enキーとCLI必須文言をアサートする。
-    /// ## エラー
-    /// カタログ解析失敗または期待キー不一致でテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.1.0 (2026-09-29, Codex): 同梱カタログの回帰テストを追加。
+    /// Verifies that embedded catalogs are loaded without mixing version metadata into the translation dictionary.
+    ///
+    /// ## Arguments / Returns
+    /// None.
+    ///
+    /// ## Errors
+    /// Panics on assertion failure.
     #[test]
     fn loads_embedded_locales_without_version_metadata() {
         let catalogs = super::load_embedded_catalogs().unwrap();
@@ -112,21 +110,20 @@ mod tests {
             .contains_key(crate::constants::CLI_TRANSLATION_HELP_KEY));
     }
 
-    /// ## 処理内容
-    /// 日本語カタログにないキーが英語カタログから返ることを検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。翻訳結果が英語文言と一致することをアサートする。
-    /// ## エラー
-    /// 期待値が異なる場合はテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, Codex): 英語フォールバック検証を追加。
+    /// Verifies that a key missing in requested locale catalog falls back to English catalog.
+    ///
+    /// ## Arguments / Returns
+    /// None.
+    ///
+    /// ## Errors
+    /// Panics on assertion failure.
     #[test]
     fn missing_requested_locale_key_uses_english_without_changing_locale() {
         let active_locale = crate::constants::LANGUAGE_JA;
         let catalogs = BTreeMap::from([(
             crate::constants::LANGUAGE_EN.to_string(),
             BTreeMap::from([
-                ("menu.about".to_string(), "About Excel Grep".to_string()),
+                ("menu.about".to_string(), "About Excel Seek".to_string()),
                 (
                     crate::constants::TRANSLATION_UNAVAILABLE_KEY.to_string(),
                     "Some text could not be translated.".to_string(),
@@ -136,19 +133,18 @@ mod tests {
 
         assert_eq!(
             super::resolve_catalog_text(&catalogs, active_locale, "menu.about"),
-            Some("About Excel Grep".to_string())
+            Some("About Excel Seek".to_string())
         );
         assert_eq!(active_locale, crate::constants::LANGUAGE_JA);
     }
 
-    /// ## 処理内容
-    /// 英語にも翻訳キーがない場合、必須の英語フォールバック文を返すことを検証する。
-    /// ## 引数・戻り値
-    /// 引数なし。解決結果が必須フォールバック文と一致することをアサートする。
-    /// ## エラー
-    /// 期待値が異なる場合はテストが失敗する。
-    /// ## 変更履歴
-    /// - v1.0.0 (2026-09-26, Codex): 最終フォールバック検証を追加。
+    /// Verifies that when key is missing in English too, the required fallback translation text is returned.
+    ///
+    /// ## Arguments / Returns
+    /// None.
+    ///
+    /// ## Errors
+    /// Panics on assertion failure.
     #[test]
     fn missing_key_uses_required_english_fallback() {
         let catalogs = BTreeMap::from([(

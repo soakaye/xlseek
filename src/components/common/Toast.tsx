@@ -1,13 +1,10 @@
 /**
- * @fileoverview トースト通知コンポーネント (src/components/common/Toast.tsx)
+ * @fileoverview Toast notification component (src/components/common/Toast.tsx)
  *
- * ## 処理内容
- * 画面右下に一時的な通知メッセージをフロート表示し、一定時間経過（定数定義準拠）
- * または閉じるボタンの押下によって自動的にフェードアウト・非表示とする。
- * 憲章原則II（定数参照）および原則III（ヘッダコメント）に準拠。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化およびJSDocドキュメントの付与。
+ * ## Description
+ * Displays a temporary floating notification message in the lower right of the screen,
+ * automatically fading out after a configured timeout (referencing constants) or when dismissed.
+ * Complies with Constitution Principle II (constant reference) and Principle III (comprehensive documentation).
  */
 
 import React, { useEffect } from "react";
@@ -21,25 +18,22 @@ interface ToastProps {
 }
 
 /**
- * ## 処理内容
- * トースト通知ポップアップを表示するUIコンポーネント。
+ * ## Description
+ * UI component rendering a toast notification popup.
  *
- * ## 引数
- * @param props - 表示メッセージ、クローズコールバック、表示持続時間
+ * ## Arguments
+ * @param props - Display message, close callback, and visibility duration
  *
- * ## 戻り値
- * @returns レンダリング要素、またはメッセージ不在時はnull
+ * ## Returns
+ * @returns Rendered toast element, or null if message is absent
  *
- * ## エラー / 例外発生条件
- * panicや例外は発生しない。
- *
- * ## 変更履歴
- * - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化（TIMING_CONSTANTS.TOAST_DURATION_MS）。
+ * ## Errors / Exceptions
+ * No panic or exceptions occur.
  */
 export const Toast: React.FC<ToastProps> = ({
   message,
   onClose,
-  // 定数参照: TIMING_CONSTANTS.TOAST_DURATION_MS を使用
+  // Constant reference: TIMING_CONSTANTS.TOAST_DURATION_MS
   duration = TIMING_CONSTANTS.TOAST_DURATION_MS,
 }) => {
   useEffect(() => {

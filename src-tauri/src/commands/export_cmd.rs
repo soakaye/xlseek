@@ -1,32 +1,27 @@
-//! # エクスポートコマンドハンドラ (commands/export_cmd.rs)
+//! # Export Command Handler (commands/export_cmd.rs)
 //!
-//! ## 処理内容
-//! フロントエンドからのエクスポート要求（export_results）を受信し、
-//! 指定フォーマット（CSVまたはExcel）に応じて検索一致アイテムをファイルへ出力する。
-//! 憲章原則I（日本語エラー）、原則II（定数参照）、原則III（ヘッダコメント）に準拠。
-//!
-//! ## 変更履歴
-//! - v1.0.0 (2026-09-26, AI Agent): 初版策定。定数参照化、4要素ヘッダコメント付与。
+//! ## Description
+//! Receives export requests (export_results) from the frontend and exports
+//! search match items to a file in the requested format (CSV or Excel).
+//! Conforms to Constitution Principle I (English comments/errors), Principle II (Constant references),
+//! and Principle III (Header comments).
 
 use crate::export::{export_to_csv, export_to_xlsx};
 use crate::models::{CommandError, ErrorCode, ExportFormat, ExportRequest};
 use tauri_plugin_i18n::PluginI18nExt;
 
-/// ## 処理内容
-/// 検索結果アイテム一覧を指定されたフォーマット（CSVまたはExcel）で指定パスへ書き出す。
+/// ## Description
+/// Exports search result items to the specified file path in the requested format (CSV or Excel).
 ///
-/// ## 引数
-/// - `app_handle`: `tauri::AppHandle` - プラグイン翻訳カタログを読み取るアプリハンドル
-/// - `request`: `ExportRequest` - エクスポート形式、出力先パス、出力言語、およびアイテム一覧
+/// ## Arguments
+/// - `app_handle`: `tauri::AppHandle` - Application handle to access plugin translation catalogs
+/// - `request`: `ExportRequest` - Export format, target path, language, and items list
 ///
-/// ## 戻り値
-/// - `Result<(), CommandError>`: 成功時 `Ok(())`、対応外言語または出力失敗時はコマンドエラー
+/// ## Returns
+/// - `Result<(), CommandError>`: `Ok(())` on success, or CommandError on unsupported language or failure
 ///
-/// ## エラー / 例外発生条件
-/// 対応外言語、ファイル書き込み失敗、または非同期タスク実行エラー時に `Err` を返却する。panicは発生しない。
-///
-/// ## 変更履歴
-/// - v1.1.0 (2026-09-26, Codex): 固定言語とプラグインカタログを出力処理へ渡す。
+/// ## Errors / Exceptions
+/// Returns `Err` on unsupported language, file write failure, or asynchronous task failure. Does not panic.
 #[tauri::command]
 pub async fn export_results(
     app_handle: tauri::AppHandle,

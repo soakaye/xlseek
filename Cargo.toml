@@ -4,7 +4,6 @@
 # History:
 # - v1.0.0 (2026-09-26, Codex): create workspace for locale bundling.
 # - v1.1.0 (2026-09-29, Antigravity): add crates/core and crates/cli to workspace members.
-# - v1.2.0 (2026-09-29, Antigravity): add patch.crates-io for calamine with bounds-checking fix.
 [workspace]
 members = [
     "crates/core",
@@ -12,7 +11,3 @@ members = [
     "src-tauri",
 ]
 resolver = "2"
-
-[patch.crates-io]
-calamine = { path = "patches/calamine-0.36.1" }
-
