@@ -8,6 +8,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "build:cli": "node scripts/build-cli.js",
+    "test:build-cli": "node --test scripts/build-cli.test.js",
     "build:gui": "tauri build",
     "build:all": "npm run build:gui",
     "preview": "vite preview",
