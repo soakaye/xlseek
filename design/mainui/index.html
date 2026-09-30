@@ -17,6 +17,7 @@
      * - Status bar (progress indicator, CSV/Excel export)
      * - Extension toggle pills (.xlsx, .xlsm, .xlsb, .xls)
      * - Toast notifications
+     * - Separate immediate language preferences and saved settings, with cancellable drafts
      * Conforms to Constitution Principle I (English code/comments) and Principle III (Header comments).
      *
      * ## Components
@@ -24,8 +25,11 @@
      * - Lucide Icons CDN: Icon rendering
      * - Mock Data & Interactive Controller: Interactive UI simulation logic
      *
+     * ## Arguments & Returns
+     * Browser events drive the mock controls; renders a standalone page with no backend calls.
+     *
      * ## Errors / Exceptions
-     * Static HTML file; external network errors do not occur. Fallback toast is displayed when clipboard API is unavailable.
+     * CDN failures can prevent styling or icons; storage and clipboard failures display a toast.
      */
   -->
   <meta charset="UTF-8">
@@ -99,6 +103,8 @@
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+    /* Hidden pages and action groups must override their flex/grid display utilities. */
+    #settingsModal [hidden] { display: none; }
   </style>
 </head>
 <body class="bg-[#121214] text-zinc-100 min-h-screen flex flex-col font-sans select-none overflow-hidden h-screen">
@@ -567,87 +573,112 @@
     </footer>
 
     <div id="settingsModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 hidden" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-      <section class="w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 p-5 text-zinc-100 shadow-2xl">
-        <div class="mb-4 flex items-center justify-between">
-          <h2 id="settingsTitle" class="text-base font-semibold">設定</h2>
-          <button id="settingsCloseBtn" type="button" aria-label="閉じる" class="rounded px-2 py-1 hover:bg-zinc-700">×</button>
+      <section class="flex w-full max-w-xl max-h-[calc(100dvh-2rem)] flex-col overflow-hidden rounded-xl border border-zinc-700 bg-zinc-900 text-zinc-100 shadow-2xl">
+        <div class="flex shrink-0 items-center justify-between border-b border-zinc-800 px-5 py-4">
+          <div class="flex items-center gap-2.5">
+            <i data-lucide="settings" class="h-4 w-4 text-emerald-400"></i>
+            <h2 id="settingsTitle" class="text-base font-semibold">設定</h2>
+          </div>
+          <button id="settingsCloseBtn" type="button" aria-label="閉じる" class="rounded p-2 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 focus-visible:outline-emerald-400"><i data-lucide="x" class="h-4 w-4"></i></button>
         </div>
-        <p id="settingsDescription" class="mb-4 text-sm text-zinc-400">言語を選択してください。デフォルトはシステム言語を使用します。</p>
-        <label for="historyLimit" class="mb-2 block text-sm font-medium">検索履歴の保存件数</label>
-        <input id="historyLimit" type="number" min="0" max="50" step="1" value="20" class="w-full rounded border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm">
-        <p class="mt-1 text-xs text-zinc-400">0～50 件。0 件にすると履歴を保存しません。</p>
-        <button id="saveHistoryLimit" type="button" class="mt-2 rounded bg-emerald-700 px-3 py-1.5 text-sm">件数を保存</button>
-        <fieldset class="mt-4">
-          <legend id="displayLanguageLabel" class="mb-2 text-sm font-medium">表示言語</legend>
-          <div class="space-y-2">
-            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-700 px-3 py-2"><input type="radio" name="mockLanguage" value="default" checked><span id="defaultLanguageLabel">デフォルト</span></label>
-            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-700 px-3 py-2"><input type="radio" name="mockLanguage" value="ja"><span>日本語</span></label>
-            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-700 px-3 py-2"><input type="radio" name="mockLanguage" value="en"><span>English</span></label>
-          </div>
-        </fieldset>
-
-        <!-- デフォルト検索オプション -->
-        <fieldset class="mt-6 border-t border-zinc-800 pt-4">
-          <legend id="defaultOptionsTitle" class="mb-1 text-sm font-medium">デフォルト検索オプション</legend>
-          <p id="defaultOptionsDescription" class="mb-3 text-xs text-zinc-400">次回起動時および検索初期状態に反映するオプションを設定します。</p>
-
-          <fieldset class="mb-3">
-            <legend class="mb-2 text-xs font-medium">ディレクトリ検索方式</legend>
-            <label class="mr-3 inline-flex items-center gap-2"><input type="radio" name="mockDirectoryMode" value="sequential" checked>順次</label>
-            <label class="inline-flex items-center gap-2"><input type="radio" name="mockDirectoryMode" value="burst">Burst</label>
-          </fieldset>
-          <fieldset class="mb-3">
-            <legend class="mb-2 text-xs font-medium">Burst 並列数</legend>
-            <label class="mr-3 inline-flex items-center gap-2"><input type="radio" name="mockWorkerChoice" value="automatic" checked>自動</label>
-            <label class="inline-flex items-center gap-2"><input type="radio" name="mockWorkerChoice" value="custom">手動</label>
-            <input id="mockBurstWorkers" type="number" min="2" max="32" step="1" value="4" aria-label="Burst 並列数" class="w-24 rounded border border-zinc-700 bg-zinc-800 px-2 py-1">
-            <p id="mockBurstWorkersError" class="hidden mt-1 text-amber-400">2 から 32 の整数を入力してください</p>
-          </fieldset>
-
-          <div class="space-y-2 text-xs">
-            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
-              <input type="checkbox" id="mockOptCase" class="accent-excel rounded cursor-pointer">
-              <span id="optMatchCaseLabel">大文字/小文字を区別</span>
-            </label>
-            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
-              <input type="checkbox" id="mockOptRegex" class="accent-excel rounded cursor-pointer">
-              <span id="optUseRegexLabel">正規表現 (Regex)</span>
-            </label>
-            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
-              <input type="checkbox" id="mockOptFormula" checked class="accent-excel rounded cursor-pointer">
-              <span id="optIncludeFormulaLabel">数式 (Formula)</span>
-            </label>
-            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
-              <input type="checkbox" id="mockOptShape" class="accent-excel rounded cursor-pointer">
-              <span id="optIncludeShapeLabel">Shape 内テキスト</span>
-            </label>
-            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
-              <input type="checkbox" id="mockOptComment" checked class="accent-excel rounded cursor-pointer">
-              <span id="optIncludeCommentLabel">コメント / メモ</span>
-            </label>
-            <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
-              <input type="checkbox" id="mockOptHidden" class="accent-excel rounded cursor-pointer">
-              <span id="optIncludeHiddenLabel">非表示シート</span>
-            </label>
-
-            <div class="mt-3 pt-2">
-              <span id="targetExtensionsLabel" class="block mb-1.5 text-zinc-300 font-medium">対象拡張子:</span>
-              <div class="flex gap-2">
-                <button type="button" class="mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium" data-ext=".xlsx">.xlsx</button>
-                <button type="button" class="mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium" data-ext=".xlsm">.xlsm</button>
-                <button type="button" class="mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium" data-ext=".xlsb">.xlsb</button>
-                <button type="button" class="mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium" data-ext=".xls">.xls</button>
+        <div role="tablist" aria-label="設定ページ" class="grid shrink-0 grid-cols-2 gap-1 border-b border-zinc-800 px-5 pt-3">
+          <button id="settingsImmediateTab" type="button" role="tab" aria-selected="true" aria-controls="settingsImmediatePage" class="border-b-2 border-transparent px-2 py-3 text-sm text-zinc-400 hover:text-zinc-100 aria-selected:border-emerald-400 aria-selected:text-emerald-300">表示言語 · 即時反映</button>
+          <button id="settingsSavedTab" type="button" role="tab" aria-selected="false" aria-controls="settingsSavedPage" tabindex="-1" class="border-b-2 border-transparent px-2 py-3 text-sm text-zinc-400 hover:text-zinc-100 aria-selected:border-emerald-400 aria-selected:text-emerald-300">検索設定 · 保存して反映</button>
+        </div>
+        <div id="settingsContent" class="min-h-0 overflow-y-auto p-5">
+          <div id="settingsImmediatePage" role="tabpanel" aria-labelledby="settingsImmediateTab" tabindex="0">
+            <p id="settingsDescription" class="mb-5 rounded-lg border border-emerald-900/60 bg-emerald-950/30 px-3 py-2.5 text-xs leading-5 text-emerald-200">表示言語は選択するとすぐに反映されます。保存操作は不要です。</p>
+            <fieldset>
+              <legend id="displayLanguageLabel" class="mb-2 text-sm font-medium">表示言語</legend>
+              <div class="grid gap-2 sm:grid-cols-3">
+                <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-700 px-3 py-3 hover:bg-zinc-800 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-950/40"><input type="radio" name="mockLanguage" value="default" checked class="accent-excel-light"><span id="defaultLanguageLabel" class="text-sm">デフォルト</span></label>
+                <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-700 px-3 py-3 hover:bg-zinc-800 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-950/40"><input type="radio" name="mockLanguage" value="ja" class="accent-excel-light"><span class="text-sm">日本語</span></label>
+                <label class="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-700 px-3 py-3 hover:bg-zinc-800 has-[:checked]:border-emerald-600 has-[:checked]:bg-emerald-950/40"><input id="mockLanguageEnglish" type="radio" name="mockLanguage" value="en" class="accent-excel-light"><span class="text-sm">English</span></label>
               </div>
+              <p id="languageSystemHint" class="mt-2 text-xs text-zinc-500">デフォルトはシステム言語を使用します。</p>
+            </fieldset>
+            <p class="mt-5 text-xs text-zinc-400"><span id="currentLanguageLabel">現在の表示言語</span>: <span id="currentLanguageValue" class="font-medium text-zinc-200">日本語</span></p>
+          </div>
+          <form id="settingsSavedPage" role="tabpanel" aria-labelledby="settingsSavedTab" tabindex="0" hidden novalidate>
+            <p id="savedSettingsDescription" class="mb-5 rounded-lg border border-zinc-700 bg-zinc-800/50 px-3 py-2.5 text-xs leading-5 text-zinc-300">このページの変更は「設定を保存」でまとめて反映します。キャンセル・閉じるで未保存の変更を破棄します。</p>
+            <div class="mb-5">
+              <div class="flex items-center justify-between gap-4">
+                <label id="historyLimitLabel" for="historyLimit" class="text-sm font-medium">検索履歴の保存件数</label>
+                <input id="historyLimit" type="number" min="0" max="50" step="1" value="20" aria-describedby="historyLimitHint historyLimitError" class="w-24 rounded border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none">
+              </div>
+              <p id="historyLimitHint" class="mt-2 text-xs text-zinc-500">0～50 件。0 件にすると履歴を保存しません。</p>
+              <p id="historyLimitError" class="mt-2 text-xs text-amber-400" role="alert" hidden>0 から 50 の整数を入力してください。</p>
             </div>
-          </div>
 
-          <div class="mt-4 flex items-center justify-between gap-3">
-            <button id="resetDefaultOptionsBtn" type="button" class="rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700 transition">デフォルトに戻す</button>
-            <button id="saveDefaultOptionsBtn" type="button" class="rounded bg-emerald-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-emerald-600 transition">オプションを保存</button>
-          </div>
-        </fieldset>
+            <!-- デフォルト検索オプション -->
+            <fieldset class="border-t border-zinc-800 pt-4">
+              <legend id="defaultOptionsTitle" class="mb-1 text-sm font-medium">デフォルト検索オプション</legend>
+              <p id="defaultOptionsDescription" class="mb-3 text-xs text-zinc-400">次回起動時および検索初期状態に反映するオプションを設定します。</p>
 
-        <p class="mt-4 text-xs text-zinc-400"><span id="currentLanguageLabel">現在の表示言語</span>: <span id="currentLanguageValue">日本語</span></p>
+              <fieldset class="mb-3">
+                <legend id="directoryModeLabel" class="mb-2 text-xs font-medium">ディレクトリ検索方式</legend>
+                <label class="mr-3 inline-flex items-center gap-2"><input type="radio" name="mockDirectoryMode" value="sequential" checked><span id="sequentialModeLabel">順次</span></label>
+                <label class="inline-flex items-center gap-2"><input type="radio" name="mockDirectoryMode" value="burst">Burst</label>
+              </fieldset>
+              <fieldset class="mb-3">
+                <legend id="burstWorkersLabel" class="mb-2 text-xs font-medium">Burst 並列数</legend>
+                <label class="mr-3 inline-flex items-center gap-2"><input type="radio" name="mockWorkerChoice" value="automatic" checked><span id="workersAutomaticLabel">自動</span></label>
+                <label class="inline-flex items-center gap-2"><input type="radio" name="mockWorkerChoice" value="custom"><span id="workersCustomLabel">手動</span></label>
+                <input id="mockBurstWorkers" type="number" min="2" max="32" step="1" value="4" aria-labelledby="burstWorkersLabel" aria-describedby="mockBurstWorkersError" class="w-24 rounded border border-zinc-700 bg-zinc-800 px-2 py-1 disabled:opacity-40">
+                <p id="mockBurstWorkersError" role="alert" class="hidden mt-1 text-xs text-amber-400">2 から 32 の整数を入力してください</p>
+              </fieldset>
+
+              <div class="grid gap-2 text-xs sm:grid-cols-2">
+                <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
+                  <input type="checkbox" id="mockOptCase" class="accent-excel rounded cursor-pointer">
+                  <span id="optMatchCaseLabel">大文字/小文字を区別</span>
+                </label>
+                <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
+                  <input type="checkbox" id="mockOptRegex" class="accent-excel rounded cursor-pointer">
+                  <span id="optUseRegexLabel">正規表現 (Regex)</span>
+                </label>
+                <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
+                  <input type="checkbox" id="mockOptFormula" checked class="accent-excel rounded cursor-pointer">
+                  <span id="optIncludeFormulaLabel">数式 (Formula)</span>
+                </label>
+                <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
+                  <input type="checkbox" id="mockOptShape" class="accent-excel rounded cursor-pointer">
+                  <span id="optIncludeShapeLabel">Shape 内テキスト</span>
+                </label>
+                <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
+                  <input type="checkbox" id="mockOptComment" checked class="accent-excel rounded cursor-pointer">
+                  <span id="optIncludeCommentLabel">コメント / メモ</span>
+                </label>
+                <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
+                  <input type="checkbox" id="mockOptHidden" class="accent-excel rounded cursor-pointer">
+                  <span id="optIncludeHiddenLabel">非表示シート</span>
+                </label>
+
+                <div class="mt-2 pt-2 sm:col-span-2">
+                  <span id="targetExtensionsLabel" class="block mb-1.5 text-zinc-300 font-medium">対象拡張子:</span>
+                  <div class="flex gap-2">
+                    <button type="button" class="mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium" data-ext=".xlsx">.xlsx</button>
+                    <button type="button" class="mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium" data-ext=".xlsm">.xlsm</button>
+                    <button type="button" class="mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium" data-ext=".xlsb">.xlsb</button>
+                    <button type="button" class="mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium" data-ext=".xls">.xls</button>
+                  </div>
+                  <p id="mockExtensionsError" role="alert" class="mt-1 text-xs text-amber-400" hidden>対象拡張子を1つ以上選択してください</p>
+                </div>
+              </div>
+
+              <div class="mt-4">
+                <button id="resetDefaultOptionsBtn" type="button" class="rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 text-xs text-zinc-300 hover:bg-zinc-700 transition">デフォルトに戻す</button>
+              </div>
+            </fieldset>
+          </form>
+        </div>
+        <div class="flex shrink-0 items-center justify-end gap-2 border-t border-zinc-800 bg-zinc-950/30 px-5 py-4">
+          <button id="settingsDoneBtn" type="button" class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800">閉じる</button>
+          <div id="settingsSavedActions" class="flex items-center gap-2" hidden>
+            <button id="settingsCancelBtn" type="button" class="rounded-lg border border-zinc-700 px-4 py-2 text-sm text-zinc-300 hover:bg-zinc-800">キャンセル</button>
+            <button id="saveDefaultOptionsBtn" type="submit" form="settingsSavedPage" class="rounded-lg bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600 disabled:cursor-not-allowed disabled:opacity-40">設定を保存</button>
+          </div>
+        </div>
       </section>
     </div>
 
@@ -859,6 +890,130 @@
   <!-- アプリケーションモック インタラクティブスクリプト                              -->
   <!-- ========================================================================= -->
   <script>
+    /**
+     * Description: Centralizes settings-only selectors, states, and text for the standalone mock.
+     * Arguments & Returns: No arguments; immutable configuration objects used by settings handlers.
+     * Errors: Static values do not access storage or require the React/Tauri runtime.
+     */
+    const MOCK_SETTINGS = {
+      HIDDEN_CLASS: "hidden",
+      HIDDEN_SELECTOR: "[hidden]",
+      INPUT_SELECTOR: "input",
+      FOCUSABLE_SELECTOR: 'button, input, [tabindex="0"]',
+      SELECTED_ATTRIBUTE: "aria-selected",
+      PANEL_ATTRIBUTE: "aria-controls",
+      INVALID_ATTRIBUTE: "aria-invalid",
+      PRESSED_ATTRIBUTE: "aria-pressed",
+      EXTENSION_ATTRIBUTE: "data-ext",
+      INACTIVE_TAB_INDEX: -1,
+      LAST_INDEX: -1,
+      TAB_KEYS: ["ArrowLeft", "ArrowRight", "Home", "End"],
+      HOME_KEY: "Home",
+      END_KEY: "End",
+      ESCAPE_KEY: "Escape",
+      TAB_KEY: "Tab",
+      CLICK_EVENT: "click",
+      KEY_EVENT: "keydown",
+      INPUT_EVENT: "input",
+      SUBMIT_EVENT: "submit",
+      BURST_MODE: "burst",
+      DONE_ID: "settingsDoneBtn",
+      CANCEL_ID: "settingsCancelBtn",
+      CONTENT_ID: "settingsContent",
+      LAUNCHER_ID: "settingsDialogBtn",
+      SAVED_ACTIONS_ID: "settingsSavedActions",
+      HISTORY_ERROR_ID: "historyLimitError",
+      HISTORY_STORAGE_KEY: "xlseek.searchHistory",
+      LEGACY_HISTORY_KEY: "exlgrep.search-history.maxEntries",
+      OPTIONS_STORAGE_KEY: "xlseek.default_search_options",
+      LANGUAGE_STORAGE_KEY: "xlseek.language",
+      HISTORY_DEFAULT: 20,
+      SEARCH_DEFAULTS: { match_case: false, use_regex: false, include_formula: true, include_shape: false, include_comment: true, include_hidden: false, extensions: [".xlsx", ".xlsm", ".xlsb", ".xls"], directory_mode: "sequential", burst_workers: null },
+      EXTENSION_SELECTED_CLASS: "mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium",
+      EXTENSION_IDLE_CLASS: "mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-zinc-900/80 text-zinc-500 border-zinc-800 hover:text-zinc-400",
+    };
+      const MOCK_SETTINGS_TEXT = {
+      JA: {
+        LABELS: {
+          settingsTitle: "設定",
+          settingsImmediateTab: "表示言語 · 即時反映",
+          settingsSavedTab: "検索設定 · 保存して反映",
+          settingsDescription: "表示言語は選択するとすぐに反映されます。保存操作は不要です。",
+          savedSettingsDescription: "このページの変更は「設定を保存」でまとめて反映します。キャンセル・閉じるで未保存の変更を破棄します。",
+          displayLanguageLabel: "表示言語",
+          defaultLanguageLabel: "デフォルト",
+          languageSystemHint: "デフォルトはシステム言語を使用します。",
+          currentLanguageLabel: "現在の表示言語",
+          currentLanguageValue: "日本語",
+          historyLimitLabel: "検索履歴の保存件数",
+          historyLimitHint: "0～50 件。0 件にすると履歴を保存しません。",
+          historyLimitError: "0 から 50 の整数を入力してください。",
+          mockExtensionsError: "対象拡張子を1つ以上選択してください",
+          defaultOptionsTitle: "デフォルト検索オプション",
+          defaultOptionsDescription: "次回起動時および検索初期状態に反映するオプションを設定します。",
+          directoryModeLabel: "ディレクトリ検索方式",
+          sequentialModeLabel: "順次",
+          burstWorkersLabel: "Burst 並列数",
+          workersAutomaticLabel: "自動",
+          workersCustomLabel: "手動",
+          mockBurstWorkersError: "2 から 32 の整数を入力してください",
+          optMatchCaseLabel: "大文字/小文字を区別",
+          optUseRegexLabel: "正規表現 (Regex)",
+          optIncludeFormulaLabel: "数式 (Formula)",
+          optIncludeShapeLabel: "Shape 内テキスト",
+          optIncludeCommentLabel: "コメント / メモ",
+          optIncludeHiddenLabel: "非表示シート",
+          targetExtensionsLabel: "対象拡張子:",
+          resetDefaultOptionsBtn: "デフォルトに戻す",
+          settingsDoneBtn: "閉じる",
+          settingsCancelBtn: "キャンセル",
+          saveDefaultOptionsBtn: "設定を保存",
+        },
+        RESET_MESSAGE: "初期値に戻しました。「設定を保存」で反映します。",
+        SAVED_MESSAGE: "検索履歴とデフォルト検索設定を保存しました",
+        STORAGE_ERROR: "設定を保存できませんでした。変更を確認して再度お試しください。",
+      },
+      EN: {
+        LABELS: {
+          settingsTitle: "Settings",
+          settingsImmediateTab: "Language · Apply immediately",
+          settingsSavedTab: "Search · Save to apply",
+          settingsDescription: "Language changes apply immediately. No save action is needed.",
+          savedSettingsDescription: "Save all changes on this page together. Cancel or close to discard unsaved changes.",
+          displayLanguageLabel: "Display language",
+          defaultLanguageLabel: "Default",
+          languageSystemHint: "Default uses the system language.",
+          currentLanguageLabel: "Current display language",
+          currentLanguageValue: "English",
+          historyLimitLabel: "Search history limit",
+          historyLimitHint: "0–50 entries. Set to 0 to disable history.",
+          historyLimitError: "Enter an integer from 0 to 50.",
+          mockExtensionsError: "Select at least one file extension.",
+          defaultOptionsTitle: "Default search options",
+          defaultOptionsDescription: "Options used at the next startup and for the initial search state.",
+          directoryModeLabel: "Directory search mode",
+          sequentialModeLabel: "Sequential",
+          burstWorkersLabel: "Burst workers",
+          workersAutomaticLabel: "Automatic",
+          workersCustomLabel: "Custom",
+          mockBurstWorkersError: "Enter an integer from 2 to 32.",
+          optMatchCaseLabel: "Match case",
+          optUseRegexLabel: "Regular expression (Regex)",
+          optIncludeFormulaLabel: "Formulas",
+          optIncludeShapeLabel: "Shape text",
+          optIncludeCommentLabel: "Comments / Notes",
+          optIncludeHiddenLabel: "Hidden sheets",
+          targetExtensionsLabel: "File extensions:",
+          resetDefaultOptionsBtn: "Reset to defaults",
+          settingsDoneBtn: "Close",
+          settingsCancelBtn: "Cancel",
+          saveDefaultOptionsBtn: "Save settings",
+        },
+        RESET_MESSAGE: "Defaults restored. Save settings to apply them.",
+        SAVED_MESSAGE: "Search history and default search settings saved",
+        STORAGE_ERROR: "Could not save settings. Review your changes and try again.",
+      },
+    };
     /**
      * 最新の仕様（SearchMatch, CellPreviewData）に完全対応したモックデータセット
      */
@@ -8804,14 +8959,6 @@
           if (folderDropZone.contains(document.activeElement) && folderInput.value.startsWith("/") && !folderInput.value.endsWith("/")) showHistory([`${folderInput.value.split("/").slice(0, -1).join("/")}/Archive/`, `${folderInput.value.split("/").slice(0, -1).join("/")}/資料/`], "directory", false);
         }, 200);
       });
-      document.getElementById("saveHistoryLimit").addEventListener("click", () => {
-        const input = document.getElementById("historyLimit");
-        const count = Number(input.value);
-        if (!Number.isInteger(count) || count < 0 || count > 50) return showToast("保存件数は0～50の整数で指定してください");
-        localStorage.setItem("exlgrep.search-history.maxEntries", String(count));
-        showToast("検索履歴の保存件数を更新しました");
-      });
-
       // フォルダ参照ボタン
       document.getElementById("browseBtn").addEventListener("click", () => {
         clearTimeout(completionTimer);
@@ -9039,61 +9186,229 @@
       const aboutPackageDetail = document.getElementById("aboutPackageDetail");
 
       const settingsModal = document.getElementById("settingsModal");
-      document.getElementById("settingsDialogBtn").addEventListener("click", () => settingsModal.classList.remove("hidden"));
-      document.getElementById("settingsCloseBtn").addEventListener("click", () => settingsModal.classList.add("hidden"));
-      settingsModal.addEventListener("click", (event) => { if (event.target === settingsModal) settingsModal.classList.add("hidden"); });
+      const settingsForm = document.getElementById("settingsSavedPage");
+      const historyLimit = document.getElementById("historyLimit");
+      const settingsSaveButton = document.getElementById("saveDefaultOptionsBtn");
+      const settingsTabs = [document.getElementById("settingsImmediateTab"), document.getElementById("settingsSavedTab")];
+      /**
+       * Description: Switches between immediate preferences and saved drafts without discarding edits.
+       * Arguments & Returns: tab (HTMLButtonElement) is the destination; returns void.
+       * Errors: Both panels exist in this standalone prototype; no storage access or exceptions.
+       */
+      const selectSettingsPage = (tab) => {
+        settingsTabs.forEach(item => {
+          const selected = item === tab;
+          // Constant reference: MOCK_SETTINGS attributes and tab indices.
+          item.setAttribute(MOCK_SETTINGS.SELECTED_ATTRIBUTE, String(selected));
+          item.tabIndex = selected ? 0 : MOCK_SETTINGS.INACTIVE_TAB_INDEX;
+          document.getElementById(item.getAttribute(MOCK_SETTINGS.PANEL_ATTRIBUTE)).hidden = !selected;
+        });
+        const savedPage = tab === settingsTabs.at(MOCK_SETTINGS.LAST_INDEX);
+        document.getElementById(MOCK_SETTINGS.SAVED_ACTIONS_ID).hidden = !savedPage;
+        document.getElementById(MOCK_SETTINGS.DONE_ID).hidden = savedPage;
+        document.getElementById(MOCK_SETTINGS.CONTENT_ID).scrollTop = 0;
+      };
+      settingsTabs.forEach(tab => {
+        tab.addEventListener(MOCK_SETTINGS.CLICK_EVENT, () => selectSettingsPage(tab));
+        tab.addEventListener(MOCK_SETTINGS.KEY_EVENT, (event) => {
+          // Constant reference: MOCK_SETTINGS navigation keys.
+          if (!MOCK_SETTINGS.TAB_KEYS.includes(event.key)) return;
+          event.preventDefault();
+          const target = event.key === MOCK_SETTINGS.HOME_KEY ? settingsTabs[0]
+            : event.key === MOCK_SETTINGS.END_KEY ? settingsTabs.at(MOCK_SETTINGS.LAST_INDEX)
+            : settingsTabs.find(item => item !== tab);
+          selectSettingsPage(target);
+          target.focus();
+        });
+      });
+      /**
+       * Description: Restores saved controls when dismissing the dialog, keeping immediate language changes.
+       * Arguments & Returns: None; returns void and restores focus to the settings launcher.
+       * Errors: Restoring in-memory defaults requires no storage operations.
+       */
+      const closeSettings = () => {
+        restoreSavedSettings();
+        // Constant reference: MOCK_SETTINGS.HIDDEN_CLASS and LAUNCHER_ID.
+        settingsModal.classList.add(MOCK_SETTINGS.HIDDEN_CLASS);
+        document.getElementById(MOCK_SETTINGS.LAUNCHER_ID).focus();
+      };
+      document.getElementById("settingsDialogBtn").addEventListener("click", () => {
+        restoreSavedSettings();
+        selectSettingsPage(settingsTabs[0]);
+        settingsModal.classList.remove(MOCK_SETTINGS.HIDDEN_CLASS);
+        settingsTabs[0].focus();
+      });
+      document.getElementById("settingsCloseBtn").addEventListener("click", closeSettings);
+      document.getElementById(MOCK_SETTINGS.DONE_ID).addEventListener(MOCK_SETTINGS.CLICK_EVENT, closeSettings);
+      document.getElementById(MOCK_SETTINGS.CANCEL_ID).addEventListener(MOCK_SETTINGS.CLICK_EVENT, closeSettings);
+      settingsModal.addEventListener("click", (event) => { if (event.target === settingsModal) closeSettings(); });
       settingsModal.addEventListener("change", (event) => {
         if (event.target.name !== "mockLanguage") return;
         const language = event.target.value === "default"
           ? (navigator.language.toLowerCase().startsWith("ja") ? "ja" : "en")
           : event.target.value;
         const english = language === "en";
-        document.getElementById("settingsTitle").textContent = english ? "Settings" : "設定";
-        document.getElementById("settingsDescription").textContent = english ? "Configure the display language and search history." : "表示言語と検索履歴を設定します。";
-        document.getElementById("displayLanguageLabel").textContent = english ? "Display language" : "表示言語";
-        document.getElementById("defaultLanguageLabel").textContent = english ? "Default" : "デフォルト";
-        document.getElementById("currentLanguageLabel").textContent = english ? "Current display language" : "現在の表示言語";
+        // Constant reference: MOCK_SETTINGS_TEXT localized prototype labels.
+        settingsText = english ? MOCK_SETTINGS_TEXT.EN : MOCK_SETTINGS_TEXT.JA;
+        Object.entries(settingsText.LABELS).forEach(([id, text]) => { document.getElementById(id).textContent = text; });
         document.getElementById("currentLanguageValue").textContent = english ? "English" : "日本語";
+        try {
+          localStorage.setItem(MOCK_SETTINGS.LANGUAGE_STORAGE_KEY, event.target.value);
+        } catch {
+          showToast(settingsText.STORAGE_ERROR);
+        }
       });
-      settingsModal.addEventListener("keydown", (event) => { if (event.key === "Escape") settingsModal.classList.add("hidden"); });
+      settingsModal.addEventListener("keydown", (event) => {
+        if (event.key === MOCK_SETTINGS.ESCAPE_KEY) { event.preventDefault(); closeSettings(); return; }
+        if (event.key !== MOCK_SETTINGS.TAB_KEY) return;
+        // Constant reference: MOCK_SETTINGS.FOCUSABLE_SELECTOR; trap focus in the active page and footer.
+        const focusable = [...settingsModal.querySelectorAll(MOCK_SETTINGS.FOCUSABLE_SELECTOR)]
+          .filter(item => !item.disabled && !item.closest(MOCK_SETTINGS.HIDDEN_SELECTOR));
+        const first = focusable[0];
+        const last = focusable.at(MOCK_SETTINGS.LAST_INDEX);
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      });
 
       // デフォルト検索オプションのモック状態管理
-      let mockDefaultExtensions = [".xlsx", ".xlsm", ".xlsb", ".xls"];
+      let mockDefaultExtensions = [...MOCK_SETTINGS.SEARCH_DEFAULTS.extensions];
+      let savedDefaultExtensions = [...mockDefaultExtensions];
+      let settingsText = MOCK_SETTINGS_TEXT.JA;
+      try {
+        const languagePreference = localStorage.getItem(MOCK_SETTINGS.LANGUAGE_STORAGE_KEY);
+        const activeLanguage = languagePreference === "default"
+          ? (navigator.language.toLowerCase().startsWith("ja") ? "ja" : "en")
+          : languagePreference || (navigator.language.toLowerCase().startsWith("ja") ? "ja" : "en");
+        if (activeLanguage === "en") settingsText = MOCK_SETTINGS_TEXT.EN;
+        if (languagePreference === "ja") settingsModal.querySelector('input[name="mockLanguage"][value="ja"]').checked = true;
+        if (languagePreference === "en") document.getElementById("mockLanguageEnglish").checked = true;
+        if (!languagePreference || languagePreference === "default") settingsModal.querySelector('input[name="mockLanguage"][value="default"]').checked = true;
+        document.getElementById("currentLanguageValue").textContent = activeLanguage === "en" ? "English" : "日本語";
+        Object.entries(settingsText.LABELS).forEach(([id, text]) => { document.getElementById(id).textContent = text; });
+      } catch {
+        showToast(MOCK_SETTINGS_TEXT.JA.STORAGE_ERROR);
+      }
 
       // 設定ダイアログの拡張子ボタントグル
       const mockDirectoryModeInputs = settingsModal.querySelectorAll('input[name="mockDirectoryMode"]');
       const mockWorkerChoiceInputs = settingsModal.querySelectorAll('input[name="mockWorkerChoice"]');
       const mockBurstWorkers = document.getElementById("mockBurstWorkers");
       const mockBurstWorkersError = document.getElementById("mockBurstWorkersError");
+      /**
+       * Description: Reads the combined settings record or compatible legacy values into safe mock defaults.
+       * Arguments & Returns: Takes no arguments; returns a complete settings record.
+       * Errors: Storage and parse failures return defaults without writing to storage.
+       */
+      const readMockSavedSettings = () => {
+        const defaults = {
+          maxEntries: MOCK_SETTINGS.HISTORY_DEFAULT, keywords: [], directories: [],
+          defaultOptions: { ...MOCK_SETTINGS.SEARCH_DEFAULTS }, rememberedBurstWorkers: null,
+        };
+        try {
+          const raw = localStorage.getItem(MOCK_SETTINGS.HISTORY_STORAGE_KEY);
+          const legacyRaw = localStorage.getItem(MOCK_SETTINGS.OPTIONS_STORAGE_KEY);
+          const legacyOptions = legacyRaw ? JSON.parse(legacyRaw) : defaults.defaultOptions;
+          if (!raw) return { ...defaults, defaultOptions: { ...defaults.defaultOptions, ...legacyOptions } };
+          const stored = JSON.parse(raw);
+          if (typeof stored === "number") return { ...defaults, maxEntries: stored };
+          if (!stored || typeof stored !== "object") return defaults;
+          const optionsSource = Object.prototype.hasOwnProperty.call(stored, "defaultOptions")
+            ? stored.defaultOptions
+            : legacyOptions;
+          return {
+            ...defaults, ...stored,
+            defaultOptions: { ...defaults.defaultOptions, ...(optionsSource && typeof optionsSource === "object" ? optionsSource : {}) },
+            rememberedBurstWorkers: stored.rememberedBurstWorkers ?? stored.defaultOptions?.burst_workers ?? null,
+          };
+        } catch {
+          return defaults;
+        }
+      };
+      let savedSettingsRecord = readMockSavedSettings();
+      let draftRememberedWorkers = savedSettingsRecord.rememberedBurstWorkers;
+      historyLimit.value = String(savedSettingsRecord.maxEntries);
+      historyLimit.defaultValue = String(savedSettingsRecord.maxEntries);
+      const savedOptions = savedSettingsRecord.defaultOptions;
+      ["mockOptCase", "mockOptRegex", "mockOptFormula", "mockOptShape", "mockOptComment", "mockOptHidden"].forEach((id, index) => {
+        const field = ["match_case", "use_regex", "include_formula", "include_shape", "include_comment", "include_hidden"][index];
+        const input = document.getElementById(id);
+        input.checked = Boolean(savedOptions[field]);
+        input.defaultChecked = input.checked;
+      });
+      settingsModal.querySelector(`input[name="mockDirectoryMode"][value="${savedOptions.directory_mode}"]`).checked = true;
+      settingsModal.querySelector(`input[name="mockWorkerChoice"][value="${savedOptions.burst_workers === null ? "automatic" : "custom"}"]`).checked = true;
+      mockBurstWorkers.value = String(savedOptions.burst_workers ?? savedSettingsRecord.rememberedBurstWorkers ?? "");
+      mockBurstWorkers.defaultValue = mockBurstWorkers.value;
+      mockDefaultExtensions = [...savedOptions.extensions];
+      savedDefaultExtensions = [...mockDefaultExtensions];
+      ["mockDirectoryMode", "mockWorkerChoice"].forEach(name => {
+        settingsModal.querySelectorAll(`input[name="${name}"]`).forEach(input => { input.defaultChecked = input.checked; });
+      });
+      selectedExtensions = [...mockDefaultExtensions];
+      /**
+       * Description: Updates worker availability and validates the complete saved-settings draft.
+       * Arguments & Returns: None; returns void and updates field errors and save availability.
+       * Errors: Invalid or empty numeric values disable saving; inactive Burst fields are ignored.
+       */
       const syncBurstWorkerControls = () => {
         const burstMode = settingsModal.querySelector('input[name="mockDirectoryMode"]:checked').value === "burst";
         const customCount = settingsModal.querySelector('input[name="mockWorkerChoice"]:checked').value === "custom";
         mockWorkerChoiceInputs.forEach(input => { input.disabled = !burstMode; });
         mockBurstWorkers.disabled = !burstMode || !customCount;
-        const validCount = Number.isInteger(Number(mockBurstWorkers.value)) && Number(mockBurstWorkers.value) >= 2 && Number(mockBurstWorkers.value) <= 32;
-        mockBurstWorkersError.classList.toggle("hidden", !customCount || validCount);
-        document.getElementById("saveDefaultOptionsBtn").disabled = customCount && !validCount;
+        const validCount = mockBurstWorkers.value !== "" && mockBurstWorkers.validity.valid;
+        const workerError = burstMode && customCount && !validCount;
+        mockBurstWorkersError.classList.toggle(MOCK_SETTINGS.HIDDEN_CLASS, !workerError);
+        mockBurstWorkers.setAttribute(MOCK_SETTINGS.INVALID_ATTRIBUTE, String(workerError));
+        const historyValid = historyLimit.value !== "" && historyLimit.validity.valid;
+        document.getElementById(MOCK_SETTINGS.HISTORY_ERROR_ID).hidden = historyValid;
+        historyLimit.setAttribute(MOCK_SETTINGS.INVALID_ATTRIBUTE, String(!historyValid));
+        const extensionsValid = mockDefaultExtensions.length > 0;
+        document.getElementById("mockExtensionsError").hidden = extensionsValid;
+        settingsSaveButton.disabled = workerError || !historyValid || !extensionsValid;
       };
       mockDirectoryModeInputs.forEach(input => input.addEventListener("change", syncBurstWorkerControls));
       mockWorkerChoiceInputs.forEach(input => input.addEventListener("change", syncBurstWorkerControls));
       mockBurstWorkers.addEventListener("input", syncBurstWorkerControls);
+      mockBurstWorkers.addEventListener("input", () => {
+        if (mockBurstWorkers.value !== "" && mockBurstWorkers.validity.valid) draftRememberedWorkers = Number(mockBurstWorkers.value);
+      });
+      historyLimit.addEventListener(MOCK_SETTINGS.INPUT_EVENT, syncBurstWorkerControls);
       syncBurstWorkerControls();
 
       const mockExtBtns = settingsModal.querySelectorAll(".mock-ext-btn");
       mockExtBtns.forEach(btn => {
+        const selected = mockDefaultExtensions.includes(btn.getAttribute(MOCK_SETTINGS.EXTENSION_ATTRIBUTE));
+        btn.className = selected ? MOCK_SETTINGS.EXTENSION_SELECTED_CLASS : MOCK_SETTINGS.EXTENSION_IDLE_CLASS;
+        btn.setAttribute(MOCK_SETTINGS.PRESSED_ATTRIBUTE, String(selected));
+      });
+      /**
+       * Description: Restores the saved form defaults and extension selection when opening or cancelling.
+       * Arguments & Returns: None; returns void and validates the restored draft.
+       * Errors: No persistence writes; stored in-memory defaults always contain a selected extension.
+       */
+      const restoreSavedSettings = () => {
+        settingsForm.reset();
+        mockDefaultExtensions = [...savedDefaultExtensions];
+        mockExtBtns.forEach(btn => {
+          // Constant reference: MOCK_SETTINGS extension states and styling.
+          const selected = mockDefaultExtensions.includes(btn.getAttribute(MOCK_SETTINGS.EXTENSION_ATTRIBUTE));
+          btn.className = selected ? MOCK_SETTINGS.EXTENSION_SELECTED_CLASS : MOCK_SETTINGS.EXTENSION_IDLE_CLASS;
+          btn.setAttribute(MOCK_SETTINGS.PRESSED_ATTRIBUTE, String(selected));
+        });
+        syncBurstWorkerControls();
+      };
+      mockExtBtns.forEach(btn => {
         btn.addEventListener("click", () => {
           const ext = btn.getAttribute("data-ext");
           if (mockDefaultExtensions.includes(ext)) {
-            if (mockDefaultExtensions.length <= 1) {
-              showToast("拡張子は1つ以上選択してください");
-              return;
-            }
             mockDefaultExtensions = mockDefaultExtensions.filter(e => e !== ext);
             btn.className = "mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-zinc-900/80 text-zinc-500 border-zinc-800 hover:text-zinc-400";
           } else {
             mockDefaultExtensions.push(ext);
             btn.className = "mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium";
           }
+          btn.setAttribute(MOCK_SETTINGS.PRESSED_ATTRIBUTE, String(mockDefaultExtensions.includes(ext)));
+          syncBurstWorkerControls();
         });
       });
 
@@ -9107,24 +9422,55 @@
         document.getElementById("mockOptHidden").checked = false;
         settingsModal.querySelector('input[name="mockDirectoryMode"][value="sequential"]').checked = true;
         settingsModal.querySelector('input[name="mockWorkerChoice"][value="automatic"]').checked = true;
-        mockBurstWorkers.value = "4";
+        mockBurstWorkers.value = "";
+        draftRememberedWorkers = null;
         syncBurstWorkerControls();
-        mockDefaultExtensions = [".xlsx", ".xlsm", ".xlsb", ".xls"];
+        mockDefaultExtensions = [...MOCK_SETTINGS.SEARCH_DEFAULTS.extensions];
         mockExtBtns.forEach(btn => {
           btn.className = "mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium";
+          btn.setAttribute(MOCK_SETTINGS.PRESSED_ATTRIBUTE, String(true));
         });
-        showToast("デフォルトオプションを初期値にリセットしました");
+        showToast(settingsText.RESET_MESSAGE);
       });
 
       // オプションを保存 (設定の永続化シミュレーションとメイン検索バーへの即時同期)
-      document.getElementById("saveDefaultOptionsBtn").addEventListener("click", () => {
-        if (document.getElementById("saveDefaultOptionsBtn").disabled) return;
+      settingsForm.addEventListener(MOCK_SETTINGS.SUBMIT_EVENT, (event) => {
+        event.preventDefault();
+        syncBurstWorkerControls();
+        if (settingsSaveButton.disabled) return;
         const directoryMode = settingsModal.querySelector('input[name="mockDirectoryMode"]:checked').value;
-        const burstWorkers = settingsModal.querySelector('input[name="mockWorkerChoice"]:checked').value === "custom"
-          ? Number(mockBurstWorkers.value)
-          : null;
+        const workerChoice = settingsModal.querySelector('input[name="mockWorkerChoice"]:checked').value;
+        const selectedWorkers = workerChoice === "custom" ? draftRememberedWorkers : null;
+        const candidateOptions = {
+          match_case: document.getElementById("mockOptCase").checked,
+          use_regex: document.getElementById("mockOptRegex").checked,
+          include_formula: document.getElementById("mockOptFormula").checked,
+          include_shape: document.getElementById("mockOptShape").checked,
+          include_comment: document.getElementById("mockOptComment").checked,
+          include_hidden: document.getElementById("mockOptHidden").checked,
+          extensions: [...mockDefaultExtensions],
+          directory_mode: directoryMode,
+          burst_workers: selectedWorkers,
+        };
+        const candidateRecord = {
+          ...savedSettingsRecord,
+          maxEntries: Number(historyLimit.value),
+          keywords: Number(historyLimit.value) ? savedSettingsRecord.keywords.slice(0, Number(historyLimit.value)) : [],
+          directories: Number(historyLimit.value) ? savedSettingsRecord.directories.slice(0, Number(historyLimit.value)) : [],
+          defaultOptions: candidateOptions,
+          rememberedBurstWorkers: draftRememberedWorkers,
+        };
+        try {
+          // Constant reference: MOCK_SETTINGS.HISTORY_STORAGE_KEY; replace the complete record before publishing values.
+          localStorage.setItem(MOCK_SETTINGS.HISTORY_STORAGE_KEY, JSON.stringify(candidateRecord));
+        } catch {
+          showToast(settingsText.STORAGE_ERROR);
+          return;
+        }
+        savedSettingsRecord = candidateRecord;
+        savedDefaultExtensions = [...mockDefaultExtensions];
         document.getElementById("searchBtn").dataset.directoryMode = directoryMode;
-        document.getElementById("searchBtn").dataset.burstWorkers = burstWorkers === null ? "automatic" : String(burstWorkers);
+        document.getElementById("searchBtn").dataset.burstWorkers = selectedWorkers === null ? "automatic" : String(selectedWorkers);
         // メイン画面の検索バーコントロールへ即時同期
         const isCase = document.getElementById("mockOptCase").checked;
         const isRegex = document.getElementById("mockOptRegex").checked;
@@ -9165,8 +9511,14 @@
         });
         applyFilterAndSort();
 
-        settingsModal.classList.add("hidden");
-        showToast("デフォルト検索オプションを保存し反映しました");
+        // Constant reference: MOCK_SETTINGS.INPUT_SELECTOR; commit only after validation and persistence succeed.
+        settingsForm.querySelectorAll(MOCK_SETTINGS.INPUT_SELECTOR).forEach(input => {
+          input.defaultValue = input.value;
+          input.defaultChecked = input.checked;
+        });
+        savedDefaultExtensions = [...mockDefaultExtensions];
+        closeSettings();
+        showToast(settingsText.SAVED_MESSAGE);
       });
 
       let currentSelectedLicenseId = mockLicenses[0].id;

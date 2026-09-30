@@ -129,6 +129,14 @@ ui.LANGUAGE_EN: English
 ui.SAVE_FAILED: 設定を保存できませんでした。次回起動時は保存済み設定を使用します。
 ui.CURRENT_LANGUAGE: 現在の表示言語
 ui.SETTINGS_DESCRIPTION: 表示言語、検索履歴、およびデフォルト検索オプションを設定します。
+ui.SETTINGS_PAGE_IMMEDIATE: 表示言語・即時反映
+ui.SETTINGS_PAGE_SAVED: 検索設定・保存して反映
+ui.SETTINGS_IMMEDIATE_DESCRIPTION: 表示言語は変更後すぐに反映・保存されます。設定を閉じても元に戻りません。
+ui.SETTINGS_SAVED_DESCRIPTION: 変更は保存するまで下書きです。キャンセルまたは閉じると破棄されます。
+ui.SETTINGS_CANCEL: キャンセル
+ui.SETTINGS_CLOSE: 閉じる
+ui.SETTINGS_SAVE: 設定を保存
+ui.HISTORY_LIMIT_RANGE_ERROR: 0～50 の整数を入力してください。
 ui.KEYWORD_HISTORY_TOOLTIP: 検索テキストの履歴
 ui.DIRECTORY_HISTORY_TOOLTIP: 検索ディレクトリの履歴
 ui.HISTORY_EMPTY: 履歴はありません

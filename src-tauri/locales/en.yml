@@ -129,6 +129,14 @@ ui.LANGUAGE_EN: English
 ui.SAVE_FAILED: Could not save settings. The saved preference will be used next time.
 ui.CURRENT_LANGUAGE: Current display language
 ui.SETTINGS_DESCRIPTION: Configure display language, search history, and default search options.
+ui.SETTINGS_PAGE_IMMEDIATE: "Display language · Apply immediately"
+ui.SETTINGS_PAGE_SAVED: "Search settings · Save to apply"
+ui.SETTINGS_IMMEDIATE_DESCRIPTION: Language changes apply and save immediately. Closing settings does not undo them.
+ui.SETTINGS_SAVED_DESCRIPTION: Changes stay as a draft until saved. Cancel or close discards them.
+ui.SETTINGS_CANCEL: Cancel
+ui.SETTINGS_CLOSE: Close
+ui.SETTINGS_SAVE: Save Settings
+ui.HISTORY_LIMIT_RANGE_ERROR: Enter a whole number from 0 through 50.
 ui.KEYWORD_HISTORY_TOOLTIP: Search text history
 ui.DIRECTORY_HISTORY_TOOLTIP: Search directory history
 ui.HISTORY_EMPTY: No history

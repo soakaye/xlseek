@@ -1,9 +1,15 @@
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+/**
+ * Description: Verifies application locale selection, persistence fallback, and preservation of search state.
+ * Arguments & Returns: Vitest renders the app with mocked locale, storage, and backend events; tests return no values.
+ * Errors: Assertions fail if locale switching loses current search content or exposes untranslated keys.
+ */
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parse } from "yaml";
 import enSource from "../src-tauri/locales/en.yml?raw";
 import jaSource from "../src-tauri/locales/ja.yml?raw";
 import App from "../src/App";
+import { EVENT_NAMES } from "../src/constants";
 
 const mocks = vi.hoisted(() => ({
   locale: vi.fn<() => Promise<string | null>>(),
@@ -12,6 +18,7 @@ const mocks = vi.hoisted(() => ({
   loadTranslations: vi.fn<() => Promise<void>>(),
   pluginSetLocale: vi.fn<(language: string) => Promise<void>>(),
   pluginTranslate: vi.fn<(key: string) => string>(),
+  listeners: {} as Record<string, (event: { payload: unknown }) => void>,
   pluginLocale: "en",
   catalogs: {} as Record<string, Record<string, string>>,
 }));
@@ -26,15 +33,26 @@ vi.mock("@razein97/tauri-plugin-i18n", () => ({
   },
 }));
 vi.mock("@tauri-apps/plugin-dialog", () => ({ open: vi.fn(), save: vi.fn() }));
+vi.mock("@tanstack/react-virtual", () => ({
+  useVirtualizer: ({ count }: { count: number }) => ({
+    getTotalSize: () => count * 36,
+    getVirtualItems: () => Array.from({ length: count }, (_, index) => ({ key: index, index, size: 36, start: index * 36 })),
+    scrollToIndex: () => undefined,
+  }),
+}));
 vi.mock("@tauri-apps/api/webview", () => ({
   getCurrentWebview: () => ({ onDragDropEvent: async () => () => undefined }),
 }));
 
 describe("App localization", () => {
   beforeEach(() => {
+    mocks.listeners = {};
     mocks.locale.mockReset().mockResolvedValue("en-US");
     mocks.invoke.mockReset().mockResolvedValue(undefined);
-    mocks.listen.mockReset().mockResolvedValue(() => undefined);
+    mocks.listen.mockReset().mockImplementation(async (event, callback) => {
+      mocks.listeners[event] = callback as (event: { payload: unknown }) => void;
+      return () => undefined;
+    });
     mocks.loadTranslations.mockReset().mockResolvedValue(undefined);
     mocks.pluginSetLocale.mockReset().mockResolvedValue(undefined);
     mocks.pluginLocale = "en";
@@ -111,6 +129,39 @@ describe("App localization", () => {
 
     expect(await screen.findByPlaceholderText("検索するテキストまたは正規表現を入力... (Enterで検索)")).toBeTruthy();
     expect(screen.getByText("設定を保存できませんでした。次回起動時は保存済み設定を使用します。")).toBeTruthy();
+  });
+
+  it("preserves displayed and selected results when changing language", async () => {
+    render(<App />);
+    const query = await screen.findByPlaceholderText("Enter text or a regular expression... (Enter to search)");
+    fireEvent.change(query, { target: { value: "shape" } });
+    fireEvent.change(screen.getByPlaceholderText("Select or drop a folder..."), { target: { value: "/reports" } });
+    await waitFor(() => expect(mocks.listeners[EVENT_NAMES.SEARCH_MATCH]).toBeDefined());
+    fireEvent.click(screen.getByRole("button", { name: "SEARCH" }));
+    const match = {
+      id: 1, file_name: "report.xlsx", full_path: "/reports/report.xlsx", sheet_name: "Summary",
+      cell_address: "A1", row_index: 0, col_index: 0, col_name: "A", match_type: "Shape",
+      shape_name: "Report title", sheet_hidden: false, snippet: "shape", full_content: "shape result",
+      formula: null, sheets_in_workbook: ["Summary"],
+    };
+    act(() => {
+      mocks.listeners[EVENT_NAMES.SEARCH_MATCH]?.({ payload: match });
+      mocks.listeners[EVENT_NAMES.SCAN_PROGRESS]?.({ payload: {
+        state: "Completed", phase: "finished", error_code: null, scanned_files: 1, total_files: 1,
+        matches_found: 1, current_file: "", elapsed_ms: 1,
+      } });
+    });
+    const file = await screen.findByText("report.xlsx");
+    const resultRow = file.closest(".flex.items-center") as HTMLElement;
+    fireEvent.click(resultRow);
+    expect(screen.getAllByText("report.xlsx")[0].closest(".flex.items-center")?.className).toContain("bg-emerald-950/70");
+    fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+    fireEvent.click(screen.getByRole("radio", { name: "日本語" }));
+
+    await screen.findByPlaceholderText("検索するテキストまたは正規表現を入力... (Enterで検索)");
+    expect(screen.getAllByText("report.xlsx")).toHaveLength(2);
+    expect(screen.getAllByText("shape result").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("report.xlsx")[0].closest(".flex.items-center")?.className).toContain("bg-emerald-950/70");
   });
 
   it.each(["ja", "en"] as const)("loads the saved %s preference before showing the screen", async (language) => {

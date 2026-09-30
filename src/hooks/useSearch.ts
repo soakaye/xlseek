@@ -19,7 +19,7 @@ import {
   CellPreviewData,
 } from "../types/search";
 import { DefaultSearchOptions } from "../types/defaultOptions";
-import { loadDefaultSearchOptions } from "../default-options-core";
+import { loadSavedSettings } from "../settings-core";
 
 import {
   COMMANDS,
@@ -48,7 +48,7 @@ interface UseSearchOptions {
  */
 export function useSearch(options?: UseSearchOptions) {
   const [query, setQuery] = useState<SearchQuery>(() => {
-    const defaults = loadDefaultSearchOptions();
+    const defaults = loadSavedSettings().defaultOptions;
     return {
       keyword: "",
       target_dir: "",

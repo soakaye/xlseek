@@ -6,6 +6,7 @@
 import { act, renderHook } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { SEARCH_HISTORY_CONSTANTS } from "../src/constants";
+import { DEFAULT_SEARCH_OPTIONS } from "../src/constants";
 import { useSearchHistory } from "../src/hooks/useSearchHistory";
 
 describe("useSearchHistory", () => {
@@ -43,7 +44,7 @@ describe("useSearchHistory", () => {
     const { result } = renderHook(() => useSearchHistory());
 
     act(() => {
-      result.current.setMaxEntries(2);
+      result.current.savePreferences(2, DEFAULT_SEARCH_OPTIONS, null);
       result.current.addSearch("first", "/one");
       result.current.addSearch("second", "/two");
       result.current.addSearch("first", "/one");
@@ -59,7 +60,7 @@ describe("useSearchHistory", () => {
     act(() => result.current.addSearch("invoice", "/reports"));
 
     act(() => {
-      result.current.setMaxEntries(0);
+      result.current.savePreferences(0, DEFAULT_SEARCH_OPTIONS, null);
       result.current.addSearch("later", "/later");
     });
 
@@ -80,6 +81,44 @@ describe("useSearchHistory", () => {
     expect(result.current.keywords).toEqual(["invoice"]);
     expect(result.current.directories).toEqual(["/reports"]);
     expect(onStorageError).toHaveBeenCalledOnce();
+  });
+
+  it("saves preferences with the latest history and trims only after persistence succeeds", () => {
+    const { result } = renderHook(() => useSearchHistory());
+    act(() => {
+      result.current.addSearch("first", "/one");
+      result.current.addSearch("second", "/two");
+    });
+    let saved = false;
+    act(() => { saved = result.current.savePreferences(1, { ...DEFAULT_SEARCH_OPTIONS, match_case: true }, null); });
+    expect(saved).toBe(true);
+    expect(result.current.keywords).toEqual(["second"]);
+    expect(result.current.directories).toEqual(["/two"]);
+    expect(result.current.defaultOptions.match_case).toBe(true);
+    expect(JSON.parse(window.localStorage.getItem(SEARCH_HISTORY_CONSTANTS.STORAGE_KEY) ?? "{}").keywords).toEqual(["second"]);
+  });
+
+  it("does not publish preference or history changes when a combined write fails", () => {
+    const onError = vi.fn();
+    const { result } = renderHook(() => useSearchHistory(onError));
+    act(() => result.current.addSearch("first", "/one"));
+    vi.spyOn(window.localStorage, "setItem").mockImplementation(() => { throw new Error("storage unavailable"); });
+    let saved = true;
+    act(() => { saved = result.current.savePreferences(0, { ...DEFAULT_SEARCH_OPTIONS, match_case: true }, null); });
+    expect(saved).toBe(false);
+    expect(result.current.maxEntries).toBe(SEARCH_HISTORY_CONSTANTS.DEFAULT_MAX_ENTRIES);
+    expect(result.current.keywords).toEqual(["first"]);
+    expect(result.current.defaultOptions.match_case).toBe(false);
+    expect(onError).not.toHaveBeenCalled();
+  });
+
+  it("preserves committed preferences on ordinary history writes", () => {
+    const { result } = renderHook(() => useSearchHistory());
+    act(() => { result.current.savePreferences(4, { ...DEFAULT_SEARCH_OPTIONS, match_case: true }, null); });
+    act(() => result.current.addSearch("after save", "/folder"));
+    const saved = JSON.parse(window.localStorage.getItem(SEARCH_HISTORY_CONSTANTS.STORAGE_KEY) ?? "{}");
+    expect(saved.defaultOptions.match_case).toBe(true);
+    expect(saved.maxEntries).toBe(4);
   });
 
   it("replaces malformed saved values with an empty default history", () => {

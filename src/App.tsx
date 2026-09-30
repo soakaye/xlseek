@@ -28,8 +28,6 @@ import { useSearchHistory } from "./hooks/useSearchHistory";
 import { APP_LOGS, COMMANDS, EVENT_NAMES } from "./constants";
 import { useLocale } from "./hooks/useLocale";
 import { LocaleProvider, t, TranslationKey, TranslationValues } from "./i18n";
-import { DefaultSearchOptions } from "./types/defaultOptions";
-import { loadDefaultSearchOptions, saveDefaultSearchOptions } from "./default-options-core";
 
 const AboutDialog = lazy(() => import("./components/about/AboutDialog").then((module) => ({ default: module.AboutDialog })));
 
@@ -100,9 +98,7 @@ export const App: React.FC = () => {
     setToastNotice({ key, values });
   };
 
-  const [defaultOptions, setDefaultOptions] = useState<DefaultSearchOptions>(() => loadDefaultSearchOptions());
-
-  const { maxEntries, keywords, directories, addSearch, setMaxEntries } = useSearchHistory(() => showToast("ui.SAVE_FAILED"));
+  const { maxEntries, keywords, directories, defaultOptions, rememberedBurstWorkers, addSearch, savePreferences } = useSearchHistory(() => showToast("ui.SAVE_FAILED"));
 
   const {
     query,
@@ -125,15 +121,15 @@ export const App: React.FC = () => {
     cancelSearch,
   } = useSearch({ onShowToast: showToast, onSearchAccepted: (acceptedQuery) => addSearch(acceptedQuery.keyword, acceptedQuery.target_dir) });
 
-  const handleSaveDefaultOptions = (newOptions: DefaultSearchOptions) => {
-    const saved = saveDefaultSearchOptions(newOptions);
+  const handleSavePreferences = (settings: { maxEntries: number; defaultOptions: typeof defaultOptions; rememberedBurstWorkers: number | null }): boolean => {
+    const saved = savePreferences(settings.maxEntries, settings.defaultOptions, settings.rememberedBurstWorkers);
     if (!saved) {
       showToast("ui.SAVE_FAILED");
-      return;
+      return false;
     }
-    setDefaultOptions(newOptions);
-    applyDefaultOptions(newOptions);
+    applyDefaultOptions(settings.defaultOptions);
     showToast("ui.DEFAULT_OPTIONS_SAVED");
+    return true;
   };
 
   if (!ready) return null;
@@ -240,9 +236,9 @@ export const App: React.FC = () => {
         preference={preference}
         language={language}
         maxEntries={maxEntries}
-        onSetMaxEntries={(value) => { if (!setMaxEntries(value)) showToast("ui.SAVE_FAILED"); }}
         defaultOptions={defaultOptions}
-        onSaveDefaultOptions={handleSaveDefaultOptions}
+        rememberedBurstWorkers={rememberedBurstWorkers}
+        onSaveSettings={handleSavePreferences}
         onSelect={async (value) => {
           const saved = await selectLanguage(value);
           if (!saved) setToastNotice({ key: "ui.SAVE_FAILED" });
