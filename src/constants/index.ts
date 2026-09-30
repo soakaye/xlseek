@@ -133,6 +133,30 @@ export const FILE_EXTENSIONS = {
 // 6. Default Search Options Constants (Default Search Options)
 // ==============================================================================
 export const DEFAULT_OPTIONS_STORAGE_KEY = "xlseek.default_search_options";
+export const SETTINGS_PAGES = { IMMEDIATE: "immediate", SAVED: "saved" } as const;
+export const SETTINGS_DIALOG_IDS = {
+  TITLE: "settings-title",
+  TAB_PREFIX: "settings-tab-",
+  PAGE_TABS: "settings-page-tabs",
+  IMMEDIATE_PANEL: "settings-immediate-panel",
+  SAVED_PANEL: "settings-saved-panel",
+  HISTORY_HELP: "history-limit-help",
+  HISTORY_ERROR: "history-limit-error",
+  WORKER_ERROR: "worker-count-error",
+  SAVED_DESCRIPTION: "saved-settings-description",
+} as const;
+export const BURST_WORKER_CHOICES = { CUSTOM: "custom" } as const;
+export const SETTINGS_TRANSLATION_KEYS = {
+  IMMEDIATE_PAGE: "ui.SETTINGS_PAGE_IMMEDIATE",
+  SAVED_PAGE: "ui.SETTINGS_PAGE_SAVED",
+  IMMEDIATE_DESCRIPTION: "ui.SETTINGS_IMMEDIATE_DESCRIPTION",
+  SAVED_DESCRIPTION: "ui.SETTINGS_SAVED_DESCRIPTION",
+  HISTORY_RANGE_ERROR: "ui.HISTORY_LIMIT_RANGE_ERROR",
+  CANCEL: "ui.SETTINGS_CANCEL",
+  CLOSE: "ui.SETTINGS_CLOSE",
+  SAVE: "ui.SETTINGS_SAVE",
+} as const;
+export const SETTINGS_KEYBOARD_KEYS = { LEFT: "ArrowLeft", RIGHT: "ArrowRight", HOME: "Home", END: "End" } as const;
 
 /** Values and bounds shared by directory search settings and the Tauri query. */
 export const DIRECTORY_SEARCH_CONSTANTS = {

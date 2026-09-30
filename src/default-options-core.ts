@@ -7,7 +7,7 @@
  * Complies with Constitution Principle II (external constants), Principle III (comprehensive documentation), and Principle V (robust error handling).
  */
 
-import { DEFAULT_SEARCH_OPTIONS, DEFAULT_OPTIONS_STORAGE_KEY, DIRECTORY_SEARCH_CONSTANTS, FILE_EXTENSIONS } from "./constants";
+import { DEFAULT_SEARCH_OPTIONS, DIRECTORY_SEARCH_CONSTANTS, FILE_EXTENSIONS } from "./constants";
 import { DefaultSearchOptions } from "./types/defaultOptions";
 
 /**
@@ -69,7 +69,30 @@ function hasValidExistingOptions(candidate: Record<string, unknown>): boolean {
     (ext) => typeof ext === "string" && allowed.has(ext)
   );
 
-  return allValid;
+  return allValid && new Set(candidate.extensions).size === candidate.extensions.length;
+}
+
+/**
+ * Description: Normalizes a legacy or partially invalid persisted options object into safe current defaults.
+ * Arguments & Returns: Accepts unknown stored data; returns validated DefaultSearchOptions with directory fields normalized.
+ * Errors: Invalid core fields or extension lists return standard defaults; malformed objects do not throw.
+ */
+export function normalizeDefaultSearchOptions(value: unknown): DefaultSearchOptions {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return resetDefaultSearchOptions();
+  const candidate = value as Record<string, unknown>;
+  if (!hasValidExistingOptions(candidate)) return resetDefaultSearchOptions();
+  const directoryMode = candidate.directory_mode === DIRECTORY_SEARCH_CONSTANTS.BURST
+    ? DIRECTORY_SEARCH_CONSTANTS.BURST
+    : DIRECTORY_SEARCH_CONSTANTS.SEQUENTIAL;
+  const workers = candidate.burst_workers;
+  const validWorkers = typeof workers === "number" && Number.isInteger(workers) &&
+    workers >= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MIN && workers <= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MAX;
+  return {
+    ...resetDefaultSearchOptions(),
+    ...candidate,
+    directory_mode: directoryMode,
+    burst_workers: validWorkers ? workers : null,
+  } as DefaultSearchOptions;
 }
 
 /**
@@ -114,70 +137,3 @@ export function resetDefaultSearchOptions(): DefaultSearchOptions {
  * ## Errors / Exceptions
  * Catches storage errors without throwing and safely falls back to standard defaults.
  */
-export function loadDefaultSearchOptions(): DefaultSearchOptions {
-  try {
-    // Constant reference: DEFAULT_OPTIONS_STORAGE_KEY
-    const raw = typeof window !== "undefined" && window.localStorage
-      ? window.localStorage.getItem(DEFAULT_OPTIONS_STORAGE_KEY)
-      : null;
-
-    if (!raw) {
-      return resetDefaultSearchOptions();
-    }
-
-    const parsed: unknown = JSON.parse(raw);
-    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-      const candidate = parsed as Record<string, unknown>;
-      if (hasValidExistingOptions(candidate)) {
-        return {
-          ...resetDefaultSearchOptions(),
-          ...(candidate as Partial<DefaultSearchOptions>),
-          directory_mode:
-            candidate.directory_mode === DIRECTORY_SEARCH_CONSTANTS.BURST
-              ? DIRECTORY_SEARCH_CONSTANTS.BURST
-              : DIRECTORY_SEARCH_CONSTANTS.SEQUENTIAL,
-          burst_workers:
-            typeof candidate.burst_workers === "number" &&
-            Number.isInteger(candidate.burst_workers) &&
-            candidate.burst_workers >= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MIN &&
-            candidate.burst_workers <= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MAX
-              ? candidate.burst_workers
-              : null,
-        };
-      }
-    }
-
-    return resetDefaultSearchOptions();
-  } catch {
-    return resetDefaultSearchOptions();
-  }
-}
-
-/**
- * ## Description
- * Persists default search options into local storage.
- *
- * ## Arguments
- * @param options - `DefaultSearchOptions` to persist
- *
- * ## Returns
- * @returns `true` if saved successfully, `false` otherwise
- *
- * ## Errors / Exceptions
- * Catches storage exceptions (such as QuotaExceededError) and returns `false` to avoid application crashes.
- */
-export function saveDefaultSearchOptions(options: DefaultSearchOptions): boolean {
-  if (!isDefaultSearchOptions(options)) {
-    return false;
-  }
-  try {
-    if (typeof window !== "undefined" && window.localStorage) {
-      // Constant reference: DEFAULT_OPTIONS_STORAGE_KEY
-      window.localStorage.setItem(DEFAULT_OPTIONS_STORAGE_KEY, JSON.stringify(options));
-      return true;
-    }
-    return false;
-  } catch {
-    return false;
-  }
-}

@@ -1,11 +1,10 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import {
   isDefaultSearchOptions,
-  loadDefaultSearchOptions,
-  saveDefaultSearchOptions,
+  normalizeDefaultSearchOptions,
   resetDefaultSearchOptions,
 } from "../src/default-options-core";
-import { DEFAULT_SEARCH_OPTIONS, DEFAULT_OPTIONS_STORAGE_KEY } from "../src/constants";
+import { DEFAULT_SEARCH_OPTIONS } from "../src/constants";
 
 describe("default-options-core", () => {
   beforeEach(() => {
@@ -21,52 +20,22 @@ describe("default-options-core", () => {
     });
   });
 
-  it("returns default values when storage is empty", () => {
-    window.localStorage.clear();
-    const options = loadDefaultSearchOptions();
-    expect(options).toEqual(DEFAULT_SEARCH_OPTIONS);
-  });
-
-  it("migrates legacy preferences and normalizes invalid new fields", () => {
+  it("normalizes legacy preferences and invalid directory fields", () => {
     const legacy = {
       ...DEFAULT_SEARCH_OPTIONS,
       directory_mode: undefined,
       burst_workers: undefined,
       match_case: true,
     };
-    window.localStorage.setItem(DEFAULT_OPTIONS_STORAGE_KEY, JSON.stringify(legacy));
-    expect(loadDefaultSearchOptions()).toEqual({
+    expect(normalizeDefaultSearchOptions(legacy)).toEqual({
       ...DEFAULT_SEARCH_OPTIONS,
       match_case: true,
     });
 
-    window.localStorage.setItem(
-      DEFAULT_OPTIONS_STORAGE_KEY,
-      JSON.stringify({ ...legacy, directory_mode: "invalid", burst_workers: 33 })
-    );
-    expect(loadDefaultSearchOptions()).toEqual({
+    expect(normalizeDefaultSearchOptions({ ...legacy, directory_mode: "invalid", burst_workers: 33 })).toEqual({
       ...DEFAULT_SEARCH_OPTIONS,
       match_case: true,
     });
-  });
-
-  it("saves and loads valid custom options", () => {
-    const custom = {
-      match_case: true,
-      use_regex: true,
-      include_formula: false,
-      include_shape: true,
-      include_comment: false,
-      include_hidden: true,
-      extensions: [".xlsx", ".xls"],
-      directory_mode: "burst" as const,
-      burst_workers: 6,
-    };
-    const saved = saveDefaultSearchOptions(custom);
-    expect(saved).toBe(true);
-
-    const loaded = loadDefaultSearchOptions();
-    expect(loaded).toEqual(custom);
   });
 
   it("validates default options schema correctly", () => {
@@ -95,32 +64,12 @@ describe("default-options-core", () => {
     ).toBe(false);
   });
 
-  it("falls back to default values when storage contains corrupted JSON or invalid data", () => {
-    window.localStorage.setItem(DEFAULT_OPTIONS_STORAGE_KEY, "invalid-json{");
-    expect(loadDefaultSearchOptions()).toEqual(DEFAULT_SEARCH_OPTIONS);
-
-    window.localStorage.setItem(
-      DEFAULT_OPTIONS_STORAGE_KEY,
-      JSON.stringify({ match_case: "not-bool" })
-    );
-    expect(loadDefaultSearchOptions()).toEqual(DEFAULT_SEARCH_OPTIONS);
+  it("normalizes malformed objects to the standard option defaults", () => {
+    expect(normalizeDefaultSearchOptions({ match_case: "not-bool" })).toEqual(DEFAULT_SEARCH_OPTIONS);
   });
 
   it("resets options to official defaults and returns the copy", () => {
     const reset = resetDefaultSearchOptions();
     expect(reset).toEqual(DEFAULT_SEARCH_OPTIONS);
-  });
-
-  it("gracefully handles localStorage write failures without throwing", () => {
-    Object.defineProperty(window, "localStorage", {
-      configurable: true,
-      value: {
-        setItem: () => {
-          throw new Error("QuotaExceededError");
-        },
-        getItem: () => null,
-      },
-    });
-    expect(saveDefaultSearchOptions(DEFAULT_SEARCH_OPTIONS)).toBe(false);
   });
 });

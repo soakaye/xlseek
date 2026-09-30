@@ -3,7 +3,7 @@
  * Arguments & Returns: Vitest runs test suites; no public arguments or return values.
  * Errors: Test assertions fail if behavior deviates from requirements.
  */
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { parse } from "yaml";
 import enSource from "../src-tauri/locales/en.yml?raw";
@@ -17,6 +17,7 @@ import { AboutDialog } from "../src/components/about/AboutDialog";
 import { MetaInfoCard } from "../src/components/preview/MetaInfoCard";
 import { Toast } from "../src/components/common/Toast";
 import type { SearchMatch } from "../src/types/search";
+import { DEFAULT_SEARCH_OPTIONS } from "../src/constants";
 
 const plugin = vi.hoisted(() => ({
   language: "en",
@@ -120,7 +121,7 @@ describe("localized application UI", () => {
   it("renders settings and About labels from the Japanese plugin catalog", async () => {
     plugin.language = "ja";
     await setI18nLocale("ja");
-    render(<LocaleProvider value="ja"><SettingsDialog isOpen preference="default" language="ja" onSelect={() => undefined} onClose={() => undefined} maxEntries={20} onSetMaxEntries={() => undefined} /></LocaleProvider>);
+    render(<LocaleProvider value="ja"><SettingsDialog isOpen preference="default" language="ja" onSelect={() => undefined} onClose={() => undefined} maxEntries={20} defaultOptions={DEFAULT_SEARCH_OPTIONS} rememberedBurstWorkers={null} onSaveSettings={() => true} /></LocaleProvider>);
     expect(screen.getByRole("dialog", { name: "設定" })).toBeTruthy();
     expect(screen.getByRole("radio", { name: "日本語" })).toBeTruthy();
     cleanup();
@@ -128,6 +129,34 @@ describe("localized application UI", () => {
     render(<LocaleProvider value="ja"><AboutDialog isOpen onClose={() => undefined} onShowToast={() => undefined} /></LocaleProvider>);
     expect(screen.getByText("Excel Seek について")).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "閉じる" }).length).toBeGreaterThan(0);
+  });
+
+  it("translates saved-page labels and errors without clearing drafts", async () => {
+    const props = {
+      isOpen: true,
+      preference: "default" as const,
+      language: "en" as const,
+      onSelect: () => undefined,
+      onClose: () => undefined,
+      maxEntries: 20,
+      defaultOptions: DEFAULT_SEARCH_OPTIONS,
+      rememberedBurstWorkers: null,
+      onSaveSettings: () => true,
+    };
+    const { rerender } = render(<LocaleProvider value="en"><SettingsDialog {...props} /></LocaleProvider>);
+    fireEvent.click(screen.getByRole("tab", { name: "Search settings · Save to apply" }));
+    const limit = screen.getByLabelText("Search history limit") as HTMLInputElement;
+    fireEvent.change(limit, { target: { value: "8" } });
+    await setI18nLocale("ja");
+    rerender(<LocaleProvider value="ja"><SettingsDialog {...props} language="ja" /></LocaleProvider>);
+    expect(screen.getByRole("tab", { name: "検索設定・保存して反映" }).getAttribute("aria-selected")).toBe("true");
+    expect((screen.getByLabelText("検索履歴の保存件数") as HTMLInputElement).value).toBe("8");
+
+    fireEvent.change(screen.getByLabelText("検索履歴の保存件数"), { target: { value: "51" } });
+    await setI18nLocale("en");
+    rerender(<LocaleProvider value="en"><SettingsDialog {...props} /></LocaleProvider>);
+    expect((screen.getByLabelText("Search history limit") as HTMLInputElement).value).toBe("51");
+    expect(screen.getByRole("alert").textContent).toContain("0 through 50");
   });
 
   it.each([

@@ -5,64 +5,8 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { SEARCH_HISTORY_CONSTANTS } from "../constants";
-
-/**
- * Description: Represents the structure of persisted search history.
- * Arguments & Returns: Holds maxEntries, keywords, and directories.
- * Errors: None. Validation is performed by isSearchHistory.
- */
-export interface SearchHistory {
-  maxEntries: number;
-  keywords: string[];
-  directories: string[];
-}
-
-/**
- * Description: Verifies whether an unknown value conforms to the SearchHistory structure.
- * Arguments & Returns: Accepts unknown value; returns boolean type guard.
- * Errors: Returns false on invalid input without throwing exceptions.
- */
-function isSearchHistory(value: unknown): value is SearchHistory {
-  if (!value || typeof value !== "object") return false;
-  const candidate = value as Partial<SearchHistory>;
-  // Constant reference: Validate entry limit against SEARCH_HISTORY_CONSTANTS range.
-  if (
-    !Number.isInteger(candidate.maxEntries) ||
-    (candidate.maxEntries as number) < SEARCH_HISTORY_CONSTANTS.MIN_ENTRIES ||
-    (candidate.maxEntries as number) > SEARCH_HISTORY_CONSTANTS.MAX_ENTRIES ||
-    !Array.isArray(candidate.keywords) ||
-    !Array.isArray(candidate.directories)
-  ) return false;
-
-  return [candidate.keywords, candidate.directories].every((entries) => {
-    if (!entries || entries.some((entry) => typeof entry !== "string" || !entry.trim())) return false;
-    if (new Set(entries).size !== entries.length) return false;
-    return entries.length <= (candidate.maxEntries as number);
-  });
-}
-
-/**
- * Description: Loads history from localStorage, falling back to initial defaults on missing or corrupted data.
- * Arguments & Returns: Accepts an optional storage error callback; returns validated SearchHistory.
- * Errors: Storage read or JSON parsing failures trigger the callback and return default initial state.
- */
-function loadHistory(onStorageError?: () => void): SearchHistory {
-  const initial: SearchHistory = {
-    maxEntries: SEARCH_HISTORY_CONSTANTS.DEFAULT_MAX_ENTRIES,
-    keywords: [],
-    directories: [],
-  };
-  try {
-    // Constant reference: SEARCH_HISTORY_CONSTANTS.STORAGE_KEY
-    const stored = window.localStorage.getItem(SEARCH_HISTORY_CONSTANTS.STORAGE_KEY);
-    if (!stored) return initial;
-    const parsed: unknown = JSON.parse(stored);
-    return isSearchHistory(parsed) ? parsed : initial;
-  } catch {
-    onStorageError?.();
-    return initial;
-  }
-}
+import { DefaultSearchOptions } from "../types/defaultOptions";
+import { loadSavedSettings, saveSavedSettings, SavedSettings } from "../settings-core";
 
 /**
  * Description: Provides history loading, addition, and limit reconfiguration, persisted to local storage.
@@ -71,8 +15,8 @@ function loadHistory(onStorageError?: () => void): SearchHistory {
  */
 export function useSearchHistory(onStorageError?: () => void) {
   const readFailed = useRef(false);
-  const [history, setHistory] = useState(() => loadHistory(() => { readFailed.current = true; }));
-  const historyRef = useRef(history);
+  const [settings, setSettings] = useState(() => loadSavedSettings(() => { readFailed.current = true; }));
+  const settingsRef = useRef(settings);
 
   useEffect(() => {
     if (readFailed.current) {
@@ -81,50 +25,64 @@ export function useSearchHistory(onStorageError?: () => void) {
     }
   }, [onStorageError]);
 
-  /** Description: Commits history state to memory and localStorage. Arguments & Returns: Accepts SearchHistory, returns void. Errors: Calls onStorageError on write error. */
-  const commit = (next: SearchHistory) => {
-    historyRef.current = next;
-    setHistory(next);
-    try {
-      // Constant reference: SEARCH_HISTORY_CONSTANTS.STORAGE_KEY
-      window.localStorage.setItem(SEARCH_HISTORY_CONSTANTS.STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      onStorageError?.();
-    }
+  /**
+   * Description: Publishes accepted-search history immediately and persists it with the committed preferences.
+   * Arguments & Returns: Accepts a complete SavedSettings record; returns void.
+   * Errors: Storage failures notify the caller while retaining the in-memory record.
+   */
+  const commitHistory = (next: SavedSettings): void => {
+    settingsRef.current = next;
+    setSettings(next);
+    if (!saveSavedSettings(next)) onStorageError?.();
   };
 
-  /** Description: Records a successful search to history. Arguments & Returns: Accepts keyword and directory, returns void. Errors: Storage failure notified via commit. */
+  /**
+   * Description: Records a successful search while retaining every committed preference.
+   * Arguments & Returns: Accepts keyword and directory strings; returns void.
+   * Errors: Storage failures notify the caller and preserve the in-memory history update.
+   */
   const addSearch = (keyword: string, directory: string) => {
-    const current = historyRef.current;
+    const current = settingsRef.current;
     if (current.maxEntries === SEARCH_HISTORY_CONSTANTS.MIN_ENTRIES) return;
     /** Description: Removes whitespace-only values, deduplicates, and places latest at front. Arguments & Returns: Array and value, returns trimmed array. Errors: None. */
     const addRecent = (entries: string[], value: string) =>
       value.trim()
         ? [value, ...entries.filter((entry) => entry !== value)].slice(0, current.maxEntries)
         : entries;
-    commit({
+    commitHistory({
       ...current,
       keywords: addRecent(current.keywords, keyword),
       directories: addRecent(current.directories, directory),
     });
   };
 
-  /** Description: Validates and applies new max entry limit, trimming entries immediately. Arguments & Returns: Limit number, returns boolean success. Errors: Returns false on invalid input. */
-  const setMaxEntries = (maxEntries: number): boolean => {
-    // Constant reference: Validates range against SEARCH_HISTORY_CONSTANTS
-    if (
-      !Number.isInteger(maxEntries) ||
-      maxEntries < SEARCH_HISTORY_CONSTANTS.MIN_ENTRIES ||
-      maxEntries > SEARCH_HISTORY_CONSTANTS.MAX_ENTRIES
-    ) return false;
-    const current = historyRef.current;
-    commit({
+  /**
+   * Description: Atomically saves history limit and search defaults using the latest committed histories.
+   * Arguments & Returns: Accepts limit, default options, and remembered worker count; returns save success.
+   * Errors: Invalid limits or storage failures return false and leave committed memory unchanged.
+   */
+  const savePreferences = (
+    maxEntries: number,
+    defaultOptions: DefaultSearchOptions,
+    rememberedBurstWorkers: number | null,
+  ): boolean => {
+    if (!Number.isInteger(maxEntries) || maxEntries < SEARCH_HISTORY_CONSTANTS.MIN_ENTRIES || maxEntries > SEARCH_HISTORY_CONSTANTS.MAX_ENTRIES) return false;
+    const current = settingsRef.current;
+    const next: SavedSettings = {
+      ...current,
       maxEntries,
       keywords: maxEntries ? current.keywords.slice(0, maxEntries) : [],
       directories: maxEntries ? current.directories.slice(0, maxEntries) : [],
-    });
+      defaultOptions: { ...defaultOptions, extensions: [...defaultOptions.extensions] },
+      rememberedBurstWorkers,
+    };
+    if (!saveSavedSettings(next)) {
+      return false;
+    }
+    settingsRef.current = next;
+    setSettings(next);
     return true;
   };
 
-  return { ...history, addSearch, setMaxEntries };
+  return { ...settings, addSearch, savePreferences };
 }
