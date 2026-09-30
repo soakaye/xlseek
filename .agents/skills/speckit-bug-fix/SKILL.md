@@ -9,7 +9,7 @@ metadata:
 
 # Fix Bug
 
-Apply the remediation that was proposed by `/speckit-bug-assess` and record the changes in a fix report at `.specify/bugs/<slug>/fix.md`. This command is **only** valid after an assessment exists for the given slug.
+Apply the remediation that was proposed by `$speckit-bug-assess` and record the changes in a fix report at `.specify/bugs/<slug>/fix.md`. This command is **only** valid after an assessment exists for the given slug.
 
 ## User Input
 
@@ -28,7 +28,7 @@ The user input should identify the bug to fix. Accept any of:
 Resolve `BUG_SLUG` in this order, stopping at the first match:
 
 1. **Explicit user input** — a slug passed in `$ARGUMENTS` (any of the forms above).
-2. **Conversation context** — if the current session has just run `/speckit-bug-assess`, the slug it reported is the working slug. Reuse it without re-prompting. Confirm it by checking that `.specify/bugs/<slug>/assessment.md` exists; if it does not, fall through.
+2. **Conversation context** — if the current session has just run `$speckit-bug-assess`, the slug it reported is the working slug. Reuse it without re-prompting. Confirm it by checking that `.specify/bugs/<slug>/assessment.md` exists; if it does not, fall through.
 3. **Single candidate on disk** — list `.specify/bugs/*/assessment.md`. If exactly one matching `assessment.md` is found, use the slug from its parent directory.
 4. **Disambiguate**:
    - **Interactive mode**: ask the user which bug to fix and list the candidates.
@@ -38,7 +38,7 @@ Once resolved, set `BUG_SLUG` and `BUG_DIR = .specify/bugs/<BUG_SLUG>`, and brie
 
 ## Prerequisites
 
-- `BUG_DIR/assessment.md` MUST exist. If it does not, stop and instruct the user to run `/speckit-bug-assess` first.
+- `BUG_DIR/assessment.md` MUST exist. If it does not, stop and instruct the user to run `$speckit-bug-assess` first.
 - If `BUG_DIR/fix.md` already exists, ask the user whether to overwrite it before continuing (interactive mode) or refuse (automated mode).
 - Read `BUG_DIR/assessment.md` in full. Treat its **Proposed Remediation**, **Files likely to change**, **Tests to add or update**, and **Risks & Considerations** sections as the contract for this command.
 
@@ -53,7 +53,7 @@ Once resolved, set `BUG_SLUG` and `BUG_DIR = .specify/bugs/<BUG_SLUG>`, and brie
    - Make the code changes described by the preferred remediation. Stay within the files listed by the assessment unless newly discovered evidence requires expanding scope (in which case, log the expansion explicitly in the report).
    - Add or update the tests called out in the assessment so the bug cannot regress silently.
    - Keep the change minimal — do not refactor unrelated code, do not introduce dependencies that the assessment did not call for.
-   - If you discover the assessment was wrong (the proposed fix does not work, the root cause is elsewhere), STOP modifying code, document the new finding in the fix report under **Deviations from Assessment**, and recommend re-running `/speckit-bug-assess`.
+   - If you discover the assessment was wrong (the proposed fix does not work, the root cause is elsewhere), STOP modifying code, document the new finding in the fix report under **Deviations from Assessment**, and recommend re-running `$speckit-bug-assess`.
 
 3. **Run local checks**
    - If the project has obvious test commands (e.g., `pytest`, `npm test`, `cargo test`), run the tests that exercise the changed paths. Capture pass/fail and key output.
@@ -107,7 +107,7 @@ Once resolved, set `BUG_SLUG` and `BUG_DIR = .specify/bugs/<BUG_SLUG>`, and brie
 5. **Report back** with:
    - The slug and `BUG_DIR/fix.md` path.
    - The status (`applied`, `partial`, `not-applied`).
-   - The next suggested step: `/speckit-bug-test slug=<BUG_SLUG>`.
+   - The next suggested step: `$speckit-bug-test slug=<BUG_SLUG>`.
 
 ## Guardrails
 

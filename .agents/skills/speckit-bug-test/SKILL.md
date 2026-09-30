@@ -9,7 +9,7 @@ metadata:
 
 # Test Bug Fix
 
-Validate that the fix recorded by `/speckit-bug-fix` actually resolves the bug described by `/speckit-bug-assess`. The output is a verification report at `.specify/bugs/<slug>/test.md`.
+Validate that the fix recorded by `$speckit-bug-fix` actually resolves the bug described by `$speckit-bug-assess`. The output is a verification report at `.specify/bugs/<slug>/test.md`.
 
 ## User Input
 
@@ -28,7 +28,7 @@ The user input should identify the bug to validate. Accept any of:
 Resolve `BUG_SLUG` in this order, stopping at the first match:
 
 1. **Explicit user input** — a slug passed in `$ARGUMENTS` (any of the forms above).
-2. **Conversation context** — if the current session has just run `/speckit-bug-assess` or `/speckit-bug-fix`, the slug it reported is the working slug. Reuse it without re-prompting. Confirm it by checking that `.specify/bugs/<slug>/fix.md` exists; if it does not, fall through.
+2. **Conversation context** — if the current session has just run `$speckit-bug-assess` or `$speckit-bug-fix`, the slug it reported is the working slug. Reuse it without re-prompting. Confirm it by checking that `.specify/bugs/<slug>/fix.md` exists; if it does not, fall through.
 3. **Single candidate on disk** — list `.specify/bugs/*/fix.md`. If exactly one bug has a `fix.md`, use it.
 4. **Disambiguate**:
    - **Interactive mode**: ask the user which bug to validate and list the candidates.
@@ -39,7 +39,7 @@ Once resolved, set `BUG_SLUG` and `BUG_DIR = .specify/bugs/<BUG_SLUG>`, and brie
 ## Prerequisites
 
 - `BUG_DIR/assessment.md` MUST exist.
-- `BUG_DIR/fix.md` MUST exist. If not, stop and instruct the user to run `/speckit-bug-fix` first.
+- `BUG_DIR/fix.md` MUST exist. If not, stop and instruct the user to run `$speckit-bug-fix` first.
 - If `BUG_DIR/test.md` already exists, ask the user whether to overwrite it (interactive mode) or refuse (automated mode).
 - Read both `assessment.md` and `fix.md` in full so you know:
   - The original symptom and reproduction steps (from `assessment.md`).
@@ -107,13 +107,13 @@ Once resolved, set `BUG_SLUG` and `BUG_DIR = .specify/bugs/<BUG_SLUG>`, and brie
    <One paragraph. Examples:>
    - "Close the bug — verified end-to-end."
    - "Hold — reproduction inconclusive; needs verification in staging."
-   - "Reopen — symptom still reproduces; rerun `/speckit-bug-assess`."
+   - "Reopen — symptom still reproduces; rerun `$speckit-bug-assess`."
    ```
 
 5. **Report back** with:
    - The slug and `BUG_DIR/test.md` path.
    - The result (`verified`, `partial`, `failed`).
-   - If the result is `failed`, recommend re-running `/speckit-bug-assess` with the new evidence captured in `test.md`.
+   - If the result is `failed`, recommend re-running `$speckit-bug-assess` with the new evidence captured in `test.md`.
 
 ## Guardrails
 
