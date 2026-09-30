@@ -68,11 +68,11 @@ npm run tauri dev
 
 ## Command Line Interface (CLI)
 
-The CLI tool (`xlseek-cli`) is distributed as an independent standalone binary alongside the GUI application. You can build and run it directly:
+Tauri installers include `xlseek-cli` as a Sidecar. You can run the CLI directly from a terminal without launching the GUI or installing the CLI separately. For development, build a standalone CLI executable with Cargo:
 
 ```bash
-# Build the CLI binary
-npm run build:cli
+# Build the standalone CLI binary for the host platform
+cargo build --release -p xlseek-cli --bin xlseek-cli
 
 # Display help and available options
 ./target/release/xlseek-cli --help
@@ -85,6 +85,27 @@ npm run build:cli
 ./target/release/xlseek-cli --path ./reports --query 'Revenue' \
   --format csv --output ./results.csv --language en
 ```
+
+On Windows, the standalone executable built by this Cargo command is `target\release\xlseek-cli.exe`. Packaging builds the target-specific CLI and stages it for Tauri automatically.
+
+### Run the CLI from an installed package
+
+The Windows x64 NSIS and MSI packages include `xlseek-cli.exe` next to `xlseek.exe`. Their generated installer definitions specify these default locations (change the path if you selected another installation directory):
+
+| Installer | Default CLI location |
+| :--- | :--- |
+| NSIS, current user | `%LOCALAPPDATA%\Excel Seek\xlseek-cli.exe` |
+| NSIS, all users | `%ProgramFiles%\Excel Seek\xlseek-cli.exe` |
+| MSI | `%ProgramFiles%\Excel Seek\xlseek-cli.exe` |
+
+Run it from PowerShell using its full path, for example with a current-user NSIS installation:
+
+```powershell
+& "$env:LOCALAPPDATA\Excel Seek\xlseek-cli.exe" --help
+& "$env:LOCALAPPDATA\Excel Seek\xlseek-cli.exe" --path .\reports --query 'Revenue' --format csv --output .\results.csv
+```
+
+The Windows package contents and installer definitions were checked; a completed installation has not yet been tested. The Sidecar is not registered on `PATH`, so use its full path. For macOS and Linux, locate `xlseek-cli` inside the installed application or package bundle and run it by full path (for example, `"/path/to/xlseek-cli" --help`). Its location depends on the bundle format and installation directory; those package layouts have not yet been verified.
 
 ### CLI Notes & Options
 
@@ -105,11 +126,11 @@ npm run build:cli
 # Full build of frontend and CLI binary
 npm run build:all
 
-# Package the desktop application & installers (bundles both GUI and CLI automatically)
-npm run tauri build
+# Package the desktop application and installers with the CLI Sidecar
+npm run build:gui
 ```
 
-The resulting application bundles and platform installers (e.g., Windows `.msi` / `.exe`, macOS `.dmg` / `.app`, Linux `.deb` / `.AppImage`) will be generated under `target/release/bundle/`. Both the desktop application (`xlseek`) and CLI tool (`xlseek-cli`) are packaged together.
+For a native build, the resulting application bundles and platform installers (e.g., Windows `.msi` / `.exe`, macOS `.dmg` / `.app`, Linux `.deb` / `.AppImage`) are generated under `target/release/bundle/`. The build runs `npm run build:cli` to stage the matching target's CLI for Tauri Sidecar bundling. A build with an explicit target may use a target-specific bundle directory.
 
 ---
 

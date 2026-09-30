@@ -68,11 +68,11 @@ npm run tauri dev
 
 ## コマンドラインインターフェース (CLI)
 
-CLI ツール（`xlseek-cli`）は、GUI アプリケーションとは独立した単体バイナリとして提供されています。直接ビルドして実行できます：
+Tauri インストーラーには `xlseek-cli` が Sidecar として同梱されます。GUI を起動したり、CLI を別途インストールしたりせずに、端末から直接実行できます。開発時には Cargo で単体の CLI 実行ファイルをビルドできます：
 
 ```bash
-# CLI バイナリのビルド
-npm run build:cli
+# ホスト環境向けの単体 CLI バイナリをビルド
+cargo build --release -p xlseek-cli --bin xlseek-cli
 
 # ヘルプと利用可能なオプションを表示
 ./target/release/xlseek-cli --help
@@ -85,6 +85,27 @@ npm run build:cli
 ./target/release/xlseek-cli --path ./reports --query 'Revenue' \
   --format csv --output ./results.csv --language en
 ```
+
+Windows では、この Cargo コマンドで生成される単体の実行ファイルは `target\release\xlseek-cli.exe` です。パッケージ生成時には対象環境向けの CLI を自動的にビルドし、Tauri 用に配置します。
+
+### インストール済みパッケージから CLI を実行する
+
+Windows x64 の NSIS および MSI パッケージには、`xlseek.exe` と同じディレクトリに `xlseek-cli.exe` が含まれます。生成されたインストーラー定義上の既定の配置先は次のとおりです（インストール先を変更した場合は読み替えてください）：
+
+| インストーラー | CLI の既定の配置先 |
+| :--- | :--- |
+| NSIS、現在のユーザー | `%LOCALAPPDATA%\Excel Seek\xlseek-cli.exe` |
+| NSIS、すべてのユーザー | `%ProgramFiles%\Excel Seek\xlseek-cli.exe` |
+| MSI | `%ProgramFiles%\Excel Seek\xlseek-cli.exe` |
+
+現在のユーザー向け NSIS インストールの場合、PowerShell からフルパスで実行できます：
+
+```powershell
+& "$env:LOCALAPPDATA\Excel Seek\xlseek-cli.exe" --help
+& "$env:LOCALAPPDATA\Excel Seek\xlseek-cli.exe" --path .\reports --query 'Revenue' --format csv --output .\results.csv
+```
+
+Windows のパッケージ内容とインストーラー定義は確認済みですが、実際のインストール後の動作は未確認です。Sidecar は `PATH` に登録されないため、フルパスで実行してください。macOS と Linux では、インストールしたアプリケーションまたはパッケージのバンドル内から `xlseek-cli` を探し、フルパスで実行します（例：`"/path/to/xlseek-cli" --help`）。配置先はバンドル形式とインストール先によって異なり、これらのパッケージの配置は未検証です。
 
 ### CLI の仕様とオプション
 
@@ -105,11 +126,11 @@ npm run build:cli
 # フロントエンドおよび CLI バイナリの一括ビルド
 npm run build:all
 
-# デスクトップアプリケーションとインストーラーの生成 (GUI と CLI が自動的に同梱されます)
-npm run tauri build
+# CLI Sidecar を同梱するデスクトップアプリケーションとインストーラーの生成
+npm run build:gui
 ```
 
-生成されたアプリケーションバンドルおよび OS 向けインストーラー（Windows: `.msi` / `.exe`、macOS: `.dmg` / `.app`、Linux: `.deb` / `.AppImage`）は `target/release/bundle/` 配下に出力されます。デスクトップアプリケーション本体（`xlseek`）と CLI ツール（`xlseek-cli`）の双方がパッケージ内に同梱されます。
+ホスト環境向けにビルドした場合、生成されたアプリケーションバンドルおよび OS 向けインストーラー（Windows: `.msi` / `.exe`、macOS: `.dmg` / `.app`、Linux: `.deb` / `.AppImage`）は `target/release/bundle/` 配下に出力されます。ビルド中に `npm run build:cli` が実行され、対象環境に合う CLI が Tauri Sidecar 用に配置されます。対象環境を明示したビルドでは、対象別のバンドルディレクトリが使用される場合があります。
 
 ---
 
