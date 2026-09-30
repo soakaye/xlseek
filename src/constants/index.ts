@@ -31,6 +31,7 @@ export const APP_LOGS = {
 export const EVENT_NAMES = {
   SEARCH_MATCH: "search-match",
   SCAN_PROGRESS: "scan-progress",
+  SEARCH_ISSUE: "search-issue",
   OPEN_ABOUT_DIALOG: "open-about-dialog",
 } as const;
 
@@ -133,6 +134,16 @@ export const FILE_EXTENSIONS = {
 // ==============================================================================
 export const DEFAULT_OPTIONS_STORAGE_KEY = "xlseek.default_search_options";
 
+/** Values and bounds shared by directory search settings and the Tauri query. */
+export const DIRECTORY_SEARCH_CONSTANTS = {
+  SEQUENTIAL: "sequential",
+  BURST: "burst",
+  AUTOMATIC: "automatic",
+  WORKERS_INPUT_ID: "burst-workers-input",
+  CUSTOM_WORKERS_MIN: 2,
+  CUSTOM_WORKERS_MAX: 32,
+} as const;
+
 export const DEFAULT_SEARCH_OPTIONS = {
   match_case: false,
   use_regex: false,
@@ -141,4 +152,6 @@ export const DEFAULT_SEARCH_OPTIONS = {
   include_comment: true,
   include_hidden: false,
   extensions: [".xlsx", ".xlsm", ".xlsb", ".xls"],
+  directory_mode: DIRECTORY_SEARCH_CONSTANTS.SEQUENTIAL,
+  burst_workers: null,
 } as const;

@@ -241,6 +241,11 @@
       </div>
     </header>
 
+    <section id="searchIssueWarnings" class="hidden border-b border-amber-800/70 bg-amber-950/30 px-4 py-2 text-xs text-amber-200" role="status">
+      <p class="mb-1 font-medium">フォルダ検索時の警告</p>
+      <ul id="searchIssueList" class="max-h-20 list-inside list-disc overflow-y-auto"></ul>
+    </section>
+
     <!-- ==================== メイン作業エリア (2ペイン分割: 左58%, 右42%) ==================== -->
     <div class="flex-1 flex overflow-hidden">
 
@@ -585,6 +590,19 @@
         <fieldset class="mt-6 border-t border-zinc-800 pt-4">
           <legend id="defaultOptionsTitle" class="mb-1 text-sm font-medium">デフォルト検索オプション</legend>
           <p id="defaultOptionsDescription" class="mb-3 text-xs text-zinc-400">次回起動時および検索初期状態に反映するオプションを設定します。</p>
+
+          <fieldset class="mb-3">
+            <legend class="mb-2 text-xs font-medium">ディレクトリ検索方式</legend>
+            <label class="mr-3 inline-flex items-center gap-2"><input type="radio" name="mockDirectoryMode" value="sequential" checked>順次</label>
+            <label class="inline-flex items-center gap-2"><input type="radio" name="mockDirectoryMode" value="burst">Burst</label>
+          </fieldset>
+          <fieldset class="mb-3">
+            <legend class="mb-2 text-xs font-medium">Burst 並列数</legend>
+            <label class="mr-3 inline-flex items-center gap-2"><input type="radio" name="mockWorkerChoice" value="automatic" checked>自動</label>
+            <label class="inline-flex items-center gap-2"><input type="radio" name="mockWorkerChoice" value="custom">手動</label>
+            <input id="mockBurstWorkers" type="number" min="2" max="32" step="1" value="4" aria-label="Burst 並列数" class="w-24 rounded border border-zinc-700 bg-zinc-800 px-2 py-1">
+            <p id="mockBurstWorkersError" class="hidden mt-1 text-amber-400">2 から 32 の整数を入力してください</p>
+          </fieldset>
 
           <div class="space-y-2 text-xs">
             <label class="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
@@ -9043,6 +9061,24 @@
       let mockDefaultExtensions = [".xlsx", ".xlsm", ".xlsb", ".xls"];
 
       // 設定ダイアログの拡張子ボタントグル
+      const mockDirectoryModeInputs = settingsModal.querySelectorAll('input[name="mockDirectoryMode"]');
+      const mockWorkerChoiceInputs = settingsModal.querySelectorAll('input[name="mockWorkerChoice"]');
+      const mockBurstWorkers = document.getElementById("mockBurstWorkers");
+      const mockBurstWorkersError = document.getElementById("mockBurstWorkersError");
+      const syncBurstWorkerControls = () => {
+        const burstMode = settingsModal.querySelector('input[name="mockDirectoryMode"]:checked').value === "burst";
+        const customCount = settingsModal.querySelector('input[name="mockWorkerChoice"]:checked').value === "custom";
+        mockWorkerChoiceInputs.forEach(input => { input.disabled = !burstMode; });
+        mockBurstWorkers.disabled = !burstMode || !customCount;
+        const validCount = Number.isInteger(Number(mockBurstWorkers.value)) && Number(mockBurstWorkers.value) >= 2 && Number(mockBurstWorkers.value) <= 32;
+        mockBurstWorkersError.classList.toggle("hidden", !customCount || validCount);
+        document.getElementById("saveDefaultOptionsBtn").disabled = customCount && !validCount;
+      };
+      mockDirectoryModeInputs.forEach(input => input.addEventListener("change", syncBurstWorkerControls));
+      mockWorkerChoiceInputs.forEach(input => input.addEventListener("change", syncBurstWorkerControls));
+      mockBurstWorkers.addEventListener("input", syncBurstWorkerControls);
+      syncBurstWorkerControls();
+
       const mockExtBtns = settingsModal.querySelectorAll(".mock-ext-btn");
       mockExtBtns.forEach(btn => {
         btn.addEventListener("click", () => {
@@ -9069,6 +9105,10 @@
         document.getElementById("mockOptShape").checked = false;
         document.getElementById("mockOptComment").checked = true;
         document.getElementById("mockOptHidden").checked = false;
+        settingsModal.querySelector('input[name="mockDirectoryMode"][value="sequential"]').checked = true;
+        settingsModal.querySelector('input[name="mockWorkerChoice"][value="automatic"]').checked = true;
+        mockBurstWorkers.value = "4";
+        syncBurstWorkerControls();
         mockDefaultExtensions = [".xlsx", ".xlsm", ".xlsb", ".xls"];
         mockExtBtns.forEach(btn => {
           btn.className = "mock-ext-btn px-2.5 py-1 rounded text-xs font-mono border bg-emerald-950/80 text-emerald-300 border-emerald-600 font-medium";
@@ -9078,6 +9118,13 @@
 
       // オプションを保存 (設定の永続化シミュレーションとメイン検索バーへの即時同期)
       document.getElementById("saveDefaultOptionsBtn").addEventListener("click", () => {
+        if (document.getElementById("saveDefaultOptionsBtn").disabled) return;
+        const directoryMode = settingsModal.querySelector('input[name="mockDirectoryMode"]:checked').value;
+        const burstWorkers = settingsModal.querySelector('input[name="mockWorkerChoice"]:checked').value === "custom"
+          ? Number(mockBurstWorkers.value)
+          : null;
+        document.getElementById("searchBtn").dataset.directoryMode = directoryMode;
+        document.getElementById("searchBtn").dataset.burstWorkers = burstWorkers === null ? "automatic" : String(burstWorkers);
         // メイン画面の検索バーコントロールへ即時同期
         const isCase = document.getElementById("mockOptCase").checked;
         const isRegex = document.getElementById("mockOptRegex").checked;

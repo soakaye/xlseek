@@ -27,6 +27,29 @@ describe("default-options-core", () => {
     expect(options).toEqual(DEFAULT_SEARCH_OPTIONS);
   });
 
+  it("migrates legacy preferences and normalizes invalid new fields", () => {
+    const legacy = {
+      ...DEFAULT_SEARCH_OPTIONS,
+      directory_mode: undefined,
+      burst_workers: undefined,
+      match_case: true,
+    };
+    window.localStorage.setItem(DEFAULT_OPTIONS_STORAGE_KEY, JSON.stringify(legacy));
+    expect(loadDefaultSearchOptions()).toEqual({
+      ...DEFAULT_SEARCH_OPTIONS,
+      match_case: true,
+    });
+
+    window.localStorage.setItem(
+      DEFAULT_OPTIONS_STORAGE_KEY,
+      JSON.stringify({ ...legacy, directory_mode: "invalid", burst_workers: 33 })
+    );
+    expect(loadDefaultSearchOptions()).toEqual({
+      ...DEFAULT_SEARCH_OPTIONS,
+      match_case: true,
+    });
+  });
+
   it("saves and loads valid custom options", () => {
     const custom = {
       match_case: true,
@@ -36,6 +59,8 @@ describe("default-options-core", () => {
       include_comment: false,
       include_hidden: true,
       extensions: [".xlsx", ".xls"],
+      directory_mode: "burst" as const,
+      burst_workers: 6,
     };
     const saved = saveDefaultSearchOptions(custom);
     expect(saved).toBe(true);

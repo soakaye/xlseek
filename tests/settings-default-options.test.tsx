@@ -58,6 +58,45 @@ describe("SettingsDialog - Default Search Options", () => {
 
     const xlsxBtn = screen.getByRole("button", { name: ".xlsx" });
     expect(xlsxBtn).toBeDefined();
+    expect((screen.getByRole("radio", { name: "Sequential" }) as HTMLInputElement).checked).toBe(true);
+    expect(screen.getByRole("radio", { name: "Burst" })).toBeDefined();
+    expect(screen.getByRole("radio", { name: "Automatic" })).toBeDefined();
+  });
+
+  it("saves a custom Burst worker count", () => {
+    const onSaveDefaultOptions = vi.fn();
+    render(
+      <LocaleProvider value="en">
+        <SettingsDialog {...baseProps} onSaveDefaultOptions={onSaveDefaultOptions} />
+      </LocaleProvider>
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "Burst" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Custom" }));
+    const count = screen.getByRole("spinbutton", { name: "Burst parallel count" });
+    fireEvent.change(count, { target: { value: "6" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Options" }));
+    expect(onSaveDefaultOptions).toHaveBeenCalledWith({
+      ...DEFAULT_SEARCH_OPTIONS,
+      directory_mode: "burst",
+      burst_workers: 6,
+    });
+  });
+
+  it("blocks saving custom counts outside the supported range", () => {
+    const onSaveDefaultOptions = vi.fn();
+    render(
+      <LocaleProvider value="en">
+        <SettingsDialog {...baseProps} onSaveDefaultOptions={onSaveDefaultOptions} />
+      </LocaleProvider>
+    );
+    fireEvent.click(screen.getByRole("radio", { name: "Burst" }));
+    fireEvent.click(screen.getByRole("radio", { name: "Custom" }));
+    const count = screen.getByRole("spinbutton", { name: "Burst parallel count" });
+    for (const value of ["1", "33", "2.5"]) {
+      fireEvent.change(count, { target: { value } });
+      expect((screen.getByRole("button", { name: "Save Options" }) as HTMLButtonElement).disabled).toBe(true);
+      expect(onSaveDefaultOptions).not.toHaveBeenCalled();
+    }
   });
 
   it("modifies toggles, resets to defaults, and saves", () => {

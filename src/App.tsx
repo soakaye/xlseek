@@ -20,6 +20,7 @@ import { SpreadsheetGrid } from "./components/preview/SpreadsheetGrid";
 import { SheetTabs } from "./components/preview/SheetTabs";
 import { MetaInfoCard } from "./components/preview/MetaInfoCard";
 import { StatusBar } from "./components/common/StatusBar";
+import { SearchWarnings } from "./components/common/SearchWarnings";
 import { Toast } from "./components/common/Toast";
 import { SettingsDialog } from "./components/settings/SettingsDialog";
 import { useSearch } from "./hooks/useSearch";
@@ -109,6 +110,7 @@ export const App: React.FC = () => {
     applyDefaultOptions,
     results,
     progress,
+    searchIssues,
     isScanning,
     selectedMatch,
     previewData,
@@ -149,6 +151,9 @@ export const App: React.FC = () => {
         history={{ keywords, directories }}
         onSelectHistory={(field, value) => updateQuery(field === "keyword" ? { keyword: value } : { target_dir: value })}
       />
+
+      {/* Constant reference: EVENT_NAMES.SEARCH_ISSUE is subscribed by useSearch. */}
+      <SearchWarnings issues={searchIssues} language={language} />
 
       {/* Main two-pane workspace: left 58%, right 42% */}
       <div className="flex-1 flex overflow-hidden">

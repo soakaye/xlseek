@@ -228,6 +228,8 @@ fn extracts_text_shape_with_sheet_and_anchor() {
     let query = SearchQuery {
         keyword: "needle".to_string(),
         target_dir: path.to_string_lossy().to_string(),
+        directory_mode: exlgrep_core::models::DirectorySearchMode::Sequential,
+        burst_workers: None,
         match_case: false,
         // Constant reference: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE
         include_value: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE,
@@ -279,6 +281,8 @@ fn uses_real_cell_coordinates_for_ranges_starting_after_a1() {
     let query = SearchQuery {
         keyword: "Financial Report Q3".to_string(),
         target_dir: path.to_string_lossy().into_owned(),
+        directory_mode: exlgrep_core::models::DirectorySearchMode::Sequential,
+        burst_workers: None,
         match_case: false,
         // Constant reference: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE
         include_value: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE,
@@ -325,6 +329,8 @@ fn searches_legacy_cell_comments() {
     let query = SearchQuery {
         keyword: exlgrep_core::constants::CLI_TEST_COMMENT_QUERY.to_string(),
         target_dir: path.to_string_lossy().into_owned(),
+        directory_mode: exlgrep_core::models::DirectorySearchMode::Sequential,
+        burst_workers: None,
         match_case: false,
         // Constant reference: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE
         include_value: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE,

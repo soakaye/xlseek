@@ -5,6 +5,7 @@
 //! path resolution (path), cell preview extraction (preview), and comment/shape extractors.
 
 pub mod comments;
+pub mod discovery;
 pub mod engine;
 pub mod parser;
 pub mod path;

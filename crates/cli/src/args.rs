@@ -12,7 +12,7 @@
 //! Returns `Err` on non-Unicode arguments, missing/duplicate/unknown arguments, or invalid paths/queries.
 
 use crate::constants;
-use exlgrep_core::models::{ExportFormat, SearchQuery};
+use exlgrep_core::models::{DirectorySearchMode, ExportFormat, SearchQuery};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
@@ -444,6 +444,34 @@ where
         constants::CLI_DEFAULT_INCLUDE_HIDDEN,
     )?;
 
+    // Constant reference: constants::CLI_DIRECTORY_MODE_FIELD, constants::CLI_BURST_WORKERS_FIELD.
+    let requested_workers = values
+        .get(constants::CLI_BURST_WORKERS_FIELD)
+        .map(|value| {
+            value
+                .parse::<usize>()
+                .map_err(|_| constants::ERR_CLI_DIRECTORY_MODE.to_string())
+        })
+        .transpose()?;
+    if requested_workers.is_some_and(|count| {
+        !(constants::BURST_WORKERS_MIN..=constants::BURST_WORKERS_MAX).contains(&count)
+    }) {
+        return Err(constants::ERR_CLI_DIRECTORY_MODE.to_string());
+    }
+    let directory_mode = match values
+        .get(constants::CLI_DIRECTORY_MODE_FIELD)
+        .map(String::as_str)
+    {
+        Some(constants::DIRECTORY_MODE_SEQUENTIAL) if requested_workers.is_some() => {
+            return Err(constants::ERR_CLI_DIRECTORY_MODE.to_string());
+        }
+        Some(constants::DIRECTORY_MODE_SEQUENTIAL) => DirectorySearchMode::Sequential,
+        Some(constants::DIRECTORY_MODE_BURST) => DirectorySearchMode::Burst,
+        Some(_) => return Err(constants::ERR_CLI_DIRECTORY_MODE.to_string()),
+        None if requested_workers.is_some() => DirectorySearchMode::Burst,
+        None => DirectorySearchMode::Sequential,
+    };
+
     if !(include_value || include_formula || include_comment || include_shape) {
         return Err(constants::ERR_CLI_NO_SEARCH_TYPES.to_string());
     }
@@ -464,6 +492,8 @@ where
         query: SearchQuery {
             keyword: query_str,
             target_dir: representative_dir,
+            directory_mode,
+            burst_workers: requested_workers,
             match_case,
             include_value,
             use_regex,
@@ -784,5 +814,80 @@ mod tests {
             panic!("help request must not run search");
         };
         assert!(help.starts_with(constants::CLI_TEST_ENGLISH_USAGE_PREFIX));
+    }
+
+    /// Verifies that a Burst worker count can select Burst without a mode option.
+    ///
+    /// ## Arguments / Returns
+    /// Parses a directory search request and asserts it is accepted.
+    ///
+    /// ## Errors
+    /// Panics if valid count-only Burst syntax is rejected.
+    #[test]
+    fn burst_worker_count_without_mode_is_accepted() {
+        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
+        let root = repo_root();
+        let input = root.join("tests/fixtures/sample_report.xlsx");
+        let result = parse_args(
+            [
+                format!("--{}", constants::CLI_QUERY_FIELD),
+                constants::CLI_TEST_HYPHEN_QUERY.to_string(),
+                format!("--{}", constants::CLI_PATH_FIELD),
+                input.to_string_lossy().into_owned(),
+                "--burst-workers".to_string(),
+                "6".to_string(),
+            ],
+            &catalogs,
+        );
+        let ParseOutcome::Run(options) = result.unwrap() else {
+            panic!("count-only request must start a search");
+        };
+        assert_eq!(
+            options.query.directory_mode,
+            exlgrep_core::models::DirectorySearchMode::Burst
+        );
+        assert_eq!(options.query.burst_workers, Some(6));
+    }
+
+    /// Rejects invalid worker counts and a count conflicting with explicit Sequential mode.
+    ///
+    /// ## Arguments / Returns
+    /// Parses invalid requests and asserts each returns a usage error.
+    ///
+    /// ## Errors
+    /// Panics if any invalid option combination is accepted.
+    #[test]
+    fn rejects_invalid_burst_worker_counts_and_sequential_conflicts() {
+        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
+        let root = repo_root();
+        let input = root.join("tests/fixtures/sample_report.xlsx");
+        for count in ["1", "33", "2.5"] {
+            let result = parse_args(
+                [
+                    "--query".to_string(),
+                    constants::CLI_TEST_HYPHEN_QUERY.to_string(),
+                    "--path".to_string(),
+                    input.to_string_lossy().into_owned(),
+                    "--burst-workers".to_string(),
+                    count.to_string(),
+                ],
+                &catalogs,
+            );
+            assert!(result.is_err());
+        }
+        let conflict = parse_args(
+            [
+                "--query".to_string(),
+                constants::CLI_TEST_HYPHEN_QUERY.to_string(),
+                "--path".to_string(),
+                input.to_string_lossy().into_owned(),
+                "--directory-mode".to_string(),
+                "sequential".to_string(),
+                "--burst-workers".to_string(),
+                "2".to_string(),
+            ],
+            &catalogs,
+        );
+        assert!(conflict.is_err());
     }
 }

@@ -25,6 +25,15 @@ export interface SearchQuery {
   include_shape?: boolean;
   include_hidden?: boolean;
   extensions?: string[];
+  directory_mode?: "sequential" | "burst";
+  burst_workers?: number | null;
+}
+
+/** Describes an inaccessible descendant folder reported during directory discovery. */
+export interface SearchIssue {
+  path: string;
+  stage: "discovery";
+  code: "permission_denied" | "read_failed";
 }
 
 /**

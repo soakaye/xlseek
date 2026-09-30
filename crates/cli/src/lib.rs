@@ -22,11 +22,10 @@ use exlgrep_core::models::{SearchIssue, SearchMatch, SearchReport};
 use same_file::Handle;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicUsize, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::sync_channel;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
-use walkdir::WalkDir;
 
 /// Parses process arguments and executes Excel search/save without initializing a GUI.
 /// Suppresses summary text when streaming directly to stdout.
@@ -161,133 +160,86 @@ fn execute(
     std::thread::scope(|scope| {
         // Discovery thread (Producer)
         let issues_for_producer = Arc::clone(&issues);
+        let reported_discovery_paths = Mutex::new(HashSet::<PathBuf>::new());
         let discovered_for_producer = Arc::clone(&discovered_files);
         let root_error_for_producer = Arc::clone(&root_error);
         let input_paths = options.input_paths.clone();
         let extensions = options.query.extensions.clone();
+        let directory_mode = options.query.directory_mode;
+        let burst_workers = options.query.burst_workers;
+        let sender_for_discovery = sender.clone();
         let guard_ref = output_guard.as_ref();
 
         scope.spawn(move || {
-            let mut visited_handles = HashSet::new();
-
-            for input in &input_paths {
-                if input.is_file() {
-                    if let Some(guard) = guard_ref {
-                        if let Err(collision_err) = guard.check_input(input) {
-                            eprintln!(
-                                "{}{}{}",
-                                input.display(),
-                                constants::CLI_ERROR_SEPARATOR,
-                                collision_err
-                            );
-                            let mut err_lock = root_error_for_producer.lock().unwrap();
-                            *err_lock = Some(collision_err);
-                            return;
-                        }
-                    }
-                    if let Ok(handle) = Handle::from_path(input) {
-                        if !visited_handles.insert(handle) {
-                            continue;
-                        }
-                    }
-                    discovered_for_producer.fetch_add(1, Ordering::Relaxed);
-                    if sender.send(input.clone()).is_err() {
-                        return;
-                    }
-                    continue;
+            let visited_handles = Mutex::new(HashSet::<Handle>::new());
+            let deliver = |path: &Path| -> Result<(), String> {
+                if let Some(guard) = guard_ref {
+                    guard.check_input(path)?;
                 }
-
-                // Directory discovery
-                let entries = WalkDir::new(input).follow_links(false).into_iter();
-                for entry in entries {
-                    let entry = match entry {
-                        Ok(entry) => entry,
-                        Err(error) => {
-                            let cause = error.to_string();
-                            let path = error
-                                .path()
-                                .map(Path::to_path_buf)
-                                .unwrap_or_else(|| input.clone());
-
-                            // Emit immediately to stderr
-                            eprintln!(
-                                "{}{}{}",
-                                path.display(),
-                                constants::CLI_ERROR_SEPARATOR,
-                                cause
-                            );
-
-                            let mut iss = issues_for_producer.lock().unwrap();
-                            iss.push(SearchIssue {
-                                path,
-                                stage: constants::SEARCH_STAGE_DISCOVERY.to_string(),
-                                sheet_name: None,
-                                cause,
-                            });
-
-                            if error.depth() == constants::CLI_ROOT_WALK_DEPTH {
-                                let mut err_lock = root_error_for_producer.lock().unwrap();
-                                *err_lock = Some(format!(
-                                    "{}: {}",
-                                    constants::ERR_CLI_INPUT_PATH,
-                                    input.display()
-                                ));
-                                return;
-                            }
-                            continue;
-                        }
-                    };
-
-                    if !entry.file_type().is_file() {
-                        continue;
+                if let Ok(handle) = Handle::from_path(path) {
+                    let mut visited = visited_handles.lock().map_err(|error| error.to_string())?;
+                    if !visited.insert(handle) {
+                        return Ok(());
                     }
-                    let path = entry.path();
-                    if path
-                        .file_name()
-                        .and_then(|name| name.to_str())
-                        .is_some_and(|name| name.starts_with(constants::EXCEL_TEMP_FILE_PREFIX))
-                    {
-                        continue;
-                    }
-                    let Some(extension) = path.extension().and_then(|ext| ext.to_str()) else {
-                        continue;
-                    };
-                    let extension = format!(
-                        "{}{}",
-                        constants::CLI_EXTENSION_PREFIX,
-                        extension.to_ascii_lowercase()
-                    );
-                    if !extensions.contains(&extension) {
-                        continue;
-                    }
+                }
+                discovered_for_producer.fetch_add(1, Ordering::Relaxed);
+                sender_for_discovery
+                    .send(path.to_path_buf())
+                    .map_err(|_| constants::ERR_CLI_FILE_CHANNEL.to_string())
+            };
 
-                    if let Some(guard) = guard_ref {
-                        if let Err(collision_err) = guard.check_input(path) {
-                            eprintln!(
-                                "{}{}{}",
-                                path.display(),
-                                constants::CLI_ERROR_SEPARATOR,
-                                collision_err
-                            );
-                            let mut err_lock = root_error_for_producer.lock().unwrap();
-                            *err_lock = Some(collision_err);
-                            return;
-                        }
-                    }
-
-                    if let Ok(handle) = Handle::from_path(path) {
-                        if !visited_handles.insert(handle) {
-                            continue;
-                        }
-                    }
-
-                    discovered_for_producer.fetch_add(1, Ordering::Relaxed);
-                    if sender.send(path.to_path_buf()).is_err() {
-                        return;
-                    }
+            let directory_roots = input_paths
+                .iter()
+                .filter(|path| path.is_dir())
+                .cloned()
+                .collect::<Vec<_>>();
+            let file_roots = input_paths
+                .iter()
+                .filter(|path| path.is_file())
+                .collect::<Vec<_>>();
+            for path in file_roots {
+                if let Err(error) = deliver(path) {
+                    *root_error_for_producer.lock().unwrap() = Some(error);
+                    return;
                 }
             }
+
+            let discovery = exlgrep_core::search::discovery::discover_files(
+                &directory_roots,
+                &extensions,
+                directory_mode,
+                burst_workers,
+                &AtomicBool::new(false),
+                deliver,
+                |issue| {
+                    let should_report = reported_discovery_paths
+                        .lock()
+                        .map(|mut paths| paths.insert(issue.path.clone()))
+                        .unwrap_or(true);
+                    if !should_report {
+                        return;
+                    }
+                    eprintln!(
+                        "{}{}{}",
+                        issue.path.display(),
+                        constants::CLI_ERROR_SEPARATOR,
+                        issue.cause
+                    );
+                    if let Ok(mut items) = issues_for_producer.lock() {
+                        items.push(SearchIssue {
+                            path: issue.path,
+                            stage: constants::SEARCH_STAGE_DISCOVERY.to_string(),
+                            sheet_name: None,
+                            cause: issue.cause,
+                        });
+                    }
+                },
+            );
+            if let Err(error) = discovery {
+                *root_error_for_producer.lock().unwrap() = Some(error);
+            }
         });
+        drop(sender);
 
         // Parallel parsing pool (Consumers: Rayon)
         let receiver = Arc::new(Mutex::new(receiver));

@@ -34,6 +34,8 @@ cli.HELP: |
     -w, --overwrite          Overwrite existing output file
     -l, --language ja|en     Output language (default: ja)
     -e, --extensions LIST    Excel extensions (.xlsx,.xlsm,.xlsb,.xls)
+    --directory-mode MODE    Directory discovery: sequential|burst (default: sequential)
+    --burst-workers COUNT    Burst visitors: automatic or custom integer from 2 through 32; alone selects burst
     -h, --help               Display help
     --values BOOL, --formulas BOOL, --comments BOOL, --shapes BOOL, --hidden-sheets BOOL
   --help and -h may be combined only with --language ja|en.
@@ -48,6 +50,7 @@ cli.ERROR_PATH: "Cannot read search input: {path}"
 cli.ERROR_OUTPUT: "Cannot save output: {path}"
 cli.ERROR_REGEX: Invalid regular expression
 cli.ERROR_NO_TYPES: Enable at least one search type
+cli.ERROR_DIRECTORY_MODE: "Invalid directory mode/count combination; Burst worker count must be from 2 through 32"
 ui.EXPORT_XLSX_FILTER_NAME: Excel workbook
 ui.EXPORT_DEFAULT_FILENAME_PREFIX: ExcelGrep_Results_
 ui.COMPLETED: Search completed

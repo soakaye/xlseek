@@ -11,6 +11,7 @@
 import React, { useEffect, useState } from "react";
 import {
   DISPLAY_LANGUAGES,
+  DIRECTORY_SEARCH_CONSTANTS,
   FILE_EXTENSIONS,
   LANGUAGE_PREFERENCES,
   SEARCH_HISTORY_CONSTANTS,
@@ -65,6 +66,12 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
   const t = useTranslation();
   const [entryCount, setEntryCount] = useState(String(maxEntries));
   const [optDraft, setOptDraft] = useState<DefaultSearchOptions>(defaultOptions ?? FALLBACK_DEFAULT_OPTIONS);
+  const [workerChoice, setWorkerChoice] = useState<"automatic" | "custom">(
+    defaultOptions.burst_workers === null ? "automatic" : "custom"
+  );
+  const [workerInput, setWorkerInput] = useState(
+    defaultOptions.burst_workers === null ? "" : String(defaultOptions.burst_workers)
+  );
 
   useEffect(() => {
     setEntryCount(String(maxEntries));
@@ -72,6 +79,8 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
   useEffect(() => {
     setOptDraft(defaultOptions ?? FALLBACK_DEFAULT_OPTIONS);
+    setWorkerChoice(defaultOptions.burst_workers === null ? "automatic" : "custom");
+    setWorkerInput(defaultOptions.burst_workers === null ? "" : String(defaultOptions.burst_workers));
   }, [defaultOptions, isOpen]);
 
   if (!isOpen) return null;
@@ -94,16 +103,22 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
   const handleResetDefaults = () => {
     setOptDraft(resetDefaultSearchOptions());
+    setWorkerChoice(DIRECTORY_SEARCH_CONSTANTS.AUTOMATIC);
+    setWorkerInput("");
   };
 
   const handleSaveOptions = () => {
-    if (optDraft.extensions.length === 0) return;
+    if (!isExtensionValid) return;
     if (onSaveDefaultOptions) {
       onSaveDefaultOptions(optDraft);
     }
   };
 
-  const isExtensionValid = optDraft.extensions.length > 0;
+  const isWorkerInputValid = workerChoice === DIRECTORY_SEARCH_CONSTANTS.AUTOMATIC ||
+    (/^\d+$/.test(workerInput) &&
+      Number(workerInput) >= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MIN &&
+      Number(workerInput) <= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MAX);
+  const isExtensionValid = optDraft.extensions.length > 0 && isWorkerInputValid;
 
   return (
     <div
@@ -194,6 +209,86 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
         <fieldset className="mt-6 border-t border-zinc-800 pt-4">
           <legend className="mb-1 text-sm font-medium">{t("ui.DEFAULT_OPTIONS_TITLE")}</legend>
           <p className="mb-3 text-xs text-zinc-400">{t("ui.DEFAULT_OPTIONS_DESCRIPTION")}</p>
+
+          <fieldset className="mb-3">
+            <legend className="mb-2 text-xs font-medium">{t("ui.DIRECTORY_SEARCH_MODE")}</legend>
+            <div className="space-y-1">
+              <label className="flex items-center gap-2 rounded border border-zinc-800 px-3 py-2">
+                <input
+                  type="radio"
+                  name="directory-search-mode"
+                  checked={optDraft.directory_mode === DIRECTORY_SEARCH_CONSTANTS.SEQUENTIAL}
+                  onChange={() => setOptDraft((previous) => ({ ...previous, directory_mode: DIRECTORY_SEARCH_CONSTANTS.SEQUENTIAL }))}
+                />
+                <span>{t("ui.DIRECTORY_SEARCH_SEQUENTIAL")}</span>
+              </label>
+              <label className="flex items-center gap-2 rounded border border-zinc-800 px-3 py-2">
+                <input
+                  type="radio"
+                  name="directory-search-mode"
+                  checked={optDraft.directory_mode === DIRECTORY_SEARCH_CONSTANTS.BURST}
+                  onChange={() => setOptDraft((previous) => ({ ...previous, directory_mode: DIRECTORY_SEARCH_CONSTANTS.BURST }))}
+                />
+                <span>{t("ui.DIRECTORY_SEARCH_BURST")}</span>
+              </label>
+            </div>
+          </fieldset>
+
+          <fieldset className="mb-3">
+            <legend className="mb-2 text-xs font-medium">{t("ui.BURST_WORKER_CHOICE")}</legend>
+            <div className="space-y-1">
+              <label className="flex items-center gap-2 rounded border border-zinc-800 px-3 py-2">
+                <input
+                  type="radio"
+                  name="burst-worker-choice"
+                  checked={workerChoice === DIRECTORY_SEARCH_CONSTANTS.AUTOMATIC}
+                  disabled={optDraft.directory_mode !== DIRECTORY_SEARCH_CONSTANTS.BURST}
+                  onChange={() => {
+                    setWorkerChoice(DIRECTORY_SEARCH_CONSTANTS.AUTOMATIC);
+                    setOptDraft((previous) => ({ ...previous, burst_workers: null }));
+                  }}
+                />
+                <span>{t("ui.BURST_WORKERS_AUTOMATIC")}</span>
+              </label>
+              <label className="flex items-center gap-2 rounded border border-zinc-800 px-3 py-2">
+                <input
+                  type="radio"
+                  name="burst-worker-choice"
+                  checked={workerChoice === "custom"}
+                  disabled={optDraft.directory_mode !== DIRECTORY_SEARCH_CONSTANTS.BURST}
+                  onChange={() => setWorkerChoice("custom")}
+                />
+                <span>{t("ui.BURST_WORKERS_CUSTOM")}</span>
+              </label>
+              <label htmlFor={DIRECTORY_SEARCH_CONSTANTS.WORKERS_INPUT_ID} className="block pt-1">
+                <span className="mb-1 block">{t("ui.BURST_WORKER_CHOICE")}</span>
+                <input
+                  id={DIRECTORY_SEARCH_CONSTANTS.WORKERS_INPUT_ID}
+                  type="number"
+                  min={DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MIN}
+                  max={DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MAX}
+                  step="1"
+                  value={workerInput}
+                  disabled={optDraft.directory_mode !== DIRECTORY_SEARCH_CONSTANTS.BURST || workerChoice !== "custom"}
+                  aria-invalid={workerChoice === "custom" && !isWorkerInputValid}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setWorkerInput(value);
+                    setOptDraft((previous) => ({
+                      ...previous,
+                      burst_workers: /^\d+$/.test(value) && Number(value) >= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MIN && Number(value) <= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MAX
+                        ? Number(value)
+                        : null,
+                    }));
+                  }}
+                  className="w-full rounded border border-zinc-700 bg-zinc-800 px-3 py-2"
+                />
+              </label>
+              {workerChoice === "custom" && !isWorkerInputValid && (
+                <p role="alert" className="text-amber-400">{t("ui.BURST_WORKERS_RANGE_ERROR")}</p>
+              )}
+            </div>
+          </fieldset>
 
           <div className="space-y-2 text-xs">
             {/* Match case */}

@@ -107,9 +107,14 @@ Run it from PowerShell using its full path, for example with a current-user NSIS
 
 The Windows package contents and installer definitions were checked; a completed installation has not yet been tested. The Sidecar is not registered on `PATH`, so use its full path. For macOS and Linux, locate `xlseek-cli` inside the installed application or package bundle and run it by full path (for example, `"/path/to/xlseek-cli" --help`). Its location depends on the bundle format and installation directory; those package layouts have not yet been verified.
 
+### Directory Search Modes
+
+Desktop Settings lets you choose Sequential or Burst directory discovery. Sequential is the default. Burst uses an Automatic bounded worker count by default, or a custom count from 2 through 32. The selected defaults are saved for later searches. A search that cannot read a descendant folder continues with accessible folders and reports the failed path; a root directory error remains fatal. See the [desktop search mode contract](specs/019-burst-directory-search/contracts/desktop-search-mode.md).
+
 ### CLI Notes & Options
 
 - **Mandatory Arguments**: `--path`, `--query`, `--format <csv|xlsx>`, and `--output <path>`.
+- **Directory Discovery**: Recursive search defaults to Sequential mode. Use `--directory-mode burst` to visit subdirectories concurrently, or `--burst-workers <2..32>` to select a custom Burst limit (the worker-count option implies Burst). Burst Automatic chooses a bounded count based on available CPU parallelism. These options affect directory traversal only; single-file searches remain valid. See [directory search option contract](specs/019-burst-directory-search/contracts/cli-directory-mode.md) and [settings contract](specs/019-burst-directory-search/contracts/settings.md).
 - **Search Scope**: By default, searches cell values, formulas, comments/notes, and shapes, while excluding hidden sheets.
 - **Comment Support**: Extracts classic comments/notes from `.xlsx` and `.xlsm` files (threaded comments and `.xls` / `.xlsb` notes are currently unsupported).
 - **Safety**: Existing output files will not be overwritten unless explicitly allowed with `--overwrite` (returns exit code `2`). Attempting to output to an input file path or hard link is strictly rejected.

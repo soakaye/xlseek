@@ -128,6 +128,9 @@ pub const EVENT_SEARCH_MATCH: &str = "search-match";
 /// Scan progress notification event name
 pub const EVENT_SCAN_PROGRESS: &str = "scan-progress";
 
+/// Search descendant directory discovery issue event name.
+pub const EVENT_SEARCH_ISSUE: &str = "search-issue";
+
 /// Open About dialog event name
 pub const EVENT_OPEN_ABOUT_DIALOG: &str = "open-about-dialog";
 

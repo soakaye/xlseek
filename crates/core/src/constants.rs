@@ -21,6 +21,58 @@ pub const DEFAULT_EXTENSIONS: [&str; 4] = [".xlsx", ".xlsm", ".xlsb", ".xls"];
 pub const DEFAULT_INCLUDE_VALUE: bool = true;
 /// Field name for value search option in SearchQuery JSON.
 pub const SEARCH_QUERY_INCLUDE_VALUE_FIELD: &str = "include_value";
+/// Canonical Sequential directory discovery token.
+pub const DIRECTORY_MODE_SEQUENTIAL: &str = "sequential";
+/// Canonical concurrent Burst directory discovery token.
+pub const DIRECTORY_MODE_BURST: &str = "burst";
+/// Minimum Burst directory visitor count for Automatic resolution and custom validation.
+pub const BURST_WORKERS_MIN: usize = 2;
+/// Maximum Automatic Burst directory visitor count.
+pub const BURST_WORKERS_AUTO_MAX: usize = 8;
+/// Maximum custom Burst directory visitor count.
+pub const BURST_WORKERS_MAX: usize = 32;
+/// Maximum number of pending directory paths held by the discovery scheduler.
+pub const DISCOVERY_QUEUE_CAPACITY: usize = 256;
+/// Delay between cancellation-aware retries when delivering to a full file channel.
+pub const DISCOVERY_RETRY_DELAY_MS: u64 = 10;
+/// Number of directory visitors used by Sequential mode.
+pub const DISCOVERY_SEQUENTIAL_WORKERS: usize = 1;
+/// Outstanding scheduler tasks added or retired for one directory.
+pub const DISCOVERY_ONE_TASK: usize = 1;
+/// Fatal error returned when a discovery callback panics.
+pub const ERR_DISCOVERY_CALLBACK_PANIC: &str = "Directory discovery callback panicked";
+/// Fatal error returned when the bounded workbook input channel is disconnected.
+pub const ERR_DISCOVERY_FILE_CHANNEL: &str = "Workbook file channel closed during discovery";
+/// Fatal error returned when the scanner thread panics.
+pub const ERR_DISCOVERY_WORKER_PANIC: &str = "Directory discovery worker panicked";
+/// CLI error used when the workbook consumer has closed the bounded file channel.
+pub const ERR_CLI_FILE_CHANNEL: &str = "Workbook file channel closed during discovery";
+/// Wire field carrying the selected directory traversal mode.
+pub const SEARCH_QUERY_DIRECTORY_MODE_FIELD: &str = "directory_mode";
+/// Wire field carrying a custom Burst visitor count.
+pub const SEARCH_QUERY_BURST_WORKERS_FIELD: &str = "burst_workers";
+/// Descendant directory failure code for denied access.
+pub const DISCOVERY_ERROR_PERMISSION_DENIED: &str = "permission_denied";
+/// Descendant directory failure code for other read failures.
+pub const DISCOVERY_ERROR_READ_FAILED: &str = "read_failed";
+/// Long CLI field for directory traversal mode.
+pub const CLI_DIRECTORY_MODE_FIELD: &str = "directory-mode";
+/// Long CLI field for a custom Burst worker count.
+pub const CLI_BURST_WORKERS_FIELD: &str = "burst-workers";
+/// Error returned for invalid Burst count or conflicting traversal mode options.
+pub const ERR_CLI_DIRECTORY_MODE: &str = "Invalid directory mode or Burst worker count";
+/// Error returned if no directory visitor count can be determined.
+pub const ERR_DISCOVERY_WORKER_COUNT: &str = "Could not determine a valid directory visitor count";
+/// Stable fixture identifier used by shared-core discovery tests.
+pub const CLI_TEST_BURST_FIXTURE_ID: &str = "shared-tree";
+/// Number of workbook paths in the shared-core nested discovery fixture.
+pub const CLI_TEST_NESTED_FILE_COUNT: usize = 4;
+/// Number of sibling fixture folders used by the parallel discovery test.
+pub const CLI_TEST_BURST_DIRECTORY_COUNT: usize = 8;
+/// Delay used by the parallel discovery test callback to expose overlap.
+pub const CLI_TEST_BURST_CALLBACK_DELAY_MS: u64 = 20;
+/// Expected minimum simultaneous file callbacks for a two-worker Burst test.
+pub const CLI_TEST_BURST_MIN_CONCURRENCY: usize = 2;
 pub const CLI_QUERY_FIELD: &str = "query";
 pub const CLI_PATH_FIELD: &str = "path";
 pub const CLI_FORMAT_FIELD: &str = "format";
@@ -130,7 +182,7 @@ pub const CLI_SHORT_TO_LONG_OPTIONS: [(&str, &str); 10] = [
     (CLI_SHORT_HELP, CLI_HELP_FIELD),
 ];
 
-pub const CLI_VALUE_OPTIONS: [&str; 13] = [
+pub const CLI_VALUE_OPTIONS: [&str; 15] = [
     CLI_PATH_FIELD,
     CLI_QUERY_FIELD,
     CLI_FORMAT_FIELD,
@@ -144,6 +196,8 @@ pub const CLI_VALUE_OPTIONS: [&str; 13] = [
     CLI_HIDDEN_SHEETS_FIELD,
     CLI_EXTENSIONS_FIELD,
     CLI_LANGUAGE_FIELD,
+    CLI_DIRECTORY_MODE_FIELD,
+    CLI_BURST_WORKERS_FIELD,
 ];
 pub const CLI_TEST_OUTPUT_NAME: &str = "exlgrep-cli-args-test.csv";
 pub const CLI_TEST_OVERWRITE_OPTION: &str = "--overwrite";
@@ -168,7 +222,7 @@ pub const CLI_ERROR_LABEL_EN: &str = "Error";
 pub const SEARCH_STAGE_DISCOVERY: &str = "discovery";
 pub const SEARCH_STAGE_WORKBOOK: &str = "workbook";
 pub const ERR_CLI_PANIC: &str = "Workbook parser encountered an unexpected panic";
-pub const CLI_ERROR_TRANSLATION_KEYS: [(&str, &str); 18] = [
+pub const CLI_ERROR_TRANSLATION_KEYS: [(&str, &str); 19] = [
     (ERR_CLI_NON_UNICODE, "cli.ERROR_VALUE"),
     (ERR_CLI_DUPLICATE, "cli.ERROR_DUPLICATE"),
     (ERR_CLI_UNKNOWN, "cli.ERROR_UNKNOWN"),
@@ -187,6 +241,7 @@ pub const CLI_ERROR_TRANSLATION_KEYS: [(&str, &str); 18] = [
     (ERR_CLI_HELP_OPTIONS, "cli.ERROR_VALUE"),
     (ERR_CLI_HOME, "cli.ERROR_PATH"),
     (ERR_CLI_LANGUAGE, "cli.ERROR_VALUE"),
+    (ERR_CLI_DIRECTORY_MODE, "cli.ERROR_DIRECTORY_MODE"),
 ];
 pub const CLI_ERROR_SEPARATOR: &str = ": ";
 pub const CLI_TRANSLATION_PATH_PLACEHOLDER: &str = "{path}";
