@@ -7,7 +7,9 @@
 //! and Principle III (Header comments).
 
 use crate::models::CommandError;
-use crate::models::{ErrorCode, ScanProgress, ScanState, SearchMatch, SearchQuery};
+use crate::models::{
+    resolve_burst_workers, ErrorCode, ScanProgress, ScanState, SearchMatch, SearchQuery,
+};
 use crate::search::engine::SearchEngine;
 use crate::search::path::{
     complete_directory_path as complete_path, resolve_search_path, validate_search_directory,
@@ -46,6 +48,7 @@ pub async fn start_search(
     let home_dir = app.path().home_dir().ok();
     let query = tauri::async_runtime::spawn_blocking(move || {
         validate_required_search_fields(&query)?;
+        validate_directory_settings(&query)?;
         validate_search_regex(&query).map_err(|code| CommandError { code })?;
         let target_path = resolve_search_path(&query.target_dir, home_dir.as_deref())
             .map_err(path_error_to_command_error)?;
@@ -66,6 +69,7 @@ pub async fn start_search(
         let app_handle_prog = app.clone();
         let app_handle_err = app.clone();
         let app_handle_final = app.clone();
+        let app_handle_issue = app.clone();
 
         let match_buffer = Arc::new(std::sync::Mutex::new(Vec::new()));
         let last_emit_instant = Arc::new(std::sync::Mutex::new(std::time::Instant::now()));
@@ -84,7 +88,7 @@ pub async fn start_search(
             }
         };
 
-        match engine.execute_search(
+        match engine.execute_search_with_issues(
             query,
             move |search_match: SearchMatch| {
                 let mut buf = match_buffer_clone.lock().unwrap();
@@ -105,6 +109,14 @@ pub async fn start_search(
                     app_handle_prog.emit(crate::constants::EVENT_SCAN_PROGRESS, &progress)
                 {
                     eprintln!("{}: {:?}", crate::constants::LOG_EVENT_EMIT_FAILED, e);
+                }
+            },
+            move |issue| {
+                // Constant reference: crate::constants::EVENT_SEARCH_ISSUE.
+                if let Err(error) =
+                    app_handle_issue.emit(crate::constants::EVENT_SEARCH_ISSUE, &issue)
+                {
+                    eprintln!("{}: {:?}", crate::constants::LOG_EVENT_EMIT_FAILED, error);
                 }
             },
         ) {
@@ -161,6 +173,25 @@ fn validate_required_search_fields(query: &SearchQuery) -> Result<(), CommandErr
     if query.keyword.trim().is_empty()
         || query.target_dir.trim().is_empty()
         || query.extensions.is_empty()
+    {
+        return Err(CommandError {
+            code: ErrorCode::SearchFailed,
+        });
+    }
+    Ok(())
+}
+
+/// Validates a custom directory visitor count before accepting the search request.
+///
+/// ## Arguments / Returns
+/// Accepts `&SearchQuery`; returns `Ok(())` for Automatic or a supported custom count.
+///
+/// ## Errors
+/// Returns `SearchFailed` when the requested count falls outside the supported range.
+fn validate_directory_settings(query: &SearchQuery) -> Result<(), CommandError> {
+    if query
+        .burst_workers
+        .is_some_and(|count| resolve_burst_workers(Some(count)).is_err())
     {
         return Err(CommandError {
             code: ErrorCode::SearchFailed,
@@ -251,7 +282,9 @@ pub fn cancel_search(state: State<'_, AppState>) -> Result<(), CommandError> {
 
 #[cfg(test)]
 mod tests {
-    use super::{validate_required_search_fields, validate_search_regex};
+    use super::{
+        validate_directory_settings, validate_required_search_fields, validate_search_regex,
+    };
     use crate::models::{CommandError, ErrorCode, SearchQuery};
 
     /// ## Description
@@ -267,6 +300,8 @@ mod tests {
         let query = SearchQuery {
             keyword: "(".to_string(),
             target_dir: String::new(),
+            directory_mode: crate::models::DirectorySearchMode::Sequential,
+            burst_workers: None,
             match_case: false,
             // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
             include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
@@ -297,6 +332,8 @@ mod tests {
         let query = SearchQuery {
             keyword: " ".to_string(),
             target_dir: "/tmp".to_string(),
+            directory_mode: crate::models::DirectorySearchMode::Sequential,
+            burst_workers: None,
             match_case: false,
             // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
             include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
@@ -309,6 +346,38 @@ mod tests {
         };
         assert!(matches!(
             validate_required_search_fields(&query),
+            Err(CommandError {
+                code: ErrorCode::SearchFailed
+            })
+        ));
+    }
+
+    /// Rejects an invalid custom directory worker count before launching a search.
+    ///
+    /// ## Arguments / Returns
+    /// No arguments; returns `()` after validating the request error.
+    ///
+    /// ## Errors
+    /// Panics if the invalid worker count is not rejected.
+    #[test]
+    fn rejects_invalid_burst_worker_count_before_search_is_started() {
+        let query = SearchQuery {
+            keyword: "term".to_string(),
+            target_dir: "directory".to_string(),
+            directory_mode: crate::models::DirectorySearchMode::Burst,
+            burst_workers: Some(exlgrep_core::constants::BURST_WORKERS_MIN - 1),
+            match_case: false,
+            // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
+            include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
+            use_regex: false,
+            include_formula: true,
+            include_comment: true,
+            include_shape: true,
+            include_hidden: false,
+            extensions: vec![crate::constants::EXT_XLSX.to_string()],
+        };
+        assert!(matches!(
+            validate_directory_settings(&query),
             Err(CommandError {
                 code: ErrorCode::SearchFailed
             })

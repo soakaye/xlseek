@@ -34,6 +34,8 @@ cli.HELP: |
     -w, --overwrite          既存出力先の上書きを許可
     -l, --language ja|en     出力言語 (既定: ja)
     -e, --extensions LIST    対象拡張子 (.xlsx,.xlsm,.xlsb,.xls)
+    --directory-mode MODE    ディレクトリ探索: sequential|burst (既定: sequential)
+    --burst-workers COUNT    Burst 並列数: 自動または 2 から 32 の整数。単独指定で Burst を選択
     -h, --help               ヘルプを表示
     --values BOOL, --formulas BOOL, --comments BOOL, --shapes BOOL, --hidden-sheets BOOL
   --help と -h は --language ja|en だけ併用できます。
@@ -48,6 +50,7 @@ cli.ERROR_PATH: "検索対象を読み取れません: {path}"
 cli.ERROR_OUTPUT: "出力先を保存できません: {path}"
 cli.ERROR_REGEX: 正規表現が不正です
 cli.ERROR_NO_TYPES: 検索対象種別を1つ以上有効にしてください
+cli.ERROR_DIRECTORY_MODE: "ディレクトリモードまたは並列数が不正です。Burst 並列数は 2 から 32 で指定してください"
 ui.EXPORT_XLSX_FILTER_NAME: Excelブック
 ui.EXPORT_DEFAULT_FILENAME_PREFIX: ExcelGrep_Results_
 ui.COMPLETED: 検索完了

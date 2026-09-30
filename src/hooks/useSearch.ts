@@ -13,6 +13,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import {
   SearchQuery,
+  SearchIssue,
   SearchMatch,
   ScanProgress,
   CellPreviewData,
@@ -58,11 +59,14 @@ export function useSearch(options?: UseSearchOptions) {
       include_comment: defaults.include_comment,
       include_hidden: defaults.include_hidden,
       extensions: [...defaults.extensions],
+      directory_mode: defaults.directory_mode,
+      burst_workers: defaults.burst_workers,
     };
   });
 
   const [results, setResults] = useState<SearchMatch[]>([]);
   const [progress, setProgress] = useState<ScanProgress | null>(null);
+  const [searchIssues, setSearchIssues] = useState<SearchIssue[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<SearchMatch | null>(null);
   const [previewData, setPreviewData] = useState<CellPreviewData | null>(null);
   const [loadingPreview, setLoadingPreview] = useState(false);
@@ -85,6 +89,7 @@ export function useSearch(options?: UseSearchOptions) {
   useEffect(() => {
     let unlistenMatch: UnlistenFn | undefined;
     let unlistenProg: UnlistenFn | undefined;
+    let unlistenIssue: UnlistenFn | undefined;
     let isCancelled = false;
 
     const appendResultsSafely = (newItems: SearchMatch[]) => {
@@ -100,7 +105,7 @@ export function useSearch(options?: UseSearchOptions) {
     const setupListeners = async () => {
       try {
         // Constant reference: EVENT_NAMES.SEARCH_MATCH ("search-match")
-        const uMatch = await listen<SearchMatch | SearchMatch[]>(EVENT_NAMES.SEARCH_MATCH, (event) => {
+        unlistenMatch = await listen<SearchMatch | SearchMatch[]>(EVENT_NAMES.SEARCH_MATCH, (event) => {
           if (isCancelled || isCancellingRef.current) return;
           if (Array.isArray(event.payload)) {
             resultsBufferRef.current.push(...event.payload);
@@ -121,7 +126,7 @@ export function useSearch(options?: UseSearchOptions) {
         });
 
         // Constant reference: EVENT_NAMES.SCAN_PROGRESS ("scan-progress")
-        const uProg = await listen<ScanProgress>(EVENT_NAMES.SCAN_PROGRESS, (event) => {
+        unlistenProg = await listen<ScanProgress>(EVENT_NAMES.SCAN_PROGRESS, (event) => {
           if (isCancelled) return;
 
           // Discard delayed scanning events after cancellation to prevent state regressions
@@ -151,15 +156,26 @@ export function useSearch(options?: UseSearchOptions) {
           }
         });
 
+        // Constant reference: EVENT_NAMES.SEARCH_ISSUE.
+        unlistenIssue = await listen<SearchIssue>(EVENT_NAMES.SEARCH_ISSUE, (event) => {
+          if (!isCancelled) {
+            setSearchIssues((previous) => previous.some((issue) => issue.path === event.payload.path && issue.code === event.payload.code)
+              ? previous
+              : [...previous, event.payload]);
+          }
+        });
+
         if (isCancelled) {
-          uMatch();
-          uProg();
+          unlistenMatch();
+          unlistenProg();
+          unlistenIssue();
         } else {
-          unlistenMatch = uMatch;
-          unlistenProg = uProg;
           console.log("[useSearch] Search event listeners registered");
         }
       } catch {
+        unlistenMatch?.();
+        unlistenProg?.();
+        unlistenIssue?.();
         console.error("[useSearch] Failed to register search event listeners");
       }
     };
@@ -170,6 +186,7 @@ export function useSearch(options?: UseSearchOptions) {
       isCancelled = true;
       if (unlistenMatch) unlistenMatch();
       if (unlistenProg) unlistenProg();
+      if (unlistenIssue) unlistenIssue();
       if (flushTimerRef.current) {
         clearTimeout(flushTimerRef.current);
         flushTimerRef.current = null;
@@ -272,6 +289,7 @@ export function useSearch(options?: UseSearchOptions) {
     console.log("[useSearch] Search request submitted");
     isCancellingRef.current = false;
     setResults([]);
+    setSearchIssues([]);
     resultsBufferRef.current = [];
     setSelectedMatch(null);
     setPreviewData(null);
@@ -377,6 +395,8 @@ export function useSearch(options?: UseSearchOptions) {
       include_comment: options.include_comment,
       include_hidden: options.include_hidden,
       extensions: [...options.extensions],
+      directory_mode: options.directory_mode,
+      burst_workers: options.burst_workers,
     }));
   }, []);
 
@@ -386,6 +406,7 @@ export function useSearch(options?: UseSearchOptions) {
     applyDefaultOptions,
     results,
     progress,
+    searchIssues,
     isScanning,
     selectedMatch,
     previewData,

@@ -1,141 +1,142 @@
-# AGENTS.md — Excel Seek 開発ガイドライン & エージェント行動規範
+# AGENTS.md — Excel Seek Development Guidelines & Agent Code of Conduct
 
-本ファイルは、Excel Seek リポジトリで作業するすべての AI エージェント（Antigravity, Claude, Codex, Cursor 等）が遵守すべき最上位の行動指針、コーディング規約、アーキテクチャ、および開発手順を定義します。
-
----
-
-## 1. プロジェクト概要
-
-- **名称**: Excel Seek (`xlseek`)
-- **目的**: 大量の Excel ファイル（`.xlsx`, `.xlsm`, `.xls`, `.xlsb`）から、指定キーワードや正規表現に一致するセル、シート、コメントを高速かつセキュアに横断検索するデスクトップアプリケーション。
-- **アーキテクチャ**:
-  - **GUI / フロントエンド**: React 18, TypeScript, Tailwind CSS, Lucide React, Tauri v2 API
-  - **バックエンド / コアエンジン**: Rust (2021 edition), `calamine` (高速 Excel 解析), `rayon` (マルチスレッド並列走査), `rust_xlsxwriter` (Excel 出力), `regex` (正規表現)
-  - **デスクトップ基盤**: Tauri v2 (`@tauri-apps/api` v2, `tauri-plugin-dialog`, `tauri-plugin-shell`)
+This file defines the highest-level conduct rules, coding standards, architecture, and development procedures that all AI agents working in the Excel Seek repository (including Antigravity, Claude, Codex, and Cursor) must follow.
 
 ---
 
-## 2. 最重要原則（プロジェクト憲章準拠）
+## 1. Project Overview
 
-すべてのエージェントは、`.specify/memory/constitution.md`（プロジェクト憲章）に定められた以下の 5 原則を例外なく厳格に遵守しなければなりません（**MUST**）。
-
-### 原則 I. 指定言語の優先と自然な出力（Language-Directed Quality）
-- ユーザーへの回答、コミットメッセージ、生成ドキュメント、UI 文言、エラーメッセージ、ログは、利用者の指示または承認済みの仕様で言語が明示されている場合、その言語で記述すること。
-- 言語の指定がないユーザーへの回答、生成ドキュメント、ソースコードコメントは、自然かつ正確な英語で記述すること。指定言語が英語以外の場合（例: `crates/core/locales/ja.yml` 等の多言語リソース）は、英語への翻訳を強制しないこと。
-- 文字化けや `<PAD>`, `<pad>` などの不要・不明な特殊トークンが混入していないことを提出前に検査し、指定言語に合う自然な表現へ補正すること。
-
-### 原則 II. 定数の外部抽出とハードコードの禁止（No Hardcoded Constants）
-- `0` と空文字列（`""`）を除き、定数値（数値、マジックナンバー、固定文字列、イベント名、コマンド名、UI ラベル等）をコードへ直接ハードコードしてはならない（**MUST NOT**）。
-- **フロントエンド定数**: `src/constants/index.ts` へ定義・一元管理。
-- **Rust バックエンド定数**: `src-tauri/src/constants.rs` へ定義・一元管理。
-- 定数を利用する箇所には、必ず該当定数を参照している旨のコメント（例: `// Constant reference: constants::MENU_ITEM_ABOUT_ID`）を明記すること。
-
-### 原則 III. 厳格なヘッダコメントとドキュメンテーション（Comprehensive Header Comments）
-すべてのファイル、モジュール、構造体、クラス、関数、およびメソッドには、以下の 3 要素を漏れなく含むヘッダコメントを必ず記載すること（**MUST**）：
-1. **処理内容の詳細な説明**
-2. **引数・戻り値の型と各説明**
-3. **起こり得るエラー、Result/Option の扱い、または panic / 例外の発生条件**
-各ファイルごとの変更履歴（バージョン、作成日、作成者、修正内容）はコード内のヘッダコメントに記録・生成してはならず（**MUST NOT**）、Gitコミットログ等のバージョン管理システムに委ねること。
-
-### 原則 IV. 責務に応じたモジュール分割と標準スタイル準拠（Modular Design & Code Standards）
-- 単一責任の原則（SRP）を守り、責務に応じたモジュール分割を行うこと。
-- Rust: 公式スタイルガイドおよび `clippy`, `rustfmt` に完全準拠すること。
-- TypeScript: 型エラー（`tsc --noEmit`）および ESLint 警告をゼロに維持すること。
-
-### 原則 V. 堅牢なエラーハンドリングとテスト検証（Robust Error Handling & Testing）
-- 予期しないパニックや未処理例外を排除し、`Result` や適切なエラー型を用いて安全に処理すること。
-- モジュールや関数を変更・追加した際は、必ず対応する単体テスト（`cargo test` / フロントエンドテスト）を作成・更新して動作を検証すること。
+- **Name**: Excel Seek (`xlseek`)
+- **Purpose**: A desktop application that quickly and securely searches cells, sheets, and comments across large numbers of Excel files (`.xlsx`, `.xlsm`, `.xls`, `.xlsb`) for specified keywords or regular expressions.
+- **Architecture**:
+  - **GUI / frontend**: React 18, TypeScript, Tailwind CSS, Lucide React, Tauri v2 API
+  - **Backend / core engine**: Rust (2021 edition), `calamine` (fast Excel parsing), `rayon` (parallel multithreaded scanning), `rust_xlsxwriter` (Excel output), `regex` (regular expressions)
+  - **Desktop platform**: Tauri v2 (`@tauri-apps/api` v2, `tauri-plugin-dialog`, `tauri-plugin-shell`)
 
 ---
 
-## 3. ディレクトリ構成と役割
+## 2. Core Principles (In Accordance With the Project Constitution)
+
+All agents **MUST** strictly follow the five principles in `.specify/memory/constitution.md` (the project constitution), without exception.
+
+### Principle I. Language-Directed Quality
+- Write responses to users, commit messages, generated documents, UI text, error messages, and logs in the language explicitly specified by the user or an approved specification.
+- Use natural, accurate English by default for responses to users, commit messages, generated documents, source code comments, UI text, error messages, and logs when no language is specified. Do not force English translations where another language is specified, such as in multilingual resources including `crates/core/locales/ja.yml`.
+- Before delivery, check for garbled text and unwanted or unexplained special tokens such as `<PAD>` and `<pad>`. Correct them using natural language appropriate to the specified language.
+
+### Principle II. No Hardcoded Constants
+- **MUST NOT** hardcode constant values (numbers, magic numbers, fixed strings, event names, command names, UI labels, etc.) directly in code, except `0` and the empty string (`""`).
+- **Frontend constants**: Define and manage them centrally in `src/constants/index.ts`.
+- **Rust backend constants**: Define and manage them centrally in `src-tauri/src/constants.rs`.
+- Wherever a constant is used, include a comment explicitly identifying the referenced constant (for example, `// Constant reference: constants::MENU_ITEM_ABOUT_ID`).
+
+### Principle III. Comprehensive Header Comments
+Every file, module, struct, class, function, and method **MUST** have a header comment containing all three of the following:
+1. **A detailed description of what it does**
+2. **The types and descriptions of its arguments and return value**
+3. **Possible errors, handling of `Result`/`Option`, or conditions that cause a panic or exception**
+
+**MUST NOT** record or generate per-file change histories (version, creation date, author, or changes) in code header comments. Use version control, such as the Git commit history, for that purpose.
+
+### Principle IV. Modular Design & Code Standards
+- Follow the single-responsibility principle (SRP) and divide modules according to their responsibilities.
+- Rust: Fully comply with the official style guide, `clippy`, and `rustfmt`.
+- TypeScript: Maintain zero type errors (`tsc --noEmit`) and zero ESLint warnings.
+
+### Principle V. Robust Error Handling & Testing
+- Prevent unexpected panics and unhandled exceptions. Handle errors safely with `Result` or appropriate error types.
+- Whenever a module or function is added or changed, create or update corresponding unit tests (`cargo test` / frontend tests) and verify its behavior.
+
+---
+
+## 3. Directory Structure and Responsibilities
 
 ```text
 exlgrep/
-├── AGENTS.md                  # 本ファイル（AI エージェント行動規範）
-├── README.md                  # プロジェクト概要・機能説明
-├── Cargo.toml                 # Cargo ワークスペース定義 (crates/core, crates/cli, src-tauri)
-├── package.json               # フロントエンド依存関係 & npm スクリプト
-├── crates/                    # バックエンド共有コア & 独立CLIクレート
-│   ├── core/                  # 検索エンジン・パーサー・エクスポート・共有モデル (exlgrep-core)
+├── AGENTS.md                  # This file (AI agent code of conduct)
+├── README.md                  # Project overview and feature descriptions
+├── Cargo.toml                 # Cargo workspace definition (crates/core, crates/cli, src-tauri)
+├── package.json               # Frontend dependencies and npm scripts
+├── crates/                    # Shared backend core and standalone CLI crate
+│   ├── core/                  # Search engine, parsers, exports, shared models (exlgrep-core)
 │   │   ├── Cargo.toml
-│   │   ├── locales/           # 翻訳カタログ原本 (ja.yml, en.yml)
+│   │   ├── locales/           # Source translation catalogs (ja.yml, en.yml)
 │   │   ├── src/               # lib.rs, constants.rs, models/, search/, export/, i18n.rs
-│   │   └── tests/             # shape_*.rs 統合テスト
-│   └── cli/                    # 独立CLIバイナリ (xlseek-cli)
+│   │   └── tests/             # shape_*.rs integration tests
+│   └── cli/                   # Standalone CLI binary (xlseek-cli)
 │       ├── Cargo.toml
 │       ├── src/               # main.rs, lib.rs, constants.rs, args.rs, output.rs
-│       └── tests/             # cli_search.rs, cli_output.rs 統合テスト
-├── src/                       # フロントエンドソースコード (React / TypeScript)
-│   ├── App.tsx                # ルートコンポーネント (状態バインディング & ダイアログ統合)
-│   ├── main.tsx               # エントリポイント
-│   ├── constants/             # 定数一元定義モジュール (index.ts, licenses.json)
-│   ├── types/                 # TypeScript 型定義 (search.ts, license.ts)
-│   ├── hooks/                 # カスタムフック (useSearch.ts 等)
-│   └── components/            # UI コンポーネント群
-│       ├── about/             # About & OSS ライセンスダイアログ (AboutDialog.tsx 等)
-│       ├── common/            # 共通パーツ (StatusBar.tsx, Toast.tsx)
-│       ├── layout/            # ウィンドウ枠・ドラッグ領域 (WindowFrame.tsx)
-│       ├── preview/           # Excel セルプレビューグリッド・数式バー
-│       ├── results/           # 検索結果テーブル (仮想スクロール表示)
-│       └── search/            # 検索入力バー・拡張子トグル・コントロール
-├── src-tauri/                 # Tauri v2 デスクトップGUIアプリケーション (xlseek)
-│   ├── Cargo.toml             # Rust クレート依存定義 (exlgrep-core に依存)
-│   ├── tauri.conf.json        # Tauri 設定ファイル (ウィンドウ設定, 権限設定)
-│   ├── capabilities/          # Tauri v2 セキュリティケーパビリティ (default.json)
+│       └── tests/             # cli_search.rs, cli_output.rs integration tests
+├── src/                       # Frontend source code (React / TypeScript)
+│   ├── App.tsx                # Root component (state binding and dialog integration)
+│   ├── main.tsx               # Entry point
+│   ├── constants/             # Centralized constants module (index.ts, licenses.json)
+│   ├── types/                 # TypeScript type definitions (search.ts, license.ts)
+│   ├── hooks/                 # Custom hooks (useSearch.ts, etc.)
+│   └── components/            # UI components
+│       ├── about/             # About and OSS license dialogs (AboutDialog.tsx, etc.)
+│       ├── common/            # Shared components (StatusBar.tsx, Toast.tsx)
+│       ├── layout/            # Window frame and drag region (WindowFrame.tsx)
+│       ├── preview/           # Excel cell preview grid and formula bar
+│       ├── results/           # Search results table (virtual scrolling)
+│       └── search/            # Search input bar, extension toggles, and controls
+├── src-tauri/                 # Tauri v2 desktop GUI application (xlseek)
+│   ├── Cargo.toml             # Rust crate dependencies (depends on exlgrep-core)
+│   ├── tauri.conf.json        # Tauri configuration (window settings, permissions)
+│   ├── capabilities/          # Tauri v2 security capabilities (default.json)
 │   └── src/
-│       ├── lib.rs             # アプリケーション初期化, メニュー構築, イベントハンドラ
-│       ├── main.rs            # 実行バイナリエントリポイント
-│       ├── constants.rs       # GUI専用定数一元定義モジュール & 単体テスト
-│       └── commands/          # Tauri IPC コマンドハンドラ群 (search, preview, export, system)
-├── specs/                     # Spec Kit 機能仕様・計画・タスク管理ディレクトリ
-├── design/                    # UI モックアップ & スタンドアローン HTML プロトタイプ
-└── .specify/                  # Spec Kit ワークフロー基盤
-    ├── memory/constitution.md # プロジェクト憲章（最優先ガバナンス文書）
-    ├── bugs/                  # バグ評価・修正・検証レポート記録場所
-    └── extensions/            # Spec Kit 拡張（git, bug 等）
+│       ├── lib.rs             # App initialization, menu construction, event handlers
+│       ├── main.rs            # Executable entry point
+│       ├── constants.rs       # Centralized GUI-specific constants and unit tests
+│       └── commands/          # Tauri IPC command handlers (search, preview, export, system)
+├── specs/                     # Spec Kit feature specs, plans, and task tracking
+├── design/                    # UI mockups and standalone HTML prototypes
+└── .specify/                  # Spec Kit workflow infrastructure
+    ├── memory/constitution.md # Project constitution (highest-priority governance document)
+    ├── bugs/                  # Bug assessment, fix, and verification reports
+    └── extensions/            # Spec Kit extensions (git, bug, etc.)
 ```
 
 ---
 
-## 4. 必須検証コマンド（Quality Gates）
+## 4. Required Verification Commands (Quality Gates)
 
-コード変更や修正作業を実施した後は、完了報告を行う前に**必ず以下の検証コマンドを実行し、エラーや警告がゼロであることを確認してください**。
+After changing or fixing code, **MUST** run all of the following verification commands before reporting completion and confirm that there are no errors or warnings.
 
-| レイヤー | 検証コマンド | 目的・合格基準 |
+| Layer | Verification command | Purpose and passing criteria |
 | :--- | :--- | :--- |
-| **Frontend** | `npm run build` | TypeScript 型チェック (`tsc`) と Vite バンドルが正常に exit 0 で完了すること |
-| **Rust Test** | `cargo test --workspace` | 全クレートの単体・統合テストが 1 件の失敗もなくパスすること |
-| **Rust Clippy** | `cargo clippy --workspace --all-targets -- -D warnings` | 全クレートでコンパイラおよび Clippy の警告が 0 件であること |
-| **Rust Format** | `cargo fmt --check` | ワークスペース全体のコードが Rust 公式フォーマット規約に完全に適合していること |
+| **Frontend** | `npm run build` | TypeScript type checking (`tsc`) and the Vite bundle complete successfully with exit code 0 |
+| **Rust Test** | `cargo test --workspace` | All unit and integration tests in every crate pass with no failures |
+| **Rust Clippy** | `cargo clippy --workspace --all-targets -- -D warnings` | No compiler or Clippy warnings in any crate |
+| **Rust Format** | `cargo fmt --check` | All workspace code fully conforms to the official Rust formatting rules |
 
 ---
 
-## 5. Spec Kit & バグ対応ワークフロー
+## 5. Spec Kit & Bug Workflow
 
-本プロジェクトでは Spec Kit ツールチェーンおよび関連スキルが導入されています。
+This project uses the Spec Kit toolchain and related skills.
 
-### バグ対応手順（Bug Triage & Fix Workflow）
-1. **バグ評価 (`/speckit-bug-assess`)**:
-   - 症状のヒアリング、コードパス特定、原因仮説の立案、および改修案を策定。
-   - 成果物: `.specify/bugs/<slug>/assessment.md`
-2. **バグ修正 (`/speckit-bug-fix`)**:
-   - `assessment.md` に基づき最小限かつ憲章準拠のコード修正・テスト追加を実施。
-   - 成果物: `.specify/bugs/<slug>/fix.md`
-3. **バグ検証 (`/speckit-bug-test`)**:
-   - 自動テスト、ビルド検証、再現防止の確認を行い、検証レポートを記録。
-   - 成果物: `.specify/bugs/<slug>/test.md`
-4. **コミット (`/speckit-git-commit`)**:
-   - 自動コミットフックまたはコマンドにより変更をコミット。
+### Bug Triage & Fix Workflow
+1. **Bug assessment (`/speckit-bug-assess`)**:
+   - Gather symptoms, identify the code path, develop a root-cause hypothesis, and propose a fix.
+   - Deliverable: `.specify/bugs/<slug>/assessment.md`
+2. **Bug fix (`/speckit-bug-fix`)**:
+   - Make minimal, constitution-compliant code changes and add tests based on `assessment.md`.
+   - Deliverable: `.specify/bugs/<slug>/fix.md`
+3. **Bug verification (`/speckit-bug-test`)**:
+   - Run automated tests and build checks, confirm the bug does not recur, and record a verification report.
+   - Deliverable: `.specify/bugs/<slug>/test.md`
+4. **Commit (`/speckit-git-commit`)**:
+   - Commit changes through an automatic commit hook or command.
 
-### UI モックアップの同期維持
-- `src/` 配下のコンポーネント構造、デザインスタイル、UI オプションを変更した場合は、`syncing-mainui-mock` スキルを活用し、`design/mainui/index.html` に配置されているスタンドアローン HTML プロトタイプとの整合性を維持すること。
+### Keep the UI Mockup in Sync
+- If you change component structure, visual styles, or UI options under `src/`, use the `syncing-mainui-mock` skill to keep the standalone HTML prototype at `design/mainui/index.html` consistent.
 
 ---
 
-## 6. エージェントのコーディング禁止事項（Anti-Patterns）
+## 6. Prohibited Coding Practices for Agents (Anti-Patterns)
 
-- ❌ **マジックナンバー・文字列の直書き**: `0` と `""` 以外の定数は必ず定数定義ファイルへ外出しすること。
-- ❌ **ヘッダコメントの省略または不要な変更履歴の記載**: 自動生成や簡易修正であっても 3 要素コメントを省略してはならない。また、ファイル内ヘッダに変更履歴を記載してはならない。
-- ❌ **型チェックやテストの未実行での完了報告**: `npm run build` や `cargo test` のエビデンスなく成功を主張しないこと。
-- ❌ **過剰なリファクタリング**: バグ修正や機能実装時に対象範囲外の無関係なコードを変更しないこと（YAGNI 原則）。
+- ❌ **Hardcoded magic numbers or strings**: Extract all constants other than `0` and `""` into the appropriate constants file.
+- ❌ **Missing header comments or unnecessary change histories**: Never omit any of the three required header-comment elements, even for generated code or small fixes. Do not include change histories in file headers.
+- ❌ **Reporting completion without type checks or tests**: Do not claim success without evidence from `npm run build` and `cargo test`.
+- ❌ **Excessive refactoring**: Do not change unrelated code outside the scope of a bug fix or feature implementation (YAGNI principle).

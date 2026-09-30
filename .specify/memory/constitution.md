@@ -1,8 +1,7 @@
 <!-- Sync Impact Report
-Version change: 2.0.0 -> 3.0.0
+Version change: 3.0.0 -> 3.1.0
 List of modified principles:
-- 原則 I: 指定言語の優先と自然な出力（Language-Directed Quality）: 言語指定がない場合の出力を英語へ変更
-- 原則 III: 厳格なヘッダコメントとドキュメンテーション（Comprehensive Header Comments）: 各ファイルごとの変更履歴（バージョン、作成日、作成者、修正内容）生成義務を廃止し、3要素（処理内容、引数/戻り値、エラー/例外）へ簡素化
+- Principle I, Language-Directed Quality: English is the default for all project output and source code comments unless a user instruction or approved specification selects another language.
 Added sections: None
 Removed sections: None
 Follow-up TODOs: None
@@ -12,9 +11,12 @@ Follow-up TODOs: None
 ## Core Principles
 
 ### I. 指定言語の優先と自然な出力（Language-Directed Quality）
-ユーザーへの回答、生成ドキュメント、製品の画面文言、エラーメッセージ、およびログは、
+英語を本プロジェクトの基本言語とし、別の言語が明示されていない場合は、ユーザーへの回答、コミットメッセージ、
+生成ドキュメント、ソースコードコメント、製品の画面文言、エラーメッセージ、およびログを自然かつ正確な英語で
+作成しなければならない（MUST）。
+ユーザーへの回答、コミットメッセージ、生成ドキュメント、ソースコードコメント、製品の画面文言、
+エラーメッセージ、およびログは、
 利用者の指示または承認済みの仕様で言語が明示されている場合、その言語で作成しなければならない（MUST）。
-言語が明示されていないユーザーへの回答と生成ドキュメントは、自然かつ正確な英語で作成しなければならない（MUST）。
 指定言語が英語以外の場合、英語への翻訳を強制してはならない（MUST NOT）。
 成果物を提出する前に、文字化けや `<PAD>`、`<pad>` 等の不要または不明な特殊トークンが含まれていないことを検査し、
 検出時は指定言語に合う自然な表現へ補正しなければならない（MUST）。
@@ -84,4 +86,4 @@ Follow-up TODOs: None
   - **PATCH**: 文言の明確化、表記ゆれ・タイポの修正、意味を変えない説明の補足
 - **実行時ガイダンス**: 開発および仕様策定時には `.specify/` 配下の仕様ファイルおよび本憲章を常時参照し、プロジェクト全体の一貫性を維持しなければならない（MUST）。
 
-**Version**: 3.0.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-30
+**Version**: 3.1.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-30

@@ -20,6 +20,10 @@ pub struct SearchQuery {
     pub keyword: String,
     pub target_dir: String,
     #[serde(default)]
+    pub directory_mode: DirectorySearchMode,
+    #[serde(default)]
+    pub burst_workers: Option<usize>,
+    #[serde(default)]
     pub match_case: bool,
     #[serde(default = "default_include_value")]
     pub include_value: bool,
@@ -350,4 +354,90 @@ mod localization_tests {
             false
         );
     }
+
+    /// Verifies legacy query JSON receives Sequential mode and Automatic count defaults.
+    ///
+    /// ## Arguments / Returns
+    /// Deserializes a legacy query and checks its backward-compatible discovery settings.
+    ///
+    /// ## Errors
+    /// Panics if the legacy query cannot deserialize or defaults differ.
+    #[test]
+    fn legacy_query_defaults_to_sequential_automatic_discovery() {
+        let legacy: SearchQuery =
+            serde_json::from_str(r#"{"keyword":"needle","target_dir":"input"}"#).unwrap();
+        let serialized = serde_json::to_value(legacy).unwrap();
+        assert_eq!(serialized["directory_mode"], "sequential");
+        assert!(serialized["burst_workers"].is_null());
+    }
+}
+
+/// Selects serial or bounded concurrent directory discovery.
+///
+/// ## Arguments / Returns
+/// `Sequential` visits one directory at a time; `Burst` permits bounded overlap.
+/// Serde uses stable lowercase values for IPC and saved request compatibility.
+///
+/// ## Errors
+/// Deserialization returns an error for an unknown explicit mode.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DirectorySearchMode {
+    #[default]
+    Sequential,
+    Burst,
+}
+
+/// Resolves Automatic or validates a custom directory visitor count.
+///
+/// ## Arguments / Returns
+/// `requested` is an optional custom count; returns the bounded effective count.
+///
+/// ## Errors
+/// Returns `Err` for counts outside the configured custom bounds or unavailable parallelism.
+pub fn resolve_burst_workers(requested: Option<usize>) -> Result<usize, String> {
+    match requested {
+        Some(count)
+            if (crate::constants::BURST_WORKERS_MIN..=crate::constants::BURST_WORKERS_MAX)
+                .contains(&count) =>
+        {
+            Ok(count)
+        }
+        Some(_) => Err(crate::constants::ERR_CLI_DIRECTORY_MODE.to_string()),
+        None => std::thread::available_parallelism()
+            .map(|available| {
+                available.get().clamp(
+                    crate::constants::BURST_WORKERS_MIN,
+                    crate::constants::BURST_WORKERS_AUTO_MAX,
+                )
+            })
+            .map_err(|_| crate::constants::ERR_DISCOVERY_WORKER_COUNT.to_string()),
+    }
+}
+
+/// Tests custom count boundaries and Automatic resolution against shared constants.
+///
+/// ## Arguments / Returns
+/// No arguments; returns `()` after checking supported and rejected counts.
+///
+/// ## Errors
+/// Panics if count resolution violates the configured bounds.
+#[cfg(test)]
+#[test]
+fn burst_worker_resolution_enforces_custom_bounds_and_caps_automatic() {
+    assert_eq!(
+        resolve_burst_workers(Some(crate::constants::BURST_WORKERS_MIN)).unwrap(),
+        crate::constants::BURST_WORKERS_MIN
+    );
+    assert_eq!(
+        resolve_burst_workers(Some(crate::constants::BURST_WORKERS_MAX)).unwrap(),
+        crate::constants::BURST_WORKERS_MAX
+    );
+    assert!(resolve_burst_workers(Some(crate::constants::BURST_WORKERS_MIN - 1)).is_err());
+    assert!(resolve_burst_workers(Some(crate::constants::BURST_WORKERS_MAX + 1)).is_err());
+    let automatic = resolve_burst_workers(None).unwrap();
+    assert!(
+        (crate::constants::BURST_WORKERS_MIN..=crate::constants::BURST_WORKERS_AUTO_MAX)
+            .contains(&automatic)
+    );
 }

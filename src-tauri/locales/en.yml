@@ -142,6 +142,15 @@ ui.DEFAULT_OPTIONS_RESET: Reset to Defaults
 ui.DEFAULT_OPTIONS_SAVE: Save Options
 ui.DEFAULT_OPTIONS_SAVED: Default search options saved
 ui.DEFAULT_OPTIONS_EXTENSIONS_REQUIRED: Select at least one target extension
+ui.DIRECTORY_SEARCH_MODE: Directory search mode
+ui.DIRECTORY_SEARCH_SEQUENTIAL: Sequential
+ui.DIRECTORY_SEARCH_BURST: Burst
+ui.BURST_WORKER_CHOICE: Burst parallel count
+ui.BURST_WORKERS_AUTOMATIC: Automatic
+ui.BURST_WORKERS_CUSTOM: Custom
+ui.BURST_WORKERS_RANGE_ERROR: Enter a whole number from 2 through 32
+ui.SEARCH_WARNING_TITLE: Folder access warnings
+ui.SEARCH_WARNING_PATH: Could not search {path}
 ui.INVALID_REGEX: The regular expression is invalid
 ui.EXPORT_CSV_BUTTON: Export CSV
 ui.EXPORT_XLSX_BUTTON: Export Excel

@@ -7,7 +7,7 @@
  * Complies with Constitution Principle II (external constants), Principle III (comprehensive documentation), and Principle V (robust error handling).
  */
 
-import { DEFAULT_SEARCH_OPTIONS, DEFAULT_OPTIONS_STORAGE_KEY, FILE_EXTENSIONS } from "./constants";
+import { DEFAULT_SEARCH_OPTIONS, DEFAULT_OPTIONS_STORAGE_KEY, DIRECTORY_SEARCH_CONSTANTS, FILE_EXTENSIONS } from "./constants";
 import { DefaultSearchOptions } from "./types/defaultOptions";
 
 /**
@@ -29,6 +29,25 @@ export function isDefaultSearchOptions(value: unknown): value is DefaultSearchOp
   }
   const candidate = value as Record<string, unknown>;
 
+  if (!hasValidExistingOptions(candidate)) {
+    return false;
+  }
+
+  const validMode = candidate.directory_mode === undefined ||
+    candidate.directory_mode === DIRECTORY_SEARCH_CONSTANTS.SEQUENTIAL ||
+    candidate.directory_mode === DIRECTORY_SEARCH_CONSTANTS.BURST;
+  const validWorkers = candidate.burst_workers === undefined ||
+    candidate.burst_workers === null ||
+    (typeof candidate.burst_workers === "number" &&
+      Number.isInteger(candidate.burst_workers) &&
+      candidate.burst_workers >= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MIN &&
+      candidate.burst_workers <= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MAX);
+
+  return validMode && validWorkers;
+}
+
+/** Validates persisted search fields that predate the directory search mode. */
+function hasValidExistingOptions(candidate: Record<string, unknown>): boolean {
   if (
     typeof candidate.match_case !== "boolean" ||
     typeof candidate.use_regex !== "boolean" ||
@@ -76,6 +95,8 @@ export function resetDefaultSearchOptions(): DefaultSearchOptions {
     include_comment: DEFAULT_SEARCH_OPTIONS.include_comment,
     include_hidden: DEFAULT_SEARCH_OPTIONS.include_hidden,
     extensions: [...DEFAULT_SEARCH_OPTIONS.extensions],
+    directory_mode: DEFAULT_SEARCH_OPTIONS.directory_mode,
+    burst_workers: DEFAULT_SEARCH_OPTIONS.burst_workers,
   };
 }
 
@@ -105,8 +126,25 @@ export function loadDefaultSearchOptions(): DefaultSearchOptions {
     }
 
     const parsed: unknown = JSON.parse(raw);
-    if (isDefaultSearchOptions(parsed)) {
-      return parsed;
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      const candidate = parsed as Record<string, unknown>;
+      if (hasValidExistingOptions(candidate)) {
+        return {
+          ...resetDefaultSearchOptions(),
+          ...(candidate as Partial<DefaultSearchOptions>),
+          directory_mode:
+            candidate.directory_mode === DIRECTORY_SEARCH_CONSTANTS.BURST
+              ? DIRECTORY_SEARCH_CONSTANTS.BURST
+              : DIRECTORY_SEARCH_CONSTANTS.SEQUENTIAL,
+          burst_workers:
+            typeof candidate.burst_workers === "number" &&
+            Number.isInteger(candidate.burst_workers) &&
+            candidate.burst_workers >= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MIN &&
+            candidate.burst_workers <= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MAX
+              ? candidate.burst_workers
+              : null,
+        };
+      }
     }
 
     return resetDefaultSearchOptions();

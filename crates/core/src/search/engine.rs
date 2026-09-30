@@ -184,6 +184,35 @@ impl SearchEngine {
         FMatch: FnMut(SearchMatch) + Send + Sync + 'static,
         FProgress: FnMut(ScanProgress) + Send + Sync + 'static,
     {
+        self.execute_search_with_issues(query, on_match, on_progress, |_| {})
+    }
+
+    /// Executes directory discovery and workbook parsing, forwarding nonfatal folder failures.
+    ///
+    /// ## Arguments
+    /// - `query`: `SearchQuery` - Search criteria, directory mode, and optional Burst count.
+    /// - `on_match`: `FMatch` - Callback receiving each matched search item.
+    /// - `on_progress`: `FProgress` - Callback receiving scan progress updates.
+    /// - `on_issue`: `FIssue` - Callback receiving descendant directory discovery issues.
+    ///
+    /// ## Returns
+    /// - `Result<ScanProgress, String>`: Final scan progress state or fatal discovery error.
+    ///
+    /// ## Errors / Exceptions
+    /// Returns `Err` for an invalid root, count, regex, worker failure, or file delivery failure.
+    /// Catches panics from workbook parsing and discovery callbacks.
+    pub fn execute_search_with_issues<FMatch, FProgress, FIssue>(
+        &self,
+        query: SearchQuery,
+        on_match: FMatch,
+        on_progress: FProgress,
+        on_issue: FIssue,
+    ) -> Result<ScanProgress, String>
+    where
+        FMatch: FnMut(SearchMatch) + Send + Sync + 'static,
+        FProgress: FnMut(ScanProgress) + Send + Sync + 'static,
+        FIssue: FnMut(crate::search::discovery::DiscoveryIssue) + Send + Sync + 'static,
+    {
         self.reset_cancel();
         let cancel_flag = Arc::clone(&self.is_cancelled);
 
@@ -253,46 +282,66 @@ impl SearchEngine {
         // Producer: Directory scan in separate background thread
         let target_dir = query.target_dir.clone();
         let extensions = query.extensions.clone();
+        let directory_mode = query.directory_mode;
+        let burst_workers = query.burst_workers;
         let cancel_flag_scanner = Arc::clone(&cancel_flag);
         let discovered_count_clone = Arc::clone(&discovered_count);
         let scan_completed_clone = Arc::clone(&scan_completed);
+        let discovery_issues = Arc::new(std::sync::Mutex::new(on_issue));
+        let discovery_issues_scanner = Arc::clone(&discovery_issues);
+        let scanner_error = Arc::new(std::sync::Mutex::new(None::<String>));
+        let scanner_error_thread = Arc::clone(&scanner_error);
 
         let scanner_handle = std::thread::spawn(move || {
-            let exts_lower: Vec<String> = extensions.iter().map(|e| e.to_lowercase()).collect();
-
-            for entry in WalkDir::new(&target_dir)
-                .follow_links(false)
-                .into_iter()
-                .filter_map(|e| e.ok())
-            {
-                if cancel_flag_scanner.load(Ordering::Relaxed) {
-                    break;
-                }
-
-                if entry.file_type().is_file() {
-                    let path = entry.path();
-                    // Exclude temporary files (e.g. ~$ Excel lock files)
-                    if let Some(file_name) = path.file_name().and_then(|n| n.to_str()) {
-                        // Constant reference: crate::constants::EXCEL_TEMP_FILE_PREFIX
-                        if file_name.starts_with(crate::constants::EXCEL_TEMP_FILE_PREFIX) {
-                            continue;
+            let delivery = crate::search::discovery::discover_files(
+                &[PathBuf::from(target_dir)],
+                &extensions,
+                directory_mode,
+                burst_workers,
+                &cancel_flag_scanner,
+                |path| {
+                    let mut pending_path = path.to_path_buf();
+                    loop {
+                        if cancel_flag_scanner.load(Ordering::Acquire) {
+                            return Ok(());
                         }
-                    }
-
-                    if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
-                        let ext_with_dot = format!(".{}", ext.to_lowercase());
-                        if exts_lower.contains(&ext_with_dot) {
-                            discovered_count_clone.fetch_add(1, Ordering::Relaxed);
-                            if tx.send(path.to_path_buf()).is_err() {
-                                // Receiver closed (cancelled or finished), abort
-                                break;
+                        match tx.try_send(pending_path) {
+                            Ok(()) => {
+                                discovered_count_clone.fetch_add(1, Ordering::Relaxed);
+                                return Ok(());
+                            }
+                            Err(std::sync::mpsc::TrySendError::Full(path)) => {
+                                pending_path = path;
+                                std::thread::sleep(std::time::Duration::from_millis(
+                                    crate::constants::DISCOVERY_RETRY_DELAY_MS,
+                                ));
+                            }
+                            Err(std::sync::mpsc::TrySendError::Disconnected(_)) => {
+                                return Err(
+                                    crate::constants::ERR_DISCOVERY_FILE_CHANNEL.to_string()
+                                );
                             }
                         }
                     }
+                },
+                |issue| {
+                    if let Ok(mut callback) = discovery_issues_scanner.lock() {
+                        callback(issue);
+                    }
+                },
+            );
+            if let Err(error) = delivery {
+                if !cancel_flag_scanner.load(Ordering::Acquire) {
+                    if let Ok(mut stored_error) = scanner_error_thread.lock() {
+                        *stored_error = Some(error);
+                    }
                 }
             }
-
-            if !cancel_flag_scanner.load(Ordering::Relaxed) {
+            if scanner_error_thread
+                .lock()
+                .is_ok_and(|error| error.is_none())
+                && !cancel_flag_scanner.load(Ordering::Relaxed)
+            {
                 scan_completed_clone.store(true, Ordering::Relaxed);
             }
             // tx drops here, closing the channel for receivers
@@ -408,7 +457,16 @@ impl SearchEngine {
         });
 
         // Wait for scanner thread to complete
-        let _ = scanner_handle.join();
+        if scanner_handle.join().is_err() {
+            return Err(crate::constants::ERR_DISCOVERY_WORKER_PANIC.to_string());
+        }
+        if let Some(error) = scanner_error
+            .lock()
+            .map_err(|error| error.to_string())?
+            .take()
+        {
+            return Err(error);
+        }
 
         let is_cancelled = cancel_flag.load(Ordering::Relaxed);
         let final_state = if is_cancelled {
@@ -490,6 +548,8 @@ mod tests {
         let query = SearchQuery {
             keyword: "Financial".to_string(),
             target_dir: fixtures_dir.to_str().unwrap().to_string(),
+            directory_mode: crate::models::DirectorySearchMode::Sequential,
+            burst_workers: None,
             match_case: false,
             // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
             include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
@@ -621,6 +681,8 @@ mod tests {
         let query = SearchQuery {
             keyword: "Financial".to_string(),
             target_dir: fixtures_dir.to_str().unwrap().to_string(),
+            directory_mode: crate::models::DirectorySearchMode::Sequential,
+            burst_workers: None,
             match_case: false,
             // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
             include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
@@ -696,6 +758,8 @@ mod tests {
         let query = SearchQuery {
             keyword: "Total".to_string(),
             target_dir: fixtures_dir.to_str().unwrap().to_string(),
+            directory_mode: crate::models::DirectorySearchMode::Sequential,
+            burst_workers: None,
             match_case: false,
             // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
             include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
@@ -753,6 +817,8 @@ mod tests {
         let query = SearchQuery {
             keyword: "a".to_string(),
             target_dir: fixtures_dir.to_str().unwrap().to_string(),
+            directory_mode: crate::models::DirectorySearchMode::Sequential,
+            burst_workers: None,
             match_case: false,
             // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
             include_value: crate::constants::DEFAULT_INCLUDE_VALUE,

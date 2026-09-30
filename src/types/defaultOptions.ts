@@ -18,4 +18,6 @@ export interface DefaultSearchOptions {
   include_comment: boolean;
   include_hidden: boolean;
   extensions: string[];
+  directory_mode: "sequential" | "burst";
+  burst_workers: number | null;
 }

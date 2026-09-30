@@ -35,6 +35,8 @@ describe("search history acceptance", () => {
     expect(onSearchAccepted).toHaveBeenCalledWith(expect.objectContaining({
       keyword: "invoice",
       target_dir: "~/reports",
+      directory_mode: "sequential",
+      burst_workers: null,
     }));
   });
 
