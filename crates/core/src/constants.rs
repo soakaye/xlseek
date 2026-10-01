@@ -449,6 +449,12 @@ pub const LOG_SEARCH_FAILED: &str = "[start_search] Search engine failed";
 pub const HOME_PATH_PREFIX_UNIX: &str = "~/";
 /// Constant reference: Windows home abbreviation path prefix.
 pub const HOME_PATH_PREFIX_WINDOWS: &str = "~\\";
+/// Constant reference: Windows verbatim extended-length prefix.
+pub const VERBATIM_PATH_PREFIX_WINDOWS: &str = r"\\?\";
+/// Constant reference: Windows verbatim UNC extended-length prefix.
+pub const VERBATIM_UNC_PATH_PREFIX_WINDOWS: &str = r"\\?\UNC\";
+/// Constant reference: Standard Windows UNC prefix.
+pub const STANDARD_UNC_PREFIX_WINDOWS: &str = r"\\";
 /// Constant reference: Maximum suggestions returned for directory completion.
 pub const MAX_PATH_COMPLETION_RESULTS: usize = 10;
 pub const LOG_EVENT_EMIT_FAILED: &str = "Failed to emit Tauri event";

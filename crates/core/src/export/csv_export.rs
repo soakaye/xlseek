@@ -79,12 +79,13 @@ pub fn write_csv_to_writer<W: Write>(
         let match_type_str = crate::i18n::resolve_catalog_text(catalogs, language, match_key)
             .ok_or_else(|| crate::constants::ERR_TRANSLATION_MISSING.to_string())?;
 
+        let clean_path = crate::export::normalize_export_path(&item.full_path);
         // Pass array directly to avoid Clippy needless_borrows_for_generic_args
         csv_writer
             .write_record([
                 item.id.to_string(),
                 item.file_name.clone(),
-                item.full_path.clone(),
+                clean_path.into_owned(),
                 item.sheet_name.clone(),
                 item.cell_address.clone(),
                 item.shape_name.clone().unwrap_or_default(),
@@ -246,5 +247,58 @@ mod localization_tests {
         )
         .unwrap();
         assert!(!buffer_without_bom.starts_with(&crate::constants::CSV_UTF8_BOM));
+    }
+
+    /// ## Description
+    /// Verifies that `write_csv_to_writer` strips Windows verbatim prefixes from full_path in CSV rows.
+    ///
+    /// ## Arguments / Returns
+    /// No arguments. Outputs a test SearchMatch and inspects the resulting CSV text.
+    ///
+    /// ## Errors / Exceptions
+    /// Panics on assertion failure.
+    #[test]
+    fn write_csv_to_writer_strips_windows_verbatim_paths() {
+        let mut japanese = BTreeMap::new();
+        for key in crate::constants::EXPORT_HEADER_KEYS {
+            japanese.insert(key.to_string(), key.to_string());
+        }
+        japanese.insert(
+            crate::constants::EXPORT_MATCH_VALUE_KEY.to_string(),
+            "一致".to_string(),
+        );
+        let catalogs = BTreeMap::from([(crate::constants::LANGUAGE_JA.to_string(), japanese)]);
+
+        let item = crate::models::SearchMatch {
+            id: 1,
+            file_name: "test.xlsx".to_string(),
+            full_path: r"\\?\C:\Projects\test.xlsx".to_string(),
+            sheet_name: "Sheet1".to_string(),
+            cell_address: "A1".to_string(),
+            row_index: 0,
+            col_index: 0,
+            col_name: "A".to_string(),
+            shape_name: None,
+            match_type: crate::models::MatchType::CellValue,
+            sheet_hidden: false,
+            snippet: "foo".to_string(),
+            full_content: "foo".to_string(),
+            formula: None,
+            sheets_in_workbook: vec!["Sheet1".to_string()],
+        };
+
+        let mut buffer = Vec::new();
+        super::write_csv_to_writer(
+            &mut buffer,
+            &[item],
+            crate::constants::LANGUAGE_JA,
+            &catalogs,
+            false,
+        )
+        .unwrap();
+
+        let output_str = String::from_utf8(buffer).unwrap();
+        assert!(output_str.contains(r"C:\Projects\test.xlsx"));
+        assert!(!output_str.contains(r"\\?\"));
     }
 }

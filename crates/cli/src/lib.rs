@@ -60,6 +60,9 @@ where
                     // Do not print summary in stdout mode to avoid breaking pipe streams
                     if !is_stdout {
                         if let Some(ref path) = output_path {
+                            let raw_path = path.display().to_string();
+                            let display_path =
+                                xlseek_core::export::normalize_export_path(&raw_path);
                             let summary = translate(
                                 &catalogs,
                                 &language,
@@ -73,10 +76,7 @@ where
                                 constants::CLI_SUMMARY_MATCHES_PLACEHOLDER,
                                 &report.matches_found.to_string(),
                             )
-                            .replace(
-                                constants::CLI_SUMMARY_PATH_PLACEHOLDER,
-                                &path.display().to_string(),
-                            );
+                            .replace(constants::CLI_SUMMARY_PATH_PLACEHOLDER, &display_path);
                             println!("{summary}");
                         }
                     }
