@@ -54,8 +54,8 @@
 
 ```bash
 # Clone the repository
-git clone https://github.com/soakaye/exgrep.git
-cd exgrep
+git clone https://github.com/soakaye/xlseek.git
+cd xlseek
 
 # Install frontend dependencies
 npm install
@@ -160,9 +160,9 @@ cargo fmt --check
 ## Project Structure
 
 ```text
-exgrep/
+xlseek/
 ├── crates/
-│   ├── core/           # exlgrep-core: shared engine, parsing, i18n, models, and export logic
+│   ├── core/           # xlseek-core: shared engine, parsing, i18n, models, and export logic
 │   └── cli/            # xlseek-cli: standalone command-line executable
 ├── src/                # React / TypeScript frontend
 │   ├── components/     # UI components (search, results, preview, about, dialogs)

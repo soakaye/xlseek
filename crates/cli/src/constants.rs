@@ -4,7 +4,7 @@
 //! Centralizes constant and configuration values for command line argument parsing,
 //! option specifications, exit statuses, temporary file naming, and output formats
 //! for the standalone CLI tool (xlseek-cli).
-//! Re-exports shared core constants (`exlgrep_core::constants`) while defining CLI-specific constants.
+//! Re-exports shared core constants (`xlseek_core::constants`) while defining CLI-specific constants.
 //! Conforms to Constitution Principle II (No Hardcoded Constants).
 //!
 //! ## Arguments / Returns
@@ -13,4 +13,4 @@
 //! ## Errors
 //! As a constant definition module, this does not produce runtime errors.
 
-pub use exlgrep_core::constants::*;
+pub use xlseek_core::constants::*;

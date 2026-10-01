@@ -184,7 +184,7 @@ mod localization_tests {
     use calamine::Reader;
     use std::collections::BTreeMap;
 
-    const TEST_OUTPUT_PREFIX: &str = "exlgrep-i18n-test";
+    const TEST_OUTPUT_PREFIX: &str = "xlseek-i18n-test";
 
     /// ## Description
     /// Verifies that Excel column headers use the requested catalog language.

@@ -13,6 +13,7 @@
 export const LANGUAGE_PREFERENCES = { DEFAULT: "default", JA: "ja", EN: "en" } as const;
 export const DISPLAY_LANGUAGES = { JA: "ja", EN: "en" } as const;
 export const LANGUAGE_STORAGE_KEY = "xlseek.language";
+export const LEGACY_LANGUAGE_STORAGE_KEY = "exlgrep.language";
 export const APP_CONSTANTS = { ROOT_ELEMENT_ID: "root", APP_VERSION: "0.1.0" } as const;
 export const I18N_CONSTANTS = {
   TRANSLATION_UNAVAILABLE_KEY: "common.translationUnavailable",
@@ -63,6 +64,7 @@ export const SEARCH_LABELS = {
 // Constant reference: Centralizes search history storage keys, limits, and timing.
 export const SEARCH_HISTORY_CONSTANTS = {
   STORAGE_KEY: "xlseek.searchHistory",
+  LEGACY_STORAGE_KEYS: ["exlgrep.searchHistory", "exlgrep.search_history", "exlgrep.search-history.maxEntries"] as const,
   DEFAULT_MAX_ENTRIES: 20,
   MIN_ENTRIES: 0,
   MAX_ENTRIES: 50,
@@ -133,6 +135,7 @@ export const FILE_EXTENSIONS = {
 // 6. Default Search Options Constants (Default Search Options)
 // ==============================================================================
 export const DEFAULT_OPTIONS_STORAGE_KEY = "xlseek.default_search_options";
+export const LEGACY_DEFAULT_OPTIONS_STORAGE_KEY = "exlgrep.default_search_options";
 export const SETTINGS_PAGES = { IMMEDIATE: "immediate", SAVED: "saved" } as const;
 export const SETTINGS_DIALOG_IDS = {
   TITLE: "settings-title",

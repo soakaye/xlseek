@@ -7,7 +7,7 @@
 //! ## Errors / Exceptions
 //! Fails if JSON serialization or deserialization does not match expected output.
 
-use exlgrep_core::models::{MatchType, SearchMatch, SearchQuery};
+use xlseek_core::models::{MatchType, SearchMatch, SearchQuery};
 
 /// ## Description
 /// Verifies that omitting include_shape defaults to true and that Shape MatchType serializes stably.

@@ -1,9 +1,7 @@
-# Workspace manifest for exlgrep (core, cli, and tauri packages).
+# Workspace manifest for xlseek (core, cli, and tauri packages).
 # Inputs: Rust packages under crates/core, crates/cli, and src-tauri; output: shared Cargo workspace and root Cargo.lock.
 # Errors: Cargo reports missing or invalid member manifests during metadata/build commands.
-# History:
-# - v1.0.0 (2026-09-26, Codex): create workspace for locale bundling.
-# - v1.1.0 (2026-09-29, Antigravity): add crates/core and crates/cli to workspace members.
+
 [workspace]
 members = [
     "crates/core",

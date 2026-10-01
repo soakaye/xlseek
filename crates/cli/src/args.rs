@@ -12,9 +12,9 @@
 //! Returns `Err` on non-Unicode arguments, missing/duplicate/unknown arguments, or invalid paths/queries.
 
 use crate::constants;
-use exlgrep_core::models::{DirectorySearchMode, ExportFormat, SearchQuery};
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use xlseek_core::models::{DirectorySearchMode, ExportFormat, SearchQuery};
 
 /// Represents the output destination target for CLI search results (file path or stdout streaming).
 ///
@@ -222,7 +222,7 @@ where
             .map(String::as_str)
             .unwrap_or(constants::CLI_DEFAULT_LANGUAGE);
         validate_language(language)?;
-        let help = exlgrep_core::i18n::resolve_catalog_text(
+        let help = xlseek_core::i18n::resolve_catalog_text(
             catalogs,
             language,
             constants::CLI_TRANSLATION_HELP_KEY,
@@ -612,7 +612,7 @@ fn validate_language(language: &str) -> Result<(), String> {
 mod tests {
     use super::{parse_args, CliOutputTarget, ParseOutcome};
     use crate::constants;
-    use exlgrep_core::models::ExportFormat;
+    use xlseek_core::models::ExportFormat;
 
     /// Resolves the absolute path to the repository root.
     ///
@@ -655,7 +655,7 @@ mod tests {
             "--output".to_string(),
             output.to_string_lossy().into_owned(),
         ];
-        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
+        let catalogs = xlseek_core::i18n::load_embedded_catalogs().unwrap();
         let ParseOutcome::Run(options) = parse_args(args, &catalogs).unwrap() else {
             panic!("valid request must run");
         };
@@ -700,7 +700,7 @@ mod tests {
             input1.to_string_lossy().into_owned(),
             input2.to_string_lossy().into_owned(),
         ];
-        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
+        let catalogs = xlseek_core::i18n::load_embedded_catalogs().unwrap();
         let ParseOutcome::Run(options) = parse_args(args, &catalogs).unwrap() else {
             panic!("valid request must run");
         };
@@ -734,7 +734,7 @@ mod tests {
             "-l".to_string(),
             "en".to_string(),
         ];
-        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
+        let catalogs = xlseek_core::i18n::load_embedded_catalogs().unwrap();
         let ParseOutcome::Run(options) = parse_args(args, &catalogs).unwrap() else {
             panic!("valid request must run");
         };
@@ -754,7 +754,7 @@ mod tests {
     /// Panics if duplicate input is erroneously accepted.
     #[test]
     fn rejects_duplicate_positional_and_named() {
-        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
+        let catalogs = xlseek_core::i18n::load_embedded_catalogs().unwrap();
         let root = repo_root();
         let input = root.join("tests/fixtures/sample_report.xlsx");
 
@@ -787,7 +787,7 @@ mod tests {
     /// Panics if unknown flag is accepted.
     #[test]
     fn rejects_unknown_short_option() {
-        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
+        let catalogs = xlseek_core::i18n::load_embedded_catalogs().unwrap();
         let args = ["-z".to_string(), "val".to_string()];
         assert!(parse_args(args, &catalogs).is_err());
     }
@@ -801,7 +801,7 @@ mod tests {
     /// Panics if help request fails or runs search.
     #[test]
     fn help_accepts_language_without_search_options() {
-        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
+        let catalogs = xlseek_core::i18n::load_embedded_catalogs().unwrap();
         let result = parse_args(
             [
                 constants::CLI_LONG_HELP.to_string(),
@@ -825,7 +825,7 @@ mod tests {
     /// Panics if valid count-only Burst syntax is rejected.
     #[test]
     fn burst_worker_count_without_mode_is_accepted() {
-        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
+        let catalogs = xlseek_core::i18n::load_embedded_catalogs().unwrap();
         let root = repo_root();
         let input = root.join("tests/fixtures/sample_report.xlsx");
         let result = parse_args(
@@ -844,7 +844,7 @@ mod tests {
         };
         assert_eq!(
             options.query.directory_mode,
-            exlgrep_core::models::DirectorySearchMode::Burst
+            xlseek_core::models::DirectorySearchMode::Burst
         );
         assert_eq!(options.query.burst_workers, Some(6));
     }
@@ -858,7 +858,7 @@ mod tests {
     /// Panics if any invalid option combination is accepted.
     #[test]
     fn rejects_invalid_burst_worker_counts_and_sequential_conflicts() {
-        let catalogs = exlgrep_core::i18n::load_embedded_catalogs().unwrap();
+        let catalogs = xlseek_core::i18n::load_embedded_catalogs().unwrap();
         let root = repo_root();
         let input = root.join("tests/fixtures/sample_report.xlsx");
         for count in ["1", "33", "2.5"] {

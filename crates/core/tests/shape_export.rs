@@ -9,12 +9,12 @@
 //! Fails if file export, reopening, or column values mismatch assertions.
 
 use calamine::Reader;
-use exlgrep_core::constants::*;
-use exlgrep_core::export::{csv_export::export_to_csv, xlsx_export::export_to_xlsx};
-use exlgrep_core::models::{MatchType, SearchMatch};
 use std::collections::BTreeMap;
+use xlseek_core::constants::*;
+use xlseek_core::export::{csv_export::export_to_csv, xlsx_export::export_to_xlsx};
+use xlseek_core::models::{MatchType, SearchMatch};
 
-const TEST_OUTPUT_PREFIX: &str = "exlgrep-shape-export";
+const TEST_OUTPUT_PREFIX: &str = "xlseek-shape-export";
 
 /// ## Description
 /// Verifies that shape name appears in shape column and shape type/content appear in appropriate columns.

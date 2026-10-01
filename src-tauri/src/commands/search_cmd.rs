@@ -365,7 +365,7 @@ mod tests {
             keyword: "term".to_string(),
             target_dir: "directory".to_string(),
             directory_mode: crate::models::DirectorySearchMode::Burst,
-            burst_workers: Some(exlgrep_core::constants::BURST_WORKERS_MIN - 1),
+            burst_workers: Some(xlseek_core::constants::BURST_WORKERS_MIN - 1),
             match_case: false,
             // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
             include_value: crate::constants::DEFAULT_INCLUDE_VALUE,

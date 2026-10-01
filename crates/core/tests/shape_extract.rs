@@ -7,19 +7,19 @@
 //! ## Errors / Exceptions
 //! Fails if ZIP creation, file handling, extraction, or assertions fail.
 
-use exlgrep_core::constants::*;
-use exlgrep_core::models::{MatchType, SearchQuery};
-use exlgrep_core::search::parser::parse_and_search_file;
-use exlgrep_core::search::shape::extract_shapes;
 use std::io::{Cursor, Write};
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicUsize, Ordering};
+use xlseek_core::constants::*;
+use xlseek_core::models::{MatchType, SearchQuery};
+use xlseek_core::search::parser::parse_and_search_file;
+use xlseek_core::search::shape::extract_shapes;
 use zip::write::FileOptions;
 use zip::{CompressionMethod, ZipWriter};
 
-const TEST_FILE_NAME: &str = "exlgrep-shape-contract.xlsx";
-const TEST_UPPERCASE_FILE_NAME: &str = "exlgrep-shape-contract-upper.XLSX";
-const XLSB_TEST_FILE_NAME: &str = "exlgrep-shape-contract.xlsb";
+const TEST_FILE_NAME: &str = "xlseek-shape-contract.xlsx";
+const TEST_UPPERCASE_FILE_NAME: &str = "xlseek-shape-contract-upper.XLSX";
+const XLSB_TEST_FILE_NAME: &str = "xlseek-shape-contract.xlsb";
 const TEST_FILE_EXTENSION_SEPARATOR: char = '.';
 static FIXTURE_SEQUENCE: AtomicUsize = AtomicUsize::new(0);
 
@@ -228,11 +228,11 @@ fn extracts_text_shape_with_sheet_and_anchor() {
     let query = SearchQuery {
         keyword: "needle".to_string(),
         target_dir: path.to_string_lossy().to_string(),
-        directory_mode: exlgrep_core::models::DirectorySearchMode::Sequential,
+        directory_mode: xlseek_core::models::DirectorySearchMode::Sequential,
         burst_workers: None,
         match_case: false,
-        // Constant reference: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE
-        include_value: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE,
+        // Constant reference: xlseek_core::constants::DEFAULT_INCLUDE_VALUE
+        include_value: xlseek_core::constants::DEFAULT_INCLUDE_VALUE,
         use_regex: false,
         include_formula: false,
         include_comment: true,
@@ -281,17 +281,17 @@ fn uses_real_cell_coordinates_for_ranges_starting_after_a1() {
     let query = SearchQuery {
         keyword: "Financial Report Q3".to_string(),
         target_dir: path.to_string_lossy().into_owned(),
-        directory_mode: exlgrep_core::models::DirectorySearchMode::Sequential,
+        directory_mode: xlseek_core::models::DirectorySearchMode::Sequential,
         burst_workers: None,
         match_case: false,
-        // Constant reference: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE
-        include_value: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE,
+        // Constant reference: xlseek_core::constants::DEFAULT_INCLUDE_VALUE
+        include_value: xlseek_core::constants::DEFAULT_INCLUDE_VALUE,
         use_regex: false,
         include_formula: false,
         include_comment: false,
         include_shape: false,
         include_hidden: false,
-        extensions: exlgrep_core::constants::DEFAULT_EXTENSIONS
+        extensions: xlseek_core::constants::DEFAULT_EXTENSIONS
             .iter()
             .map(|extension| extension.to_string())
             .collect(),
@@ -327,19 +327,19 @@ fn searches_legacy_cell_comments() {
     let root = repo_root();
     let path = root.join("tests/fixtures/sample_report.xlsx");
     let query = SearchQuery {
-        keyword: exlgrep_core::constants::CLI_TEST_COMMENT_QUERY.to_string(),
+        keyword: xlseek_core::constants::CLI_TEST_COMMENT_QUERY.to_string(),
         target_dir: path.to_string_lossy().into_owned(),
-        directory_mode: exlgrep_core::models::DirectorySearchMode::Sequential,
+        directory_mode: xlseek_core::models::DirectorySearchMode::Sequential,
         burst_workers: None,
         match_case: false,
-        // Constant reference: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE
-        include_value: exlgrep_core::constants::DEFAULT_INCLUDE_VALUE,
+        // Constant reference: xlseek_core::constants::DEFAULT_INCLUDE_VALUE
+        include_value: xlseek_core::constants::DEFAULT_INCLUDE_VALUE,
         use_regex: false,
         include_formula: false,
         include_comment: true,
         include_shape: false,
         include_hidden: false,
-        extensions: exlgrep_core::constants::DEFAULT_EXTENSIONS
+        extensions: xlseek_core::constants::DEFAULT_EXTENSIONS
             .iter()
             .map(|extension| extension.to_string())
             .collect(),

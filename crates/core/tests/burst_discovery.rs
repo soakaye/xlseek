@@ -2,12 +2,12 @@
 //! Inputs: Temporary directory trees and discovery settings; output: assertions over delivered paths.
 //! Errors: Filesystem setup failures fail the test; discovery failures are asserted through `Result`.
 
-use exlgrep_core::models::DirectorySearchMode;
-use exlgrep_core::search::discovery::discover_files;
 use std::fs;
 use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::{Arc, Mutex};
+use xlseek_core::models::DirectorySearchMode;
+use xlseek_core::search::discovery::discover_files;
 
 /// Creates an isolated nested fixture and returns its root and cleanup path.
 ///
@@ -24,7 +24,7 @@ fn nested_fixture() -> (PathBuf, PathBuf) {
     let root = std::env::temp_dir().join(format!(
         "xlseek-burst-{}-{}-{unique_id}",
         std::process::id(),
-        exlgrep_core::constants::CLI_TEST_BURST_FIXTURE_ID
+        xlseek_core::constants::CLI_TEST_BURST_FIXTURE_ID
     ));
     fs::create_dir_all(root.join("one/deep")).unwrap();
     fs::create_dir_all(root.join("two")).unwrap();
@@ -45,7 +45,7 @@ fn nested_fixture() -> (PathBuf, PathBuf) {
 #[test]
 fn burst_discovery_respects_the_configured_worker_bound() {
     let (root, cleanup) = nested_fixture();
-    for index in 0..exlgrep_core::constants::CLI_TEST_BURST_DIRECTORY_COUNT {
+    for index in 0..xlseek_core::constants::CLI_TEST_BURST_DIRECTORY_COUNT {
         let directory = root.join(format!("parallel-{index}"));
         fs::create_dir_all(&directory).unwrap();
         fs::write(directory.join("book.xlsx"), []).unwrap();
@@ -58,13 +58,13 @@ fn burst_discovery_respects_the_configured_worker_bound() {
         std::slice::from_ref(&root),
         &[".xlsx".to_string()],
         DirectorySearchMode::Burst,
-        Some(exlgrep_core::constants::BURST_WORKERS_MIN),
+        Some(xlseek_core::constants::BURST_WORKERS_MIN),
         &AtomicBool::new(false),
         move |_| {
             let current = callback_active.fetch_add(1, Ordering::SeqCst) + 1;
             callback_maximum.fetch_max(current, Ordering::SeqCst);
             std::thread::sleep(std::time::Duration::from_millis(
-                exlgrep_core::constants::CLI_TEST_BURST_CALLBACK_DELAY_MS,
+                xlseek_core::constants::CLI_TEST_BURST_CALLBACK_DELAY_MS,
             ));
             callback_active.fetch_sub(1, Ordering::SeqCst);
             Ok(())
@@ -73,9 +73,9 @@ fn burst_discovery_respects_the_configured_worker_bound() {
     )
     .unwrap();
     assert!(
-        maximum.load(Ordering::SeqCst) >= exlgrep_core::constants::CLI_TEST_BURST_MIN_CONCURRENCY
+        maximum.load(Ordering::SeqCst) >= xlseek_core::constants::CLI_TEST_BURST_MIN_CONCURRENCY
     );
-    assert!(maximum.load(Ordering::SeqCst) <= exlgrep_core::constants::BURST_WORKERS_MIN);
+    assert!(maximum.load(Ordering::SeqCst) <= xlseek_core::constants::BURST_WORKERS_MIN);
     fs::remove_dir_all(cleanup).unwrap();
 }
 
@@ -89,7 +89,7 @@ fn burst_discovery_respects_the_configured_worker_bound() {
 #[test]
 fn burst_discovery_stops_scheduling_after_cancellation() {
     let (root, cleanup) = nested_fixture();
-    for index in 0..exlgrep_core::constants::CLI_TEST_BURST_DIRECTORY_COUNT {
+    for index in 0..xlseek_core::constants::CLI_TEST_BURST_DIRECTORY_COUNT {
         let directory = root.join(format!("cancel-{index}"));
         fs::create_dir_all(&directory).unwrap();
         fs::write(directory.join("book.xlsx"), []).unwrap();
@@ -102,7 +102,7 @@ fn burst_discovery_stops_scheduling_after_cancellation() {
         std::slice::from_ref(&root),
         &[".xlsx".to_string()],
         DirectorySearchMode::Burst,
-        Some(exlgrep_core::constants::BURST_WORKERS_MIN),
+        Some(xlseek_core::constants::BURST_WORKERS_MIN),
         cancelled.as_ref(),
         move |_| {
             callback_delivered.fetch_add(1, Ordering::SeqCst);
@@ -112,9 +112,9 @@ fn burst_discovery_stops_scheduling_after_cancellation() {
         |_| {},
     )
     .unwrap();
-    assert!(delivered.load(Ordering::SeqCst) <= exlgrep_core::constants::BURST_WORKERS_MIN);
+    assert!(delivered.load(Ordering::SeqCst) <= xlseek_core::constants::BURST_WORKERS_MIN);
     assert!(
-        delivered.load(Ordering::SeqCst) < exlgrep_core::constants::CLI_TEST_BURST_DIRECTORY_COUNT
+        delivered.load(Ordering::SeqCst) < xlseek_core::constants::CLI_TEST_BURST_DIRECTORY_COUNT
     );
     fs::remove_dir_all(cleanup).unwrap();
 }
@@ -149,7 +149,7 @@ fn sequential_and_burst_discover_the_same_nested_files_once() {
         std::slice::from_ref(&root),
         &extensions,
         DirectorySearchMode::Burst,
-        Some(exlgrep_core::constants::BURST_WORKERS_MIN),
+        Some(xlseek_core::constants::BURST_WORKERS_MIN),
         &AtomicBool::new(false),
         |path| {
             burst.lock().unwrap().push(path.to_path_buf());
@@ -165,7 +165,7 @@ fn sequential_and_burst_discover_the_same_nested_files_once() {
     assert_eq!(sequential, burst);
     assert_eq!(
         sequential.len(),
-        exlgrep_core::constants::CLI_TEST_NESTED_FILE_COUNT
+        xlseek_core::constants::CLI_TEST_NESTED_FILE_COUNT
     );
     fs::remove_dir_all(cleanup).unwrap();
 }

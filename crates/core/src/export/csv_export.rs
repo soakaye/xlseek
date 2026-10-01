@@ -142,7 +142,7 @@ pub fn export_to_csv(
 mod localization_tests {
     use std::collections::BTreeMap;
 
-    const TEST_OUTPUT_PREFIX: &str = "exlgrep-i18n-test";
+    const TEST_OUTPUT_PREFIX: &str = "xlseek-i18n-test";
 
     /// ## Description
     /// Verifies that CSV column headers use the requested catalog language.

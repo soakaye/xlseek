@@ -8,7 +8,7 @@
  * ## Errors / Exceptions
  * Invalid values and acquisition failures fall back safely to default or English.
  */
-import { DISPLAY_LANGUAGES, LANGUAGE_PREFERENCES, LANGUAGE_STORAGE_KEY } from "./constants";
+import { DISPLAY_LANGUAGES, LANGUAGE_PREFERENCES, LANGUAGE_STORAGE_KEY, LEGACY_LANGUAGE_STORAGE_KEY } from "./constants";
 
 export type LanguagePreference = (typeof LANGUAGE_PREFERENCES)[keyof typeof LANGUAGE_PREFERENCES];
 export type DisplayLanguage = (typeof DISPLAY_LANGUAGES)[keyof typeof DISPLAY_LANGUAGES];
@@ -69,7 +69,19 @@ export const resolveLanguage = (locale: string | null | undefined): DisplayLangu
  */
 export const readLanguagePreference = (): LanguagePreference => {
   try {
-    return getLanguagePreference(window.localStorage.getItem(LANGUAGE_STORAGE_KEY));
+    // Constant reference: LANGUAGE_STORAGE_KEY
+    const current = window.localStorage.getItem(LANGUAGE_STORAGE_KEY);
+    if (current !== null) {
+      return getLanguagePreference(current);
+    }
+    // Constant reference: LEGACY_LANGUAGE_STORAGE_KEY fallback for backward compatibility
+    const legacy = window.localStorage.getItem(LEGACY_LANGUAGE_STORAGE_KEY);
+    if (legacy !== null) {
+      const preference = getLanguagePreference(legacy);
+      window.localStorage.setItem(LANGUAGE_STORAGE_KEY, preference);
+      return preference;
+    }
+    return LANGUAGE_PREFERENCES.DEFAULT;
   } catch {
     return LANGUAGE_PREFERENCES.DEFAULT;
   }

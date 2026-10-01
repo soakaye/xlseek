@@ -1,4 +1,4 @@
-//! # Excel Grep Shared Core Library (exlgrep_core)
+//! # Excel Seek Shared Core Library (xlseek_core)
 //!
 //! ## Description
 //! Provides high-speed parallel search engine for Excel workbooks (.xlsx, .xlsm, .xls, .xlsb),

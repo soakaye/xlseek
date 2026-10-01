@@ -12,10 +12,10 @@
 //! Returns `Err` on input collision, output conflict, export error, publication failure, or file system error.
 
 use crate::constants;
-use exlgrep_core::models::{ExportFormat, SearchMatch};
 use same_file::Handle;
 use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
+use xlseek_core::models::{ExportFormat, SearchMatch};
 
 /// Retains initial output file identity and overwrite policy.
 ///
@@ -114,13 +114,13 @@ impl OutputGuard {
         let temporary_file = temporary_directory.path.join(constants::CLI_TEMP_FILE_NAME);
         let temporary_file_text = temporary_file.to_string_lossy();
         match format {
-            ExportFormat::Csv => exlgrep_core::export::export_to_csv(
+            ExportFormat::Csv => xlseek_core::export::export_to_csv(
                 &temporary_file_text,
                 matches,
                 language,
                 catalogs,
             )?,
-            ExportFormat::Xlsx => exlgrep_core::export::export_to_xlsx(
+            ExportFormat::Xlsx => xlseek_core::export::export_to_xlsx(
                 &temporary_file_text,
                 matches,
                 language,

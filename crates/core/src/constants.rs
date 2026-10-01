@@ -96,7 +96,7 @@ pub const CLI_DEFAULT_INCLUDE_HIDDEN: bool = false;
 pub const CLI_FORMAT_CSV: &str = "csv";
 pub const CLI_FORMAT_XLSX: &str = "xlsx";
 pub const CLI_OUTPUT_SUFFIX: &str = ".tmp";
-pub const CLI_TEMP_DIRECTORY_PREFIX: &str = ".exlgrep-export-";
+pub const CLI_TEMP_DIRECTORY_PREFIX: &str = ".xlseek-export-";
 pub const CLI_TEMP_FILE_NAME: &str = "result.tmp";
 pub const CLI_TEMP_CREATE_ATTEMPTS: u32 = 16;
 pub const CLI_EXIT_SUCCESS: i32 = 0;
@@ -199,7 +199,7 @@ pub const CLI_VALUE_OPTIONS: [&str; 15] = [
     CLI_DIRECTORY_MODE_FIELD,
     CLI_BURST_WORKERS_FIELD,
 ];
-pub const CLI_TEST_OUTPUT_NAME: &str = "exlgrep-cli-args-test.csv";
+pub const CLI_TEST_OUTPUT_NAME: &str = "xlseek-cli-args-test.csv";
 pub const CLI_TEST_OVERWRITE_OPTION: &str = "--overwrite";
 pub const CLI_TEST_HYPHEN_QUERY: &str = "--needle";
 pub const CLI_TEST_COMMENT_QUERY: &str = "財務報告レビュー対象セル";

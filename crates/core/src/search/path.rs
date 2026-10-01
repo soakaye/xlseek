@@ -186,7 +186,7 @@ mod tests {
             .duration_since(UNIX_EPOCH)
             .expect("system time should be after the Unix epoch")
             .as_nanos();
-        let path = std::env::temp_dir().join(format!("exlgrep-path-tests-{unique}"));
+        let path = std::env::temp_dir().join(format!("xlseek-path-tests-{unique}"));
         let _ = fs::remove_dir_all(&path);
         fs::create_dir_all(&path).expect("temporary directory should be created");
         path
