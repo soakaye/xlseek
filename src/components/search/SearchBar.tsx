@@ -17,6 +17,7 @@ import { SearchQuery } from "../../types/search";
 import { SEARCH_LABELS } from "../../constants";
 import { COMMANDS, FILE_EXTENSIONS, KEYBOARD_KEYS, PATH_COMPLETION_CONSTANTS } from "../../constants";
 import { useTranslation } from "../../i18n";
+import { appendSearchPath, getActivePathSegment } from "../../utils/pathTokenizer";
 
 interface SearchBarProps {
   query: SearchQuery;
@@ -54,12 +55,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const [isDragOver, setIsDragOver] = useState(false);
   const keywordInputRef = useRef<HTMLDivElement>(null);
   const folderInputRef = useRef<HTMLDivElement>(null);
+  const folderInputElementRef = useRef<HTMLInputElement>(null);
   const [openList, setOpenList] = useState<"keyword" | "directory" | "directory-history" | null>(null);
   const [directorySuggestions, setDirectorySuggestions] = useState<string[]>([]);
   const [activeOption, setActiveOption] = useState<number | null>(null);
   const [completionDismissed, setCompletionDismissed] = useState(false);
   const [directoryFocused, setDirectoryFocused] = useState(false);
   const completionRequestRef = useRef(0);
+  const activeSegmentRangeRef = useRef<{ start: number; end: number }>({ start: 0, end: 0 });
 
   /**
    * Fetches path completion suggestions for directory input.
@@ -67,10 +70,21 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   useEffect(() => {
     const request = ++completionRequestRef.current;
     if (!directoryFocused || completionDismissed || !query.target_dir) return;
+
+    const cursorPos = folderInputElementRef.current?.selectionStart ?? query.target_dir.length;
+    const { segment, startIndex, endIndex } = getActivePathSegment(query.target_dir, cursorPos);
+    activeSegmentRangeRef.current = { start: startIndex, end: endIndex };
+
+    if (!segment.trim()) {
+      setDirectorySuggestions([]);
+      setOpenList(null);
+      return;
+    }
+
     const timer = window.setTimeout(async () => {
       try {
         // Constant reference: COMMANDS.COMPLETE_DIRECTORY_PATH
-        const values = await invoke<string[]>(COMMANDS.COMPLETE_DIRECTORY_PATH, { pathInput: query.target_dir });
+        const values = await invoke<string[]>(COMMANDS.COMPLETE_DIRECTORY_PATH, { pathInput: segment });
         if (request === completionRequestRef.current) {
           setDirectorySuggestions(values);
           if (values.length) setOpenList("directory");
@@ -114,8 +128,20 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     const value = values[index];
     if (!value || !openList) return;
     completionRequestRef.current += 1;
-    onSelectHistory(openList === "keyword" ? "keyword" : "directory", value);
-    if (openList !== "keyword") setCompletionDismissed(true);
+
+    if (openList === "directory") {
+      // Replace only active segment under cursor
+      const current = query.target_dir;
+      const { start, end } = activeSegmentRangeRef.current;
+      const needsQuotes = value.includes(",") || value.includes(" ");
+      const formatted = needsQuotes ? `"${value.replace(/"/g, '""')}"` : value;
+      const nextTargetDir = current.slice(0, start) + formatted + current.slice(end);
+      onChangeQuery({ target_dir: nextTargetDir });
+      setCompletionDismissed(true);
+    } else {
+      onSelectHistory(openList === "keyword" ? "keyword" : "directory", value);
+      if (openList !== "keyword") setCompletionDismissed(true);
+    }
     closeList();
   };
 
@@ -245,10 +271,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               if (isInside && payload.paths && payload.paths.length > 0) {
                 try {
                   // Constant reference: COMMANDS.RESOLVE_DROPPED_PATH
-                  const resolvedPath = await invoke<string>(COMMANDS.RESOLVE_DROPPED_PATH, {
-                    path: payload.paths[0],
-                  });
-                  onChangeQuery({ target_dir: resolvedPath });
+                  let updated = query.target_dir;
+                  for (const dropped of payload.paths) {
+                    const resolvedPath = await invoke<string>(COMMANDS.RESOLVE_DROPPED_PATH, {
+                      path: dropped,
+                    });
+                    updated = appendSearchPath(updated, resolvedPath);
+                  }
+                  onChangeQuery({ target_dir: updated });
                 } catch {
                   console.error("[SearchBar] Failed to resolve dropped folder path");
                 }
@@ -271,7 +301,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         unlisten();
       }
     };
-  }, [onChangeQuery]);
+  }, [onChangeQuery, query.target_dir]);
 
   // Standard HTML5 drag-and-drop fallback
   const handleHtmlDragOver = (e: React.DragEvent<HTMLDivElement>) => {
@@ -292,18 +322,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     setIsDragOver(false);
 
     if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      const file = e.dataTransfer.files[0];
-      const filePath = (file as File & { path?: string }).path;
-      if (filePath) {
-        try {
-          // Constant reference: COMMANDS.RESOLVE_DROPPED_PATH
-          const resolvedPath = await invoke<string>(COMMANDS.RESOLVE_DROPPED_PATH, {
-            path: filePath,
-          });
-          onChangeQuery({ target_dir: resolvedPath });
-        } catch {
-          console.error("[SearchBar] Failed to resolve dropped folder path");
+      try {
+        let updated = query.target_dir;
+        for (let i = 0; i < e.dataTransfer.files.length; i++) {
+          const file = e.dataTransfer.files[i];
+          const filePath = (file as File & { path?: string }).path;
+          if (filePath) {
+            // Constant reference: COMMANDS.RESOLVE_DROPPED_PATH
+            const resolvedPath = await invoke<string>(COMMANDS.RESOLVE_DROPPED_PATH, {
+              path: filePath,
+            });
+            updated = appendSearchPath(updated, resolvedPath);
+          }
         }
+        onChangeQuery({ target_dir: updated });
+      } catch {
+        console.error("[SearchBar] Failed to resolve dropped folder path");
       }
     }
   };
@@ -363,7 +397,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
         title: t("ui.SELECT_FOLDER_DIALOG_TITLE"),
       });
       if (selected && typeof selected === "string") {
-        onChangeQuery({ target_dir: selected });
+        onChangeQuery({ target_dir: appendSearchPath(query.target_dir, selected) });
       }
     } catch {
       console.error("[SearchBar] Failed to select folder");
@@ -461,6 +495,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               )}
             </div>
             <input
+              ref={folderInputElementRef}
               type="text"
               value={query.target_dir}
               onChange={(e) => { setCompletionDismissed(false); setOpenList(null); onChangeQuery({ target_dir: e.target.value }); }}

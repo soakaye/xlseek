@@ -16,6 +16,138 @@ pub enum PathError {
     SearchFailed,
 }
 
+/// Description: Classifies failures occurring during path string tokenization.
+/// Arguments/Returns: None. Holds error variants.
+/// Errors: None.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum PathParseError {
+    EmptyInput,
+    UnclosedQuote,
+}
+
+/// Description: Represents the outcome of resolving, validating, and partitioning search paths.
+/// Arguments/Returns: Contains valid roots and invalid path strings paired with their errors.
+/// Errors: None.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct PathResolutionResult {
+    pub valid_roots: Vec<PathBuf>,
+    pub invalid_paths: Vec<(String, PathError)>,
+}
+
+/// Description: Parses comma-separated path string into individual path tokens, respecting double-quoted segments.
+/// Arguments/Returns: Accepts `input: &str`; returns `Result<Vec<String>, PathParseError>`.
+/// Errors: Returns `PathParseError::UnclosedQuote` if a quoted segment is unclosed, or `EmptyInput` if no paths exist.
+pub fn parse_search_paths(input: &str) -> Result<Vec<String>, PathParseError> {
+    let trimmed = input.trim();
+    if trimmed.is_empty() {
+        return Err(PathParseError::EmptyInput);
+    }
+
+    let mut paths = Vec::new();
+    let mut current = String::new();
+    let mut in_quotes = false;
+    let mut chars = trimmed.chars().peekable();
+
+    while let Some(c) = chars.next() {
+        match c {
+            crate::constants::PATH_QUOTE_CHAR => {
+                if in_quotes {
+                    // Check for escaped quote ("" or \")
+                    if chars.peek() == Some(&crate::constants::PATH_QUOTE_CHAR) {
+                        chars.next();
+                        current.push(crate::constants::PATH_QUOTE_CHAR);
+                    } else {
+                        in_quotes = false;
+                    }
+                } else {
+                    in_quotes = true;
+                }
+            }
+            '\\' if in_quotes && chars.peek() == Some(&crate::constants::PATH_QUOTE_CHAR) => {
+                chars.next();
+                current.push(crate::constants::PATH_QUOTE_CHAR);
+            }
+            crate::constants::MULTI_PATH_DELIMITER if !in_quotes => {
+                let token = current.trim();
+                if !token.is_empty() {
+                    paths.push(token.to_string());
+                }
+                current.clear();
+            }
+            _ => {
+                current.push(c);
+            }
+        }
+    }
+
+    if in_quotes {
+        return Err(PathParseError::UnclosedQuote);
+    }
+
+    let token = current.trim();
+    if !token.is_empty() {
+        paths.push(token.to_string());
+    }
+
+    if paths.is_empty() {
+        return Err(PathParseError::EmptyInput);
+    }
+
+    Ok(paths)
+}
+
+/// Description: Resolves, validates, partitions, and deduplicates target paths against the filesystem.
+/// Arguments/Returns: Accepts slice of path strings and optional home directory; returns `PathResolutionResult`.
+/// Errors: None; classifies inaccessible or invalid paths into `invalid_paths` rather than panicking.
+pub fn resolve_and_partition_paths(
+    paths: &[String],
+    home_dir: Option<&Path>,
+) -> PathResolutionResult {
+    let mut valid_roots = Vec::new();
+    let mut invalid_paths = Vec::new();
+
+    for raw_path in paths {
+        let resolved = match resolve_search_path(raw_path, home_dir) {
+            Ok(p) => p,
+            Err(e) => {
+                invalid_paths.push((raw_path.clone(), e));
+                continue;
+            }
+        };
+
+        match validate_search_directory(&resolved) {
+            Ok(()) => {
+                let canonical = resolved.canonicalize().unwrap_or(resolved);
+                if !valid_roots.contains(&canonical) {
+                    valid_roots.push(canonical);
+                }
+            }
+            Err(e) => {
+                invalid_paths.push((raw_path.clone(), e));
+            }
+        }
+    }
+
+    // Prune redundant sub-paths if an ancestor directory is already in valid_roots
+    if valid_roots.len() > 1 {
+        let mut pruned: Vec<PathBuf> = Vec::new();
+        for root in &valid_roots {
+            let has_ancestor = valid_roots
+                .iter()
+                .any(|other| other != root && root.starts_with(other));
+            if !has_ancestor && !pruned.contains(root) {
+                pruned.push(root.clone());
+            }
+        }
+        valid_roots = pruned;
+    }
+
+    PathResolutionResult {
+        valid_roots,
+        invalid_paths,
+    }
+}
+
 /// Description: Expands home shorthand prefix in input path and returns search path.
 /// Arguments/Returns: Accepts input string and optional home path, returns resolved PathBuf.
 /// Errors: Returns SearchFailed if home shorthand is present but home path is not provided.
@@ -167,7 +299,8 @@ mod tests {
     #[cfg(windows)]
     use super::is_supported_completion_path;
     use super::{
-        complete_directory_path, resolve_search_path, validate_search_directory, PathError,
+        complete_directory_path, parse_search_paths, resolve_and_partition_paths,
+        resolve_search_path, validate_search_directory, PathError, PathParseError,
     };
     use std::fs;
     #[cfg(windows)]
@@ -339,6 +472,83 @@ mod tests {
         let root = temp_dir();
         assert_eq!(validate_search_directory(&root), Ok(()));
         let _ = fs::remove_dir_all(root);
+    }
+
+    /// Description: Verifies comma splitting, whitespace trimming, and empty token removal.
+    /// Arguments/Returns: None.
+    /// Errors: Panics on test failure.
+    #[test]
+    fn test_parse_search_paths_basic() {
+        let input = "  /dir/a , /dir/b  ,  ";
+        let parsed = parse_search_paths(input).unwrap();
+        assert_eq!(parsed, vec!["/dir/a", "/dir/b"]);
+    }
+
+    /// Description: Verifies that quoted paths with spaces and commas are preserved as single path units.
+    /// Arguments/Returns: None.
+    /// Errors: Panics on test failure.
+    #[test]
+    fn test_parse_search_paths_quoted() {
+        let input = r#""/path/with, comma", "/path with spaces", /normal/path"#;
+        let parsed = parse_search_paths(input).unwrap();
+        assert_eq!(
+            parsed,
+            vec!["/path/with, comma", "/path with spaces", "/normal/path"]
+        );
+    }
+
+    /// Description: Verifies escaped quotes handling in both CSV style and backslash style.
+    /// Arguments/Returns: None.
+    /// Errors: Panics on test failure.
+    #[test]
+    fn test_parse_search_paths_escaped_quotes() {
+        let input = r#""/path/with""quote", "/path/with\"backslash""#;
+        let parsed = parse_search_paths(input).unwrap();
+        assert_eq!(parsed, vec!["/path/with\"quote", "/path/with\"backslash"]);
+    }
+
+    /// Description: Verifies unclosed quote error.
+    /// Arguments/Returns: None.
+    /// Errors: Panics on test failure.
+    #[test]
+    fn test_parse_search_paths_unclosed_quote() {
+        let input = r#""/unclosed/path, /other/path"#;
+        assert_eq!(
+            parse_search_paths(input),
+            Err(PathParseError::UnclosedQuote)
+        );
+    }
+
+    /// Description: Verifies empty input error.
+    /// Arguments/Returns: None.
+    /// Errors: Panics on test failure.
+    #[test]
+    fn test_parse_search_paths_empty() {
+        assert_eq!(
+            parse_search_paths("   , ,  "),
+            Err(PathParseError::EmptyInput)
+        );
+    }
+
+    /// Description: Verifies resolve_and_partition_paths separates valid directories from invalid ones.
+    /// Arguments/Returns: None.
+    /// Errors: Panics on test failure.
+    #[test]
+    fn test_resolve_and_partition_paths() {
+        let valid_dir = temp_dir();
+        let invalid_path = "/non_existent_path_xyz_12345".to_string();
+        let paths = vec![
+            valid_dir.to_string_lossy().to_string(),
+            invalid_path.clone(),
+        ];
+
+        let result = resolve_and_partition_paths(&paths, None);
+        assert_eq!(result.valid_roots.len(), 1);
+        assert_eq!(result.invalid_paths.len(), 1);
+        assert_eq!(result.invalid_paths[0].0, invalid_path);
+        assert_eq!(result.invalid_paths[0].1, PathError::NotFound);
+
+        let _ = fs::remove_dir_all(valid_dir);
     }
 
     #[cfg(windows)]

@@ -79,6 +79,16 @@ export const PATH_COMPLETION_CONSTANTS = {
   KEYBOARD_STEP: 1,
 } as const;
 
+// Constant reference: Multi-path delimiters and quotation characters.
+export const MULTI_PATH_CONSTANTS = {
+  DELIMITER: ",",
+  DELIMITER_SPACE: ", ",
+  QUOTE: '"',
+  ESCAPED_QUOTE_CSV: '""',
+  ESCAPED_QUOTE_BACKSLASH: '\\"',
+} as const;
+
+
 // Constant reference: Standardizes keyboard key identifiers used across list navigation.
 export const KEYBOARD_KEYS = {
   ARROW_DOWN: "ArrowDown",

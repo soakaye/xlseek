@@ -233,6 +233,21 @@ pub const MAC_BUNDLE_EXCEL: &str = "com.microsoft.Excel";
 pub const MAC_BUNDLE_NUMBERS: &str = "com.apple.iWork.Numbers";
 
 // ==============================================================================
+// 7.1 Multi-Path Search Constants
+// ==============================================================================
+
+/// Delimiter separating multiple search paths.
+pub const MULTI_PATH_DELIMITER: char = ',';
+/// Delimiter string separating multiple search paths.
+pub const MULTI_PATH_DELIMITER_STR: &str = ",";
+/// Standard double quote character used for path grouping.
+pub const PATH_QUOTE_CHAR: char = '"';
+/// Error message returned when a quoted path segment is not closed.
+pub const ERR_PATH_UNCLOSED_QUOTE: &str = "Unclosed double quote in search path";
+/// Error message returned when no valid search path is specified.
+pub const ERR_NO_VALID_SEARCH_PATHS: &str = "No valid search path specified";
+
+// ==============================================================================
 // 8. Unit Tests
 // ==============================================================================
 

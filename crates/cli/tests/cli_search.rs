@@ -324,6 +324,42 @@ fn notifies_errors_in_realtime_during_async_pipeline() {
     let _ = fs::remove_dir_all(work);
 }
 
+/// Verifies that the CLI accepts multiple comma-separated paths via --path / -p.
+#[test]
+fn test_cli_search_multiple_paths_in_option() {
+    let work = unique_test_directory();
+    let dir_a = work.join("dir_a");
+    let dir_b = work.join("dir_b");
+    fs::create_dir_all(&dir_a).unwrap();
+    fs::create_dir_all(&dir_b).unwrap();
+
+    let fixture = repo_root().join("tests/fixtures/sample_report.xlsx");
+    fs::copy(&fixture, dir_a.join("sample_a.xlsx")).unwrap();
+    fs::copy(&fixture, dir_b.join("sample_b.xlsx")).unwrap();
+
+    let output_csv = work.join("output.csv");
+    let path_arg = format!("{}, {}", dir_a.display(), dir_b.display());
+
+    let result = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
+        .arg("-p")
+        .arg(&path_arg)
+        .arg("-q")
+        .arg(QUERY_TEXT)
+        .arg("-o")
+        .arg(&output_csv)
+        .output()
+        .expect("CLI process must start");
+
+    assert_eq!(result.status.code(), Some(0));
+    assert!(output_csv.exists());
+
+    let content = fs::read_to_string(&output_csv).unwrap();
+    assert!(content.contains("sample_a.xlsx"));
+    assert!(content.contains("sample_b.xlsx"));
+
+    let _ = fs::remove_dir_all(work);
+}
+
 /// Helper that invokes the CLI with path, query, format, and output arguments.
 ///
 /// ## Arguments / Returns

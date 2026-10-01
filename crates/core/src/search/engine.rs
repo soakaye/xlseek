@@ -11,7 +11,7 @@ use crate::models::{ScanProgress, ScanState, SearchMatch, SearchQuery};
 use crate::search::parser::parse_and_search_file;
 use rayon::prelude::*;
 use regex::RegexBuilder;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::Arc;
 use std::time::Instant;
@@ -231,8 +231,20 @@ impl SearchEngine {
         };
 
         let start_time = Instant::now();
-        let target_path = Path::new(&query.target_dir);
-        if !target_path.exists() || !target_path.is_dir() {
+        // Constant reference: crate::constants::ERR_PATH_UNCLOSED_QUOTE, crate::constants::ERR_NO_VALID_SEARCH_PATHS
+        let parsed_paths =
+            crate::search::path::parse_search_paths(&query.target_dir).map_err(|e| match e {
+                crate::search::path::PathParseError::UnclosedQuote => {
+                    crate::constants::ERR_PATH_UNCLOSED_QUOTE.to_string()
+                }
+                crate::search::path::PathParseError::EmptyInput => {
+                    crate::constants::ERR_NO_VALID_SEARCH_PATHS.to_string()
+                }
+            })?;
+
+        let partition_result =
+            crate::search::path::resolve_and_partition_paths(&parsed_paths, None);
+        if partition_result.valid_roots.is_empty() {
             // Constant reference: crate::constants::ERR_FILE_NOT_FOUND
             return Err(format!(
                 "{}: {}",
@@ -279,22 +291,39 @@ impl SearchEngine {
             std::sync::mpsc::sync_channel::<PathBuf>(crate::constants::CHANNEL_BUFFER_SIZE);
         let rx = Arc::new(std::sync::Mutex::new(rx));
 
+        // Forward non-fatal path errors as discovery issues
+        let discovery_issues = Arc::new(std::sync::Mutex::new(on_issue));
+        for (invalid_path, error) in partition_result.invalid_paths {
+            if let Ok(mut issues) = discovery_issues.lock() {
+                issues(crate::search::discovery::DiscoveryIssue {
+                    path: PathBuf::from(invalid_path),
+                    stage: crate::constants::SEARCH_STAGE_DISCOVERY,
+                    code: match error {
+                        crate::search::path::PathError::PermissionDenied => {
+                            crate::constants::DISCOVERY_ERROR_PERMISSION_DENIED
+                        }
+                        _ => crate::constants::DISCOVERY_ERROR_READ_FAILED,
+                    },
+                    cause: String::new(),
+                });
+            }
+        }
+
         // Producer: Directory scan in separate background thread
-        let target_dir = query.target_dir.clone();
+        let valid_roots = partition_result.valid_roots;
         let extensions = query.extensions.clone();
         let directory_mode = query.directory_mode;
         let burst_workers = query.burst_workers;
         let cancel_flag_scanner = Arc::clone(&cancel_flag);
         let discovered_count_clone = Arc::clone(&discovered_count);
         let scan_completed_clone = Arc::clone(&scan_completed);
-        let discovery_issues = Arc::new(std::sync::Mutex::new(on_issue));
         let discovery_issues_scanner = Arc::clone(&discovery_issues);
         let scanner_error = Arc::new(std::sync::Mutex::new(None::<String>));
         let scanner_error_thread = Arc::clone(&scanner_error);
 
         let scanner_handle = std::thread::spawn(move || {
             let delivery = crate::search::discovery::discover_files(
-                &[PathBuf::from(target_dir)],
+                &valid_roots,
                 &extensions,
                 directory_mode,
                 burst_workers,

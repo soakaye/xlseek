@@ -11,10 +11,7 @@ use crate::models::{
     resolve_burst_workers, ErrorCode, ScanProgress, ScanState, SearchMatch, SearchQuery,
 };
 use crate::search::engine::SearchEngine;
-use crate::search::path::{
-    complete_directory_path as complete_path, resolve_search_path, validate_search_directory,
-    PathError,
-};
+use crate::search::path::complete_directory_path as complete_path;
 use regex::RegexBuilder;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, Manager, State};
@@ -50,12 +47,20 @@ pub async fn start_search(
         validate_required_search_fields(&query)?;
         validate_directory_settings(&query)?;
         validate_search_regex(&query).map_err(|code| CommandError { code })?;
-        let target_path = resolve_search_path(&query.target_dir, home_dir.as_deref())
-            .map_err(path_error_to_command_error)?;
-        validate_search_directory(&target_path).map_err(path_error_to_command_error)?;
-        let mut validated_query = query;
-        validated_query.target_dir = target_path.to_string_lossy().into_owned();
-        Ok::<SearchQuery, CommandError>(validated_query)
+        let parsed_paths = xlseek_core::search::path::parse_search_paths(&query.target_dir)
+            .map_err(|_| CommandError {
+                code: ErrorCode::SearchFailed,
+            })?;
+        let partition = xlseek_core::search::path::resolve_and_partition_paths(
+            &parsed_paths,
+            home_dir.as_deref(),
+        );
+        if partition.valid_roots.is_empty() {
+            return Err(CommandError {
+                code: ErrorCode::PathNotFound,
+            });
+        }
+        Ok::<SearchQuery, CommandError>(query)
     })
     .await
     .map_err(|_| CommandError {
@@ -240,26 +245,6 @@ fn validate_search_regex(query: &SearchQuery) -> Result<(), ErrorCode> {
         .build()
         .map(|_| ())
         .map_err(|_| ErrorCode::InvalidRegex)
-}
-
-/// ## Description
-/// Converts internal PathError into structured CommandError for Tauri IPC.
-///
-/// ## Arguments
-/// - `error`: `PathError` - Internal path error
-///
-/// ## Returns
-/// - `CommandError`: Mapped command error
-///
-/// ## Errors / Exceptions
-/// Does not panic.
-fn path_error_to_command_error(error: PathError) -> CommandError {
-    let code = match error {
-        PathError::NotFound => ErrorCode::PathNotFound,
-        PathError::PermissionDenied => ErrorCode::PermissionDenied,
-        PathError::SearchFailed => ErrorCode::SearchFailed,
-    };
-    CommandError { code }
 }
 
 /// ## Description

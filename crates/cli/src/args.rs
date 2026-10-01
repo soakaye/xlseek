@@ -252,8 +252,13 @@ where
                     constants::CLI_PATH_FIELD
                 )
             })?;
-            let resolved = resolve_input_path(path_arg)?;
-            (query, vec![resolved])
+            let parsed_paths = xlseek_core::search::path::parse_search_paths(path_arg)
+                .map_err(|_| constants::ERR_CLI_INPUT_PATH.to_string())?;
+            let mut resolved_paths = Vec::with_capacity(parsed_paths.len());
+            for p in parsed_paths {
+                resolved_paths.push(resolve_input_path(&p)?);
+            }
+            (query, resolved_paths)
         }
         [first_pos] => {
             // Single positional argument: 1st argument is query
@@ -271,8 +276,13 @@ where
                     constants::CLI_PATH_FIELD
                 )
             })?;
-            let resolved = resolve_input_path(path_arg)?;
-            (first_pos.clone(), vec![resolved])
+            let parsed_paths = xlseek_core::search::path::parse_search_paths(path_arg)
+                .map_err(|_| constants::ERR_CLI_INPUT_PATH.to_string())?;
+            let mut resolved_paths = Vec::with_capacity(parsed_paths.len());
+            for p in parsed_paths {
+                resolved_paths.push(resolve_input_path(&p)?);
+            }
+            (first_pos.clone(), resolved_paths)
         }
         [first_pos, remaining_paths @ ..] => {
             // Two or more positional arguments: 1st is query, 2nd+ are paths
