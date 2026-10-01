@@ -18,7 +18,6 @@ pub mod constants;
 pub mod output;
 
 use args::{CliOptions, CliOutputTarget, ParseOutcome};
-use exlgrep_core::models::{SearchIssue, SearchMatch, SearchReport};
 use same_file::Handle;
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
@@ -26,6 +25,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::sync_channel;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
+use xlseek_core::models::{SearchIssue, SearchMatch, SearchReport};
 
 /// Parses process arguments and executes Excel search/save without initializing a GUI.
 /// Suppresses summary text when streaming directly to stdout.
@@ -40,7 +40,7 @@ where
     I: IntoIterator<Item = S>,
     S: Into<std::ffi::OsString>,
 {
-    let catalogs = match exlgrep_core::i18n::load_embedded_catalogs() {
+    let catalogs = match xlseek_core::i18n::load_embedded_catalogs() {
         Ok(catalogs) => catalogs,
         Err(error) => {
             eprintln!("{}: {error}", constants::CLI_ERROR_LABEL_EN);
@@ -60,6 +60,9 @@ where
                     // Do not print summary in stdout mode to avoid breaking pipe streams
                     if !is_stdout {
                         if let Some(ref path) = output_path {
+                            let raw_path = path.display().to_string();
+                            let display_path =
+                                xlseek_core::export::normalize_export_path(&raw_path);
                             let summary = translate(
                                 &catalogs,
                                 &language,
@@ -73,10 +76,7 @@ where
                                 constants::CLI_SUMMARY_MATCHES_PLACEHOLDER,
                                 &report.matches_found.to_string(),
                             )
-                            .replace(
-                                constants::CLI_SUMMARY_PATH_PLACEHOLDER,
-                                &path.display().to_string(),
-                            );
+                            .replace(constants::CLI_SUMMARY_PATH_PLACEHOLDER, &display_path);
                             println!("{summary}");
                         }
                     }
@@ -204,7 +204,7 @@ fn execute(
                 }
             }
 
-            let discovery = exlgrep_core::search::discovery::discover_files(
+            let discovery = xlseek_core::search::discovery::discover_files(
                 &directory_roots,
                 &extensions,
                 directory_mode,
@@ -265,7 +265,7 @@ fn execute(
                         };
                         scanned_consumer.fetch_add(1, Ordering::Relaxed);
                         match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                            exlgrep_core::search::parser::parse_and_search_file(
+                            xlseek_core::search::parser::parse_and_search_file(
                                 &path, query, regex_ref, None,
                             )
                         })) {
@@ -351,7 +351,7 @@ fn execute(
         }
         CliOutputTarget::Stdout => {
             let mut stdout = std::io::stdout().lock();
-            exlgrep_core::export::write_csv_to_writer(
+            xlseek_core::export::write_csv_to_writer(
                 &mut stdout,
                 &matches_list,
                 &options.language,
@@ -385,7 +385,7 @@ fn translate(
     language: &str,
     key: &str,
 ) -> String {
-    exlgrep_core::i18n::resolve_catalog_text(catalogs, language, key)
+    xlseek_core::i18n::resolve_catalog_text(catalogs, language, key)
         .unwrap_or_else(|| constants::CLI_FALLBACK_ENGLISH.to_string())
 }
 

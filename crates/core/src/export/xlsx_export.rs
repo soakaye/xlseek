@@ -119,8 +119,9 @@ pub fn export_to_xlsx(
                 // Constant reference: crate::constants::ERR_XLSX_WRITE
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
             })?;
+        let clean_path = crate::export::normalize_export_path(&item.full_path);
         worksheet
-            .write_string_with_format(r, 2, &item.full_path, &cell_format)
+            .write_string_with_format(r, 2, clean_path.as_ref(), &cell_format)
             .map_err(|e| {
                 // Constant reference: crate::constants::ERR_XLSX_WRITE
                 format!("{}: {}", crate::constants::ERR_XLSX_WRITE, e)
@@ -184,7 +185,7 @@ mod localization_tests {
     use calamine::Reader;
     use std::collections::BTreeMap;
 
-    const TEST_OUTPUT_PREFIX: &str = "exlgrep-i18n-test";
+    const TEST_OUTPUT_PREFIX: &str = "xlseek-i18n-test";
 
     /// ## Description
     /// Verifies that Excel column headers use the requested catalog language.
@@ -259,5 +260,65 @@ mod localization_tests {
             super::export_to_xlsx("", &[], "fr", &BTreeMap::new()),
             Err(crate::constants::ERR_INVALID_LANGUAGE.to_string())
         );
+    }
+
+    /// ## Description
+    /// Verifies that `export_to_xlsx` strips Windows verbatim prefixes from full_path in worksheets.
+    ///
+    /// ## Arguments / Returns
+    /// No arguments. Outputs a test SearchMatch to a temporary .xlsx file and inspects column 2.
+    ///
+    /// ## Errors / Exceptions
+    /// Panics on assertion failure.
+    #[test]
+    fn export_to_xlsx_strips_windows_verbatim_paths() {
+        let mut english = BTreeMap::new();
+        for key in crate::constants::EXPORT_HEADER_KEYS {
+            english.insert(key.to_string(), key.to_string());
+        }
+        english.insert(
+            crate::constants::EXPORT_SHEET_NAME_KEY.to_string(),
+            "Results".to_string(),
+        );
+        english.insert(
+            crate::constants::EXPORT_MATCH_VALUE_KEY.to_string(),
+            "Match".to_string(),
+        );
+        let catalogs = BTreeMap::from([(crate::constants::LANGUAGE_EN.to_string(), english)]);
+
+        let item = crate::models::SearchMatch {
+            id: 1,
+            file_name: "test.xlsx".to_string(),
+            full_path: r"\\?\C:\Projects\test.xlsx".to_string(),
+            sheet_name: "Sheet1".to_string(),
+            cell_address: "A1".to_string(),
+            row_index: 0,
+            col_index: 0,
+            col_name: "A".to_string(),
+            shape_name: None,
+            match_type: crate::models::MatchType::CellValue,
+            sheet_hidden: false,
+            snippet: "foo".to_string(),
+            full_content: "foo".to_string(),
+            formula: None,
+            sheets_in_workbook: vec!["Sheet1".to_string()],
+        };
+
+        let path = std::env::temp_dir().join(format!("{TEST_OUTPUT_PREFIX}-verbatim-strip.xlsx"));
+        super::export_to_xlsx(
+            path.to_str().unwrap(),
+            &[item],
+            crate::constants::LANGUAGE_EN,
+            &catalogs,
+        )
+        .unwrap();
+
+        let mut workbook = calamine::open_workbook_auto(&path).unwrap();
+        let sheet = workbook.worksheet_range_at(0).unwrap().unwrap();
+        let actual_path = sheet.get_value((1, 2)).map(ToString::to_string).unwrap();
+        assert_eq!(actual_path, r"C:\Projects\test.xlsx");
+        assert!(!actual_path.contains(r"\\?\"));
+
+        std::fs::remove_file(path).unwrap();
     }
 }

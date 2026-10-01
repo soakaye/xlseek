@@ -54,8 +54,8 @@
 
 ```bash
 # リポジトリのクローン
-git clone https://github.com/soakaye/exgrep.git
-cd exgrep
+git clone https://github.com/soakaye/xlseek.git
+cd xlseek
 
 # フロントエンド依存関係のインストール
 npm install
@@ -155,9 +155,9 @@ cargo fmt --check
 ## ディレクトリ構成
 
 ```text
-exgrep/
+xlseek/
 ├── crates/
-│   ├── core/           # exlgrep-core: 共有検索エンジン、パーサー、i18n、データモデル、エクスポート処理
+│   ├── core/           # xlseek-core: 共有検索エンジン、パーサー、i18n、データモデル、エクスポート処理
 │   └── cli/            # xlseek-cli: 独立 CLI コマンドライン実行バイナリ
 ├── src/                # React / TypeScript フロントエンド
 │   ├── components/     # UI コンポーネント群 (検索、結果、プレビュー、About、ダイアログ等)

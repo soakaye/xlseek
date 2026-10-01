@@ -52,13 +52,13 @@ Every file, module, struct, class, function, and method **MUST** have a header c
 ## 3. Directory Structure and Responsibilities
 
 ```text
-exlgrep/
+xlseek/
 ├── AGENTS.md                  # This file (AI agent code of conduct)
 ├── README.md                  # Project overview and feature descriptions
 ├── Cargo.toml                 # Cargo workspace definition (crates/core, crates/cli, src-tauri)
 ├── package.json               # Frontend dependencies and npm scripts
 ├── crates/                    # Shared backend core and standalone CLI crate
-│   ├── core/                  # Search engine, parsers, exports, shared models (exlgrep-core)
+│   ├── core/                  # Search engine, parsers, exports, shared models (xlseek-core)
 │   │   ├── Cargo.toml
 │   │   ├── locales/           # Source translation catalogs (ja.yml, en.yml)
 │   │   ├── src/               # lib.rs, constants.rs, models/, search/, export/, i18n.rs
@@ -81,7 +81,7 @@ exlgrep/
 │       ├── results/           # Search results table (virtual scrolling)
 │       └── search/            # Search input bar, extension toggles, and controls
 ├── src-tauri/                 # Tauri v2 desktop GUI application (xlseek)
-│   ├── Cargo.toml             # Rust crate dependencies (depends on exlgrep-core)
+│   ├── Cargo.toml             # Rust crate dependencies (depends on xlseek-core)
 │   ├── tauri.conf.json        # Tauri configuration (window settings, permissions)
 │   ├── capabilities/          # Tauri v2 security capabilities (default.json)
 │   └── src/

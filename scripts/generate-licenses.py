@@ -5,7 +5,7 @@
 ## Description
 Extracts and consolidates license and copyright metadata for all production runtime third-party
 packages (Rust runtime crates and npm production dependencies) statically linked or bundled
-into the Excel Grep application binary, outputting a static JSON file (src/constants/licenses.json).
+into the Excel Seek application binary, outputting a static JSON file (src/constants/licenses.json).
 
 Development-only packages (devDependencies, build-dependencies, test utilities) are excluded.
 Packages sharing identical names with distinct versions are cataloged side-by-side using
@@ -241,7 +241,7 @@ def collect_rust_licenses(repo_root: Path) -> List[Dict[str, Any]]:
         name = pkg.get("name", "")
         version = pkg.get("version", "")
         # Exclude workspace root crates
-        if name in ("exgrep", "exlgrep", "xlseek", "xlseek-cli"):
+        if name in ("xlseek", "xlseek-core", "xlseek-cli"):
             continue
 
         license_spdx = pkg.get("license") or "MIT OR Apache-2.0"
@@ -302,7 +302,7 @@ def collect_npm_licenses(repo_root: Path) -> List[Dict[str, Any]]:
 
     for key, val in data.items():
         # key format: "name@version" or "@scope/name@version"
-        if key.startswith("exgrep@") or key.startswith("exlgrep@") or key.startswith("xlseek@"):
+        if key.startswith("xlseek@"):
             continue
 
         # Split at the last '@' to extract name and version
@@ -350,7 +350,7 @@ def collect_npm_licenses(repo_root: Path) -> List[Dict[str, Any]]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Collect third-party licenses for Excel Grep.")
+    parser = argparse.ArgumentParser(description="Collect third-party licenses for Excel Seek.")
     parser.add_argument(
         "--output",
         "-o",
@@ -363,7 +363,7 @@ def main() -> int:
     repo_root = Path(__file__).resolve().parent.parent
     output_path = args.output or (repo_root / "src" / "constants" / "licenses.json")
 
-    print(f"=== Excel Grep third-party license collection started ===")
+    print(f"=== Excel Seek third-party license collection started ===")
     print(f"Project root: {repo_root}")
 
     # 1. Collect Rust crates

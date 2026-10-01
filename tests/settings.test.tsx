@@ -144,4 +144,13 @@ describe("SettingsDialog", () => {
     expect(field.getAttribute("aria-describedby")).toContain("history-limit-error");
     expect(screen.getByRole("alert").textContent).toContain("0 through 50");
   });
+
+  it("renders history limit label and input within a horizontal flex row", () => {
+    render(<LocaleProvider value="en"><SettingsDialog {...settingsProps} /></LocaleProvider>);
+    fireEvent.click(screen.getByRole("tab", { name: "Search settings · Save to apply" }));
+    const field = screen.getByLabelText("Search history limit");
+    expect(field.className).toContain("w-24");
+    const flexRow = field.parentElement;
+    expect(flexRow?.className).toContain("flex items-center justify-between");
+  });
 });

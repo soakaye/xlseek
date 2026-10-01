@@ -1,4 +1,4 @@
-//! # Excel Grep Core Library (lib.rs)
+//! # Excel Seek Core Library (lib.rs)
 //!
 //! ## Description
 //! Initializes the Tauri desktop application, registers plugins (dialog, os, shell, i18n),
@@ -6,7 +6,7 @@
 pub mod commands;
 pub mod constants;
 
-pub use exlgrep_core::{export, i18n, models, search};
+pub use xlseek_core::{export, i18n, models, search};
 
 use commands::AppState;
 use search::engine::SearchEngine;

@@ -892,27 +892,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "exlgrep-core"
-version = "0.1.0"
-dependencies = [
- "calamine",
- "cfb",
- "chrono",
- "csv",
- "encoding_rs",
- "quick-xml 0.41.0",
- "rayon",
- "regex",
- "rust_xlsxwriter",
- "same-file",
- "serde",
- "serde_json",
- "serde_yaml",
- "walkdir",
- "zip 0.6.6",
-]
-
-[[package]]
 name = "fast-float2"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5071,7 +5050,6 @@ dependencies = [
  "chrono",
  "csv",
  "encoding_rs",
- "exlgrep-core",
  "open",
  "quick-xml 0.41.0",
  "rayon",
@@ -5089,6 +5067,7 @@ dependencies = [
  "tauri-plugin-shell",
  "walkdir",
  "winreg",
+ "xlseek-core",
  "zip 0.6.6",
 ]
 
@@ -5097,11 +5076,32 @@ name = "xlseek-cli"
 version = "0.1.0"
 dependencies = [
  "calamine",
- "exlgrep-core",
  "rayon",
  "regex",
  "same-file",
  "walkdir",
+ "xlseek-core",
+]
+
+[[package]]
+name = "xlseek-core"
+version = "0.1.0"
+dependencies = [
+ "calamine",
+ "cfb",
+ "chrono",
+ "csv",
+ "encoding_rs",
+ "quick-xml 0.41.0",
+ "rayon",
+ "regex",
+ "rust_xlsxwriter",
+ "same-file",
+ "serde",
+ "serde_json",
+ "serde_yaml",
+ "walkdir",
+ "zip 0.6.6",
 ]
 
 [[package]]

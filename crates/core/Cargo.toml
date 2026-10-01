@@ -1,18 +1,16 @@
-# Package manifest for exlgrep-core shared library.
-# Inputs: library source files under src/; output: rlib crate exlgrep_core.
+# Package manifest for xlseek-core shared library.
+# Inputs: library source files under src/; output: rlib crate xlseek_core.
 # Errors: Cargo reports compilation or dependency resolution errors.
-# History:
-# - v1.0.0 (2026-09-29, Antigravity): Initial creation of exlgrep-core shared crate.
 
 [package]
-name = "exlgrep-core"
+name = "xlseek-core"
 version = "0.1.0"
-description = "Core search engine, parser, models, and export library for Excel Grep"
+description = "Core search engine, parser, models, and export library for Excel Seek"
 authors = ["soakaye"]
 edition = "2021"
 
 [lib]
-name = "exlgrep_core"
+name = "xlseek_core"
 crate-type = ["rlib"]
 
 [dependencies]

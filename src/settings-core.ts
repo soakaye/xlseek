@@ -3,7 +3,7 @@
  * Arguments & Returns: Accepts candidate settings and optional error callback; returns normalized settings or save success.
  * Errors: Storage, serialization, and malformed JSON failures are caught and reported through the callback.
  */
-import { DEFAULT_OPTIONS_STORAGE_KEY, SEARCH_HISTORY_CONSTANTS, DIRECTORY_SEARCH_CONSTANTS } from "./constants";
+import { DEFAULT_OPTIONS_STORAGE_KEY, LEGACY_DEFAULT_OPTIONS_STORAGE_KEY, SEARCH_HISTORY_CONSTANTS, DIRECTORY_SEARCH_CONSTANTS } from "./constants";
 import { isDefaultSearchOptions, normalizeDefaultSearchOptions, resetDefaultSearchOptions } from "./default-options-core";
 import { DefaultSearchOptions } from "./types/defaultOptions";
 
@@ -64,9 +64,20 @@ function normalizeEntries(value: unknown, limit: number): string[] {
 export function loadSavedSettings(onStorageError?: () => void): SavedSettings {
   try {
     // Constant reference: SEARCH_HISTORY_CONSTANTS.STORAGE_KEY is the single settings record.
-    const raw = window.localStorage.getItem(SEARCH_HISTORY_CONSTANTS.STORAGE_KEY);
+    let raw = window.localStorage.getItem(SEARCH_HISTORY_CONSTANTS.STORAGE_KEY);
     if (!raw) {
-      const legacyRaw = window.localStorage.getItem(DEFAULT_OPTIONS_STORAGE_KEY);
+      for (const legacyKey of SEARCH_HISTORY_CONSTANTS.LEGACY_STORAGE_KEYS) {
+        const legacyVal = window.localStorage.getItem(legacyKey);
+        if (legacyVal) {
+          raw = legacyVal;
+          window.localStorage.setItem(SEARCH_HISTORY_CONSTANTS.STORAGE_KEY, legacyVal);
+          break;
+        }
+      }
+    }
+    if (!raw) {
+      const legacyRaw = window.localStorage.getItem(DEFAULT_OPTIONS_STORAGE_KEY) ??
+        window.localStorage.getItem(LEGACY_DEFAULT_OPTIONS_STORAGE_KEY);
       const legacyOptions = legacyRaw ? normalizeDefaultSearchOptions(JSON.parse(legacyRaw)) : resetDefaultSearchOptions();
       return { ...initialSettings(), defaultOptions: legacyOptions, rememberedBurstWorkers: legacyOptions.burst_workers };
     }

@@ -96,7 +96,7 @@ pub const CLI_DEFAULT_INCLUDE_HIDDEN: bool = false;
 pub const CLI_FORMAT_CSV: &str = "csv";
 pub const CLI_FORMAT_XLSX: &str = "xlsx";
 pub const CLI_OUTPUT_SUFFIX: &str = ".tmp";
-pub const CLI_TEMP_DIRECTORY_PREFIX: &str = ".exlgrep-export-";
+pub const CLI_TEMP_DIRECTORY_PREFIX: &str = ".xlseek-export-";
 pub const CLI_TEMP_FILE_NAME: &str = "result.tmp";
 pub const CLI_TEMP_CREATE_ATTEMPTS: u32 = 16;
 pub const CLI_EXIT_SUCCESS: i32 = 0;
@@ -199,7 +199,7 @@ pub const CLI_VALUE_OPTIONS: [&str; 15] = [
     CLI_DIRECTORY_MODE_FIELD,
     CLI_BURST_WORKERS_FIELD,
 ];
-pub const CLI_TEST_OUTPUT_NAME: &str = "exlgrep-cli-args-test.csv";
+pub const CLI_TEST_OUTPUT_NAME: &str = "xlseek-cli-args-test.csv";
 pub const CLI_TEST_OVERWRITE_OPTION: &str = "--overwrite";
 pub const CLI_TEST_HYPHEN_QUERY: &str = "--needle";
 pub const CLI_TEST_COMMENT_QUERY: &str = "財務報告レビュー対象セル";
@@ -449,6 +449,12 @@ pub const LOG_SEARCH_FAILED: &str = "[start_search] Search engine failed";
 pub const HOME_PATH_PREFIX_UNIX: &str = "~/";
 /// Constant reference: Windows home abbreviation path prefix.
 pub const HOME_PATH_PREFIX_WINDOWS: &str = "~\\";
+/// Constant reference: Windows verbatim extended-length prefix.
+pub const VERBATIM_PATH_PREFIX_WINDOWS: &str = r"\\?\";
+/// Constant reference: Windows verbatim UNC extended-length prefix.
+pub const VERBATIM_UNC_PATH_PREFIX_WINDOWS: &str = r"\\?\UNC\";
+/// Constant reference: Standard Windows UNC prefix.
+pub const STANDARD_UNC_PREFIX_WINDOWS: &str = r"\\";
 /// Constant reference: Maximum suggestions returned for directory completion.
 pub const MAX_PATH_COMPLETION_RESULTS: usize = 10;
 pub const LOG_EVENT_EMIT_FAILED: &str = "Failed to emit Tauri event";

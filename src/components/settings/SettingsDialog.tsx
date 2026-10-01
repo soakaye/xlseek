@@ -237,10 +237,14 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
           ) : (
             <section role="tabpanel" id={SETTINGS_DIALOG_IDS.SAVED_PANEL} aria-labelledby={`${SETTINGS_DIALOG_IDS.TAB_PREFIX}${SETTINGS_PAGES.SAVED}`} aria-describedby={SETTINGS_DIALOG_IDS.SAVED_DESCRIPTION}>
               <p id={SETTINGS_DIALOG_IDS.SAVED_DESCRIPTION} className="mb-4 text-sm text-zinc-400">{t(SETTINGS_TRANSLATION_KEYS.SAVED_DESCRIPTION)}</p>
-              <label htmlFor={SEARCH_HISTORY_CONSTANTS.INPUT_ID} className="mb-2 block text-sm font-medium">{t("ui.HISTORY_LIMIT_LABEL")}</label>
-              <input id={SEARCH_HISTORY_CONSTANTS.INPUT_ID} type="number" min={SEARCH_HISTORY_CONSTANTS.MIN_ENTRIES} max={SEARCH_HISTORY_CONSTANTS.MAX_ENTRIES} step={SEARCH_HISTORY_CONSTANTS.STEP} value={historyInput} disabled={saving} aria-invalid={!historyValid} aria-describedby={`${SETTINGS_DIALOG_IDS.HISTORY_HELP} ${SETTINGS_DIALOG_IDS.HISTORY_ERROR}`} onChange={(event) => setHistoryInput(event.target.value)} className="w-full rounded border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm" />
-              <p id={SETTINGS_DIALOG_IDS.HISTORY_HELP} className="mt-1 text-xs text-zinc-400">{t("ui.HISTORY_LIMIT_DESCRIPTION")}</p>
-              {!historyValid && <p id={SETTINGS_DIALOG_IDS.HISTORY_ERROR} role="alert" className="mt-1 text-xs text-amber-400">{t(SETTINGS_TRANSLATION_KEYS.HISTORY_RANGE_ERROR)}</p>}
+              <div className="mb-5">
+                <div className="flex items-center justify-between gap-4">
+                  <label htmlFor={SEARCH_HISTORY_CONSTANTS.INPUT_ID} className="text-sm font-medium">{t("ui.HISTORY_LIMIT_LABEL")}</label>
+                  <input id={SEARCH_HISTORY_CONSTANTS.INPUT_ID} type="number" min={SEARCH_HISTORY_CONSTANTS.MIN_ENTRIES} max={SEARCH_HISTORY_CONSTANTS.MAX_ENTRIES} step={SEARCH_HISTORY_CONSTANTS.STEP} value={historyInput} disabled={saving} aria-invalid={!historyValid} aria-describedby={`${SETTINGS_DIALOG_IDS.HISTORY_HELP} ${SETTINGS_DIALOG_IDS.HISTORY_ERROR}`} onChange={(event) => setHistoryInput(event.target.value)} className="w-24 rounded border border-zinc-700 bg-zinc-800 px-3 py-2 text-sm focus:border-emerald-500 focus:outline-none" />
+                </div>
+                <p id={SETTINGS_DIALOG_IDS.HISTORY_HELP} className="mt-2 text-xs text-zinc-400">{t("ui.HISTORY_LIMIT_DESCRIPTION")}</p>
+                {!historyValid && <p id={SETTINGS_DIALOG_IDS.HISTORY_ERROR} role="alert" className="mt-2 text-xs text-amber-400">{t(SETTINGS_TRANSLATION_KEYS.HISTORY_RANGE_ERROR)}</p>}
+              </div>
 
               <fieldset className="mt-6 border-t border-zinc-800 pt-4">
                 <legend className="mb-1 text-sm font-medium">{t("ui.DEFAULT_OPTIONS_TITLE")}</legend>
