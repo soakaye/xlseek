@@ -94,6 +94,9 @@ worktrees/
 .cache/
 .tmp/
 tmp/
+.agents
+.agents/
+
 
 # Node.js / Frontend
 node_modules/
