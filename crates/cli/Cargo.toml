@@ -4,7 +4,7 @@
 
 [package]
 name = "xlseek-cli"
-version = "0.1.0"
+version = "1.0.0"
 description = "Standalone command-line interface for Excel Seek"
 authors = ["soakaye"]
 edition = "2021"

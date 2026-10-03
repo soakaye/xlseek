@@ -4966,7 +4966,7 @@ dependencies = [
 
 [[package]]
 name = "xlseek"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "calamine",
  "cfb 0.7.3",
@@ -4996,7 +4996,7 @@ dependencies = [
 
 [[package]]
 name = "xlseek-cli"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "calamine",
  "rayon",
@@ -5008,7 +5008,7 @@ dependencies = [
 
 [[package]]
 name = "xlseek-core"
-version = "0.1.0"
+version = "1.0.0"
 dependencies = [
  "calamine",
  "cfb 0.7.3",

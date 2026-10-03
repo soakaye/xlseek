@@ -22,6 +22,13 @@ export default tseslint.config(
   {
     files: ["**/*.{ts,tsx}"],
     plugins: { "react-hooks": reactHooks },
-    rules: { ...reactHooks.configs.recommended.rules },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      // Disable React 19 Compiler rules for React 18 project
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/incompatible-library": "off",
+      "react-hooks/purity": "off",
+      "react-hooks/refs": "off",
+    },
   },
 );
