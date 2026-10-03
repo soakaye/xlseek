@@ -39,6 +39,9 @@
       "icons/icon.ico"
     ],
     "copyright": "Copyright © 2026 soakaye",
-    "publisher": "soakaye"
+    "publisher": "soakaye",
+    "macOS": {
+      "signingIdentity": "-"
+    }
   }
 }
