@@ -1,0 +1,29 @@
+# Package manifest for xlseek-cli binary.
+# Inputs: CLI source files under src/; output: executable binary xlseek-cli.
+# Errors: Cargo reports compilation or dependency resolution errors.
+
+[package]
+name = "xlseek-cli"
+version = "0.1.0"
+description = "Standalone command-line interface for Excel Seek"
+authors = ["soakaye"]
+edition = "2021"
+default-run = "xlseek-cli"
+
+[lib]
+name = "xlseek_cli"
+path = "src/lib.rs"
+
+[[bin]]
+name = "xlseek-cli"
+path = "src/main.rs"
+
+[dependencies]
+xlseek-core = { path = "../core" }
+same-file = "1.0.6"
+walkdir = "2.5"
+rayon = "1.10"
+regex = "1.10"
+
+[dev-dependencies]
+calamine = "0.36"

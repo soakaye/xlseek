@@ -1,0 +1,58 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "PackageLicenseRecordList",
+  "description": "Schema for bundled static license dataset containing third-party OSS dependencies",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": [
+      "id",
+      "name",
+      "version",
+      "source",
+      "license",
+      "license_text"
+    ],
+    "properties": {
+      "id": {
+        "type": "string",
+        "description": "Unique identifier formatted as {name}@{version}",
+        "pattern": "^.+@.+$"
+      },
+      "name": {
+        "type": "string",
+        "description": "Package or crate name",
+        "minLength": 1
+      },
+      "version": {
+        "type": "string",
+        "description": "Package version string",
+        "minLength": 1
+      },
+      "source": {
+        "type": "string",
+        "enum": ["rust", "npm"],
+        "description": "Origin of the package: rust crate or npm package"
+      },
+      "license": {
+        "type": "string",
+        "description": "SPDX identifier or license name (e.g. MIT, Apache-2.0)",
+        "minLength": 1
+      },
+      "author": {
+        "type": ["string", "null"],
+        "description": "Author, publisher, or copyright notice"
+      },
+      "repository": {
+        "type": ["string", "null"],
+        "description": "URL to source repository or package homepage"
+      },
+      "license_text": {
+        "type": "string",
+        "description": "Full verbatim license text",
+        "minLength": 1
+      }
+    },
+    "additionalProperties": false
+  }
+}

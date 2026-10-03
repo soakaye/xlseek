@@ -1,0 +1,124 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "MultiPlatformTauriIpcContracts",
+  "description": "Tauri IPC Command Contracts for Multi-Platform macOS and Windows Excel Grep",
+  "version": "1.0.0",
+  "commands": {
+    "open_in_folder": {
+      "description": "対象ファイルをファイルマネージャー（macOSではFinder、Windowsではエクスプローラー）で選択・ハイライト表示する",
+      "parameters": {
+        "file_path": {
+          "type": "string",
+          "description": "対象ファイルの完全パス"
+        }
+      },
+      "returns": {
+        "type": "null"
+      },
+      "errors": {
+        "type": "string",
+        "description": "ファイルが存在しない、または起動失敗時のエラーメッセージ"
+      }
+    },
+    "get_supported_apps": {
+      "description": "指定された拡張子（.xlsx/.xls等）をサポートするインストール済み表計算アプリ一覧をOS（macOS/Windows）から取得する",
+      "parameters": {
+        "extension": {
+          "type": "string",
+          "description": "対象の拡張子（例: '.xlsx', '.xls'）",
+          "default": ".xlsx"
+        }
+      },
+      "returns": {
+        "type": "array",
+        "items": {
+          "$ref": "#/definitions/SupportedApp"
+        }
+      }
+    },
+    "launch_associated_app": {
+      "description": "指定されたファイルパスを、OS既定アプリまたは指定されたアプリケーション（.app/.exe）で起動する",
+      "parameters": {
+        "file_path": {
+          "type": "string",
+          "description": "起動対象ファイルの完全パス"
+        },
+        "app_path": {
+          "type": "string",
+          "nullable": true,
+          "description": "起動に使用するアプリケーションパス（nullの場合はOS既定アプリで起動）"
+        }
+      },
+      "returns": {
+        "type": "null"
+      },
+      "errors": {
+        "type": "string",
+        "description": "起動失敗時のエラーメッセージ"
+      }
+    },
+    "show_open_with_dialog": {
+      "description": "対象ファイルに対して OS ネイティブのアプリ選択ダイアログ（macOSでは/Applications選択、WindowsではOpenAs_RunDLL）を呼び出す",
+      "parameters": {
+        "file_path": {
+          "type": "string",
+          "description": "対象ファイルの完全パス"
+        }
+      },
+      "returns": {
+        "type": "null"
+      },
+      "errors": {
+        "type": "string",
+        "description": "ダイアログ呼び出し・起動失敗時のエラーメッセージ"
+      }
+    },
+    "resolve_dropped_path": {
+      "description": "ドラッグ＆ドロップされたパスから有効な検索対象ディレクトリパスを解決する（ディレクトリならそのまま、ファイルなら親ディレクトリを返す。POSIX/Windowsパス双方対応）",
+      "parameters": {
+        "path": {
+          "type": "string",
+          "description": "ドロップされたファイルまたはフォルダの完全パス"
+        }
+      },
+      "returns": {
+        "type": "string",
+        "description": "解決されたディレクトリの完全パス"
+      },
+      "errors": {
+        "type": "string",
+        "description": "パスが存在しない場合のエラー"
+      }
+    }
+  },
+  "definitions": {
+    "SupportedApp": {
+      "type": "object",
+      "required": ["id", "name", "executable_path", "is_default"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "アプリケーション識別子 (macOS: Bundle ID / App名, Windows: ProgID / Exe名)"
+        },
+        "name": {
+          "type": "string",
+          "description": "ユーザー向け表示名"
+        },
+        "executable_path": {
+          "type": "string",
+          "description": "アプリケーションの完全パス (.app または .exe)"
+        },
+        "is_default": {
+          "type": "boolean",
+          "description": "現在OSの既定アプリであるかどうか"
+        },
+        "icon_hint": {
+          "type": "string",
+          "nullable": true,
+          "enum": ["excel", "numbers", "calc", "generic"],
+          "description": "UI表示用のアイコンヒント"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,11 @@
+# Workspace manifest for xlseek (core, cli, and tauri packages).
+# Inputs: Rust packages under crates/core, crates/cli, and src-tauri; output: shared Cargo workspace and root Cargo.lock.
+# Errors: Cargo reports missing or invalid member manifests during metadata/build commands.
+
+[workspace]
+members = [
+    "crates/core",
+    "crates/cli",
+    "src-tauri",
+]
+resolver = "2"

@@ -1,0 +1,244 @@
+# Description: Translation catalog used for Excel Grep UI, menus, and export outputs.
+# Arguments & Returns: Accepts dotted keys and string values, outputting locale maps for plugins.
+# Errors: Invalid YAML fails during plugin loading and falls back to default catalog.
+_version: 1
+ui.APP_TITLE: Excel Seek
+ui.SEARCHING: Searching...
+ui.SEARCHING_DIR: Discovering
+ui.STATUS_IDLE: Ready
+ui.STATUS_WAITING: Waiting
+ui.STATUS_SCAN_PREPARING: Preparing scan...
+ui.STATUS_DISCOVERING_FILES: Discovering and scanning files...
+ui.STATUS_DISCOVERING_PREFIX: Discovering
+ui.STATUS_SCANNING_PREFIX: "Scanning: "
+ui.STATUS_COMPLETED_PREFIX: "Completed: "
+ui.FOLDER_SCANNING_PREFIX: "Scanning folder: "
+ui.FOLDER_SEARCHING_DEFAULT: Discovering target folder...
+ui.SCAN_CANCELLED_MSG: Scan cancelled
+ui.EXPORT_NO_RESULTS_MSG: There are no results to export
+ui.EXPORT_ERROR_PREFIX: "Export failed: "
+ui.EXPORT_SAVED_PREFIX: "Saved file: "
+ui.EXPORT_CSV_SAVED: "CSV file saved: {path}"
+ui.EXPORT_XLSX_SAVED: "Excel file saved: {path}"
+ui.EXPORT_CSV_FILTER_NAME: CSV file
+cli.HELP: |
+  Usage: xlseek-cli [OPTIONS] [QUERY] [PATH]...
+  Positional arguments: 1st argument = search query, 2nd+ arguments = target path(s)
+  Main options:
+    -q, --query TEXT         Search keyword or regex
+    -p, --path PATH          Target file or directory
+    -o, --output PATH        Output file path (prints CSV to stdout if omitted)
+    -f, --format csv|xlsx    Output format (auto-inferred from extension if omitted)
+    -c, --match-case BOOL    Case sensitive matching (default: false)
+    -r, --regex BOOL         Regular expression (default: false)
+    -w, --overwrite          Overwrite existing output file
+    -l, --language ja|en     Output language (default: ja)
+    -e, --extensions LIST    Excel extensions (.xlsx,.xlsm,.xlsb,.xls)
+    -h, --help               Display help
+    --values BOOL, --formulas BOOL, --comments BOOL, --shapes BOOL, --hidden-sheets BOOL
+  --help and -h may be combined only with --language ja|en.
+cli.ERROR: Error
+cli.SUMMARY: "Search complete: {scanned} files, {matches} matches, saved to {path}"
+cli.ISSUES: "Some inputs had issues: {count}"
+cli.ERROR_REQUIRED: "Missing required option: {option}"
+cli.ERROR_UNKNOWN: "Unknown option: {option}"
+cli.ERROR_DUPLICATE: "Duplicate option: {option}"
+cli.ERROR_VALUE: "Invalid option value: {option}"
+cli.ERROR_PATH: "Cannot read search input: {path}"
+cli.ERROR_OUTPUT: "Cannot save output: {path}"
+cli.ERROR_REGEX: Invalid regular expression
+cli.ERROR_NO_TYPES: Enable at least one search type
+ui.EXPORT_XLSX_FILTER_NAME: Excel workbook
+ui.EXPORT_DEFAULT_FILENAME_PREFIX: ExcelGrep_Results_
+ui.COMPLETED: Search completed
+ui.CANCELLED: Search cancelled
+ui.ERROR: Error
+ui.NO_RESULTS: No results matched the search criteria
+ui.SELECT_FOLDER_PROMPT: Select a folder to search
+ui.SELECT_FOLDER_DIALOG_TITLE: Select search folder
+ui.SELECT_FOLDER_TOOLTIP: Select folder
+ui.KEYWORD_PLACEHOLDER: Enter a search keyword...
+ui.KEYWORD_INPUT_PLACEHOLDER: Enter text or a regular expression... (Enter to search)
+ui.CLEAR_TOOLTIP: Clear
+ui.FOLDER_DROP_PLACEHOLDER: Drop a folder here...
+ui.FOLDER_INPUT_PLACEHOLDER: Select or drop a folder...
+ui.FOLDER_DROP_PROMPT: Drop folder here
+ui.BUTTON_CANCEL: CANCEL
+ui.BUTTON_SEARCH: SEARCH
+ui.OPTIONS_LABEL: "Options:"
+ui.OPTION_MATCH_CASE: Match case
+ui.OPTION_USE_REGEX: Regular expression (Regex)
+ui.OPTION_INCLUDE_FORMULA: Formula
+ui.OPTION_INCLUDE_SHAPE: Shape text
+ui.MATCH_TYPE_SHAPE: Shape
+ui.RESULT_MATCH_TYPE_SHAPE: Shape
+ui.SHAPE_NAME_LABEL: Shape name
+ui.OPTION_INCLUDE_COMMENT: Comments / Notes
+ui.OPTION_INCLUDE_HIDDEN: Hidden sheets
+ui.LABEL_TARGET_EXTENSIONS: "File types:"
+ui.SELECT_EXTENSION_PROMPT: Select one or more file types to search
+ui.EXTENSION_TOGGLE_EXCLUDE_SUFFIX: " excluded from search"
+ui.EXTENSION_TOGGLE_INCLUDE_SUFFIX: " included in search"
+ui.PREVIEW_LOADING: Loading preview...
+ui.PREVIEW_EMPTY: No preview data
+ui.PREVIEW_GUIDANCE: Nearby cells (3 rows and 2 columns around)
+ui.PREVIEW_SCROLL_GUIDANCE: Scroll vertically and horizontally (fixed headers)
+ui.PREVIEW_SELECT_ITEM_PROMPT: Select a result to show its preview
+ui.PREVIEW_SHAPE_NO_ANCHOR: Text inside shape / textbox (no cell anchor)
+ui.OPEN_IN_APP_DEFAULT: Open in app
+ui.OPEN_WITH_APP_TOOLTIP: Choose an application
+ui.OPEN_WITH_SPECIFIC_APP_PREFIX: " - Open with"
+ui.DEFAULT_APP_LABEL: Default
+ui.NO_SUPPORTED_APPS: No supported applications found
+ui.OPEN_WITH_OTHER_APP: Choose another application...
+ui.OPEN_LOCATION_TOOLTIP: Open file location
+ui.LOCATION_LABEL: "Location:"
+ui.COPY_PATH_TOOLTIP: Copy path
+ui.EXPORT_SUCCESS: Export completed
+ui.EXPORT_FAILED: Export failed
+ui.OPEN_FILE_FAILED: Could not open file
+ui.OPEN_FOLDER_FAILED: Could not open folder
+ui.LAUNCH_APP_FAILED: Could not launch application
+ui.SHOW_OPEN_WITH_FAILED: Could not open the application chooser
+ui.COPIED_TO_CLIPBOARD: Copied to clipboard
+ui.COPIED_FILE_PATH: Copied file path
+ui.COPY_TO_CLIPBOARD_FAILED: Could not copy to clipboard
+ui.MATCH_TYPE_CELL_VALUE: Cell value (Text / Number)
+ui.MATCH_TYPE_FORMULA: Formula
+ui.RESULT_MATCH_TYPE_CELL_VALUE: Value
+ui.RESULT_MATCH_TYPE_FORMULA: Formula
+ui.MATCH_TYPE_COMMENT: Comment / Note
+ui.MATCH_TYPE_HIDDEN_SHEET: Hidden sheet match
+ui.MATCH_DETAIL_TITLE: Match details
+ui.TYPE_LABEL: "Type:"
+ui.ROW_NUMBER_LABEL: "Row:"
+ui.COL_NUMBER_LABEL: "Column:"
+ui.HIDDEN_STATUS_LABEL: "Visibility:"
+ui.STATUS_HIDDEN: Hidden
+ui.STATUS_VISIBLE: Visible
+ui.EMPTY_CONTENT: (empty)
+ui.PREV_SHEET_TOOLTIP: Previous sheet
+ui.NEXT_SHEET_TOOLTIP: Next sheet
+ui.SHEET_TABS_BADGE: Sheet Tabs
+ui.SETTINGS: Settings
+ui.SETTINGS_TITLE: Settings
+ui.DISPLAY_LANGUAGE: Display language
+ui.LANGUAGE_DEFAULT: Default
+ui.LANGUAGE_JA: 日本語
+ui.LANGUAGE_EN: English
+ui.SAVE_FAILED: Could not save settings. The saved preference will be used next time.
+ui.CURRENT_LANGUAGE: Current display language
+ui.SETTINGS_DESCRIPTION: Configure display language, search history, and default search options.
+ui.SETTINGS_PAGE_IMMEDIATE: "Display language · Apply immediately"
+ui.SETTINGS_PAGE_SAVED: "Search settings · Save to apply"
+ui.SETTINGS_IMMEDIATE_DESCRIPTION: Language changes apply and save immediately. Closing settings does not undo them.
+ui.SETTINGS_SAVED_DESCRIPTION: Changes stay as a draft until saved. Cancel or close discards them.
+ui.SETTINGS_CANCEL: Cancel
+ui.SETTINGS_CLOSE: Close
+ui.SETTINGS_SAVE: Save Settings
+ui.HISTORY_LIMIT_RANGE_ERROR: Enter a whole number from 0 through 50.
+ui.KEYWORD_HISTORY_TOOLTIP: Search text history
+ui.DIRECTORY_HISTORY_TOOLTIP: Search directory history
+ui.HISTORY_EMPTY: No history
+ui.DIRECTORY_SUGGESTIONS: Directory suggestions
+ui.HISTORY_LIMIT_LABEL: Search history limit
+ui.HISTORY_LIMIT_DESCRIPTION: 0–50 entries. Set to 0 to disable history.
+ui.HISTORY_LIMIT_SAVE: Save limit
+ui.DEFAULT_OPTIONS_TITLE: Default Search Options
+ui.DEFAULT_OPTIONS_DESCRIPTION: Configure default search options applied on startup and reset.
+ui.DEFAULT_OPTIONS_RESET: Reset to Defaults
+ui.DEFAULT_OPTIONS_SAVE: Save Options
+ui.DEFAULT_OPTIONS_SAVED: Default search options saved
+ui.DEFAULT_OPTIONS_EXTENSIONS_REQUIRED: Select at least one target extension
+ui.DIRECTORY_SEARCH_MODE: Directory search mode
+ui.DIRECTORY_SEARCH_SEQUENTIAL: Sequential
+ui.DIRECTORY_SEARCH_BURST: Burst
+ui.BURST_WORKER_CHOICE: Burst parallel count
+ui.BURST_WORKERS_AUTOMATIC: Automatic
+ui.BURST_WORKERS_CUSTOM: Custom
+ui.BURST_WORKERS_RANGE_ERROR: Enter a whole number from 2 through 32
+ui.SEARCH_WARNING_TITLE: Folder access warnings
+ui.SEARCH_WARNING_PATH: Could not search {path}
+ui.INVALID_REGEX: The regular expression is invalid
+ui.EXPORT_CSV_BUTTON: Export CSV
+ui.EXPORT_XLSX_BUTTON: Export Excel
+ui.RESULTS_TITLE: Search results
+ui.FILTER_RESULTS_PLACEHOLDER: Filter results...
+ui.COLUMN_FILE: File name
+ui.COLUMN_SHEET: Sheet
+ui.COLUMN_CELL: Cell
+ui.COLUMN_MATCH_TYPE: Match type
+ui.COLUMN_PREVIEW: Matched content (preview)
+ui.WORKSHEET_TITLE: Worksheet containing the match
+ui.LABEL_SHEET: "Sheet:"
+ui.UNIT_FILES: files
+ui.UNIT_MATCHES: matches
+ui.RESULT_COUNT_SUFFIX: matches
+ui.NO_FILTERED_RESULTS: No matching results
+ui.FORMULA_TOOLTIP_PREFIX: "Formula:"
+ui.UNIT_ROWS: rows
+ui.TOAST_SEARCH_KEYWORD: Enter a search keyword
+ui.SEARCH_START_ERROR: Could not start search
+ui.PREVIEW_LOAD_ERROR: Could not load preview
+ui.SEARCH_ERROR: An error occurred during search
+ui.SELECT_FOLDER_FAILED: Could not select folder
+ui.SUPPORTED_APPS_FAILED: Could not load supported applications
+ui.MENU_UPDATE_FAILED: Could not update application menu language
+ui.UNIT_SECONDS_SUFFIX: s
+ui.STATUS_DISCOVERING_DETAIL: Discovering
+ui.STATUS_SCANNING_DETAIL: Scanning
+ui.STATUS_CANCELLED_DETAIL: Search cancelled
+ui.STATUS_ERROR_DETAIL: An error occurred
+about.TITLE: About Excel Seek
+about.APP_NAME: Excel Seek
+about.APP_DESCRIPTION: Fast and secure desktop search for Excel files
+about.COPYRIGHT: Copyright © 2026 soakaye
+about.APP_LICENSE_LABEL: "Distribution license: MIT License"
+about.TAB_ABOUT: About
+about.TAB_LICENSES: Open source licenses
+about.SEARCH_PLACEHOLDER: Search package or license...
+about.SEARCH_CLEAR_TOOLTIP: Clear search
+about.NO_PACKAGES_FOUND: No matching packages found
+about.PACKAGE_COUNT_SUFFIX: " packages"
+about.BUTTON_COPY_LICENSE: Copy license text
+about.BUTTON_COPIED: Copied
+about.BUTTON_CLOSE: Close
+about.BUTTON_ABOUT_TOOLTIP: About Excel Seek
+about.AUTHOR_LABEL: "Author / Copyright:"
+about.LICENSE_TYPE_LABEL: "License type:"
+about.REPOSITORY_LABEL: "Repository / Website:"
+about.SOURCE_RUST_LABEL: Rust (backend)
+about.SOURCE_NPM_LABEL: npm (frontend)
+about.LICENSE_TEXT_LABEL: "Full license text:"
+about.SELECT_PACKAGE_PROMPT: Select a package from the list to view its license
+about.TOAST_COPIED: "{packageName} license text copied to clipboard"
+about.TOAST_COPY_FAILED: Could not copy license text
+about.COPYRIGHT_LABEL: "Copyright:"
+about.THIRD_PARTY_LABEL: "Third-party packages:"
+about.LICENSE_LABEL: "License:"
+about.PACKAGE_LIST_LINK: View open-source licenses
+about.PACKAGE_COUNT_UNIT: packages
+about.FILTER_ACTIVE: Filter active
+about.APP_VERSION: 0.1.0
+common.translationUnavailable: Some text could not be translated.
+menu.about: About Excel Seek
+menu.file: File
+menu.edit: Edit
+menu.view: View
+menu.window: Window
+menu.help: Help
+export.header.id: ID
+export.header.fileName: File name
+export.header.fullPath: Full path
+export.header.sheetName: Sheet name
+export.header.cell: Cell
+export.header.shapeName: Shape name
+export.header.matchType: Match type
+export.header.matchedContent: Matched content
+export.header.formula: Formula
+export.sheetName: Search Results
+export.match.value: Value
+export.match.formula: Formula
+export.match.comment: Comment
+export.match.hiddenSheet: Hidden sheet
+export.match.shape: Shape

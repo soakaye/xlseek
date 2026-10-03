@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="1024" height="1024">
+  <defs>
+    <!-- Magnifier subtle drop shadow -->
+    <filter id="glass-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="2" dy="8" stdDeviation="10" flood-color="#000" flood-opacity="0.32" />
+    </filter>
+    <!-- Lens Glass Surface gradient -->
+    <linearGradient id="lensGlass" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.35" />
+      <stop offset="50%" stop-color="#e8f5e9" stop-opacity="0.15" />
+      <stop offset="100%" stop-color="#81c784" stop-opacity="0.05" />
+    </linearGradient>
+    <!-- Highlight Reflection -->
+    <linearGradient id="lensHighlight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.8" />
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0.0" />
+    </linearGradient>
+  </defs>
+
+  <!-- 1. Excel Green Squircle (Background) -->
+  <rect x="0" y="0" width="512" height="512" rx="115" ry="115" fill="#107C41" />
+
+  <!-- 2. Bold White Letter 'X' -->
+  <path d="M 160 140 L 216 140 L 256 235 L 296 140 L 352 140 L 285 272 L 362 372 L 306 372 L 256 295 L 206 372 L 150 372 L 227 272 Z"
+        fill="#FFFFFF" />
+
+  <!-- 3. Magnifying Glass (Search Loupe) overlapping 'X' -->
+  <g filter="url(#glass-shadow)">
+    <!-- Handle (Pointing diagonally down-right) -->
+    <path d="M 378 378 L 434 434"
+          stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" />
+    <path d="M 380 380 L 432 432"
+          stroke="#E8F5E9" stroke-width="12" stroke-linecap="round" />
+
+    <!-- Lens Glass Background -->
+    <circle cx="316" cy="316" r="76" fill="url(#lensGlass)" />
+
+    <!-- Magnified / Focus Reticle inside lens (Excel Grid / Crosshair) -->
+    <path d="M 265 300 L 367 300 M 265 332 L 367 332"
+          stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-opacity="0.85" />
+    <path d="M 300 265 L 300 367 M 332 265 L 332 367"
+          stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-opacity="0.85" />
+
+    <!-- Outer Rim Frame of Loupe -->
+    <circle cx="316" cy="316" r="76" fill="none" stroke="#FFFFFF" stroke-width="18" />
+
+    <!-- Inner bezel border -->
+    <circle cx="316" cy="316" r="67" fill="none" stroke="#0D6535" stroke-width="1.5" stroke-opacity="0.25" />
+
+    <!-- Glass curved gloss reflection -->
+    <path d="M 262 290 A 62 62 0 0 1 350 258"
+          fill="none" stroke="url(#lensHighlight)" stroke-width="6" stroke-linecap="round" />
+  </g>
+</svg>

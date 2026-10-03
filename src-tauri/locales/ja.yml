@@ -1,0 +1,244 @@
+# Description: Translation catalog used for Excel Grep UI, menus, and export outputs.
+# Arguments & Returns: Accepts dotted keys and string values, outputting locale maps for plugins.
+# Errors: Invalid YAML fails during plugin loading and falls back to default catalog.
+_version: 1
+ui.APP_TITLE: Excel Seek
+ui.SEARCHING: 検索中...
+ui.SEARCHING_DIR: 探索中
+ui.STATUS_IDLE: 検索待機中
+ui.STATUS_WAITING: 待機中
+ui.STATUS_SCAN_PREPARING: スキャン開始準備中...
+ui.STATUS_DISCOVERING_FILES: ファイルを検出・走査中...
+ui.STATUS_DISCOVERING_PREFIX: 検出・走査中
+ui.STATUS_SCANNING_PREFIX: "スキャン中: "
+ui.STATUS_COMPLETED_PREFIX: "完了: "
+ui.FOLDER_SCANNING_PREFIX: "フォルダスキャン中: "
+ui.FOLDER_SEARCHING_DEFAULT: 対象フォルダを探索しています...
+ui.SCAN_CANCELLED_MSG: スキャンが中断されました
+ui.EXPORT_NO_RESULTS_MSG: エクスポート対象の結果がありません
+ui.EXPORT_ERROR_PREFIX: "エクスポート失敗: "
+ui.EXPORT_SAVED_PREFIX: "ファイルを保存しました: "
+ui.EXPORT_CSV_SAVED: "CSVファイルを保存しました: {path}"
+ui.EXPORT_XLSX_SAVED: "Excelファイルを保存しました: {path}"
+ui.EXPORT_CSV_FILTER_NAME: CSVファイル
+cli.HELP: |
+  使用方法: xlseek-cli [OPTIONS] [QUERY] [PATH]...
+  位置引数: 第1引数=検索文字列, 第2引数以降=検索対象パス (複数指定可能)
+  主なオプション:
+    -q, --query TEXT         検索文字列
+    -p, --path PATH          検索対象パス
+    -o, --output PATH        出力先ファイル (省略時は標準出力へCSV出力)
+    -f, --format csv|xlsx    出力形式 (省略時は拡張子から自動推論)
+    -c, --match-case BOOL    大文字/小文字を区別 (既定: false)
+    -r, --regex BOOL         正規表現として解釈 (既定: false)
+    -w, --overwrite          既存出力先の上書きを許可
+    -l, --language ja|en     出力言語 (既定: ja)
+    -e, --extensions LIST    対象拡張子 (.xlsx,.xlsm,.xlsb,.xls)
+    -h, --help               ヘルプを表示
+    --values BOOL, --formulas BOOL, --comments BOOL, --shapes BOOL, --hidden-sheets BOOL
+  --help と -h は --language ja|en だけ併用できます。
+cli.ERROR: エラー
+cli.SUMMARY: "検索完了: {scanned} ファイル、{matches} 件一致、保存先 {path}"
+cli.ISSUES: "一部の対象で問題が発生しました: {count} 件"
+cli.ERROR_REQUIRED: "必須オプションがありません: {option}"
+cli.ERROR_UNKNOWN: "不明なオプション: {option}"
+cli.ERROR_DUPLICATE: "オプションが重複しています: {option}"
+cli.ERROR_VALUE: "オプション値が不正です: {option}"
+cli.ERROR_PATH: "検索対象を読み取れません: {path}"
+cli.ERROR_OUTPUT: "出力先を保存できません: {path}"
+cli.ERROR_REGEX: 正規表現が不正です
+cli.ERROR_NO_TYPES: 検索対象種別を1つ以上有効にしてください
+ui.EXPORT_XLSX_FILTER_NAME: Excelブック
+ui.EXPORT_DEFAULT_FILENAME_PREFIX: ExcelGrep_Results_
+ui.COMPLETED: 検索完了
+ui.CANCELLED: 検索中断
+ui.ERROR: エラー
+ui.NO_RESULTS: 検索条件に一致する結果は見つかりませんでした
+ui.SELECT_FOLDER_PROMPT: 検索対象フォルダを選択してください
+ui.SELECT_FOLDER_DIALOG_TITLE: 検索対象フォルダを選択
+ui.SELECT_FOLDER_TOOLTIP: フォルダを選択
+ui.KEYWORD_PLACEHOLDER: 検索キーワードを入力...
+ui.KEYWORD_INPUT_PLACEHOLDER: 検索するテキストまたは正規表現を入力... (Enterで検索)
+ui.CLEAR_TOOLTIP: クリア
+ui.FOLDER_DROP_PLACEHOLDER: ここにフォルダをドロップ...
+ui.FOLDER_INPUT_PLACEHOLDER: フォルダを選択またはドラッグ＆ドロップ...
+ui.FOLDER_DROP_PROMPT: フォルダをここにドロップ
+ui.BUTTON_CANCEL: CANCEL
+ui.BUTTON_SEARCH: SEARCH
+ui.OPTIONS_LABEL: "オプション:"
+ui.OPTION_MATCH_CASE: 大文字/小文字を区別
+ui.OPTION_USE_REGEX: 正規表現 (Regex)
+ui.OPTION_INCLUDE_FORMULA: 数式 (Formula)
+ui.OPTION_INCLUDE_SHAPE: Shape 内テキスト
+ui.MATCH_TYPE_SHAPE: Shape
+ui.RESULT_MATCH_TYPE_SHAPE: Shape
+ui.SHAPE_NAME_LABEL: Shape 名
+ui.OPTION_INCLUDE_COMMENT: コメント / メモ
+ui.OPTION_INCLUDE_HIDDEN: 非表示シート
+ui.LABEL_TARGET_EXTENSIONS: "対象拡張子:"
+ui.SELECT_EXTENSION_PROMPT: 検索対象の拡張子を1つ以上選択してください
+ui.EXTENSION_TOGGLE_EXCLUDE_SUFFIX: " を検索対象から除外"
+ui.EXTENSION_TOGGLE_INCLUDE_SUFFIX: " を検索対象に追加"
+ui.PREVIEW_LOADING: プレビュー読み込み中...
+ui.PREVIEW_EMPTY: プレビューデータがありません
+ui.PREVIEW_GUIDANCE: 周辺セルプレビュー (前後3行・前後2列)
+ui.PREVIEW_SCROLL_GUIDANCE: 縦横スクロール可能 (固定見出し)
+ui.PREVIEW_SELECT_ITEM_PROMPT: 項目を選択するとプレビューが表示されます
+ui.PREVIEW_SHAPE_NO_ANCHOR: 図形・テキストボックス内のテキストです（セル配置アンカーなし）
+ui.OPEN_IN_APP_DEFAULT: アプリで開く
+ui.OPEN_WITH_APP_TOOLTIP: 開くアプリケーションを選択
+ui.OPEN_WITH_SPECIFIC_APP_PREFIX: " で開く"
+ui.DEFAULT_APP_LABEL: 既定
+ui.NO_SUPPORTED_APPS: 利用可能なアプリが見つかりません
+ui.OPEN_WITH_OTHER_APP: 別のプログラムを選択...
+ui.OPEN_LOCATION_TOOLTIP: ファイルの保存場所を開く
+ui.LOCATION_LABEL: "場所:"
+ui.COPY_PATH_TOOLTIP: パスをコピー
+ui.EXPORT_SUCCESS: エクスポートが完了しました
+ui.EXPORT_FAILED: エクスポートに失敗しました
+ui.OPEN_FILE_FAILED: ファイルを開けませんでした
+ui.OPEN_FOLDER_FAILED: フォルダを開けませんでした
+ui.LAUNCH_APP_FAILED: アプリケーションを起動できませんでした
+ui.SHOW_OPEN_WITH_FAILED: 「プログラムから開く」ダイアログを起動できませんでした
+ui.COPIED_TO_CLIPBOARD: クリップボードにコピーしました
+ui.COPIED_FILE_PATH: ファイルパスをコピーしました
+ui.COPY_TO_CLIPBOARD_FAILED: クリップボードへのコピーに失敗しました
+ui.MATCH_TYPE_CELL_VALUE: セル値 (Text / Number)
+ui.MATCH_TYPE_FORMULA: 数式 (Formula)
+ui.RESULT_MATCH_TYPE_CELL_VALUE: 値
+ui.RESULT_MATCH_TYPE_FORMULA: 数式
+ui.MATCH_TYPE_COMMENT: コメント / メモ
+ui.MATCH_TYPE_HIDDEN_SHEET: 非表示シート一致
+ui.MATCH_DETAIL_TITLE: 一致の詳細情報
+ui.TYPE_LABEL: "タイプ:"
+ui.ROW_NUMBER_LABEL: "行番号:"
+ui.COL_NUMBER_LABEL: "列番号:"
+ui.HIDDEN_STATUS_LABEL: "非表示状態:"
+ui.STATUS_HIDDEN: 非表示
+ui.STATUS_VISIBLE: 表示
+ui.EMPTY_CONTENT: (空)
+ui.PREV_SHEET_TOOLTIP: 前のシートへ
+ui.NEXT_SHEET_TOOLTIP: 次のシートへ
+ui.SHEET_TABS_BADGE: Sheet Tabs
+ui.SETTINGS: 設定
+ui.SETTINGS_TITLE: 設定
+ui.DISPLAY_LANGUAGE: 表示言語
+ui.LANGUAGE_DEFAULT: デフォルト
+ui.LANGUAGE_JA: 日本語
+ui.LANGUAGE_EN: English
+ui.SAVE_FAILED: 設定を保存できませんでした。次回起動時は保存済み設定を使用します。
+ui.CURRENT_LANGUAGE: 現在の表示言語
+ui.SETTINGS_DESCRIPTION: 表示言語、検索履歴、およびデフォルト検索オプションを設定します。
+ui.SETTINGS_PAGE_IMMEDIATE: 表示言語・即時反映
+ui.SETTINGS_PAGE_SAVED: 検索設定・保存して反映
+ui.SETTINGS_IMMEDIATE_DESCRIPTION: 表示言語は変更後すぐに反映・保存されます。設定を閉じても元に戻りません。
+ui.SETTINGS_SAVED_DESCRIPTION: 変更は保存するまで下書きです。キャンセルまたは閉じると破棄されます。
+ui.SETTINGS_CANCEL: キャンセル
+ui.SETTINGS_CLOSE: 閉じる
+ui.SETTINGS_SAVE: 設定を保存
+ui.HISTORY_LIMIT_RANGE_ERROR: 0～50 の整数を入力してください。
+ui.KEYWORD_HISTORY_TOOLTIP: 検索テキストの履歴
+ui.DIRECTORY_HISTORY_TOOLTIP: 検索ディレクトリの履歴
+ui.HISTORY_EMPTY: 履歴はありません
+ui.DIRECTORY_SUGGESTIONS: ディレクトリ候補
+ui.HISTORY_LIMIT_LABEL: 検索履歴の保存件数
+ui.HISTORY_LIMIT_DESCRIPTION: 0～50 件。0 件にすると履歴を保存しません。
+ui.HISTORY_LIMIT_SAVE: 件数を保存
+ui.DEFAULT_OPTIONS_TITLE: デフォルト検索オプション
+ui.DEFAULT_OPTIONS_DESCRIPTION: 次回起動時および検索初期状態に反映するオプションを設定します。
+ui.DEFAULT_OPTIONS_RESET: デフォルトに戻す
+ui.DEFAULT_OPTIONS_SAVE: オプションを保存
+ui.DEFAULT_OPTIONS_SAVED: デフォルト検索オプションを保存しました
+ui.DEFAULT_OPTIONS_EXTENSIONS_REQUIRED: 対象拡張子を少なくとも1つ選択してください
+ui.DIRECTORY_SEARCH_MODE: ディレクトリ検索方式
+ui.DIRECTORY_SEARCH_SEQUENTIAL: 順次
+ui.DIRECTORY_SEARCH_BURST: Burst
+ui.BURST_WORKER_CHOICE: Burst 並列数
+ui.BURST_WORKERS_AUTOMATIC: 自動
+ui.BURST_WORKERS_CUSTOM: 手動
+ui.BURST_WORKERS_RANGE_ERROR: 2 から 32 の整数を入力してください
+ui.SEARCH_WARNING_TITLE: フォルダ検索時の警告
+ui.SEARCH_WARNING_PATH: "検索できませんでした: {path}"
+ui.INVALID_REGEX: 正規表現が正しくありません
+ui.EXPORT_CSV_BUTTON: CSV 出力
+ui.EXPORT_XLSX_BUTTON: Excel 出力
+ui.RESULTS_TITLE: 検索結果リスト
+ui.FILTER_RESULTS_PLACEHOLDER: 結果内を絞り込み...
+ui.COLUMN_FILE: ファイル名
+ui.COLUMN_SHEET: シート
+ui.COLUMN_CELL: セル
+ui.COLUMN_MATCH_TYPE: 一致種別
+ui.COLUMN_PREVIEW: 一致内容 (プレビュー)
+ui.WORKSHEET_TITLE: 検索一致が発生したワークシート
+ui.LABEL_SHEET: "シート:"
+ui.UNIT_FILES: ファイル
+ui.UNIT_MATCHES: 一致
+ui.RESULT_COUNT_SUFFIX: 件
+ui.NO_FILTERED_RESULTS: 一致する結果がありません
+ui.FORMULA_TOOLTIP_PREFIX: "数式:"
+ui.UNIT_ROWS: 行
+ui.TOAST_SEARCH_KEYWORD: 検索キーワードを入力してください
+ui.SEARCH_START_ERROR: 検索を開始できませんでした
+ui.PREVIEW_LOAD_ERROR: プレビューを読み込めませんでした
+ui.SEARCH_ERROR: 検索中にエラーが発生しました
+ui.SELECT_FOLDER_FAILED: フォルダ選択に失敗しました
+ui.SUPPORTED_APPS_FAILED: サポートアプリ一覧を取得できませんでした
+ui.MENU_UPDATE_FAILED: アプリメニューの言語を更新できませんでした
+ui.UNIT_SECONDS_SUFFIX: 秒
+ui.STATUS_DISCOVERING_DETAIL: 検出・走査中
+ui.STATUS_SCANNING_DETAIL: スキャン中
+ui.STATUS_CANCELLED_DETAIL: 検索中断
+ui.STATUS_ERROR_DETAIL: エラーが発生しました
+about.TITLE: Excel Seek について
+about.APP_NAME: Excel Seek
+about.APP_VERSION: 0.1.0
+about.APP_DESCRIPTION: 高速・セキュアなExcel専用ファイル内検索デスクトップアプリケーション
+about.COPYRIGHT: Copyright © 2026 soakaye
+about.APP_LICENSE_LABEL: "配布ライセンス: MIT License"
+about.TAB_ABOUT: アプリ情報
+about.TAB_LICENSES: オープンソースライセンス
+about.SEARCH_PLACEHOLDER: パッケージ名・ライセンスで検索...
+about.SEARCH_CLEAR_TOOLTIP: 検索キーワードをクリア
+about.NO_PACKAGES_FOUND: 一致するパッケージが見つかりません
+about.PACKAGE_COUNT_SUFFIX: " 件のパッケージ"
+about.BUTTON_COPY_LICENSE: ライセンス本文をコピー
+about.BUTTON_COPIED: コピー完了
+about.BUTTON_CLOSE: 閉じる
+about.BUTTON_ABOUT_TOOLTIP: Excel Seek について
+about.AUTHOR_LABEL: "著作者 / 著作権表記:"
+about.LICENSE_TYPE_LABEL: "ライセンス種別:"
+about.REPOSITORY_LABEL: "リポジトリ / 公式サイト:"
+about.SOURCE_RUST_LABEL: Rust (バックエンド)
+about.SOURCE_NPM_LABEL: npm (フロントエンド)
+about.LICENSE_TEXT_LABEL: "ライセンス条項全文:"
+about.SELECT_PACKAGE_PROMPT: 左側の一覧からパッケージを選択するとライセンス詳細が表示されます
+about.TOAST_COPIED: "{packageName} のライセンス本文をクリップボードにコピーしました"
+about.TOAST_COPY_FAILED: クリップボードへのコピーに失敗しました
+about.COPYRIGHT_LABEL: "著作権:"
+about.LICENSE_LABEL: "ライセンス:"
+about.THIRD_PARTY_LABEL: "サードパーティパッケージ:"
+about.PACKAGE_LIST_LINK: オープンソースライセンス一覧を確認する
+about.PACKAGE_COUNT_UNIT: 件
+about.FILTER_ACTIVE: フィルタ適用中
+common.translationUnavailable: 一部の文言を翻訳できませんでした。
+menu.about: Excel Seek について
+menu.file: ファイル
+menu.edit: 編集
+menu.view: 表示
+menu.window: ウィンドウ
+menu.help: ヘルプ
+export.header.id: ID
+export.header.fileName: ファイル名
+export.header.fullPath: フルパス
+export.header.sheetName: シート名
+export.header.cell: セル位置
+export.header.shapeName: Shape 名
+export.header.matchType: 一致種別
+export.header.matchedContent: 一致内容
+export.header.formula: 数式
+export.sheetName: 検索結果
+export.match.value: 値
+export.match.formula: 数式
+export.match.comment: コメント
+export.match.hiddenSheet: 非表示シート
+export.match.shape: 図形
