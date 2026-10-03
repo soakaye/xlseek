@@ -1,5 +1,9 @@
 name: 'publish'
 
+permissions:
+  actions: read
+  security-events: write
+
 on:
   push:
     tags:
