@@ -20,6 +20,7 @@ import path from "node:path";
 import {
   CARGO_CHECK_SUBCOMMAND,
   CARGO_COMMAND,
+  CARGO_LOCK_PATH,
   CARGO_PACKAGE_VERSION_PATTERN,
   CARGO_WORKSPACE_FLAG,
   CLI_CARGO_TOML_PATH,
@@ -29,6 +30,8 @@ import {
   DESIGN_HTML_APP_HEADER_VERSION_PATTERN,
   DESIGN_HTML_APP_MODAL_VERSION_PATTERN,
   DESIGN_INDEX_HTML_PATH,
+  GIT_ADD_SUBCOMMAND,
+  GIT_COMMAND,
   INVALID_SEMVER_MESSAGE,
   LOCALE_APP_VERSION_PATTERN,
   LOCALES_CORE_EN_PATH,
@@ -255,8 +258,18 @@ export async function syncAllFiles(repoRoot, targetVersion, options = {}) {
       stdio: "pipe",
     });
     if (result.status === 0) {
-      updatedPaths.push("Cargo.lock");
+      // Constant reference: CARGO_LOCK_PATH.
+      updatedPaths.push(CARGO_LOCK_PATH);
     }
+  }
+
+  if (!dryRun) {
+    // Stage all updated files so `npm version` includes them in the version commit.
+    // Constant references: GIT_COMMAND and GIT_ADD_SUBCOMMAND.
+    spawnSync(GIT_COMMAND, [GIT_ADD_SUBCOMMAND, ...updatedPaths], {
+      cwd: repoRoot,
+      stdio: "pipe",
+    });
   }
 
   return updatedPaths;

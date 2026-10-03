@@ -16,7 +16,7 @@ export const LANGUAGE_PREFERENCES = { DEFAULT: "default", JA: "ja", EN: "en" } a
 export const DISPLAY_LANGUAGES = { JA: "ja", EN: "en" } as const;
 export const LANGUAGE_STORAGE_KEY = "xlseek.language";
 export const LEGACY_LANGUAGE_STORAGE_KEY = "exlgrep.language";
-export const APP_CONSTANTS = { ROOT_ELEMENT_ID: "root", APP_VERSION: "1.0.0" } as const;
+export const APP_CONSTANTS = { ROOT_ELEMENT_ID: "root", APP_VERSION: "1.0.1" } as const;
 export const I18N_CONSTANTS = {
   TRANSLATION_UNAVAILABLE_KEY: "common.translationUnavailable",
   TRANSLATION_UNAVAILABLE_TEXT: "Some text could not be translated.",

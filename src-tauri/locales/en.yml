@@ -219,7 +219,7 @@ about.LICENSE_LABEL: "License:"
 about.PACKAGE_LIST_LINK: View open-source licenses
 about.PACKAGE_COUNT_UNIT: packages
 about.FILTER_ACTIVE: Filter active
-about.APP_VERSION: 1.0.0
+about.APP_VERSION: 1.0.1
 common.translationUnavailable: Some text could not be translated.
 menu.about: About Excel Seek
 menu.file: File

@@ -1,6 +1,6 @@
 [package]
 name = "xlseek"
-version = "1.0.0"
+version = "1.0.1"
 description = "Super fast Excel Grep Desktop Application"
 authors = ["soakaye"]
 edition = "2021"

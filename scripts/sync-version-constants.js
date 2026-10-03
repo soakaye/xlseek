@@ -51,6 +51,10 @@ export const DESIGN_HTML_APP_MODAL_VERSION_PATTERN = /(Excel Seek[\s\S]*?<p[^>]*
 export const CARGO_COMMAND = "cargo";
 export const CARGO_CHECK_SUBCOMMAND = "check";
 export const CARGO_WORKSPACE_FLAG = "--workspace";
+export const CARGO_LOCK_PATH = "Cargo.lock";
+
+export const GIT_COMMAND = "git";
+export const GIT_ADD_SUBCOMMAND = "add";
 
 export const SYNC_LOG_PREFIX = "[sync-version]";
 export const SYNC_SUCCESS_MESSAGE = "Successfully synchronized all project version entries to";

@@ -177,7 +177,7 @@ ui.STATUS_CANCELLED_DETAIL: 検索中断
 ui.STATUS_ERROR_DETAIL: エラーが発生しました
 about.TITLE: Excel Seek について
 about.APP_NAME: Excel Seek
-about.APP_VERSION: 1.0.0
+about.APP_VERSION: 1.0.1
 about.APP_DESCRIPTION: 高速・セキュアなExcel専用ファイル内検索デスクトップアプリケーション
 about.COPYRIGHT: Copyright © 2026 soakaye
 about.APP_LICENSE_LABEL: "配布ライセンス: MIT License"
