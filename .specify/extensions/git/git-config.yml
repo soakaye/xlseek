@@ -63,8 +63,8 @@ auto_commit:
     enabled: false
     message: "[Spec Kit] Add implementation plan"
   after_tasks:
-    enabled: false
-    message: "[Spec Kit] Add tasks"
+    enabled: true
+    message: "[Spec Kit] Add tasks and design artifacts for 025-ignore-file-patterns"
   after_implement:
     enabled: false
     message: "[Spec Kit] Implementation progress"
