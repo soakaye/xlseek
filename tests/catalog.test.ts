@@ -36,6 +36,23 @@ describe("shared localization catalogs", () => {
     }
   });
 
+  it("defines all ignore pattern localization keys in English and Japanese", () => {
+    const ignoreKeys = [
+      "ui.IGNORE_PATTERNS_LABEL",
+      "ui.IGNORE_PATTERNS_PLACEHOLDER",
+      "ui.IGNORE_PATTERNS_TOOLTIP",
+      "ui.IGNORE_PATTERNS_CLEAR",
+      "ui.IGNORE_HISTORY_BUTTON",
+      "ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_LABEL",
+      "ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_HELP",
+    ];
+
+    for (const key of ignoreKeys) {
+      expect(english[key], `Missing English key: ${key}`).toBeTruthy();
+      expect(japanese[key], `Missing Japanese key: ${key}`).toBeTruthy();
+    }
+  });
+
   it("uses matching interpolation placeholders in each locale", () => {
     const placeholders = (message: string) => [...message.matchAll(/\{([A-Za-z0-9_]+)\}/g)].map((match) => match[1]).sort();
     const mismatched = Object.keys(japanese)

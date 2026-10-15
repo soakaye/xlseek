@@ -79,7 +79,7 @@ auto_commit:
     message: "[Spec Kit] Sync tasks to issues"
   after_bug_fix:
     enabled: true
-    message: "[Spec Kit] Fix bug preview-verbatim-path-prefix"
+    message: "[Spec Kit] Fix bug ignore-patterns-missing-locales"
   after_bug_test:
     enabled: true
-    message: "[Spec Kit] Verify and resolve bug preview-verbatim-path-prefix"
+    message: "[Spec Kit] Verify and resolve bug ignore-patterns-missing-locales"
