@@ -11,6 +11,7 @@
 
 use crate::models::{ScanProgress, ScanState, SearchMatch, SearchQuery};
 use crate::search::parser::parse_and_search_file;
+use crate::search::word::search_word_file;
 use rayon::prelude::*;
 use regex::RegexBuilder;
 use std::path::PathBuf;
@@ -405,15 +406,34 @@ impl SearchEngine {
                     .map(|f| f.to_string_lossy().to_string())
                     .unwrap_or_default();
 
-                // Parse Excel file (corrupted files or panics are safely caught without aborting)
+                // Parse document file (Excel or Word; corrupted files or panics are safely caught without aborting)
                 let cancel_flag_ref = Arc::clone(&cancel_flag);
                 let parse_result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
-                    parse_and_search_file(
-                        &file_path,
-                        &query,
-                        regex_obj.as_ref(),
-                        Some(&cancel_flag_ref),
-                    )
+                    let ext = file_path
+                        .extension()
+                        .and_then(|e| e.to_str())
+                        .map(|s| s.to_ascii_lowercase())
+                        .unwrap_or_default();
+                    let ext_with_dot = format!(".{}", ext);
+                    // Constant reference: crate::constants::EXT_DOCX, EXT_DOCM, EXT_DOC
+                    if ext_with_dot == crate::constants::EXT_DOCX
+                        || ext_with_dot == crate::constants::EXT_DOCM
+                        || ext_with_dot == crate::constants::EXT_DOC
+                    {
+                        search_word_file(
+                            &file_path,
+                            &query,
+                            regex_obj.as_ref(),
+                            Some(&cancel_flag_ref),
+                        )
+                    } else {
+                        parse_and_search_file(
+                            &file_path,
+                            &query,
+                            regex_obj.as_ref(),
+                            Some(&cancel_flag_ref),
+                        )
+                    }
                 }));
 
                 if cancel_flag.load(Ordering::Relaxed) {

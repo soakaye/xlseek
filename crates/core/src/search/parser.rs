@@ -19,6 +19,21 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 static MATCH_ID_COUNTER: AtomicU64 = AtomicU64::new(crate::constants::DEFAULT_MATCH_ID_START);
 
 /// ## Description
+/// Generates the next sequential unique match ID across search operations.
+///
+/// ## Arguments
+/// None.
+///
+/// ## Returns
+/// - `u64`: Next unique match item ID.
+///
+/// ## Errors / Exceptions
+/// Does not panic.
+pub fn next_match_id() -> u64 {
+    MATCH_ID_COUNTER.fetch_add(1, Ordering::Relaxed)
+}
+
+/// ## Description
 /// Converts a 0-based column index to an Excel column name (e.g., 0 -> A, 1 -> B, 26 -> AA).
 ///
 /// ## Arguments
@@ -73,7 +88,7 @@ pub fn format_cell_address(row_idx: u32, col_idx: u32) -> (String, String) {
 ///
 /// ## Errors / Exceptions
 /// Does not panic; invalid regexes are caught prior to invocation.
-fn find_match_position(
+pub(crate) fn find_match_position(
     text: &str,
     query: &SearchQuery,
     regex_opt: Option<&Regex>,

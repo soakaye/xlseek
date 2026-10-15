@@ -228,3 +228,8 @@ export.match.formula: 数式
 export.match.comment: コメント
 export.match.hiddenSheet: 非表示シート
 export.match.shape: 図形
+export.match.wordText: Word
+ui.OPTION_ENABLE_WORD_SEARCH: "Word文書も検索対象に含める (.docx, .docm, .doc)"
+ui.OPTION_ENABLE_WORD_SEARCH_DESC: "有効にすると、Word文書内の本文・表・コメント・図形テキストも検索します"
+ui.MATCH_TYPE_WORD_TEXT: Word本文
+ui.RESULT_MATCH_TYPE_WORD_TEXT: Word

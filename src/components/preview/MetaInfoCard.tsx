@@ -54,6 +54,9 @@ export const MetaInfoCard: React.FC<MetaInfoCardProps> = ({ match }) => {
       case "Shape":
         // Constant reference: SEARCH_LABELS.SHAPE_TYPE
         return t(SEARCH_LABELS.SHAPE_TYPE);
+      case "WordText":
+        // Constant reference: t("ui.MATCH_TYPE_WORD_TEXT")
+        return t("ui.MATCH_TYPE_WORD_TEXT");
     }
   })();
 

@@ -9,10 +9,10 @@
 
 **目的**: 全レイヤー（コア、Tauriバックエンド、フロントエンド）にわたる定数定義と多言語キーの一元管理（憲法 原則 II・原則 III 準拠）。
 
-- [ ] T001 `crates/core/src/constants.rs` に Word 拡張子（`"docx"`, `"docm"`, `"doc"`）、固定ラベル（`"Word"`, `"-"`）、および検索定数を定義
-- [ ] T002 [P] `src-tauri/src/constants.rs` に Tauri IPC コマンド名 `CMD_GET_WORD_PREVIEW`（`"get_word_preview"`）およびエラーコード定数を定義
-- [ ] T003 [P] `src/constants/index.ts` にフロントエンド用 Word コマンド、拡張子リスト、および UI 定数を定義
-- [ ] T004 [P] `crates/core/locales/ja.yml` および `crates/core/locales/en.yml` に Word 検索オプション名、プレビュー表示用メッセージの多言語翻訳キーを追加
+- [X] T001 `crates/core/src/constants.rs` に Word 拡張子（`"docx"`, `"docm"`, `"doc"`）、固定ラベル（`"Word"`, `"-"`）、および検索定数を定義
+- [X] T002 [P] `src-tauri/src/constants.rs` に Tauri IPC コマンド名 `CMD_GET_WORD_PREVIEW`（`"get_word_preview"`）およびエラーコード定数を定義
+- [X] T003 [P] `src/constants/index.ts` にフロントエンド用 Word コマンド、拡張子リスト、および UI 定数を定義
+- [X] T004 [P] `crates/core/locales/ja.yml` および `crates/core/locales/en.yml` に Word 検索オプション名、プレビュー表示用メッセージの多言語翻訳キーを追加
 
 ---
 
@@ -22,11 +22,11 @@
 
 **⚠️ クリティカル**: 本フェーズの完了前にはユーザーストーリーの実装に着手できません。
 
-- [ ] T005 `crates/core/src/models/mod.rs` に `MatchType::WordText` バリアントおよびプレビュー用データ構造体 `WordPreviewPayload`, `WordParagraph` を定義
-- [ ] T006 [P] `crates/core/src/search/word/docx.rs` を新規作成し、`zip` と `quick-xml` を用いて `.docx` および `.docm` の本文（`word/document.xml`）、ヘッダー/フッター、コメント、図形テキストを抽出するストリーミングパーサーを実装
-- [ ] T007 [P] `crates/core/src/search/word/doc.rs` を新規作成し、`cfb` と `encoding_rs` を用いてバイナリ `.doc`（OLE2）の `WordDocument` ストリームから CP932/UTF-16LE テキストを抽出するパーサーを実装
-- [ ] T008 `crates/core/src/search/word/mod.rs` を作成し、拡張子（`.docx`, `.docm`, `.doc`）に応じたパーサーディスパッチ関数 `search_word_file` および全文プレビュー抽出関数 `extract_word_document` を実装
-- [ ] T009 `crates/core/src/search/mod.rs` で `word` モジュールを公開し、`crates/core/tests/word_search.rs` に `.docx`, `.docm`, `.doc` のテキスト抽出・検索結合テストを追加
+- [X] T005 `crates/core/src/models/mod.rs` に `MatchType::WordText` バリアントおよびプレビュー用データ構造体 `WordPreviewPayload`, `WordParagraph` を定義
+- [X] T006 [P] `crates/core/src/search/word/docx.rs` を新規作成し、`zip` と `quick-xml` を用いて `.docx` および `.docm` の本文（`word/document.xml`）、ヘッダー/フッター、コメント、図形テキストを抽出するストリーミングパーサーを実装
+- [X] T007 [P] `crates/core/src/search/word/doc.rs` を新規作成し、`cfb` と `encoding_rs` を用いてバイナリ `.doc`（OLE2）の `WordDocument` ストリームから CP932/UTF-16LE テキストを抽出するパーサーを実装
+- [X] T008 `crates/core/src/search/word/mod.rs` を作成し、拡張子（`.docx`, `.docm`, `.doc`）に応じたパーサーディスパッチ関数 `search_word_file` および全文プレビュー抽出関数 `extract_word_document` を実装
+- [X] T009 `crates/core/src/search/mod.rs` で `word` モジュールを公開し、`crates/core/tests/word_search.rs` に `.docx`, `.docm`, `.doc` のテキスト抽出・検索結合テストを追加
 
 **チェックポイント**: 基盤完了 - コアの Word テキスト抽出エンジンが単体で検証可能な状態
 
@@ -40,12 +40,12 @@
 
 ### ユーザーストーリー 1 の実装タスク
 
-- [ ] T010 [US1] `crates/core/src/search/engine.rs` を更新し、走査対象拡張子に Word 拡張子が含まれる場合に `search_word_file` を呼び出すルーティングと `SearchMatch` 生成処理を統合
-- [ ] T011 [P] [US1] `src/types/defaultOptions.ts` および `src/types/search.ts` に `enable_word_search` プロパティおよび `WordText` マッチ型定義を追加
-- [ ] T012 [P] [US1] `src/default-options-core.ts` および `src/settings-core.ts` を更新し、`enable_word_search` の初期値（`false`）および永続化バリデーションを実装
-- [ ] T013 [US1] `src/components/settings/SettingsDialog.tsx` の検索設定ページに「Word文書も検索対象に含める (.docx, .docm, .doc)」トグルオプションを追加
-- [ ] T014 [US1] `src/components/search/SearchBar.tsx` を更新し、`enable_word_search` 有効時に `.docx`, `.docm`, `.doc` のトグルボタンを動的表示し、個別オン/オフを可能にする
-- [ ] T015 [US1] `src/components/results/ResultTable.tsx` を更新し、Word 検索結果行のシート列「Word」、セル列「-」の表示および Word アイコンのレンダリングに対応
+- [X] T010 [US1] `crates/core/src/search/engine.rs` を更新し、走査対象拡張子に Word 拡張子が含まれる場合に `search_word_file` を呼び出すルーティングと `SearchMatch` 生成処理を統合
+- [X] T011 [P] [US1] `src/types/defaultOptions.ts` および `src/types/search.ts` に `enable_word_search` プロパティおよび `WordText` マッチ型定義を追加
+- [X] T012 [P] [US1] `src/default-options-core.ts` および `src/settings-core.ts` を更新し、`enable_word_search` の初期値（`false`）および永続化バリデーションを実装
+- [X] T013 [US1] `src/components/settings/SettingsDialog.tsx` の検索設定ページに「Word文書も検索対象に含める (.docx, .docm, .doc)」トグルオプションを追加
+- [X] T014 [US1] `src/components/search/SearchBar.tsx` を更新し、`enable_word_search` 有効時に `.docx`, `.docm`, `.doc` のトグルボタンを動的表示し、個別オン/オフを可能にする
+- [X] T015 [US1] `src/components/results/ResultTable.tsx` を更新し、Word 検索結果行のシート列「Word」、セル列「-」の表示および Word アイコンのレンダリングに対応
 
 **チェックポイント**: ユーザーストーリー 1 (MVP) が単独で動作・テスト可能
 
@@ -59,10 +59,10 @@
 
 ### ユーザーストーリー 2 の実装タスク
 
-- [ ] T016 [US2] `src-tauri/src/commands/preview_cmd.rs` に `get_word_preview(file_path: String, target_paragraph: u32) -> Result<WordPreviewPayload, CommandError>` コマンドを実装し、`src-tauri/src/lib.rs` に登録
-- [ ] T017 [P] [US2] `src/types/preview.ts` に `WordPreviewPayload` および `WordParagraph` の TypeScript 型定義を追加
-- [ ] T018 [US2] `src/components/preview/WordTextPreview.tsx` を新規作成し、段落番号付きテキスト表示、キーワードハイライト、およびマウント/選択変更時の対象段落への自動スクロール（`scrollIntoView`）を実装
-- [ ] T019 [US2] `src/App.tsx` のプレビュー表示領域を改修し、選択された `SearchMatch` が Word 文書の場合に `get_word_preview` を呼び出して `WordTextPreview` を描画する条件分岐を統合
+- [X] T016 [US2] `src-tauri/src/commands/preview_cmd.rs` に `get_word_preview(file_path: String, target_paragraph: u32) -> Result<WordPreviewPayload, CommandError>` コマンドを実装し、`src-tauri/src/lib.rs` に登録
+- [X] T017 [P] [US2] `src/types/preview.ts` に `WordPreviewPayload` および `WordParagraph` の TypeScript 型定義を追加
+- [X] T018 [US2] `src/components/preview/WordTextPreview.tsx` を新規作成し、段落番号付きテキスト表示、キーワードハイライト、およびマウント/選択変更時の対象段落への自動スクロール（`scrollIntoView`）を実装
+- [X] T019 [US2] `src/App.tsx` のプレビュー表示領域を改修し、選択された `SearchMatch` が Word 文書の場合に `get_word_preview` を呼び出して `WordTextPreview` を描画する条件分岐を統合
 
 **チェックポイント**: ユーザーストーリー 1 および 2 が連携して動作し、検索からテキストプレビューまでシームレスに機能
 
@@ -76,8 +76,8 @@
 
 ### ユーザーストーリー 3 の実装タスク
 
-- [ ] T020 [US3] `src/components/preview/PreviewHeader.tsx` を確認・更新し、Word 文書ファイル選択時にも「ファイルを開く」「フォルダを開く」ボタンが正常に動作し、ファイル情報が適切に表示されるよう調整
-- [ ] T021 [US3] `crates/core/src/export/csv_export.rs` および `xlsx_export.rs` で Word 検索結果が含まれている場合にもカラムずれなく正常に出力されることを単体テストで検証・調整
+- [X] T020 [US3] `src/components/preview/PreviewHeader.tsx` を確認・更新し、Word 文書ファイル選択時にも「ファイルを開く」「フォルダを開く」ボタンが正常に動作し、ファイル情報が適切に表示されるよう調整
+- [X] T021 [US3] `crates/core/src/export/csv_export.rs` および `xlsx_export.rs` で Word 検索結果が含まれている場合にもカラムずれなく正常に出力されることを単体テストで検証・調整
 
 **チェックポイント**: 全ユーザーストーリーが独立かつ協調して完全動作
 
@@ -87,10 +87,10 @@
 
 **目的**: プロジェクト全体の品質ゲート（テスト、リンター、フォーマット）の完全通過と回帰防止。
 
-- [ ] T022 [P] `cargo test --workspace` を実行し、すべての単体テスト・結合テストがパスすることを確認
-- [ ] T023 [P] `npm run build` を実行し、TypeScript 型エラー（`tsc`）ゼロおよび Vite バンドルが正常完了することを確認
-- [ ] T024 [P] `cargo clippy --workspace --all-targets -- -D warnings` および `cargo fmt --check` を実行し、Rust コード規約を完全遵守していることを確認
-- [ ] T025 `specs/024-word-doc-search/quickstart.md` の検証シナリオに沿って、エンドツーエンドでの動作確認を実施
+- [X] T022 [P] `cargo test --workspace` を実行し、すべての単体テスト・結合テストがパスすることを確認
+- [X] T023 [P] `npm run build` を実行し、TypeScript 型エラー（`tsc`）ゼロおよび Vite バンドルが正常完了することを確認
+- [X] T024 [P] `cargo clippy --workspace --all-targets -- -D warnings` および `cargo fmt --check` を実行し、Rust コード規約を完全遵守していることを確認
+- [X] T025 `specs/024-word-doc-search/quickstart.md` の検証シナリオに沿って、エンドツーエンドでの動作確認を実施
 
 ---
 

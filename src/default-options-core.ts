@@ -9,7 +9,7 @@
  * Complies with Constitution Principle II (external constants), Principle III (comprehensive documentation), and Principle V (robust error handling).
  */
 
-import { DEFAULT_SEARCH_OPTIONS, DIRECTORY_SEARCH_CONSTANTS, FILE_EXTENSIONS } from "./constants";
+import { DEFAULT_SEARCH_OPTIONS, DIRECTORY_SEARCH_CONSTANTS, FILE_EXTENSIONS, WORD_FILE_EXTENSIONS } from "./constants";
 import { DefaultSearchOptions } from "./types/defaultOptions";
 
 /**
@@ -61,12 +61,16 @@ function hasValidExistingOptions(candidate: Record<string, unknown>): boolean {
     return false;
   }
 
+  if (candidate.enable_word_search !== undefined && typeof candidate.enable_word_search !== "boolean") {
+    return false;
+  }
+
   if (!Array.isArray(candidate.extensions) || candidate.extensions.length === 0) {
     return false;
   }
 
-  // Constant reference: FILE_EXTENSIONS.DEFAULT_LIST defines the permitted extensions
-  const allowed = new Set<string>(FILE_EXTENSIONS.DEFAULT_LIST);
+  // Constant reference: FILE_EXTENSIONS.DEFAULT_LIST and WORD_FILE_EXTENSIONS.DEFAULT_LIST define the permitted extensions
+  const allowed = new Set<string>([...FILE_EXTENSIONS.DEFAULT_LIST, ...WORD_FILE_EXTENSIONS.DEFAULT_LIST]);
   const allValid = candidate.extensions.every(
     (ext) => typeof ext === "string" && allowed.has(ext)
   );
@@ -89,11 +93,15 @@ export function normalizeDefaultSearchOptions(value: unknown): DefaultSearchOpti
   const workers = candidate.burst_workers;
   const validWorkers = typeof workers === "number" && Number.isInteger(workers) &&
     workers >= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MIN && workers <= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MAX;
+  const enableWordSearch = typeof candidate.enable_word_search === "boolean"
+    ? candidate.enable_word_search
+    : DEFAULT_SEARCH_OPTIONS.enable_word_search;
   return {
     ...resetDefaultSearchOptions(),
     ...candidate,
     directory_mode: directoryMode,
     burst_workers: validWorkers ? workers : null,
+    enable_word_search: enableWordSearch,
   } as DefaultSearchOptions;
 }
 
@@ -122,6 +130,7 @@ export function resetDefaultSearchOptions(): DefaultSearchOptions {
     extensions: [...DEFAULT_SEARCH_OPTIONS.extensions],
     directory_mode: DEFAULT_SEARCH_OPTIONS.directory_mode,
     burst_workers: DEFAULT_SEARCH_OPTIONS.burst_workers,
+    enable_word_search: DEFAULT_SEARCH_OPTIONS.enable_word_search,
   };
 }
 

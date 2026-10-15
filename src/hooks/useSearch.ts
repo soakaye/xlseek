@@ -20,6 +20,7 @@ import {
   ScanProgress,
   CellPreviewData,
 } from "../types/search";
+import { WordPreviewPayload } from "../types/preview";
 import { DefaultSearchOptions } from "../types/defaultOptions";
 import { loadSavedSettings } from "../settings-core";
 
@@ -27,6 +28,7 @@ import {
   COMMANDS,
   EVENT_NAMES,
   TIMING_CONSTANTS,
+  WORD_FILE_EXTENSIONS,
 } from "../constants";
 import { TranslationKey } from "../i18n";
 
@@ -78,6 +80,7 @@ export function useSearch(options?: UseSearchOptions) {
     value: string;
   } | null>(null);
   const [formulaOrValue, setFormulaOrValue] = useState<string>("");
+  const [wordPreview, setWordPreview] = useState<WordPreviewPayload | null>(null);
 
   const isScanning = progress?.state === "Scanning";
 
@@ -196,10 +199,41 @@ export function useSearch(options?: UseSearchOptions) {
     };
   }, []);
 
-  // Cell preview loading
+  const isWordMatch = (match: SearchMatch): boolean => {
+    if (match.match_type === "WordText") return true;
+    const lower = match.file_name.toLowerCase();
+    // Constant reference: WORD_FILE_EXTENSIONS.DEFAULT_LIST
+    return (WORD_FILE_EXTENSIONS.DEFAULT_LIST as readonly string[]).some((ext) => lower.endsWith(ext));
+  };
+
+  // Preview loading (Excel spreadsheet or Word document)
   const loadPreview = useCallback(
     async (match: SearchMatch, sheetNameOverride?: string) => {
       setLoadingPreview(true);
+
+      if (isWordMatch(match)) {
+        setPreviewData(null);
+        setActiveSheet(match.sheet_name);
+        try {
+          // Constant reference: COMMANDS.GET_WORD_PREVIEW
+          const data = await invoke<WordPreviewPayload>(COMMANDS.GET_WORD_PREVIEW, {
+            filePath: match.full_path,
+            targetParagraph: match.row_index,
+          });
+          setWordPreview(data);
+          setSelectedCell(null);
+          setFormulaOrValue(match.full_content);
+        } catch {
+          console.error("[useSearch] Failed to load word preview");
+          options?.onShowToast?.("ui.PREVIEW_LOAD_ERROR");
+          setWordPreview(null);
+        } finally {
+          setLoadingPreview(false);
+        }
+        return;
+      }
+
+      setWordPreview(null);
       const targetSheet = sheetNameOverride || match.sheet_name;
       setActiveSheet(targetSheet);
 
@@ -295,6 +329,7 @@ export function useSearch(options?: UseSearchOptions) {
     resultsBufferRef.current = [];
     setSelectedMatch(null);
     setPreviewData(null);
+    setWordPreview(null);
     setSelectedCell(null);
     setFormulaOrValue("");
 
@@ -412,6 +447,7 @@ export function useSearch(options?: UseSearchOptions) {
     isScanning,
     selectedMatch,
     previewData,
+    wordPreview,
     loadingPreview,
     activeSheet,
     selectedCell,

@@ -8,8 +8,9 @@
 //! Conforms to Constitution Principle I (English comments/errors), Principle II (Constant references),
 //! and Principle III (Header comments).
 
-use crate::models::{CellPreviewData, CommandError, ErrorCode};
+use crate::models::{CellPreviewData, CommandError, ErrorCode, WordPreviewPayload};
 use crate::search::preview::extract_cell_preview;
+use crate::search::word::extract_word_document;
 
 /// ## Description
 /// Retrieves surrounding cell preview data centered on a specific sheet and cell coordinates in an Excel file.
@@ -34,6 +35,37 @@ pub async fn get_cell_preview(
 ) -> Result<CellPreviewData, CommandError> {
     tauri::async_runtime::spawn_blocking(move || {
         extract_cell_preview(&file_path, &sheet_name, row_index, col_index)
+    })
+    .await
+    .map_err(|_| CommandError {
+        code: ErrorCode::PreviewFailed,
+    })?
+    .map_err(|_| CommandError {
+        code: ErrorCode::PreviewFailed,
+    })
+}
+
+/// ## Description
+/// Retrieves ordered document paragraphs from a Word document (.docx, .docm, or .doc) for text preview.
+///
+/// ## Arguments
+/// - `file_path`: `String` - Path to the Word document on disk
+/// - `target_paragraph`: `u32` - 1-based paragraph sequence index matching the search hit
+///
+/// ## Returns
+/// - `Result<WordPreviewPayload, CommandError>`: Word document preview payload on success, or CommandError on failure
+///
+/// ## Errors / Exceptions
+/// Returns `Err` if the file cannot be opened, is encrypted, or is corrupted. Does not panic.
+#[tauri::command]
+pub async fn get_word_preview(
+    file_path: String,
+    target_paragraph: u32,
+) -> Result<WordPreviewPayload, CommandError> {
+    // Constant reference: crate::constants::CMD_GET_WORD_PREVIEW
+    tauri::async_runtime::spawn_blocking(move || {
+        let path = std::path::Path::new(&file_path);
+        extract_word_document(path, target_paragraph)
     })
     .await
     .map_err(|_| CommandError {

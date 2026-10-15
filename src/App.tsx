@@ -19,6 +19,7 @@ import { ResultTable } from "./components/results/ResultTable";
 import { PreviewHeader } from "./components/preview/PreviewHeader";
 import { FormulaBar } from "./components/preview/FormulaBar";
 import { SpreadsheetGrid } from "./components/preview/SpreadsheetGrid";
+import { WordTextPreview } from "./components/preview/WordTextPreview";
 import { SheetTabs } from "./components/preview/SheetTabs";
 import { MetaInfoCard } from "./components/preview/MetaInfoCard";
 import { StatusBar } from "./components/common/StatusBar";
@@ -27,11 +28,32 @@ import { Toast } from "./components/common/Toast";
 import { SettingsDialog } from "./components/settings/SettingsDialog";
 import { useSearch } from "./hooks/useSearch";
 import { useSearchHistory } from "./hooks/useSearchHistory";
-import { APP_LOGS, COMMANDS, EVENT_NAMES } from "./constants";
+import { APP_LOGS, COMMANDS, EVENT_NAMES, WORD_FILE_EXTENSIONS } from "./constants";
 import { useLocale } from "./hooks/useLocale";
 import { LocaleProvider, t, TranslationKey, TranslationValues } from "./i18n";
 
 const AboutDialog = lazy(() => import("./components/about/AboutDialog").then((module) => ({ default: module.AboutDialog })));
+
+/**
+ * ## Description
+ * Determines whether the active search match is from a Word document (.docx, .docm, .doc).
+ *
+ * ## Arguments
+ * @param match - Active SearchMatch or null
+ *
+ * ## Returns
+ * @returns `true` if Word document, `false` otherwise
+ *
+ * ## Errors / Exceptions
+ * Does not throw.
+ */
+const isWordDocument = (match: import("./types/search").SearchMatch | null): boolean => {
+  if (!match) return false;
+  if (match.match_type === "WordText") return true;
+  const lower = match.file_name.toLowerCase();
+  // Constant reference: WORD_FILE_EXTENSIONS.DEFAULT_LIST
+  return (WORD_FILE_EXTENSIONS.DEFAULT_LIST as readonly string[]).some((ext) => lower.endsWith(ext));
+};
 
 /**
  * ## Description
@@ -112,6 +134,7 @@ export const App: React.FC = () => {
     isScanning,
     selectedMatch,
     previewData,
+    wordPreview,
     loadingPreview,
     activeSheet,
     selectedCell,
@@ -148,6 +171,7 @@ export const App: React.FC = () => {
         isScanning={isScanning}
         history={{ keywords, directories }}
         onSelectHistory={(field, value) => updateQuery(field === "keyword" ? { keyword: value } : { target_dir: value })}
+        enableWordSearch={defaultOptions.enable_word_search}
       />
 
       {/* Constant reference: EVENT_NAMES.SEARCH_ISSUE is subscribed by useSearch. */}
@@ -170,7 +194,15 @@ export const App: React.FC = () => {
             onShowToast={showToast}
           />
 
-          {selectedMatch?.match_type === "Shape" && (!selectedMatch.row_index || !selectedMatch.col_index) ? (
+          {isWordDocument(selectedMatch) ? (
+            <WordTextPreview
+              payload={wordPreview}
+              isLoading={loadingPreview}
+              keyword={query.keyword}
+              useRegex={query.use_regex}
+              matchCase={query.match_case}
+            />
+          ) : selectedMatch?.match_type === "Shape" && (!selectedMatch.row_index || !selectedMatch.col_index) ? (
             <div className="flex-1 min-h-0 min-w-0 p-6 flex flex-col items-center justify-center text-zinc-400 bg-[#141416]">
               <div className="max-w-md w-full bg-[#1a1a1d] border border-zinc-800 rounded-lg p-5 text-center shadow-sm">
                 <span className="inline-block px-2.5 py-1 rounded text-xs font-medium bg-amber-950/60 text-amber-300 border border-amber-800/80 mb-3">

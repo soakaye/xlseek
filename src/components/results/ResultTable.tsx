@@ -12,9 +12,9 @@
 
 import React, { useState, useRef, useMemo, useEffect } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ListFilter, Filter, ArrowUp, ArrowDown } from "lucide-react";
+import { ListFilter, Filter, ArrowUp, ArrowDown, FileText } from "lucide-react";
 import { SearchMatch, MatchType } from "../../types/search";
-import { LAYOUT_CONSTANTS, SEARCH_LABELS } from "../../constants";
+import { LAYOUT_CONSTANTS, SEARCH_LABELS, WORD_FILE_EXTENSIONS } from "../../constants";
 import { useTranslation } from "../../i18n";
 
 interface ResultTableProps {
@@ -25,6 +25,25 @@ interface ResultTableProps {
 
 type SortField = "file_name" | "sheet_name" | "cell_address" | "match_type";
 type SortOrder = "asc" | "desc";
+
+/**
+ * ## Description
+ * Determines whether a file path or name corresponds to a Word document (.docx, .docm, .doc).
+ *
+ * ## Arguments
+ * @param fileName - File name string to check
+ *
+ * ## Returns
+ * @returns `true` if file name has a Word extension, `false` otherwise
+ *
+ * ## Errors / Exceptions
+ * Does not throw.
+ */
+const isWordDocument = (fileName: string): boolean => {
+  const lower = fileName.toLowerCase();
+  // Constant reference: WORD_FILE_EXTENSIONS.DEFAULT_LIST
+  return (WORD_FILE_EXTENSIONS.DEFAULT_LIST as readonly string[]).some((ext) => lower.endsWith(ext));
+};
 
 /**
  * ## Description
@@ -174,6 +193,15 @@ export const ResultTable: React.FC<ResultTableProps> = ({
           </span>
         );
       }
+      case "WordText": {
+        // Constant reference: t("ui.RESULT_MATCH_TYPE_WORD_TEXT")
+        const label = t("ui.RESULT_MATCH_TYPE_WORD_TEXT");
+        return (
+          <span className="inline-block max-w-full truncate whitespace-nowrap align-middle px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-900/80 text-blue-200 border border-blue-700/60" title={label} aria-label={label}>
+            {label}
+          </span>
+        );
+      }
     }
   };
 
@@ -294,8 +322,11 @@ export const ResultTable: React.FC<ResultTableProps> = ({
                       : "hover:bg-zinc-800/60 text-zinc-300"
                   }`}
                 >
-                  <div className="w-[30%] px-3 truncate font-mono text-[11px]" title={item.file_name}>
-                    {item.file_name}
+                  <div className="w-[30%] px-3 truncate font-mono text-[11px] flex items-center gap-1.5" title={item.file_name}>
+                    {isWordDocument(item.file_name) && (
+                      <FileText className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                    )}
+                    <span className="truncate">{item.file_name}</span>
                   </div>
                   <div className="w-[18%] px-3 truncate" title={item.sheet_name}>
                     {item.sheet_name}

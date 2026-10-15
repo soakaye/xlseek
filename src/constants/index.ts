@@ -54,6 +54,7 @@ export const COMMANDS = {
   LAUNCH_ASSOCIATED_APP: "launch_associated_app",
   SHOW_OPEN_WITH_DIALOG: "show_open_with_dialog",
   SET_MENU_LOCALE: "set_menu_locale",
+  GET_WORD_PREVIEW: "get_word_preview",
 } as const;
 
 export const SEARCH_LABELS = {
@@ -143,6 +144,20 @@ export const FILE_EXTENSIONS = {
   DEFAULT_LIST: [".xlsx", ".xlsm", ".xlsb", ".xls"],
 } as const;
 
+// Constant reference: Supported Word document file extensions
+export const WORD_FILE_EXTENSIONS = {
+  DOCX: ".docx",
+  DOCM: ".docm",
+  DOC: ".doc",
+  DEFAULT_LIST: [".docx", ".docm", ".doc"],
+} as const;
+
+// Constant reference: Fixed UI placeholder and labels for Word documents
+export const WORD_UI_CONSTANTS = {
+  SHEET_NAME: "Word",
+  CELL_ADDRESS_PLACEHOLDER: "-",
+} as const;
+
 // ==============================================================================
 // 6. Default Search Options Constants (Default Search Options)
 // ==============================================================================
@@ -193,4 +208,5 @@ export const DEFAULT_SEARCH_OPTIONS = {
   extensions: [".xlsx", ".xlsm", ".xlsb", ".xls"],
   directory_mode: DIRECTORY_SEARCH_CONSTANTS.SEQUENTIAL,
   burst_workers: null,
+  enable_word_search: false,
 } as const;

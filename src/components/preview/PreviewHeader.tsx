@@ -10,10 +10,10 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { FileSpreadsheet, Layers, Folder, Copy, Check, ChevronDown, ExternalLink, BarChart2, Table } from "lucide-react";
+import { FileSpreadsheet, FileText, Layers, Folder, Copy, Check, ChevronDown, ExternalLink, BarChart2, Table } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { SearchMatch, SupportedApp } from "../../types/search";
-import { COMMANDS, LAYOUT_CONSTANTS } from "../../constants";
+import { COMMANDS, LAYOUT_CONSTANTS, WORD_FILE_EXTENSIONS } from "../../constants";
 import { useTranslation } from "../../i18n";
 
 interface PreviewHeaderProps {
@@ -183,12 +183,26 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
     }
   };
 
+  const isWord = (match: SearchMatch | null): boolean => {
+    if (!match) return false;
+    if (match.match_type === "WordText") return true;
+    const lower = match.file_name.toLowerCase();
+    // Constant reference: WORD_FILE_EXTENSIONS.DEFAULT_LIST
+    return (WORD_FILE_EXTENSIONS.DEFAULT_LIST as readonly string[]).some((ext) => lower.endsWith(ext));
+  };
+
+  const isWordDoc = isWord(selectedMatch);
+
   return (
     <div className="p-3 pr-4 bg-[#1c1c1f] border-b border-zinc-800 flex flex-col gap-2 flex-shrink-0">
       {/* Row 1: File name & sheet badge with action button group */}
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <FileSpreadsheet className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          {isWordDoc ? (
+            <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
+          ) : (
+            <FileSpreadsheet className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          )}
           <span
             className="text-xs font-semibold text-zinc-100 truncate"
             title={selectedMatch.file_name}
@@ -196,17 +210,27 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
             {selectedMatch.file_name}
           </span>
 
-          {/* Worksheet badge */}
-          <div
-            className="flex items-center gap-1.5 bg-emerald-950/80 text-emerald-300 border border-emerald-700/70 px-2 py-0.5 rounded text-[11px] font-medium flex-shrink-0 shadow-sm"
-            title={t("ui.WORKSHEET_TITLE")}
-          >
-            <Layers className="w-3 h-3 text-emerald-400" />
-            <span className="text-zinc-400 font-normal">{t("ui.LABEL_SHEET")}</span>
-            <span className="font-bold text-emerald-200">
-              {selectedMatch.sheet_name}
-            </span>
-          </div>
+          {/* Worksheet or Word badge */}
+          {isWordDoc ? (
+            <div
+              className="flex items-center gap-1.5 bg-blue-950/80 text-blue-300 border border-blue-700/70 px-2 py-0.5 rounded text-[11px] font-medium flex-shrink-0 shadow-sm"
+              title="Word Document"
+            >
+              <FileText className="w-3 h-3 text-blue-400" />
+              <span className="font-bold text-blue-200">Word</span>
+            </div>
+          ) : (
+            <div
+              className="flex items-center gap-1.5 bg-emerald-950/80 text-emerald-300 border border-emerald-700/70 px-2 py-0.5 rounded text-[11px] font-medium flex-shrink-0 shadow-sm"
+              title={t("ui.WORKSHEET_TITLE")}
+            >
+              <Layers className="w-3 h-3 text-emerald-400" />
+              <span className="text-zinc-400 font-normal">{t("ui.LABEL_SHEET")}</span>
+              <span className="font-bold text-emerald-200">
+                {selectedMatch.sheet_name}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Action button controls */}

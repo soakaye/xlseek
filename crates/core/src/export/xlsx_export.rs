@@ -105,6 +105,7 @@ pub fn export_to_xlsx(
             MatchType::Comment => crate::constants::EXPORT_MATCH_COMMENT_KEY,
             MatchType::HiddenSheet => crate::constants::EXPORT_MATCH_HIDDEN_SHEET_KEY,
             MatchType::Shape => crate::constants::EXPORT_MATCH_SHAPE_KEY,
+            MatchType::WordText => crate::constants::EXPORT_MATCH_WORD_TEXT_KEY,
         };
         let match_type_str = crate::i18n::resolve_catalog_text(catalogs, language, match_key)
             .ok_or_else(|| crate::constants::ERR_TRANSLATION_MISSING.to_string())?;
@@ -320,6 +321,77 @@ mod localization_tests {
         let actual_path = sheet.get_value((1, 2)).map(ToString::to_string).unwrap();
         assert_eq!(actual_path, r"C:\Projects\test.xlsx");
         assert!(!actual_path.contains(r"\\?\"));
+
+        std::fs::remove_file(path).unwrap();
+    }
+
+    /// ## Description
+    /// Verifies that `export_to_xlsx` correctly formats Word search results without column shifts.
+    ///
+    /// ## Arguments / Returns
+    /// No arguments. Outputs a test Word SearchMatch to XLSX and validates cell contents via Calamine.
+    ///
+    /// ## Errors / Exceptions
+    /// Panics on assertion failure.
+    #[test]
+    fn export_to_xlsx_handles_word_search_match() {
+        let mut english = BTreeMap::new();
+        for key in crate::constants::EXPORT_HEADER_KEYS {
+            english.insert(key.to_string(), key.to_string());
+        }
+        english.insert(
+            crate::constants::EXPORT_SHEET_NAME_KEY.to_string(),
+            "Results".to_string(),
+        );
+        english.insert(
+            crate::constants::EXPORT_MATCH_WORD_TEXT_KEY.to_string(),
+            "Word".to_string(),
+        );
+        let catalogs = BTreeMap::from([(crate::constants::LANGUAGE_EN.to_string(), english)]);
+
+        let item = crate::models::SearchMatch {
+            id: 10,
+            file_name: "doc2.docx".to_string(),
+            full_path: r"C:\Docs\doc2.docx".to_string(),
+            // Constant reference: crate::constants::WORD_SHEET_LABEL
+            sheet_name: crate::constants::WORD_SHEET_LABEL.to_string(),
+            // Constant reference: crate::constants::WORD_CELL_DEFAULT_ADDRESS
+            cell_address: crate::constants::WORD_CELL_DEFAULT_ADDRESS.to_string(),
+            row_index: 3,
+            col_index: 0,
+            col_name: String::new(),
+            shape_name: None,
+            match_type: crate::models::MatchType::WordText,
+            sheet_hidden: false,
+            snippet: "docx test snippet".to_string(),
+            full_content: "Full docx text".to_string(),
+            formula: None,
+            // Constant reference: crate::constants::WORD_SHEET_LABEL
+            sheets_in_workbook: vec![crate::constants::WORD_SHEET_LABEL.to_string()],
+        };
+
+        let path = std::env::temp_dir().join(format!("{TEST_OUTPUT_PREFIX}-word-export.xlsx"));
+        super::export_to_xlsx(
+            path.to_str().unwrap(),
+            &[item],
+            crate::constants::LANGUAGE_EN,
+            &catalogs,
+        )
+        .unwrap();
+
+        let mut workbook = calamine::open_workbook_auto(&path).unwrap();
+        let sheet = workbook.worksheet_range_at(0).unwrap().unwrap();
+        let actual_file = sheet.get_value((1, 1)).map(ToString::to_string).unwrap();
+        let actual_sheet = sheet.get_value((1, 3)).map(ToString::to_string).unwrap();
+        let actual_cell = sheet.get_value((1, 4)).map(ToString::to_string).unwrap();
+        let actual_type = sheet.get_value((1, 6)).map(ToString::to_string).unwrap();
+        let actual_content = sheet.get_value((1, 7)).map(ToString::to_string).unwrap();
+
+        assert_eq!(actual_file, "doc2.docx");
+        assert_eq!(actual_sheet, crate::constants::WORD_SHEET_LABEL);
+        assert_eq!(actual_cell, crate::constants::WORD_CELL_DEFAULT_ADDRESS);
+        assert_eq!(actual_type, "Word");
+        assert_eq!(actual_content, "Full docx text");
 
         std::fs::remove_file(path).unwrap();
     }

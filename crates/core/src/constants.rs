@@ -19,6 +19,18 @@
 
 /// Default list of target Excel extensions
 pub const DEFAULT_EXTENSIONS: [&str; 4] = [".xlsx", ".xlsm", ".xlsb", ".xls"];
+/// Word .docx extension
+pub const EXT_DOCX: &str = ".docx";
+/// Word .docm extension
+pub const EXT_DOCM: &str = ".docm";
+/// Word .doc extension
+pub const EXT_DOC: &str = ".doc";
+/// Supported Word document extensions
+pub const WORD_EXTENSIONS: [&str; 3] = [EXT_DOCX, EXT_DOCM, EXT_DOC];
+/// Fixed sheet name label for Word document search matches
+pub const WORD_SHEET_LABEL: &str = "Word";
+/// Fixed cell address placeholder for Word document search matches
+pub const WORD_CELL_DEFAULT_ADDRESS: &str = "-";
 /// Backward-compatible default setting for enabling cell value search in SearchQuery.
 pub const DEFAULT_INCLUDE_VALUE: bool = true;
 /// Field name for value search option in SearchQuery JSON.
@@ -406,6 +418,7 @@ pub const EXPORT_MATCH_FORMULA_KEY: &str = "export.match.formula";
 pub const EXPORT_MATCH_COMMENT_KEY: &str = "export.match.comment";
 pub const EXPORT_MATCH_HIDDEN_SHEET_KEY: &str = "export.match.hiddenSheet";
 pub const EXPORT_MATCH_SHAPE_KEY: &str = "export.match.shape";
+pub const EXPORT_MATCH_WORD_TEXT_KEY: &str = "export.match.wordText";
 
 // ==============================================================================
 // 6. Supported Apps
@@ -511,6 +524,12 @@ mod tests {
         assert!(DEFAULT_EXTENSIONS.contains(&EXT_XLSM));
         assert!(DEFAULT_EXTENSIONS.contains(&EXT_XLSB));
         assert!(DEFAULT_EXTENSIONS.contains(&EXT_XLS));
+        assert_eq!(WORD_EXTENSIONS.len(), 3);
+        assert!(WORD_EXTENSIONS.contains(&EXT_DOCX));
+        assert!(WORD_EXTENSIONS.contains(&EXT_DOCM));
+        assert!(WORD_EXTENSIONS.contains(&EXT_DOC));
+        assert_eq!(WORD_SHEET_LABEL, "Word");
+        assert_eq!(WORD_CELL_DEFAULT_ADDRESS, "-");
     }
 
     /// Validates CSV/Excel export header column counts and key mappings.
@@ -528,6 +547,7 @@ mod tests {
         assert_eq!(EXPORT_HEADER_KEYS[8], "export.header.formula");
         assert_eq!(EXPORT_SHEET_NAME_KEY, "export.sheetName");
         assert_eq!(EXPORT_MATCH_HIDDEN_SHEET_KEY, "export.match.hiddenSheet");
+        assert_eq!(EXPORT_MATCH_WORD_TEXT_KEY, "export.match.wordText");
     }
 
     /// Validates that error messages are non-empty strings.

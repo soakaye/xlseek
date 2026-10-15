@@ -53,6 +53,20 @@ pub const EXT_XLSX: &str = ".xlsx";
 pub const EXT_XLSM: &str = ".xlsm";
 pub const EXT_XLSB: &str = ".xlsb";
 pub const EXT_XLS: &str = ".xls";
+/// Word .docx extension
+pub const EXT_DOCX: &str = ".docx";
+/// Word .docm extension
+pub const EXT_DOCM: &str = ".docm";
+/// Word .doc extension
+pub const EXT_DOC: &str = ".doc";
+/// Supported Word document extensions
+pub const WORD_EXTENSIONS: [&str; 3] = [EXT_DOCX, EXT_DOCM, EXT_DOC];
+/// Fixed sheet name label for Word document search matches
+pub const WORD_SHEET_LABEL: &str = "Word";
+/// Fixed cell address placeholder for Word document search matches
+pub const WORD_CELL_DEFAULT_ADDRESS: &str = "-";
+/// Command name for retrieving Word document preview
+pub const CMD_GET_WORD_PREVIEW: &str = "get_word_preview";
 
 // ==============================================================================
 // 2. Scan & Search Settings
@@ -348,6 +362,13 @@ mod tests {
         assert!(DEFAULT_EXTENSIONS.contains(&EXT_XLSM));
         assert!(DEFAULT_EXTENSIONS.contains(&EXT_XLSB));
         assert!(DEFAULT_EXTENSIONS.contains(&EXT_XLS));
+        assert_eq!(WORD_EXTENSIONS.len(), 3);
+        assert!(WORD_EXTENSIONS.contains(&EXT_DOCX));
+        assert!(WORD_EXTENSIONS.contains(&EXT_DOCM));
+        assert!(WORD_EXTENSIONS.contains(&EXT_DOC));
+        assert_eq!(WORD_SHEET_LABEL, "Word");
+        assert_eq!(WORD_CELL_DEFAULT_ADDRESS, "-");
+        assert_eq!(CMD_GET_WORD_PREVIEW, "get_word_preview");
     }
 
     /// ## Description

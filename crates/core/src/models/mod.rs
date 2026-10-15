@@ -95,6 +95,7 @@ pub enum MatchType {
     Comment,
     HiddenSheet,
     Shape,
+    WordText,
 }
 
 /// Result structure storing matched cell or drawing shape item.
@@ -243,6 +244,44 @@ pub struct CellValueInfo {
     pub value: String,
     pub is_target: bool,
     pub formula: Option<String>,
+}
+
+/// Represents a single extracted paragraph from a Word document for preview.
+///
+/// ## Description
+/// Holds a 1-based paragraph sequence index, the extracted plain text, and a flag
+/// indicating whether this paragraph contains the selected search match.
+///
+/// ## Arguments / Returns
+/// Plain data carrier struct.
+///
+/// ## Errors / Exceptions
+/// Does not produce runtime errors or panics.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WordParagraph {
+    pub index: u32,
+    pub text: String,
+    pub is_target: bool,
+}
+
+/// Complete Word document text preview payload returned to clients.
+///
+/// ## Description
+/// Carries file identifiers, target paragraph index, total paragraph count,
+/// and the ordered sequence of extracted Word document paragraphs.
+///
+/// ## Arguments / Returns
+/// Plain data carrier struct serialized to JSON for Tauri IPC responses.
+///
+/// ## Errors / Exceptions
+/// Does not produce runtime errors or panics.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct WordPreviewPayload {
+    pub file_path: String,
+    pub file_name: String,
+    pub target_paragraph: u32,
+    pub total_paragraphs: usize,
+    pub paragraphs: Vec<WordParagraph>,
 }
 
 /// Export format options (CSV or Excel).

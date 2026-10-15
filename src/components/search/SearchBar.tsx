@@ -17,7 +17,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { SearchQuery } from "../../types/search";
 import { SEARCH_LABELS } from "../../constants";
-import { COMMANDS, FILE_EXTENSIONS, KEYBOARD_KEYS, PATH_COMPLETION_CONSTANTS } from "../../constants";
+import { COMMANDS, FILE_EXTENSIONS, WORD_FILE_EXTENSIONS, KEYBOARD_KEYS, PATH_COMPLETION_CONSTANTS } from "../../constants";
 import { useTranslation } from "../../i18n";
 import { appendSearchPath, getActivePathSegment } from "../../utils/pathTokenizer";
 
@@ -29,6 +29,7 @@ interface SearchBarProps {
   isScanning: boolean;
   history: { keywords: string[]; directories: string[] };
   onSelectHistory: (field: "keyword" | "directory", value: string) => void;
+  enableWordSearch?: boolean;
 }
 
 /**
@@ -52,6 +53,7 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   isScanning,
   history,
   onSelectHistory,
+  enableWordSearch = false,
 }) => {
   const t = useTranslation();
   const [isDragOver, setIsDragOver] = useState(false);
@@ -406,7 +408,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     }
   };
 
-  const currentExtensions = query.extensions ?? [...FILE_EXTENSIONS.DEFAULT_LIST];
+  const availableExtensions = enableWordSearch
+    ? [...FILE_EXTENSIONS.DEFAULT_LIST, ...WORD_FILE_EXTENSIONS.DEFAULT_LIST]
+    : FILE_EXTENSIONS.DEFAULT_LIST;
+
+  const currentExtensions = query.extensions ?? [...availableExtensions];
 
   const handleToggleExtension = (ext: string) => {
     const isSelected = currentExtensions.includes(ext);
@@ -685,8 +691,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           <div className="flex items-center gap-2 text-zinc-400 text-xs">
             {/* Constant reference: t("ui.LABEL_TARGET_EXTENSIONS") */}
             <span>{t("ui.LABEL_TARGET_EXTENSIONS")}</span>
-            <div className="flex gap-1">
-              {FILE_EXTENSIONS.DEFAULT_LIST.map((ext) => {
+            <div className="flex gap-1 flex-wrap">
+              {availableExtensions.map((ext) => {
                 const isSelected = currentExtensions.includes(ext);
                 return (
                   <button

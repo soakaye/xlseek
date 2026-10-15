@@ -12,7 +12,7 @@
 /**
  * Match type enumeration
  */
-export type MatchType = "CellValue" | "Formula" | "Comment" | "HiddenSheet" | "Shape";
+export type MatchType = "CellValue" | "Formula" | "Comment" | "HiddenSheet" | "Shape" | "WordText";
 
 /**
  * Search query parameter interface

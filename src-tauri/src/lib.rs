@@ -189,6 +189,7 @@ pub fn run() {
             commands::complete_directory_path,
             commands::cancel_search,
             commands::get_cell_preview,
+            commands::get_word_preview,
             commands::open_in_excel,
             commands::open_in_folder,
             commands::export_results,

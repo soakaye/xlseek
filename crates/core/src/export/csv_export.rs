@@ -77,6 +77,7 @@ pub fn write_csv_to_writer<W: Write>(
             MatchType::Comment => crate::constants::EXPORT_MATCH_COMMENT_KEY,
             MatchType::HiddenSheet => crate::constants::EXPORT_MATCH_HIDDEN_SHEET_KEY,
             MatchType::Shape => crate::constants::EXPORT_MATCH_SHAPE_KEY,
+            MatchType::WordText => crate::constants::EXPORT_MATCH_WORD_TEXT_KEY,
         };
         let match_type_str = crate::i18n::resolve_catalog_text(catalogs, language, match_key)
             .ok_or_else(|| crate::constants::ERR_TRANSLATION_MISSING.to_string())?;
@@ -302,5 +303,62 @@ mod localization_tests {
         let output_str = String::from_utf8(buffer).unwrap();
         assert!(output_str.contains(r"C:\Projects\test.xlsx"));
         assert!(!output_str.contains(r"\\?\"));
+    }
+
+    /// ## Description
+    /// Verifies that `write_csv_to_writer` correctly formats Word search results without column shifts.
+    ///
+    /// ## Arguments / Returns
+    /// No arguments. Outputs a test Word SearchMatch and inspects the resulting CSV text.
+    ///
+    /// ## Errors / Exceptions
+    /// Panics on assertion failure.
+    #[test]
+    fn write_csv_to_writer_handles_word_search_match() {
+        let mut japanese = BTreeMap::new();
+        for key in crate::constants::EXPORT_HEADER_KEYS {
+            japanese.insert(key.to_string(), key.to_string());
+        }
+        japanese.insert(
+            crate::constants::EXPORT_MATCH_WORD_TEXT_KEY.to_string(),
+            "Word".to_string(),
+        );
+        let catalogs = BTreeMap::from([(crate::constants::LANGUAGE_JA.to_string(), japanese)]);
+
+        let item = crate::models::SearchMatch {
+            id: 42,
+            file_name: "doc1.docx".to_string(),
+            full_path: r"C:\Docs\doc1.docx".to_string(),
+            // Constant reference: crate::constants::WORD_SHEET_LABEL
+            sheet_name: crate::constants::WORD_SHEET_LABEL.to_string(),
+            // Constant reference: crate::constants::WORD_CELL_DEFAULT_ADDRESS
+            cell_address: crate::constants::WORD_CELL_DEFAULT_ADDRESS.to_string(),
+            row_index: 5,
+            col_index: 0,
+            col_name: String::new(),
+            shape_name: None,
+            match_type: crate::models::MatchType::WordText,
+            sheet_hidden: false,
+            snippet: "keyword".to_string(),
+            full_content: "Entire paragraph containing keyword".to_string(),
+            formula: None,
+            // Constant reference: crate::constants::WORD_SHEET_LABEL
+            sheets_in_workbook: vec![crate::constants::WORD_SHEET_LABEL.to_string()],
+        };
+
+        let mut buffer = Vec::new();
+        super::write_csv_to_writer(
+            &mut buffer,
+            &[item],
+            crate::constants::LANGUAGE_JA,
+            &catalogs,
+            false,
+        )
+        .unwrap();
+
+        let output_str = String::from_utf8(buffer).unwrap();
+        assert!(output_str.contains("doc1.docx"));
+        assert!(output_str.contains("Word"));
+        assert!(output_str.contains("Entire paragraph containing keyword"));
     }
 }

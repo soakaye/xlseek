@@ -7,7 +7,7 @@
  */
 import React, { useEffect, useRef, useState } from "react";
 import {
-  BURST_WORKER_CHOICES, DISPLAY_LANGUAGES, DIRECTORY_SEARCH_CONSTANTS, FILE_EXTENSIONS, KEYBOARD_KEYS, LANGUAGE_PREFERENCES,
+  BURST_WORKER_CHOICES, DISPLAY_LANGUAGES, DIRECTORY_SEARCH_CONSTANTS, FILE_EXTENSIONS, WORD_FILE_EXTENSIONS, KEYBOARD_KEYS, LANGUAGE_PREFERENCES,
   SEARCH_HISTORY_CONSTANTS, SEARCH_LABELS, SETTINGS_DIALOG_IDS, SETTINGS_KEYBOARD_KEYS, SETTINGS_PAGES, SETTINGS_TRANSLATION_KEYS,
 } from "../../constants";
 import { DisplayLanguage, LanguagePreference } from "../../locale-core";
@@ -262,7 +262,41 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                 <div className="space-y-2 text-xs">{[
                   ["match_case", "ui.OPTION_MATCH_CASE"], ["use_regex", "ui.OPTION_USE_REGEX"], ["include_formula", "ui.OPTION_INCLUDE_FORMULA"], ["include_shape", SEARCH_LABELS.INCLUDE_SHAPE], ["include_comment", "ui.OPTION_INCLUDE_COMMENT"], ["include_hidden", "ui.OPTION_INCLUDE_HIDDEN"],
                 ].map(([field, label]) => <label key={field} className="flex cursor-pointer items-center gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800"><input type="checkbox" disabled={saving} checked={Boolean(options[field as keyof DefaultSearchOptions])} onChange={(event) => setOptions((current) => ({ ...current, [field]: event.target.checked }))} /><span>{t(label as TranslationKey)}</span></label>)}
-                  <div><span className="mb-1.5 block font-medium text-zinc-300">{t("ui.LABEL_TARGET_EXTENSIONS")}</span><div className="flex gap-2">{FILE_EXTENSIONS.DEFAULT_LIST.map((extension) => <button key={extension} type="button" disabled={saving} aria-pressed={options.extensions.includes(extension)} onClick={() => toggleExtension(extension)} className={`rounded border px-2.5 py-1 font-mono ${options.extensions.includes(extension) ? "border-emerald-600 bg-emerald-950/80 text-emerald-300" : "border-zinc-700 bg-zinc-800 text-zinc-500"}`}>{extension}</button>)}</div>{!extensionsValid && <p role="alert" className="mt-1 text-amber-400">{t("ui.DEFAULT_OPTIONS_EXTENSIONS_REQUIRED")}</p>}</div>
+                  <label className="flex cursor-pointer items-start gap-2 rounded border border-zinc-800 bg-zinc-850 px-3 py-2 hover:bg-zinc-800">
+                    <input
+                      type="checkbox"
+                      disabled={saving}
+                      checked={Boolean(options.enable_word_search)}
+                      onChange={(event) => {
+                        const checked = event.target.checked;
+                        setOptions((current) => {
+                          let nextExtensions = [...current.extensions];
+                          if (checked) {
+                            for (const ext of WORD_FILE_EXTENSIONS.DEFAULT_LIST) {
+                              if (!nextExtensions.includes(ext)) {
+                                nextExtensions.push(ext);
+                              }
+                            }
+                          } else {
+                            nextExtensions = nextExtensions.filter(
+                              (ext) => !(WORD_FILE_EXTENSIONS.DEFAULT_LIST as readonly string[]).includes(ext)
+                            );
+                          }
+                          return {
+                            ...current,
+                            enable_word_search: checked,
+                            extensions: nextExtensions,
+                          };
+                        });
+                      }}
+                      className="mt-0.5"
+                    />
+                    <div>
+                      <span className="block font-medium">{t("ui.OPTION_ENABLE_WORD_SEARCH")}</span>
+                      <span className="block text-zinc-400 text-[11px]">{t("ui.OPTION_ENABLE_WORD_SEARCH_DESC")}</span>
+                    </div>
+                  </label>
+                  <div><span className="mb-1.5 block font-medium text-zinc-300">{t("ui.LABEL_TARGET_EXTENSIONS")}</span><div className="flex flex-wrap gap-2">{(options.enable_word_search ? [...FILE_EXTENSIONS.DEFAULT_LIST, ...WORD_FILE_EXTENSIONS.DEFAULT_LIST] : FILE_EXTENSIONS.DEFAULT_LIST).map((extension) => <button key={extension} type="button" disabled={saving} aria-pressed={options.extensions.includes(extension)} onClick={() => toggleExtension(extension)} className={`rounded border px-2.5 py-1 font-mono ${options.extensions.includes(extension) ? "border-emerald-600 bg-emerald-950/80 text-emerald-300" : "border-zinc-700 bg-zinc-800 text-zinc-500"}`}>{extension}</button>)}</div>{!extensionsValid && <p role="alert" className="mt-1 text-amber-400">{t("ui.DEFAULT_OPTIONS_EXTENSIONS_REQUIRED")}</p>}</div>
                 </div>
               </fieldset>
             </section>
