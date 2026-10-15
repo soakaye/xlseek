@@ -77,3 +77,9 @@ auto_commit:
   after_taskstoissues:
     enabled: false
     message: "[Spec Kit] Sync tasks to issues"
+  after_bug_fix:
+    enabled: true
+    message: "[Spec Kit] Fix bug docx-missing-locale-keys"
+  after_bug_test:
+    enabled: true
+    message: "[Spec Kit] Verify and resolve bug docx-missing-locale-keys"

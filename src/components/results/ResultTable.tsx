@@ -322,7 +322,7 @@ export const ResultTable: React.FC<ResultTableProps> = ({
                       : "hover:bg-zinc-800/60 text-zinc-300"
                   }`}
                 >
-                  <div className="w-[30%] px-3 truncate font-mono text-[11px] flex items-center gap-1.5" title={item.file_name}>
+                  <div className="w-[30%] px-3 truncate font-mono text-[11px] inline-flex items-center gap-1.5" title={item.file_name}>
                     {isWordDocument(item.file_name) && (
                       <FileText className="w-3.5 h-3.5 text-blue-400 shrink-0" />
                     )}

@@ -21,6 +21,21 @@ describe("shared localization catalogs", () => {
     expect(english["common.translationUnavailable"]).toBeTruthy();
   });
 
+  it("defines all Word document search localization keys in English and Japanese", () => {
+    const wordKeys = [
+      "ui.OPTION_ENABLE_WORD_SEARCH",
+      "ui.OPTION_ENABLE_WORD_SEARCH_DESC",
+      "ui.MATCH_TYPE_WORD_TEXT",
+      "ui.RESULT_MATCH_TYPE_WORD_TEXT",
+      "export.match.wordText",
+    ];
+
+    for (const key of wordKeys) {
+      expect(english[key], `Missing English key: ${key}`).toBeTruthy();
+      expect(japanese[key], `Missing Japanese key: ${key}`).toBeTruthy();
+    }
+  });
+
   it("uses matching interpolation placeholders in each locale", () => {
     const placeholders = (message: string) => [...message.matchAll(/\{([A-Za-z0-9_]+)\}/g)].map((match) => match[1]).sort();
     const mismatched = Object.keys(japanese)
