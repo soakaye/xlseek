@@ -4,28 +4,39 @@
 
 **English** | [日本語](README_ja.md)
 
-**Excel Seek (`xlseek`)** is a fast, lightweight, and secure desktop search application and CLI tool for recursive searching across Excel workbooks (`.xlsx`, `.xlsm`, `.xlsb`, `.xls`). It enables users to search cell values, formulas, notes, and shape text using plain text queries or regular expressions.
+**Excel Seek (`xlseek`)** is a fast, lightweight, and secure desktop search application and CLI tool for recursive searching across Excel workbooks (`.xlsx`, `.xlsm`, `.xlsb`, `.xls`) and Microsoft Word documents (`.docx`, `.docm`, `.doc`). It enables users to search cell values, formulas, notes, paragraphs, and shape text using plain text queries or regular expressions.
 
 ---
 
 ## Key Features
 
-- **Multi-Format Support**: Recursively searches `.xlsx`, `.xlsm`, `.xlsb`, and `.xls` files within designated directories.
+- **Multi-Format Support**:
+  - **Excel Workbooks**: Recursively searches `.xlsx`, `.xlsm`, `.xlsb`, and `.xls` files within designated directories.
+  - **Word Documents**: Optional support for `.docx`, `.docm`, and `.doc` files (opt-in via Settings). When enabled, Word extension toggles appear directly on the search bar.
+- **Multiple Target Paths**: Specify multiple search paths separated by commas. Paths containing commas or spaces can be enclosed in double quotes (e.g. `"/Volumes/Data, 2026", "C:\My Reports"`).
+- **Ignore File Patterns (.gitignore Syntax)**:
+  - Exclude temporary office locks, backup files, or unwanted subdirectories using standard `.gitignore` glob patterns (comma-separated, e.g. `~$*, *.tmp, backup/`).
+  - Pre-populated with `~$*` by default to skip Microsoft Office temporary lock files.
+  - Full pattern history with dropdown selection, customizable baseline defaults in Settings, and instant directory skipping for matching folders.
 - **Flexible Search Options**:
   - Case-sensitive / Case-insensitive matching.
   - Regular expression (regex) search.
-  - Search across cell values, formulas, comments/notes, and shape text.
-  - Include or exclude hidden worksheets.
+  - Search across cell values, formulas, comments/notes, and shape text (Excel).
+  - Search body paragraphs, tables, headers/footers, comments, and drawing shape text (Word).
+  - Include or exclude hidden worksheets (Excel).
 - **Fast & Parallelized**: Powered by [calamine](https://github.com/tafia/calamine) for high-performance spreadsheet parsing and [rayon](https://github.com/rayon-rs/rayon) for multi-threaded parallel execution.
-- **Rich Preview & Direct Opening**: Inspect matched cell values, formulas, and surrounding cells directly in the preview grid, or open the original file with your system's default application.
-- **Search History & Autocomplete**: Remembers recent search queries and target directory paths with autocompletion.
+- **Rich Preview & Direct Opening**:
+  - **Spreadsheet Grid Preview**: Inspect matched cell values, formulas, and surrounding cells in a familiar spreadsheet view for Excel documents.
+  - **Text Document Preview**: Read matching Word paragraphs with line/paragraph numbering, auto-scrolling to matches, and query term highlighting.
+  - **Direct Launching**: Open files in system default applications or specific installed spreadsheet apps, or reveal the file highlighted in File Explorer / Finder / Linux file managers.
+- **Search History & Autocomplete**: Remembers recent search queries, target directory paths, and ignore patterns with autocompletion.
 - **Export Capabilities**: Export search results directly to CSV or formatted Excel (`.xlsx`) files.
-- **Headless CLI Included**: Run batch searches and export results without launching the GUI via `xlseek-cli`.
+- **Headless CLI Included**: Run batch searches and export results or stream CSV to stdout via `xlseek-cli`.
 - **Bilingual Interface**: Seamless switching between Japanese and English UI, configurable default search options, and history limits.
 - **Cross-Platform Desktop & CLI**: Full native support for Windows, macOS, and Linux, including OS-specific file manager integration (Explorer, Finder, DBus ShowItems / xdg-open) and external spreadsheet application launching.
 - **Transparent Open Source**: View application details, version information, and third-party OSS licenses in the About dialog.
 
-> **Default Search Behavior**: Searching cell formulas is enabled by default. Shape text and hidden sheets are excluded by default. All 4 file extensions (`.xlsx`, `.xlsm`, `.xlsb`, `.xls`) are enabled by default.
+> **Default Search Behavior**: Searching cell formulas is enabled by default. Shape text and hidden sheets are excluded by default. All 4 Excel extensions (`.xlsx`, `.xlsm`, `.xlsb`, `.xls`) and temporary file ignore pattern (`~$*`) are enabled by default. Word document search (`.docx`, `.docm`, `.doc`) is disabled by default and can be enabled in Settings.
 
 ---
 
@@ -36,9 +47,9 @@
 | **Desktop Framework** | [Tauri v2](https://tauri.app/) |
 | **Frontend** | React 18, TypeScript, Vite, Tailwind CSS, Lucide React |
 | **Backend & Engine** | Rust 2021 edition |
-| **Excel Parser** | `calamine` |
+| **Document Parsers** | `calamine` (Excel), `quick-xml` + `zip` (OOXML Word), `cfb` (legacy Word binary) |
 | **Concurrency** | `rayon` |
-| **Regular Expressions**| `regex` |
+| **Pattern & Glob Matching**| `regex`, `ignore` / `globset` |
 | **Export Formats** | `csv`, `rust_xlsxwriter` |
 
 ---
@@ -127,13 +138,15 @@ cargo build --release -p xlseek-cli --bin xlseek-cli
 # Display help and available options
 ./target/release/xlseek-cli --help
 
-# Example: Search and export to XLSX
-./target/release/xlseek-cli --path ./reports --query 'Revenue' \
-  --format xlsx --output ./results.xlsx
+# Example: Positional syntax streaming CSV to standard output (stdout)
+./target/release/xlseek-cli "Revenue" ./reports
 
-# Example: Search and export to CSV with English headings
-./target/release/xlseek-cli --path ./reports --query 'Revenue' \
-  --format csv --output ./results.csv --language en
+# Example: Search and export to XLSX (format inferred from file extension)
+./target/release/xlseek-cli -p ./reports -q "Revenue" -o ./results.xlsx
+
+# Example: Search multiple directories with ignore patterns and English headings
+./target/release/xlseek-cli -p "./reports, ./archive" -q "Revenue" \
+  -i "~$*, *.tmp, backup/*" -f csv -o ./results.csv -l en
 ```
 
 On Windows, the standalone executable built by this Cargo command is `target\release\xlseek-cli.exe`. Packaging builds the target-specific CLI and stages it for Tauri automatically.
@@ -158,8 +171,11 @@ Run it from PowerShell using its full path:
 # Display help and options
 & "$env:LOCALAPPDATA\xlseek\xlseek-cli.exe" --help
 
-# Search and export to CSV
-& "$env:LOCALAPPDATA\xlseek\xlseek-cli.exe" --path .\reports --query 'Revenue' --format csv --output .\results.csv
+# Positional search streaming CSV to stdout
+& "$env:LOCALAPPDATA\xlseek\xlseek-cli.exe" "Revenue" .\reports
+
+# Search and export to CSV with ignore pattern
+& "$env:LOCALAPPDATA\xlseek\xlseek-cli.exe" -p .\reports -q "Revenue" -i "~$*" -o .\results.csv
 ```
 
 #### macOS
@@ -177,8 +193,7 @@ Run it from Terminal:
 "/Applications/xlseek.app/Contents/MacOS/xlseek-cli" --help
 
 # Search and export to XLSX
-"/Applications/xlseek.app/Contents/MacOS/xlseek-cli" --path ./reports --query 'Revenue' \
-  --format xlsx --output ./results.xlsx
+"/Applications/xlseek.app/Contents/MacOS/xlseek-cli" -p ./reports -q "Revenue" -o ./results.xlsx
 ```
 
 *Tip*: You can create a symlink in `/usr/local/bin` to run it directly:
@@ -200,10 +215,10 @@ Run it from Terminal:
 ```bash
 # When installed via Debian package (.deb)
 xlseek-cli --help
-xlseek-cli --path ./reports --query 'Revenue' --format csv --output ./results.csv
+xlseek-cli "Revenue" ./reports
 
 # When running from extracted AppImage
-./squashfs-root/usr/bin/xlseek-cli --path ./reports --query 'Revenue' --format csv --output ./results.csv
+./squashfs-root/usr/bin/xlseek-cli -p ./reports -q "Revenue" -o ./results.csv
 ```
 
 ### Directory Search Modes
@@ -212,11 +227,25 @@ Desktop Settings lets you choose Sequential or Burst directory discovery. Sequen
 
 ### CLI Notes & Options
 
-- **Mandatory Arguments**: `--path`, `--query`, `--format <csv|xlsx>`, and `--output <path>`.
-- **Directory Discovery**: Recursive search defaults to Sequential mode. Use `--directory-mode burst` to visit subdirectories concurrently, or `--burst-workers <2..32>` to select a custom Burst limit (the worker-count option implies Burst). Burst Automatic chooses a bounded count based on available CPU parallelism. These options affect directory traversal only; single-file searches remain valid. See [directory search option contract](specs/019-burst-directory-search/contracts/cli-directory-mode.md) and [settings contract](specs/019-burst-directory-search/contracts/settings.md).
-- **Search Scope**: By default, searches cell values, formulas, comments/notes, and shapes, while excluding hidden sheets.
-- **Comment Support**: Extracts classic comments/notes from `.xlsx` and `.xlsm` files (threaded comments and `.xls` / `.xlsb` notes are currently unsupported).
-- **Safety**: Existing output files will not be overwritten unless explicitly allowed with `--overwrite` (returns exit code `2`). Attempting to output to an input file path or hard link is strictly rejected.
+- **Flexible Invocation**:
+  - Positional arguments: `xlseek-cli [OPTIONS] [QUERY] [PATH]...` (e.g. `xlseek-cli "Revenue" ./folderA ./folderB`).
+  - Flag options: `-q, --query <TEXT>`, `-p, --path <PATH>` (multiple comma-separated or quoted paths supported).
+- **Output Destination & Format**:
+  - `-o, --output <path>`: Destination file. When omitted, CSV output is streamed directly to standard output (`stdout`).
+  - `-f, --format <csv|xlsx>`: Output format. When omitted with `-o`, format is auto-inferred from file extension (`.csv` or `.xlsx`). Defaults to `csv` for stdout.
+  - `-w, --overwrite`: Overwrites existing output destination files safely.
+- **Ignore Patterns**:
+  - `-i, --ignore-patterns <LIST>`: Comma-separated glob patterns using standard `.gitignore` syntax (e.g. `~$*, *.tmp, backup/`). Matching directories are skipped during traversal.
+- **Search Scope & Options**:
+  - `-c, --match-case <BOOL>`: Case-sensitive matching (default: `false`).
+  - `-r, --regex <BOOL>`: Regular expression matching (default: `false`).
+  - `-l, --language <ja|en>`: Header and message output language (default: `ja`).
+  - `-e, --extensions <LIST>`: Comma-separated target extensions (default: `.xlsx,.xlsm,.xlsb,.xls`).
+  - Scope switches: `--values <BOOL>`, `--formulas <BOOL>`, `--comments <BOOL>`, `--shapes <BOOL>`, `--hidden-sheets <BOOL>`.
+- **Directory Traversal**:
+  - `--directory-mode <sequential|burst>` (default: `sequential`).
+  - `--burst-workers <COUNT>`: Automatic or custom integer from 2 through 32 (specifying this flag automatically selects Burst mode).
+- **Safety**: Existing output files will not be overwritten unless explicitly allowed with `-w / --overwrite` (returns exit code `2`). Attempting to output to an input file path or hard link is strictly rejected.
 - **Exit Codes**:
   - `0`: Success (including 0 matches found).
   - `1`: Partial failure (e.g., specific files could not be read or parsed).
@@ -277,8 +306,8 @@ cargo fmt --check
 ```text
 xlseek/
 ├── crates/
-│   ├── core/           # xlseek-core: shared engine, parsing, i18n, models, and export logic
-│   └── cli/            # xlseek-cli: standalone command-line executable
+│   ├── core/           # xlseek-core: shared engine, Excel & Word parsing, i18n, models, and export logic
+│   └── cli/            # xlseek-cli: standalone command-line executable (streaming CSV, XLSX export)
 ├── src/                # React / TypeScript frontend
 │   ├── components/     # UI components (search, results, preview, about, dialogs)
 │   ├── hooks/          # Custom hooks for search, history, and internationalization

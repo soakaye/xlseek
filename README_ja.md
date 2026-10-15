@@ -4,28 +4,39 @@
 
 [English](README.md) | **日本語**
 
-**Excel Seek (`xlseek`)** は、Excel ワークブック（`.xlsx`、`.xlsm`、`.xlsb`、`.xls`）をフォルダ単位で高速・軽量かつセキュアに再帰検索できるデスクトップ検索アプリケーションおよび CLI ツールです。セルの値、数式、コメント/メモ、図形（Shape）内テキストを、通常の文字列または正規表現を用いて横断検索できます。
+**Excel Seek (`xlseek`)** は、Excel ワークブック（`.xlsx`、`.xlsm`、`.xlsb`、`.xls`）および Microsoft Word 文書（`.docx`、`.docm`、`.doc`）を対象に、フォルダ単位で高速・軽量かつセキュアに再帰検索できるデスクトップ検索アプリケーションおよび CLI ツールです。セルの値、数式、コメント/メモ、Word 本文段落、図形（Shape）内テキストを、通常の文字列または正規表現を用いて横断検索できます。
 
 ---
 
 ## 主な機能
 
-- **マルチフォーマット対応**: 指定したディレクトリ配下の `.xlsx`、`.xlsm`、`.xlsb`、`.xls` ファイルを再帰的に検索。
+- **マルチフォーマット対応**:
+  - **Excel ワークブック**: 指定したディレクトリ配下の `.xlsx`、`.xlsm`、`.xlsb`、`.xls` ファイルを再帰的に検索。
+  - **Word 文書**: `.docx`、`.docm`、`.doc` ファイルの検索に対応（設定画面からのオプトイン）。有効化すると検索バーに拡張子トグルが動的に追加され、個別に対象を切り替え可能。
+- **複数検索パスの一括指定**: カンマ区切りで複数のフォルダやファイルパスを指定可能。空白やカンマを含むパスはダブルクオートで囲むことで安全に処理（例: `"/Volumes/Data, 2026", "C:\My Reports"`）。
+- **除外ファイルパターン指定（.gitignore 形式）**:
+  - `.gitignore` 構文のワイルドカードパターン（カンマ区切り、例: `~$*, *.tmp, backup/`）を用いて、一時ファイルやバックアップフォルダを検索から除外。
+  - Office のテンポラリ・ロックファイルを除外するため、初期値として `~$*` がプリセット。
+  - 履歴保存・ドロップダウン選択、設定画面（保存された既定値）での既定パターンカスタマイズ、除外フォルダの走査スキップによる高速化に対応。
 - **柔軟な検索オプション**:
   - 大文字・小文字の区別 / 非区別。
   - 正規表現（Regex）検索。
-  - セル値、数式、コメント/メモ、図形（Shape）内テキストの対象切り替え。
-  - 非表示シートの検索対象への追加 / 除外。
+  - セル値、数式、コメント/メモ、図形（Shape）内テキストの検索対象切り替え（Excel）。
+  - 本文段落・表、ヘッダー/フッター、コメント、図形内テキストの検索（Word）。
+  - 非表示シートの検索対象への追加 / 除外（Excel）。
 - **高速かつ並列化された走査**: 高パフォーマンスなスプレッドシート解析ライブラリ [calamine](https://github.com/tafia/calamine) と、マルチスレッド並列処理ライブラリ [rayon](https://github.com/rayon-rs/rayon) を採用。
-- **リッチプレビューと直接起動**: 一致したセルの値、数式、および周辺セルをプレビューグリッドで直接確認でき、システムの既定アプリケーションで元ファイルをワンクリックで開くことが可能。
-- **検索履歴と入力補完**: 直近の検索キーワードおよび対象ディレクトリパスを履歴として保持し、パスの入力補完をサポート。
+- **リッチプレビューと直接起動**:
+  - **スプレッドシートグリッド表示**: Excel ファイルの一致セル、数式、周辺セルをプレビューグリッドで確認。
+  - **テキストドキュメント表示**: Word ファイルの一致段落を自然なテキスト形式で閲覧（行・段落番号表示、キーワードハイライト、該当箇所への自動スクロール）。
+  - **外部連携**: システム既定のアプリや検出された表計算アプリで直接開くほか、OS のファイルマネージャー（Explorer、Finder、Linux ファイルマネージャー）で該当ファイルをハイライト表示可能。
+- **検索履歴と入力補完**: 直近の検索キーワード、対象ディレクトリパス、除外パターンを履歴として保持し、パスの入力補完をサポート。
 - **エクスポート機能**: 検索結果を CSV または整形された Excel（`.xlsx`）ファイルとして直接保存。
-- **ヘッドレス CLI 同梱**: GUI を起動せずにバッチ検索と結果出力が可能な `xlseek-cli` を提供。
+- **ヘッドレス CLI 同梱**: GUI を起動せずにバッチ検索、ファイル出力、または標準出力（stdout）への CSV ストリーミングが可能な `xlseek-cli` を提供。
 - **バイリンガル対応**: 日本語と英語の UI 切り替え、デフォルト検索オプションおよび履歴件数の設定が可能。
 - **クロスプラットフォーム対応（デスクトップ & CLI）**: Windows、macOS、Linux をネイティブサポート。各 OS のファイルマネージャー（Explorer、Finder、DBus ShowItems / xdg-open）連携や表計算アプリの直接起動に対応。
 - **オープンソース情報の透明性**: About ダイアログからアプリケーション情報、バージョン、およびサードパーティ OSS ライセンス条項を確認可能。
 
-> **検索オプションの既定値**: 数式の検索は既定で有効です。図形内テキストと非表示シートは既定で除外されています。対象拡張子は 4 形式（`.xlsx`、`.xlsm`、`.xlsb`、`.xls`）すべてが既定で選択されています。
+> **検索オプションの既定値**: 数式の検索は既定で有効です。図形内テキストと非表示シートは既定で除外されています。Excel 対象拡張子 4 形式（`.xlsx`、`.xlsm`、`.xlsb`、`.xls`）および一時ファイル除外パターン（`~$*`）は既定で有効です。Word 文書検索（`.docx`、`.docm`、`.doc`）は初期状態では無効となっており、設定画面から有効化できます。
 
 ---
 
@@ -36,9 +47,9 @@
 | **デスクトップ基盤** | [Tauri v2](https://tauri.app/) |
 | **フロントエンド** | React 18, TypeScript, Vite, Tailwind CSS, Lucide React |
 | **バックエンド & コアエンジン** | Rust 2021 edition |
-| **Excel パーサー** | `calamine` |
+| **ドキュメントパーサー** | `calamine` (Excel), `quick-xml` + `zip` (OOXML Word), `cfb` (旧形式 Word バイナリ) |
 | **並列処理** | `rayon` |
-| **正規表現** | `regex` |
+| **パターン・グロブマッチング** | `regex`, `ignore` / `globset` |
 | **エクスポート** | `csv`, `rust_xlsxwriter` |
 
 ---
@@ -127,13 +138,15 @@ cargo build --release -p xlseek-cli --bin xlseek-cli
 # ヘルプと利用可能なオプションを表示
 ./target/release/xlseek-cli --help
 
-# 実行例: 検索結果を XLSX へエクスポート
-./target/release/xlseek-cli --path ./reports --query 'Revenue' \
-  --format xlsx --output ./results.xlsx
+# 実行例: 位置引数構文で検索し、CSV を標準出力（stdout）へストリーミング
+./target/release/xlseek-cli "Revenue" ./reports
 
-# 実行例: 英語の見出しで CSV へエクスポート
-./target/release/xlseek-cli --path ./reports --query 'Revenue' \
-  --format csv --output ./results.csv --language en
+# 実行例: 検索を実行して XLSX へエクスポート（拡張子から形式を自動推論）
+./target/release/xlseek-cli -p ./reports -q "Revenue" -o ./results.xlsx
+
+# 実行例: 除外パターンと英語の見出しを指定して複数フォルダを検索し、CSV へエクスポート
+./target/release/xlseek-cli -p "./reports, ./archive" -q "Revenue" \
+  -i "~$*, *.tmp, backup/*" -f csv -o ./results.csv -l en
 ```
 
 Windows では、この Cargo コマンドで生成される単体の実行ファイルは `target\release\xlseek-cli.exe` です。パッケージ生成時には対象環境向けの CLI を自動的にビルドし、Tauri 用に配置します。
@@ -158,8 +171,11 @@ PowerShell からの実行例：
 # ヘルプと利用可能なオプションを表示
 & "$env:LOCALAPPDATA\xlseek\xlseek-cli.exe" --help
 
-# 検索を実行して CSV へエクスポート
-& "$env:LOCALAPPDATA\xlseek\xlseek-cli.exe" --path .\reports --query 'Revenue' --format csv --output .\results.csv
+# 位置引数で検索し、CSV を標準出力へストリーミング
+& "$env:LOCALAPPDATA\xlseek\xlseek-cli.exe" "Revenue" .\reports
+
+# 除外パターンを指定して検索し、CSV へエクスポート
+& "$env:LOCALAPPDATA\xlseek\xlseek-cli.exe" -p .\reports -q "Revenue" -i "~$*" -o .\results.csv
 ```
 
 #### macOS
@@ -177,8 +193,7 @@ macOS では、アプリケーションバンドル（`.app`）内に `xlseek-cl
 "/Applications/xlseek.app/Contents/MacOS/xlseek-cli" --help
 
 # 検索を実行して XLSX へエクスポート
-"/Applications/xlseek.app/Contents/MacOS/xlseek-cli" --path ./reports --query 'Revenue' \
-  --format xlsx --output ./results.xlsx
+"/Applications/xlseek.app/Contents/MacOS/xlseek-cli" -p ./reports -q "Revenue" -o ./results.xlsx
 ```
 
 *ヒント*: シンボリックリンクを作成すると、任意のディレクトリからコマンド名だけで実行できます：
@@ -200,10 +215,10 @@ Linux では、パッケージ形式に応じて以下の場所に配置され�
 ```bash
 # Debian / Ubuntu (.deb インストール時)
 xlseek-cli --help
-xlseek-cli --path ./reports --query 'Revenue' --format csv --output ./results.csv
+xlseek-cli "Revenue" ./reports
 
 # AppImage 展開バイナリ
-./squashfs-root/usr/bin/xlseek-cli --path ./reports --query 'Revenue' --format csv --output ./results.csv
+./squashfs-root/usr/bin/xlseek-cli -p ./reports -q "Revenue" -o ./results.csv
 ```
 
 ### ディレクトリ検索モード
@@ -212,11 +227,25 @@ xlseek-cli --path ./reports --query 'Revenue' --format csv --output ./results.cs
 
 ### CLI の仕様とオプション
 
-- **必須引数**: `--path`、`--query`、`--format <csv|xlsx>`、および `--output <path>`。
-- **ディレクトリ探索**: 再帰検索の走査は既定で逐次（Sequential）モードです。サブディレクトリを並列走査するには `--directory-mode burst` を、ワーカー数を指定するには `--burst-workers <2..32>` を指定します（ワーカー数指定時は自動的にバーストモードとなります）。自動設定時は CPU 並列数に基づき適切な上限数が割り当てられます。これらはディレクトリ探索にのみ影響し、単一ファイルの検索も有効です。詳細は [ディレクトリ検索オプション仕様](specs/019-burst-directory-search/contracts/cli-directory-mode.md) および [設定仕様](specs/019-burst-directory-search/contracts/settings.md) を参照してください。
-- **検索範囲**: 既定ではセルの値、数式、コメント/メモ、図形（Shape）を検索対象とし、非表示シートは除外されます。
-- **コメント抽出対応**: `.xlsx` および `.xlsm` ファイルの従来のメモ/コメントに対応しています（スレッドコメントおよび `.xls` / `.xlsb` のメモは現在未対応です）。
-- **安全性**: 既存の出力ファイルは、`--overwrite` を明示的に指定しない限り上書きされません（終了コード `2` が返されます）。また、入力ファイルと同一のパスやハードリンクへの出力は厳格に拒否されます。
+- **柔軟な引数構文**:
+  - 位置引数: `xlseek-cli [OPTIONS] [QUERY] [PATH]...`（第1引数=検索文字列、第2引数以降=検索対象パス。複数パス指定可能）。
+  - フラグ指定: `-q, --query <TEXT>`、`-p, --path <PATH>`（カンマ区切りやクオートによる複数パスに対応）。
+- **出力先と形式の指定**:
+  - `-o, --output <path>`: 出力先ファイルパス。省略時は標準出力（`stdout`）へ CSV 形式でストリーミング出力。
+  - `-f, --format <csv|xlsx>`: 出力形式。`-o` 指定時は拡張子から自動推論可能。標準出力時は `csv`。
+  - `-w, --overwrite`: 出力ファイルが既に存在する場合の上書きを許可。
+- **除外パターン**:
+  - `-i, --ignore-patterns <LIST>`: カンマ区切りの除外パターン（`.gitignore` 構文準拠。例: `~$*, *.tmp, backup/`）。マッチしたディレクトリは配下の走査を即座にスキップ。
+- **検索範囲とオプション**:
+  - `-c, --match-case <BOOL>`: 大文字/小文字を区別（既定: `false`）。
+  - `-r, --regex <BOOL>`: 正規表現として解釈（既定: `false`）。
+  - `-l, --language <ja|en>`: 出力言語/見出し言語（既定: `ja`）。
+  - `-e, --extensions <LIST>`: 対象拡張子（既定: `.xlsx,.xlsm,.xlsb,.xls`）。
+  - 範囲切り替え: `--values <BOOL>`、`--formulas <BOOL>`、`--comments <BOOL>`、`--shapes <BOOL>`、`--hidden-sheets <BOOL>`。
+- **ディレクトリ走査**:
+  - `--directory-mode <sequential|burst>`（既定: `sequential`）。
+  - `--burst-workers <COUNT>`: 2〜32 の整数または自動判定（本フラグ指定時は自動的に Burst モードを選択）。
+- **安全性**: 既存の出力ファイルは、`-w / --overwrite` を明示的に指定しない限り上書きされません（終了コード `2` が返されます）。また、入力ファイルと同一のパスやハードリンクへの出力は厳格に拒否されます。
 - **終了ステータスコード**:
   - `0`: 成功（一致件数が 0 件の場合を含む）。
   - `1`: 部分的な失敗（一部のファイルが読み取れない、破損している等）。
@@ -277,8 +306,8 @@ cargo fmt --check
 ```text
 xlseek/
 ├── crates/
-│   ├── core/           # xlseek-core: 共有検索エンジン、パーサー、i18n、データモデル、エクスポート処理
-│   └── cli/            # xlseek-cli: 独立 CLI コマンドライン実行バイナリ
+│   ├── core/           # xlseek-core: 共有検索エンジン、Excel/Word パース、i18n、データモデル、エクスポート処理
+│   └── cli/            # xlseek-cli: 独立 CLI コマンドライン実行バイナリ (CSV標準出力、XLSX出力)
 ├── src/                # React / TypeScript フロントエンド
 │   ├── components/     # UI コンポーネント群 (検索、結果、プレビュー、About、ダイアログ等)
 │   ├── hooks/          # 検索、履歴、多言語化に関するカスタムフック
