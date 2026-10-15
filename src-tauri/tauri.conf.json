@@ -4,7 +4,7 @@
   "version": "1.0.1",
   "identifier": "com.xlseek.desktop",
   "build": {
-    "beforeDevCommand": "npm run dev",
+    "beforeDevCommand": "npm run build:cli && npm run dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "npm run build && npm run build:cli",
     "frontendDist": "../dist"
