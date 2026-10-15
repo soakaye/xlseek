@@ -15,6 +15,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { SearchMatch, SupportedApp } from "../../types/search";
 import { COMMANDS, LAYOUT_CONSTANTS, WORD_FILE_EXTENSIONS } from "../../constants";
 import { useTranslation } from "../../i18n";
+import { normalizeDisplayPath } from "../../utils/pathDisplay";
 
 interface PreviewHeaderProps {
   selectedMatch: SearchMatch | null;
@@ -98,6 +99,7 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
   }
 
   // OS default application name for tooltip
+  const displayPath = normalizeDisplayPath(selectedMatch.full_path);
   const defaultApp = supportedApps.find((app) => app.is_default);
   const defaultAppTooltip = defaultApp
     ? `${defaultApp.name}${t("ui.OPEN_WITH_SPECIFIC_APP_PREFIX")}`
@@ -162,7 +164,7 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
   const handleOpenFolder = async () => {
     try {
       // Constant reference: COMMANDS.OPEN_IN_FOLDER
-      await invoke(COMMANDS.OPEN_IN_FOLDER, { filePath: selectedMatch.full_path });
+      await invoke(COMMANDS.OPEN_IN_FOLDER, { filePath: displayPath || selectedMatch.full_path });
     } catch {
       // Constant reference: t("ui.OPEN_FOLDER_FAILED")
       onShowToast("ui.OPEN_FOLDER_FAILED");
@@ -171,7 +173,7 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
 
   const handleCopyPath = async () => {
     try {
-      await navigator.clipboard.writeText(selectedMatch.full_path);
+      await navigator.clipboard.writeText(displayPath);
       setCopied(true);
       // Constant reference: t("ui.COPIED_FILE_PATH")
       onShowToast("ui.COPIED_FILE_PATH");
@@ -325,9 +327,9 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
         <span className="text-zinc-500 select-none flex-shrink-0">{t("ui.LOCATION_LABEL")}</span>
         <span
           className="text-zinc-400 truncate select-text flex-1"
-          title={selectedMatch.full_path}
+          title={displayPath}
         >
-          {selectedMatch.full_path}
+          {displayPath}
         </span>
         <button
           onClick={handleCopyPath}

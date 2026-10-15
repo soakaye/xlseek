@@ -91,6 +91,15 @@ export const MULTI_PATH_CONSTANTS = {
   ESCAPED_QUOTE_BACKSLASH: '\\"',
 } as const;
 
+// Constant reference: Windows verbatim extended-length path prefixes for user-facing display.
+export const PATH_DISPLAY_CONSTANTS = {
+  VERBATIM_PREFIX_BACKSLASH: "\\\\?\\",
+  VERBATIM_PREFIX_SLASH: "//?/",
+  VERBATIM_UNC_PREFIX_BACKSLASH: "\\\\?\\UNC\\",
+  VERBATIM_UNC_PREFIX_SLASH: "//?/UNC/",
+  STANDARD_UNC_PREFIX: "\\\\",
+} as const;
+
 
 // Constant reference: Standardizes keyboard key identifiers used across list navigation.
 export const KEYBOARD_KEYS = {
