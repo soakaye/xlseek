@@ -18,10 +18,10 @@
 
 **Purpose**: Project initialization, dependency additions, centralized constants, and localization catalogs.
 
-- [ ] T001 Add `ignore = "0.4"` dependency to `crates/core/Cargo.toml`
-- [ ] T002 [P] Define centralized constants in `crates/core/src/constants.rs` (`DEFAULT_IGNORE_PATTERNS = "~$*"`, `SEARCH_QUERY_IGNORE_PATTERNS_FIELD`, `CLI_IGNORE_PATTERNS_FIELD = "ignore-patterns"`, `CLI_SHORT_IGNORE_PATTERNS = "-i"`)
-- [ ] T003 [P] Define centralized constants in `src/constants/index.ts` (`IGNORE_PATTERNS_CONSTANTS`, `STORAGE_KEY_HISTORY = "xlseek.ignorePatternHistory"`, `DEFAULT_PATTERNS = "~$*"`, `MAX_HISTORY_ENTRIES = 20`, `INPUT_ID`, `HISTORY_DROPDOWN_ID`, `SETTINGS_INPUT_ID`)
-- [ ] T004 [P] Add localized UI labels, tooltips, and placeholder strings in `crates/core/locales/ja.yml` and `crates/core/locales/en.yml` (`ui.IGNORE_PATTERNS_LABEL`, `ui.IGNORE_PATTERNS_PLACEHOLDER`, `ui.IGNORE_PATTERNS_CLEAR`, `ui.IGNORE_HISTORY_BUTTON`, `ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_LABEL`, `ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_HELP`)
+- [X] T001 Add `ignore = "0.4"` dependency to `crates/core/Cargo.toml`
+- [X] T002 [P] Define centralized constants in `crates/core/src/constants.rs` (`DEFAULT_IGNORE_PATTERNS = "~$*"`, `SEARCH_QUERY_IGNORE_PATTERNS_FIELD`, `CLI_IGNORE_PATTERNS_FIELD = "ignore-patterns"`, `CLI_SHORT_IGNORE_PATTERNS = "-i"`)
+- [X] T003 [P] Define centralized constants in `src/constants/index.ts` (`IGNORE_PATTERNS_CONSTANTS`, `STORAGE_KEY_HISTORY = "xlseek.ignorePatternHistory"`, `DEFAULT_PATTERNS = "~$*"`, `MAX_HISTORY_ENTRIES = 20`, `INPUT_ID`, `HISTORY_DROPDOWN_ID`, `SETTINGS_INPUT_ID`)
+- [X] T004 [P] Add localized UI labels, tooltips, and placeholder strings in `crates/core/locales/ja.yml` and `crates/core/locales/en.yml` (`ui.IGNORE_PATTERNS_LABEL`, `ui.IGNORE_PATTERNS_PLACEHOLDER`, `ui.IGNORE_PATTERNS_CLEAR`, `ui.IGNORE_HISTORY_BUTTON`, `ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_LABEL`, `ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_HELP`)
 
 ---
 
@@ -31,10 +31,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 Extend `SearchQuery` in `crates/core/src/models/mod.rs` with `pub ignore_patterns: Option<String>` with serde default and doc comments
-- [ ] T006 [P] Extend `SearchQuery` interface in `src/types/search.ts` with `ignore_patterns?: string`
-- [ ] T007 Implement `IgnoreMatcher` domain struct and methods in `crates/core/src/search/ignore.rs` (wrapping `ignore::gitignore::GitignoreBuilder`, `from_patterns(root: &Path, raw_patterns: Option<&str>) -> Result<Self, CoreError>`, `is_ignored(&self, path: &Path, is_dir: bool) -> bool`, and `passthrough()`)
-- [ ] T008 [P] Add unit tests for `IgnoreMatcher` in `crates/core/src/search/ignore.rs` (testing `~$*` lock files, glob wildcards, trailing `/` directory pruning, `!` negation, and case-insensitive matching)
+- [X] T005 Extend `SearchQuery` in `crates/core/src/models/mod.rs` with `pub ignore_patterns: Option<String>` with serde default and doc comments
+- [X] T006 [P] Extend `SearchQuery` interface in `src/types/search.ts` with `ignore_patterns?: string`
+- [X] T007 Implement `IgnoreMatcher` domain struct and methods in `crates/core/src/search/ignore.rs` (wrapping `ignore::gitignore::GitignoreBuilder`, `from_patterns(root: &Path, raw_patterns: Option<&str>) -> Result<Self, CoreError>`, `is_ignored(&self, path: &Path, is_dir: bool) -> bool`, and `passthrough()`)
+- [X] T008 [P] Add unit tests for `IgnoreMatcher` in `crates/core/src/search/ignore.rs` (testing `~$*` lock files, glob wildcards, trailing `/` directory pruning, `!` negation, and case-insensitive matching)
 
 **Checkpoint**: Foundation ready — User Story 1 implementation can now begin.
 
@@ -48,12 +48,12 @@
 
 ### Implementation & Tests for User Story 1
 
-- [ ] T009 [P] [US1] Integrate `IgnoreMatcher` into directory traversal in `crates/core/src/search/discovery.rs` (early pruning of directories via `is_ignored(&entry_path, true)` and file skipping via `is_ignored(&entry_path, false)`)
-- [ ] T010 [P] [US1] Wire `ignore_patterns` from `SearchQuery` through search execution pipeline in `crates/core/src/search/engine.rs`
-- [ ] T011 [US1] Add `-i` and `--ignore-patterns` CLI argument parsing and validation in `crates/cli/src/args.rs` and forward to `SearchQuery`
-- [ ] T012 [P] [US1] Add integration tests for ignore patterns and directory pruning in `crates/core/tests/ignore_patterns_test.rs`
-- [ ] T013 [P] [US1] Add CLI integration tests for `-i` / `--ignore-patterns` option in `crates/cli/tests/cli_ignore_patterns.rs`
-- [ ] T014 [US1] Update Tauri IPC search command in `src-tauri/src/commands/search_cmd.rs` to accept and forward `ignore_patterns` to `SearchEngine`
+- [X] T009 [P] [US1] Integrate `IgnoreMatcher` into directory traversal in `crates/core/src/search/discovery.rs` (early pruning of directories via `is_ignored(&entry_path, true)` and file skipping via `is_ignored(&entry_path, false)`)
+- [X] T010 [P] [US1] Wire `ignore_patterns` from `SearchQuery` through search execution pipeline in `crates/core/src/search/engine.rs`
+- [X] T011 [US1] Add `-i` and `--ignore-patterns` CLI argument parsing and validation in `crates/cli/src/args.rs` and forward to `SearchQuery`
+- [X] T012 [P] [US1] Add integration tests for ignore patterns and directory pruning in `crates/core/tests/ignore_patterns_test.rs`
+- [X] T013 [P] [US1] Add CLI integration tests for `-i` / `--ignore-patterns` option in `crates/cli/tests/cli_ignore_patterns.rs`
+- [X] T014 [US1] Update Tauri IPC search command in `src-tauri/src/commands/search_cmd.rs` to accept and forward `ignore_patterns` to `SearchEngine`
 
 **Checkpoint**: At this point, User Story 1 is fully functional and testable via CLI and Tauri backend commands.
 
@@ -67,10 +67,10 @@
 
 ### Implementation & Tests for User Story 2
 
-- [ ] T015 [P] [US2] Implement comma-separated pattern tokenizer utility in `src/utils/ignoreTokenizer.ts` (with unit tests in `src/utils/__tests__/ignoreTokenizer.test.ts` for spacing, commas, and double quotes)
-- [ ] T016 [US2] Add ignore pattern state management and query dispatch in `src/hooks/useSearch.ts` (handling `ignorePatterns` input state, reset action, and clear button)
-- [ ] T017 [US2] Update `src/components/search/SearchBar.tsx` to render the dedicated ignore patterns row directly beneath the search directory row (with Filter icon, localized label, text input, clear button, and Enter key triggering search)
-- [ ] T018 [P] [US2] Update standalone HTML UI mockup in `design/mainui/index.html` to reflect the new ignore patterns row (keeping mockup in sync per AGENTS.md)
+- [X] T015 [P] [US2] Implement comma-separated pattern tokenizer utility in `src/utils/ignoreTokenizer.ts` (with unit tests in `src/utils/__tests__/ignoreTokenizer.test.ts` for spacing, commas, and double quotes)
+- [X] T016 [US2] Add ignore pattern state management and query dispatch in `src/hooks/useSearch.ts` (handling `ignorePatterns` input state, reset action, and clear button)
+- [X] T017 [US2] Update `src/components/search/SearchBar.tsx` to render the dedicated ignore patterns row directly beneath the search directory row (with Filter icon, localized label, text input, clear button, and Enter key triggering search)
+- [X] T018 [P] [US2] Update standalone HTML UI mockup in `design/mainui/index.html` to reflect the new ignore patterns row (keeping mockup in sync per AGENTS.md)
 
 **Checkpoint**: At this point, User Stories 1 AND 2 work together seamlessly in the GUI.
 
@@ -84,10 +84,10 @@
 
 ### Implementation & Tests for User Story 3
 
-- [ ] T019 [P] [US3] Implement `IgnoreHistoryStore` in `src/utils/ignoreHistory.ts` (handling `localStorage` reading under `xlseek.ignorePatternHistory`, MRU deduplication, trimming, max 20 limit, and clearing)
-- [ ] T020 [P] [US3] Implement accessible dropdown component in `src/components/search/IgnoreHistoryDropdown.tsx` (supporting mouse clicks and keyboard navigation: ArrowUp, ArrowDown, Enter, Escape)
-- [ ] T021 [US3] Connect `IgnoreHistoryDropdown` and history recording to `src/components/search/SearchBar.tsx` and `src/hooks/useSearch.ts` (recording pattern on search start, toggling dropdown, selecting history items)
-- [ ] T022 [P] [US3] Add unit tests for `ignoreHistory.ts` in `src/utils/__tests__/ignoreHistory.test.ts` (testing MRU promotion, duplicate prevention, whitespace trimming, and 20-entry limit)
+- [X] T019 [P] [US3] Implement `IgnoreHistoryStore` in `src/utils/ignoreHistory.ts` (handling `localStorage` reading under `xlseek.ignorePatternHistory`, MRU deduplication, trimming, max 20 limit, and clearing)
+- [X] T020 [P] [US3] Implement accessible dropdown component in `src/components/search/IgnoreHistoryDropdown.tsx` (supporting mouse clicks and keyboard navigation: ArrowUp, ArrowDown, Enter, Escape)
+- [X] T021 [US3] Connect `IgnoreHistoryDropdown` and history recording to `src/components/search/SearchBar.tsx` and `src/hooks/useSearch.ts` (recording pattern on search start, toggling dropdown, selecting history items)
+- [X] T022 [P] [US3] Add unit tests for `ignoreHistory.ts` in `src/utils/__tests__/ignoreHistory.test.ts` (testing MRU promotion, duplicate prevention, whitespace trimming, and 20-entry limit)
 
 **Checkpoint**: At this point, User Stories 1, 2, and 3 are complete with persistent history recall.
 
@@ -101,10 +101,10 @@
 
 ### Implementation & Tests for User Story 4
 
-- [ ] T023 [P] [US4] Extend `DefaultSearchOptions` in `src/types/settings.ts` and `src/settings-core.ts` with `ignore_patterns: string` (default: `"~$*"`)
-- [ ] T024 [US4] Add "Default Ignore Patterns" input field in `src/components/settings/SettingsDialog.tsx` under the Saved Defaults tab with localized labels, help text, and validation
-- [ ] T025 [US4] Wire default ignore patterns initialization and reset from saved defaults in `src/App.tsx` and `src/hooks/useSearch.ts`
-- [ ] T026 [P] [US4] Add unit tests for settings persistence and default ignore pattern migration in `src/__tests__/settings-core.test.ts`
+- [X] T023 [P] [US4] Extend `DefaultSearchOptions` in `src/types/settings.ts` and `src/settings-core.ts` with `ignore_patterns: string` (default: `"~$*"`)
+- [X] T024 [US4] Add "Default Ignore Patterns" input field in `src/components/settings/SettingsDialog.tsx` under the Saved Defaults tab with localized labels, help text, and validation
+- [X] T025 [US4] Wire default ignore patterns initialization and reset from saved defaults in `src/App.tsx` and `src/hooks/useSearch.ts`
+- [X] T026 [P] [US4] Add unit tests for settings persistence and default ignore pattern migration in `src/__tests__/settings-core.test.ts`
 
 **Checkpoint**: All user stories (US1 through US4) are now fully implemented and testable.
 
@@ -114,10 +114,10 @@
 
 **Purpose**: Improvements, verification quality gates, formatting, and end-to-end scenario validation across all stories.
 
-- [ ] T027 [P] Verify zero compiler and Clippy warnings across workspace with `cargo clippy --workspace --all-targets -- -D warnings`
-- [ ] T028 [P] Verify code formatting across workspace with `cargo fmt --check`
-- [ ] T029 [P] Run frontend TypeScript type check and bundle build with `npm run build`
-- [ ] T030 Execute all workspace tests (`cargo test --workspace`) and validate end-to-end scenarios per `specs/025-ignore-file-patterns/quickstart.md`
+- [X] T027 [P] Verify zero compiler and Clippy warnings across workspace with `cargo clippy --workspace --all-targets -- -D warnings`
+- [X] T028 [P] Verify code formatting across workspace with `cargo fmt --check`
+- [X] T029 [P] Run frontend TypeScript type check and bundle build with `npm run build`
+- [X] T030 Execute all workspace tests (`cargo test --workspace`) and validate end-to-end scenarios per `specs/025-ignore-file-patterns/quickstart.md`
 
 ---
 

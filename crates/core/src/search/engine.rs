@@ -317,6 +317,27 @@ impl SearchEngine {
         let extensions = query.extensions.clone();
         let directory_mode = query.directory_mode;
         let burst_workers = query.burst_workers;
+        let root_for_matcher = valid_roots
+            .first()
+            .cloned()
+            .unwrap_or_else(|| PathBuf::from("."));
+        let ignore_matcher = match crate::search::ignore::IgnoreMatcher::from_patterns(
+            &root_for_matcher,
+            query.ignore_patterns.as_deref(),
+        ) {
+            Ok(matcher) => matcher,
+            Err(cause) => {
+                if let Ok(mut issues) = discovery_issues.lock() {
+                    issues(crate::search::discovery::DiscoveryIssue {
+                        path: PathBuf::from(crate::constants::SEARCH_QUERY_IGNORE_PATTERNS_FIELD),
+                        stage: crate::constants::STAGE_IGNORE_PATTERNS,
+                        code: crate::constants::DISCOVERY_ERROR_READ_FAILED,
+                        cause,
+                    });
+                }
+                crate::search::ignore::IgnoreMatcher::passthrough()
+            }
+        };
         let cancel_flag_scanner = Arc::clone(&cancel_flag);
         let discovered_count_clone = Arc::clone(&discovered_count);
         let scan_completed_clone = Arc::clone(&scan_completed);
@@ -325,11 +346,12 @@ impl SearchEngine {
         let scanner_error_thread = Arc::clone(&scanner_error);
 
         let scanner_handle = std::thread::spawn(move || {
-            let delivery = crate::search::discovery::discover_files(
+            let delivery = crate::search::discovery::discover_files_with_ignore(
                 &valid_roots,
                 &extensions,
                 directory_mode,
                 burst_workers,
+                &ignore_matcher,
                 &cancel_flag_scanner,
                 |path| {
                     let mut pending_path = path.to_path_buf();
@@ -610,6 +632,7 @@ mod tests {
             include_shape: true,
             include_hidden: false,
             extensions: vec![".xlsx".to_string()],
+            ignore_patterns: None,
         };
 
         let matches = Arc::new(std::sync::Mutex::new(Vec::new()));
@@ -743,6 +766,7 @@ mod tests {
             include_shape: true,
             include_hidden: false,
             extensions: vec![".xlsx".to_string()],
+            ignore_patterns: None,
         };
 
         // Set cancellation flag during search execution
@@ -820,6 +844,7 @@ mod tests {
             include_shape: true,
             include_hidden: false,
             extensions: vec![".xlsx".to_string()],
+            ignore_patterns: None,
         };
 
         let matches = Arc::new(std::sync::Mutex::new(Vec::new()));
@@ -879,6 +904,7 @@ mod tests {
             include_shape: true,
             include_hidden: false,
             extensions: vec![".xlsx".to_string()],
+            ignore_patterns: None,
         };
 
         // Cancel immediately upon receiving initial progress notification

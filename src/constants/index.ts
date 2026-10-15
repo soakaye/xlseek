@@ -207,6 +207,19 @@ export const DIRECTORY_SEARCH_CONSTANTS = {
   CUSTOM_WORKERS_MAX: 32,
 } as const;
 
+// Constant reference: Configuration and identifiers for ignore pattern filtering and history.
+export const IGNORE_PATTERNS_CONSTANTS = {
+  STORAGE_KEY_HISTORY: "xlseek.ignorePatternHistory",
+  DEFAULT_PATTERNS: "~$*",
+  MAX_HISTORY_ENTRIES: 20,
+  INPUT_ID: "search-ignore-patterns-input",
+  HISTORY_DROPDOWN_ID: "search-ignore-history-dropdown",
+  SETTINGS_INPUT_ID: "settings-default-ignore-patterns-input",
+  DELIMITER: ",",
+  DELIMITER_SPACE: ", ",
+  QUOTE: '"',
+} as const;
+
 export const DEFAULT_SEARCH_OPTIONS = {
   match_case: false,
   use_regex: false,
@@ -218,4 +231,6 @@ export const DEFAULT_SEARCH_OPTIONS = {
   directory_mode: DIRECTORY_SEARCH_CONSTANTS.SEQUENTIAL,
   burst_workers: null,
   enable_word_search: false,
+  ignore_patterns: "~$*",
 } as const;
+

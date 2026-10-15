@@ -102,4 +102,19 @@ describe("settings-core", () => {
     expect(saveSavedSettings(loadSavedSettings())).toBe(false);
     stringify.mockRestore();
   });
+
+  it("persists and reloads custom default ignore patterns", () => {
+    const saved = loadSavedSettings();
+    const updated = {
+      ...saved,
+      defaultOptions: {
+        ...saved.defaultOptions,
+        ignore_patterns: "~$*, *.bak, temp/",
+      },
+    };
+    expect(saveSavedSettings(updated)).toBe(true);
+
+    const reloaded = loadSavedSettings();
+    expect(reloaded.defaultOptions.ignore_patterns).toBe("~$*, *.bak, temp/");
+  });
 });

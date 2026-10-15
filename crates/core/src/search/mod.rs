@@ -9,6 +9,7 @@
 pub mod comments;
 pub mod discovery;
 pub mod engine;
+pub mod ignore;
 pub mod parser;
 pub mod path;
 pub mod preview;

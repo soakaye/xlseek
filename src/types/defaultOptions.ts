@@ -23,4 +23,5 @@ export interface DefaultSearchOptions {
   directory_mode: "sequential" | "burst";
   burst_workers: number | null;
   enable_word_search: boolean;
+  ignore_patterns: string;
 }

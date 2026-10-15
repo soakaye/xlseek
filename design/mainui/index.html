@@ -188,6 +188,39 @@
           </div>
         </div>
 
+        <!-- 中段: 無視パターン指定 (検索ディレクトリ直下) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
+          <div id="ignorePatternControl" class="lg:col-span-12 relative">
+            <div class="flex items-center gap-2">
+              <span class="text-zinc-400 text-xs font-medium flex items-center gap-1.5 flex-shrink-0 select-none">
+                <i data-lucide="filter" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span>無視パターン:</span>
+              </span>
+              <div class="relative flex-1">
+                <input 
+                  type="text" 
+                  id="ignorePatternInput"
+                  value="~$*"
+                  placeholder="~$*, *.tmp, backup/"
+                  title="検索から除外するファイル・フォルダのパターン (カンマ区切り、.gitignore形式)"
+                  aria-label="無視パターン"
+                  class="w-full pl-3 pr-20 py-1.5 bg-[#202024] border border-zinc-700 rounded-lg text-xs font-mono text-zinc-300 placeholder-zinc-500 focus:outline-none focus:border-excel-light focus:ring-1 focus:ring-excel-light transition"
+                />
+                <div class="absolute inset-y-0 right-1 flex items-center gap-1 pr-1.5">
+                  <button id="clearIgnoreBtn" type="button" title="クリア" class="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded transition">
+                    <i data-lucide="x" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <button id="ignoreHistoryBtn" type="button" title="無視パターン履歴" aria-label="無視パターン履歴" class="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded">
+                    <i data-lucide="history" class="w-3.5 h-3.5"></i>
+                  </button>
+                  <span class="text-[10px] text-zinc-400 font-mono bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">Enter</span>
+                </div>
+                <div id="ignoreHistoryPopup" class="hidden absolute z-20 top-full mt-1 w-full rounded-lg border border-zinc-700 bg-zinc-900 p-1 shadow-xl"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <!-- 下段: 検索オプション (トグルピル) & 対象拡張子 -->
         <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs select-none">
           <div class="flex flex-wrap items-center gap-2">

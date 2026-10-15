@@ -60,6 +60,7 @@ fn test_search_engine_multiple_paths() {
         include_shape: false,
         include_hidden: false,
         extensions: vec![".xlsx".to_string()],
+        ignore_patterns: None,
     };
 
     let matched_files = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));

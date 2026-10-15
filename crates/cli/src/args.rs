@@ -500,6 +500,11 @@ where
         .map(|path| path.to_string_lossy().into_owned())
         .unwrap_or_default();
 
+    let ignore_patterns = values
+        .get(constants::CLI_IGNORE_PATTERNS_FIELD)
+        .cloned()
+        .filter(|s| !s.trim().is_empty());
+
     Ok(ParseOutcome::Run(CliOptions {
         query: SearchQuery {
             keyword: query_str,
@@ -514,6 +519,7 @@ where
             include_shape,
             include_hidden,
             extensions,
+            ignore_patterns,
         },
         input_paths,
         output_target,

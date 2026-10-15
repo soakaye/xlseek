@@ -144,6 +144,7 @@ fn build_query(keyword: &str, ext: &str, include_comment: bool) -> SearchQuery {
         include_shape: false,
         include_hidden: false,
         extensions: vec![ext.to_string()],
+        ignore_patterns: None,
     }
 }
 

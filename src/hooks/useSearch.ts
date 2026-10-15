@@ -29,8 +29,10 @@ import {
   EVENT_NAMES,
   TIMING_CONSTANTS,
   WORD_FILE_EXTENSIONS,
+  IGNORE_PATTERNS_CONSTANTS,
 } from "../constants";
 import { TranslationKey } from "../i18n";
+import { saveIgnorePattern } from "../utils/ignoreHistory";
 
 interface UseSearchOptions {
   onShowToast?: (key: TranslationKey) => void;
@@ -65,6 +67,8 @@ export function useSearch(options?: UseSearchOptions) {
       extensions: [...defaults.extensions],
       directory_mode: defaults.directory_mode,
       burst_workers: defaults.burst_workers,
+      // Constant reference: IGNORE_PATTERNS_CONSTANTS.DEFAULT_PATTERNS
+      ignore_patterns: defaults.ignore_patterns ?? IGNORE_PATTERNS_CONSTANTS.DEFAULT_PATTERNS,
     };
   });
 
@@ -348,6 +352,9 @@ export function useSearch(options?: UseSearchOptions) {
     try {
       // Constant reference: COMMANDS.START_SEARCH
       await invoke(COMMANDS.START_SEARCH, { query });
+      if (query.ignore_patterns && query.ignore_patterns.trim()) {
+        saveIgnorePattern(query.ignore_patterns);
+      }
       options?.onSearchAccepted?.(query);
     } catch (error: unknown) {
       console.error("[useSearch] Failed to start search");
@@ -434,13 +441,19 @@ export function useSearch(options?: UseSearchOptions) {
       extensions: [...options.extensions],
       directory_mode: options.directory_mode,
       burst_workers: options.burst_workers,
+      ignore_patterns: options.ignore_patterns,
     }));
   }, []);
+
+  const clearIgnorePatterns = useCallback(() => {
+    updateQuery({ ignore_patterns: "" });
+  }, [updateQuery]);
 
   return {
     query,
     updateQuery,
     applyDefaultOptions,
+    clearIgnorePatterns,
     results,
     progress,
     searchIssues,

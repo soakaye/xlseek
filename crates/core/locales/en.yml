@@ -34,6 +34,7 @@ cli.HELP: |
     -w, --overwrite          Overwrite existing output file
     -l, --language ja|en     Output language (default: ja)
     -e, --extensions LIST    Excel extensions (.xlsx,.xlsm,.xlsb,.xls)
+    -i, --ignore-patterns LIST Ignore patterns (comma-separated, .gitignore syntax)
     --directory-mode MODE    Directory discovery: sequential|burst (default: sequential)
     --burst-workers COUNT    Burst visitors: automatic or custom integer from 2 through 32; alone selects burst
     -h, --help               Display help
@@ -66,6 +67,13 @@ ui.CLEAR_TOOLTIP: Clear
 ui.FOLDER_DROP_PLACEHOLDER: Drop a folder here...
 ui.FOLDER_INPUT_PLACEHOLDER: Select or drop a folder...
 ui.FOLDER_DROP_PROMPT: Drop folder here
+ui.IGNORE_PATTERNS_LABEL: "Ignore patterns:"
+ui.IGNORE_PATTERNS_PLACEHOLDER: "~$*, *.tmp, backup/ (comma-separated)"
+ui.IGNORE_PATTERNS_TOOLTIP: "Patterns of files or folders to ignore (.gitignore syntax)"
+ui.IGNORE_PATTERNS_CLEAR: "Clear ignore patterns"
+ui.IGNORE_HISTORY_BUTTON: "Ignore pattern history"
+ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_LABEL: "Default ignore patterns"
+ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_HELP: "Initial ignore patterns applied to new search sessions (comma-separated)"
 ui.BUTTON_CANCEL: CANCEL
 ui.BUTTON_SEARCH: SEARCH
 ui.OPTIONS_LABEL: "Options:"

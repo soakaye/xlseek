@@ -41,6 +41,9 @@ pub struct SearchQuery {
     pub include_hidden: bool,
     #[serde(default = "default_extensions")]
     pub extensions: Vec<String>,
+    /// Comma-separated gitignore-style ignore patterns (e.g., `"~$*, *.tmp, backup/"`).
+    #[serde(default)]
+    pub ignore_patterns: Option<String>,
 }
 
 /// Returns the backward-compatible default value for value search when omitted in legacy JSON.

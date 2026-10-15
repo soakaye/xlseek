@@ -66,8 +66,8 @@ auto_commit:
     enabled: true
     message: "[Spec Kit] Add tasks and design artifacts for 025-ignore-file-patterns"
   after_implement:
-    enabled: false
-    message: "[Spec Kit] Implementation progress"
+    enabled: true
+    message: "[Spec Kit] Implement ignore file patterns with gitignore matching and history"
   after_checklist:
     enabled: false
     message: "[Spec Kit] Add checklist"

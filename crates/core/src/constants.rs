@@ -35,6 +35,16 @@ pub const WORD_CELL_DEFAULT_ADDRESS: &str = "-";
 pub const DEFAULT_INCLUDE_VALUE: bool = true;
 /// Field name for value search option in SearchQuery JSON.
 pub const SEARCH_QUERY_INCLUDE_VALUE_FIELD: &str = "include_value";
+/// Default gitignore-style ignore patterns applied to newly initiated search sessions.
+pub const DEFAULT_IGNORE_PATTERNS: &str = "~$*";
+/// Field name for ignore patterns in SearchQuery JSON.
+pub const SEARCH_QUERY_IGNORE_PATTERNS_FIELD: &str = "ignore_patterns";
+/// Delimiter used to separate ignore patterns in raw comma-delimited strings.
+pub const IGNORE_PATTERN_DELIMITER: char = ',';
+/// Quotation character used to wrap ignore patterns containing commas or spaces.
+pub const IGNORE_PATTERN_QUOTE: char = '"';
+/// Search stage identifier for ignore pattern evaluation errors.
+pub const STAGE_IGNORE_PATTERNS: &str = "ignore_patterns";
 /// Canonical Sequential directory discovery token.
 pub const DIRECTORY_MODE_SEQUENTIAL: &str = "sequential";
 /// Canonical concurrent Burst directory discovery token.
@@ -98,6 +108,8 @@ pub const CLI_FORMULAS_FIELD: &str = "formulas";
 pub const CLI_COMMENTS_FIELD: &str = "comments";
 pub const CLI_SHAPES_FIELD: &str = "shapes";
 pub const CLI_HIDDEN_SHEETS_FIELD: &str = "hidden-sheets";
+pub const CLI_IGNORE_PATTERNS_FIELD: &str = "ignore-patterns";
+pub const CLI_SHORT_IGNORE_PATTERNS: &str = "-i";
 pub const CLI_EXTENSIONS_FIELD: &str = "extensions";
 pub const CLI_LANGUAGE_FIELD: &str = "language";
 pub const CLI_OVERWRITE_FIELD: &str = "overwrite";
@@ -183,7 +195,7 @@ pub const CLI_SHORT_OVERWRITE: &str = "-w";
 pub const CLI_SHORT_LANGUAGE: &str = "-l";
 pub const CLI_SHORT_EXTENSIONS: &str = "-e";
 
-pub const CLI_SHORT_TO_LONG_OPTIONS: [(&str, &str); 10] = [
+pub const CLI_SHORT_TO_LONG_OPTIONS: [(&str, &str); 11] = [
     (CLI_SHORT_PATH, CLI_PATH_FIELD),
     (CLI_SHORT_QUERY, CLI_QUERY_FIELD),
     (CLI_SHORT_FORMAT, CLI_FORMAT_FIELD),
@@ -193,10 +205,11 @@ pub const CLI_SHORT_TO_LONG_OPTIONS: [(&str, &str); 10] = [
     (CLI_SHORT_OVERWRITE, CLI_OVERWRITE_FIELD),
     (CLI_SHORT_LANGUAGE, CLI_LANGUAGE_FIELD),
     (CLI_SHORT_EXTENSIONS, CLI_EXTENSIONS_FIELD),
+    (CLI_SHORT_IGNORE_PATTERNS, CLI_IGNORE_PATTERNS_FIELD),
     (CLI_SHORT_HELP, CLI_HELP_FIELD),
 ];
 
-pub const CLI_VALUE_OPTIONS: [&str; 15] = [
+pub const CLI_VALUE_OPTIONS: [&str; 16] = [
     CLI_PATH_FIELD,
     CLI_QUERY_FIELD,
     CLI_FORMAT_FIELD,
@@ -209,6 +222,7 @@ pub const CLI_VALUE_OPTIONS: [&str; 15] = [
     CLI_SHAPES_FIELD,
     CLI_HIDDEN_SHEETS_FIELD,
     CLI_EXTENSIONS_FIELD,
+    CLI_IGNORE_PATTERNS_FIELD,
     CLI_LANGUAGE_FIELD,
     CLI_DIRECTORY_MODE_FIELD,
     CLI_BURST_WORKERS_FIELD,

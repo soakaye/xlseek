@@ -34,6 +34,7 @@ cli.HELP: |
     -w, --overwrite          既存出力先の上書きを許可
     -l, --language ja|en     出力言語 (既定: ja)
     -e, --extensions LIST    対象拡張子 (.xlsx,.xlsm,.xlsb,.xls)
+    -i, --ignore-patterns LIST 除外パターン (カンマ区切り、.gitignore構文)
     --directory-mode MODE    ディレクトリ探索: sequential|burst (既定: sequential)
     --burst-workers COUNT    Burst 並列数: 自動または 2 から 32 の整数。単独指定で Burst を選択
     -h, --help               ヘルプを表示
@@ -66,6 +67,13 @@ ui.CLEAR_TOOLTIP: クリア
 ui.FOLDER_DROP_PLACEHOLDER: ここにフォルダをドロップ...
 ui.FOLDER_INPUT_PLACEHOLDER: フォルダを選択またはドラッグ＆ドロップ...
 ui.FOLDER_DROP_PROMPT: フォルダをここにドロップ
+ui.IGNORE_PATTERNS_LABEL: "除外パターン:"
+ui.IGNORE_PATTERNS_PLACEHOLDER: "~$*, *.tmp, backup/ (カンマ区切り)"
+ui.IGNORE_PATTERNS_TOOLTIP: "除外するファイルまたはフォルダのパターン (.gitignore構文)"
+ui.IGNORE_PATTERNS_CLEAR: "除外パターンをクリア"
+ui.IGNORE_HISTORY_BUTTON: "除外パターンの履歴"
+ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_LABEL: "デフォルトの除外パターン"
+ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_HELP: "新しい検索セッションで初期設定される除外パターン（カンマ区切り）"
 ui.BUTTON_CANCEL: CANCEL
 ui.BUTTON_SEARCH: SEARCH
 ui.OPTIONS_LABEL: "オプション:"

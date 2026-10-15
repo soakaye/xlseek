@@ -9,6 +9,7 @@ import React, { useEffect, useRef, useState } from "react";
 import {
   BURST_WORKER_CHOICES, DISPLAY_LANGUAGES, DIRECTORY_SEARCH_CONSTANTS, FILE_EXTENSIONS, WORD_FILE_EXTENSIONS, KEYBOARD_KEYS, LANGUAGE_PREFERENCES,
   SEARCH_HISTORY_CONSTANTS, SEARCH_LABELS, SETTINGS_DIALOG_IDS, SETTINGS_KEYBOARD_KEYS, SETTINGS_PAGES, SETTINGS_TRANSLATION_KEYS,
+  IGNORE_PATTERNS_CONSTANTS,
 } from "../../constants";
 import { DisplayLanguage, LanguagePreference } from "../../locale-core";
 import { TranslationKey, useTranslation } from "../../i18n";
@@ -297,6 +298,37 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
                     </div>
                   </label>
                   <div><span className="mb-1.5 block font-medium text-zinc-300">{t("ui.LABEL_TARGET_EXTENSIONS")}</span><div className="flex flex-wrap gap-2">{(options.enable_word_search ? [...FILE_EXTENSIONS.DEFAULT_LIST, ...WORD_FILE_EXTENSIONS.DEFAULT_LIST] : FILE_EXTENSIONS.DEFAULT_LIST).map((extension) => <button key={extension} type="button" disabled={saving} aria-pressed={options.extensions.includes(extension)} onClick={() => toggleExtension(extension)} className={`rounded border px-2.5 py-1 font-mono ${options.extensions.includes(extension) ? "border-emerald-600 bg-emerald-950/80 text-emerald-300" : "border-zinc-700 bg-zinc-800 text-zinc-500"}`}>{extension}</button>)}</div>{!extensionsValid && <p role="alert" className="mt-1 text-amber-400">{t("ui.DEFAULT_OPTIONS_EXTENSIONS_REQUIRED")}</p>}</div>
+
+                  {/* Default Ignore Patterns */}
+                  <div className="rounded border border-zinc-800 bg-zinc-850 p-3">
+                    <label
+                      // Constant reference: IGNORE_PATTERNS_CONSTANTS.SETTINGS_INPUT_ID
+                      htmlFor={IGNORE_PATTERNS_CONSTANTS.SETTINGS_INPUT_ID}
+                      className="mb-1 block font-medium text-zinc-200"
+                    >
+                      {/* Constant reference: t("ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_LABEL") */}
+                      {t("ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_LABEL")}
+                    </label>
+                    <input
+                      id={IGNORE_PATTERNS_CONSTANTS.SETTINGS_INPUT_ID}
+                      type="text"
+                      disabled={saving}
+                      value={options.ignore_patterns ?? ""}
+                      onChange={(event) =>
+                        setOptions((current) => ({
+                          ...current,
+                          ignore_patterns: event.target.value,
+                        }))
+                      }
+                      /* Constant reference: t("ui.IGNORE_PATTERNS_PLACEHOLDER") */
+                      placeholder={t("ui.IGNORE_PATTERNS_PLACEHOLDER")}
+                      className="w-full rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 font-mono text-xs text-zinc-100 placeholder-zinc-500 focus:border-emerald-500 focus:outline-none"
+                    />
+                    <p className="mt-1.5 text-[11px] text-zinc-400">
+                      {/* Constant reference: t("ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_HELP") */}
+                      {t("ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_HELP")}
+                    </p>
+                  </div>
                 </div>
               </fieldset>
             </section>

@@ -29,6 +29,8 @@ export interface SearchQuery {
   extensions?: string[];
   directory_mode?: "sequential" | "burst";
   burst_workers?: number | null;
+  /** Comma-separated gitignore-style ignore patterns (e.g. "~$*, *.tmp, backup/"). */
+  ignore_patterns?: string;
 }
 
 /** Describes an inaccessible descendant folder reported during directory discovery. */

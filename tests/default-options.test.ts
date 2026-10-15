@@ -79,5 +79,40 @@ describe("default-options-core", () => {
   it("resets options to official defaults and returns the copy", () => {
     const reset = resetDefaultSearchOptions();
     expect(reset).toEqual(DEFAULT_SEARCH_OPTIONS);
+    expect(reset.ignore_patterns).toBe("~$*");
+  });
+
+  it("normalizes missing ignore_patterns to standard default ~$*", () => {
+    const legacyWithoutIgnore = {
+      ...DEFAULT_SEARCH_OPTIONS,
+      ignore_patterns: undefined,
+    };
+    const normalized = normalizeDefaultSearchOptions(legacyWithoutIgnore);
+    expect(normalized.ignore_patterns).toBe("~$*");
+  });
+
+  it("preserves custom ignore_patterns during normalization", () => {
+    const custom = {
+      ...DEFAULT_SEARCH_OPTIONS,
+      ignore_patterns: "~$*, *.tmp, backup/",
+    };
+    const normalized = normalizeDefaultSearchOptions(custom);
+    expect(normalized.ignore_patterns).toBe("~$*, *.tmp, backup/");
+  });
+
+  it("validates ignore_patterns field types", () => {
+    expect(
+      isDefaultSearchOptions({
+        ...DEFAULT_SEARCH_OPTIONS,
+        ignore_patterns: "~$*, *.bak",
+      })
+    ).toBe(true);
+
+    expect(
+      isDefaultSearchOptions({
+        ...DEFAULT_SEARCH_OPTIONS,
+        ignore_patterns: 12345,
+      })
+    ).toBe(false);
   });
 });

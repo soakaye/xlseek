@@ -11,15 +11,17 @@
  */
 
 import React, { KeyboardEvent, useState, useRef, useEffect } from "react";
-import { Search, X, Folder, FolderOpen, SlidersHorizontal, Square, ArrowDownToLine, History } from "lucide-react";
+import { Search, X, Folder, FolderOpen, SlidersHorizontal, Square, ArrowDownToLine, History, Filter } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { SearchQuery } from "../../types/search";
 import { SEARCH_LABELS } from "../../constants";
-import { COMMANDS, FILE_EXTENSIONS, WORD_FILE_EXTENSIONS, KEYBOARD_KEYS, PATH_COMPLETION_CONSTANTS } from "../../constants";
+import { COMMANDS, FILE_EXTENSIONS, WORD_FILE_EXTENSIONS, KEYBOARD_KEYS, PATH_COMPLETION_CONSTANTS, IGNORE_PATTERNS_CONSTANTS } from "../../constants";
 import { useTranslation } from "../../i18n";
 import { appendSearchPath, getActivePathSegment } from "../../utils/pathTokenizer";
+import { loadIgnoreHistory, clearIgnoreHistory } from "../../utils/ignoreHistory";
+import { IgnoreHistoryDropdown } from "./IgnoreHistoryDropdown";
 
 interface SearchBarProps {
   query: SearchQuery;
@@ -60,8 +62,10 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const keywordInputRef = useRef<HTMLDivElement>(null);
   const folderInputRef = useRef<HTMLDivElement>(null);
   const folderInputElementRef = useRef<HTMLInputElement>(null);
-  const [openList, setOpenList] = useState<"keyword" | "directory" | "directory-history" | null>(null);
+  const ignoreInputRef = useRef<HTMLDivElement>(null);
+  const [openList, setOpenList] = useState<"keyword" | "directory" | "directory-history" | "ignore-history" | null>(null);
   const [directorySuggestions, setDirectorySuggestions] = useState<string[]>([]);
+  const [ignoreHistory, setIgnoreHistory] = useState<string[]>(() => loadIgnoreHistory());
   const [activeOption, setActiveOption] = useState<number | null>(null);
   const [completionDismissed, setCompletionDismissed] = useState(false);
   const [directoryFocused, setDirectoryFocused] = useState(false);
@@ -103,8 +107,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   /** Closes active history or suggestion dropdown list. */
   const closeList = () => { setOpenList(null); setActiveOption(null); };
 
-  /** Handles blur on search or directory input field to close dropdown. */
-  const handleFieldBlur = (event: React.FocusEvent<HTMLDivElement>, field: "keyword" | "directory") => {
+  /** Handles blur on search, directory, or ignore patterns input field to close dropdown. */
+  const handleFieldBlur = (event: React.FocusEvent<HTMLDivElement>, field: "keyword" | "directory" | "ignore-history") => {
     if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
     completionRequestRef.current++;
     if (field === "directory") setDirectoryFocused(false);
@@ -115,7 +119,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   useEffect(() => {
     if (!openList && !directoryFocused) return;
     const handlePointerDown = (event: PointerEvent) => {
-      const region = openList === "keyword" ? keywordInputRef.current : folderInputRef.current;
+      const region =
+        openList === "keyword"
+          ? keywordInputRef.current
+          : openList === "ignore-history"
+          ? ignoreInputRef.current
+          : folderInputRef.current;
       if (region?.contains(event.target as Node)) return;
       completionRequestRef.current++;
       setDirectoryFocused(false);
@@ -227,10 +236,15 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   /** Toggles history list visibility. */
-  const toggleHistory = (field: "keyword" | "directory") => {
+  const toggleHistory = (field: "keyword" | "directory" | "ignore-history") => {
     completionRequestRef.current += 1;
     if (field === "directory") setCompletionDismissed(true);
-    setOpenList(field === "directory" ? (openList === "directory-history" ? null : "directory-history") : (openList === field ? null : field));
+    if (field === "ignore-history") {
+      setIgnoreHistory(loadIgnoreHistory());
+      setOpenList(openList === "ignore-history" ? null : "ignore-history");
+    } else {
+      setOpenList(field === "directory" ? (openList === "directory-history" ? null : "directory-history") : (openList === field ? null : field));
+    }
     setActiveOption(null);
   };
 
@@ -384,6 +398,57 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     if (handleListKeyDown(e)) return;
     if (e.key === "Enter") {
       e.preventDefault();
+    }
+  };
+
+  const handleIgnoreKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (
+      e.nativeEvent.isComposing ||
+      isComposingRef.current ||
+      e.key === "Process" ||
+      e.keyCode === 229
+    ) {
+      return;
+    }
+    if (Date.now() - compositionEndTimeRef.current < 50) {
+      return;
+    }
+    if (openList === "ignore-history") {
+      // Constant reference: KEYBOARD_KEYS.ESCAPE
+      if (e.key === KEYBOARD_KEYS.ESCAPE) {
+        e.preventDefault();
+        closeList();
+        return;
+      }
+      // Constant reference: KEYBOARD_KEYS.ARROW_DOWN / ARROW_UP
+      if (e.key === KEYBOARD_KEYS.ARROW_DOWN || e.key === KEYBOARD_KEYS.ARROW_UP) {
+        e.preventDefault();
+        if (!ignoreHistory.length) return;
+        const delta = e.key === KEYBOARD_KEYS.ARROW_DOWN ? 1 : -1;
+        const current = activeOption === null ? (delta > 0 ? -1 : ignoreHistory.length) : activeOption;
+        setActiveOption(Math.max(0, Math.min(ignoreHistory.length - 1, current + delta)));
+        return;
+      }
+      // Constant reference: KEYBOARD_KEYS.ENTER
+      if (e.key === KEYBOARD_KEYS.ENTER && activeOption !== null) {
+        e.preventDefault();
+        const selected = ignoreHistory[activeOption];
+        if (selected) {
+          onChangeQuery({ ignore_patterns: selected });
+        }
+        closeList();
+        return;
+      }
+    } else {
+      // Constant reference: KEYBOARD_KEYS.ARROW_DOWN
+      if (e.key === KEYBOARD_KEYS.ARROW_DOWN) {
+        e.preventDefault();
+        toggleHistory("ignore-history");
+        return;
+      }
+    }
+    if (e.key === KEYBOARD_KEYS.ENTER && !isScanning) {
+      onSearch();
     }
   };
 
@@ -570,7 +635,87 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           </div>
         </div>
 
-        {/* Row 2: Search Options (Toggle Pills) */}
+        {/* Row 2: Ignore Patterns row directly beneath directory input */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
+          <div
+            ref={ignoreInputRef}
+            onBlur={(event) => handleFieldBlur(event, "ignore-history")}
+            className="lg:col-span-12 relative"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-zinc-400 text-xs font-medium flex items-center gap-1.5 flex-shrink-0 select-none">
+                <Filter className="w-3.5 h-3.5 text-zinc-400" />
+                {/* Constant reference: t("ui.IGNORE_PATTERNS_LABEL") */}
+                <span>{t("ui.IGNORE_PATTERNS_LABEL")}</span>
+              </span>
+              <div className="relative flex-1">
+                <input
+                  // Constant reference: IGNORE_PATTERNS_CONSTANTS.INPUT_ID
+                  id={IGNORE_PATTERNS_CONSTANTS.INPUT_ID}
+                  type="text"
+                  value={query.ignore_patterns ?? ""}
+                  onChange={(e) => onChangeQuery({ ignore_patterns: e.target.value })}
+                  onKeyDown={handleIgnoreKeyDown}
+                  onCompositionStart={handleCompositionStart}
+                  onCompositionEnd={handleCompositionEnd}
+                  /* Constant reference: t("ui.IGNORE_PATTERNS_PLACEHOLDER") */
+                  placeholder={t("ui.IGNORE_PATTERNS_PLACEHOLDER")}
+                  /* Constant reference: t("ui.IGNORE_PATTERNS_TOOLTIP") */
+                  title={t("ui.IGNORE_PATTERNS_TOOLTIP")}
+                  /* Constant reference: t("ui.IGNORE_PATTERNS_LABEL") */
+                  aria-label={t("ui.IGNORE_PATTERNS_LABEL")}
+                  className="w-full pl-3 pr-20 py-1.5 bg-[#202024] border border-zinc-700 rounded-lg text-xs font-mono text-zinc-300 placeholder-zinc-500 focus:outline-none focus:border-excel-light focus:ring-1 focus:ring-excel-light transition"
+                />
+                <div className="absolute inset-y-0 right-1 flex items-center gap-1 pr-1.5">
+                  {(query.ignore_patterns ?? "").length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => onChangeQuery({ ignore_patterns: "" })}
+                      /* Constant reference: t("ui.CLEAR_TOOLTIP") */
+                      title={t("ui.CLEAR_TOOLTIP")}
+                      className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.currentTarget.focus();
+                      toggleHistory("ignore-history");
+                    }}
+                    /* Constant reference: t("ui.IGNORE_HISTORY_BUTTON") */
+                    title={t("ui.IGNORE_HISTORY_BUTTON")}
+                    aria-label={t("ui.IGNORE_HISTORY_BUTTON")}
+                    className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded"
+                  >
+                    <History className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="text-[10px] text-zinc-400 font-mono bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">
+                    Enter
+                  </span>
+                </div>
+                <IgnoreHistoryDropdown
+                  isOpen={openList === "ignore-history"}
+                  history={ignoreHistory}
+                  activeOption={activeOption}
+                  onSelect={(pattern) => {
+                    onChangeQuery({ ignore_patterns: pattern });
+                    closeList();
+                  }}
+                  onClose={closeList}
+                  onClearHistory={() => {
+                    clearIgnoreHistory();
+                    setIgnoreHistory([]);
+                    closeList();
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 3: Search Options (Toggle Pills) */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-1 text-xs select-none">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-zinc-400 mr-1 font-medium flex items-center gap-1">

@@ -97,6 +97,46 @@ where
     FFile: Fn(&Path) -> Result<(), String> + Send + Sync,
     FIssue: Fn(DiscoveryIssue) + Send + Sync,
 {
+    let passthrough = crate::search::ignore::IgnoreMatcher::passthrough();
+    discover_files_with_ignore(
+        roots,
+        extensions,
+        mode,
+        requested_workers,
+        &passthrough,
+        cancelled,
+        on_file,
+        on_issue,
+    )
+}
+
+/// Discovers eligible files under the given roots with bounded folder concurrency,
+/// skipping ignored files and pruning excluded directory subtrees.
+///
+/// ## Arguments / Returns
+/// `roots` are files' parent directories to traverse; `extensions` are dot-prefixed file types;
+/// `mode` selects one visitor or a bounded Burst pool; `requested_workers` is optional custom
+/// count; `ignore_matcher` evaluates candidate paths against gitignore rules; `cancelled` is checked
+/// between operations; `on_file` receives each eligible path; `on_issue` receives nonfatal failures.
+/// Returns `Ok(())` on completion or `Err` on fatal errors.
+///
+/// ## Errors
+/// Returns `Err` for invalid roots/settings or callback failure.
+#[allow(clippy::too_many_arguments)]
+pub fn discover_files_with_ignore<FFile, FIssue>(
+    roots: &[PathBuf],
+    extensions: &[String],
+    mode: DirectorySearchMode,
+    requested_workers: Option<usize>,
+    ignore_matcher: &crate::search::ignore::IgnoreMatcher,
+    cancelled: &AtomicBool,
+    on_file: FFile,
+    on_issue: FIssue,
+) -> Result<(), String>
+where
+    FFile: Fn(&Path) -> Result<(), String> + Send + Sync,
+    FIssue: Fn(DiscoveryIssue) + Send + Sync,
+{
     let custom_count = requested_workers
         .map(|count| resolve_burst_workers(Some(count)))
         .transpose()?;
@@ -135,6 +175,7 @@ where
     });
     let on_file = Arc::new(on_file);
     let on_issue = Arc::new(on_issue);
+    let ignore_matcher = Arc::new(ignore_matcher.clone());
 
     std::thread::scope(|scope| {
         for _ in 0..worker_count {
@@ -142,10 +183,12 @@ where
             let extensions = Arc::clone(&extensions);
             let on_file = Arc::clone(&on_file);
             let on_issue = Arc::clone(&on_issue);
+            let ignore_matcher = Arc::clone(&ignore_matcher);
             scope.spawn(move || {
                 visit_directories(
                     &scheduler,
                     &extensions,
+                    &ignore_matcher,
                     cancelled,
                     on_file.as_ref(),
                     on_issue.as_ref(),
@@ -164,13 +207,14 @@ where
 /// Advances a visitor's local continuation stack and shared pending queue.
 ///
 /// ## Arguments / Returns
-/// Accepts shared scheduler, normalized extensions, cancellation flag, and callbacks; returns `()`.
+/// Accepts shared scheduler, normalized extensions, ignore matcher, cancellation flag, and callbacks; returns `()`.
 ///
 /// ## Errors
 /// Fatal root/delivery errors stop all visitors; descendant filesystem errors go to `on_issue`.
 fn visit_directories<FFile, FIssue>(
     scheduler: &Scheduler,
     extensions: &[String],
+    ignore_matcher: &crate::search::ignore::IgnoreMatcher,
     cancelled: &AtomicBool,
     on_file: &FFile,
     on_issue: &FIssue,
@@ -254,6 +298,9 @@ fn visit_directories<FFile, FIssue>(
             }
         };
         if file_type.is_dir() {
+            if ignore_matcher.is_ignored(&entry_path, true) {
+                continue;
+            }
             {
                 let mut state = lock_state(&scheduler.state);
                 state.outstanding += constants::DISCOVERY_ONE_TASK;
@@ -264,16 +311,21 @@ fn visit_directories<FFile, FIssue>(
                 }
             }
             push_directory_frame(entry_path, false, &mut frames, scheduler, on_issue);
-        } else if file_type.is_file() && is_eligible_file(&entry_path, extensions) {
-            let delivery =
-                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| on_file(&entry_path)));
-            match delivery {
-                Ok(Ok(())) => {}
-                Ok(Err(error)) => set_fatal(scheduler, error),
-                Err(_) => set_fatal(
-                    scheduler,
-                    constants::ERR_DISCOVERY_CALLBACK_PANIC.to_string(),
-                ),
+        } else if file_type.is_file() {
+            if ignore_matcher.is_ignored(&entry_path, false) {
+                continue;
+            }
+            if is_eligible_file(&entry_path, extensions) {
+                let delivery =
+                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| on_file(&entry_path)));
+                match delivery {
+                    Ok(Ok(())) => {}
+                    Ok(Err(error)) => set_fatal(scheduler, error),
+                    Err(_) => set_fatal(
+                        scheduler,
+                        constants::ERR_DISCOVERY_CALLBACK_PANIC.to_string(),
+                    ),
+                }
             }
         }
     }

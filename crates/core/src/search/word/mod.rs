@@ -118,6 +118,7 @@ mod tests {
             include_shape: false,
             include_hidden: false,
             extensions: vec![],
+            ignore_patterns: None,
         };
         let result = search_word_file(dummy_path, &query, None, None);
         assert!(result.is_err());

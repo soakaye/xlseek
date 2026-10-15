@@ -29,3 +29,4 @@ encoding_rs = "0.8.42"
 cfb = "0.7.3"
 quick-xml = "0.41.0"
 zip = { version = "0.6.6", default-features = false, features = ["deflate"] }
+ignore = "0.4"

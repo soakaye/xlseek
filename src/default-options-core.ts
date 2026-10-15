@@ -45,7 +45,9 @@ export function isDefaultSearchOptions(value: unknown): value is DefaultSearchOp
       candidate.burst_workers >= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MIN &&
       candidate.burst_workers <= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MAX);
 
-  return validMode && validWorkers;
+  const validIgnorePatterns = candidate.ignore_patterns === undefined || typeof candidate.ignore_patterns === "string";
+
+  return validMode && validWorkers && validIgnorePatterns;
 }
 
 /** Validates persisted search fields that predate the directory search mode. */
@@ -96,12 +98,16 @@ export function normalizeDefaultSearchOptions(value: unknown): DefaultSearchOpti
   const enableWordSearch = typeof candidate.enable_word_search === "boolean"
     ? candidate.enable_word_search
     : DEFAULT_SEARCH_OPTIONS.enable_word_search;
+  const ignorePatterns = typeof candidate.ignore_patterns === "string"
+    ? candidate.ignore_patterns
+    : DEFAULT_SEARCH_OPTIONS.ignore_patterns;
   return {
     ...resetDefaultSearchOptions(),
     ...candidate,
     directory_mode: directoryMode,
     burst_workers: validWorkers ? workers : null,
     enable_word_search: enableWordSearch,
+    ignore_patterns: ignorePatterns,
   } as DefaultSearchOptions;
 }
 
@@ -131,6 +137,7 @@ export function resetDefaultSearchOptions(): DefaultSearchOptions {
     directory_mode: DEFAULT_SEARCH_OPTIONS.directory_mode,
     burst_workers: DEFAULT_SEARCH_OPTIONS.burst_workers,
     enable_word_search: DEFAULT_SEARCH_OPTIONS.enable_word_search,
+    ignore_patterns: DEFAULT_SEARCH_OPTIONS.ignore_patterns,
   };
 }
 

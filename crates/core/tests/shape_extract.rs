@@ -241,6 +241,7 @@ fn extracts_text_shape_with_sheet_and_anchor() {
         include_shape: true,
         include_hidden: false,
         extensions: vec![".xlsx".to_string()],
+        ignore_patterns: None,
     };
     let results = parse_and_search_file(&path, &query, None, None)
         .expect("search must merge cell and shape results");
@@ -297,6 +298,7 @@ fn uses_real_cell_coordinates_for_ranges_starting_after_a1() {
             .iter()
             .map(|extension| extension.to_string())
             .collect(),
+        ignore_patterns: None,
     };
     let results = parse_and_search_file(path, &query, None, None).unwrap();
     assert!(results.iter().any(|item| item.cell_address == "A12"));
@@ -345,6 +347,7 @@ fn searches_legacy_cell_comments() {
             .iter()
             .map(|extension| extension.to_string())
             .collect(),
+        ignore_patterns: None,
     };
     let results = parse_and_search_file(path, &query, None, None).unwrap();
     assert!(results
