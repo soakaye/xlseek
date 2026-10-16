@@ -260,7 +260,9 @@ where
             for p in parsed_paths {
                 resolved_paths.push(resolve_input_path(&p)?);
             }
-            (query, resolved_paths)
+            let deduplicated =
+                xlseek_core::search::path::deduplicate_and_prune_subpaths(resolved_paths);
+            (query, deduplicated)
         }
         [first_pos] => {
             // Single positional argument: 1st argument is query
@@ -284,7 +286,9 @@ where
             for p in parsed_paths {
                 resolved_paths.push(resolve_input_path(&p)?);
             }
-            (first_pos.clone(), resolved_paths)
+            let deduplicated =
+                xlseek_core::search::path::deduplicate_and_prune_subpaths(resolved_paths);
+            (first_pos.clone(), deduplicated)
         }
         [first_pos, remaining_paths @ ..] => {
             // Two or more positional arguments: 1st is query, 2nd+ are paths
@@ -302,11 +306,19 @@ where
                     constants::CLI_PATH_FIELD
                 ));
             }
-            let mut paths = Vec::with_capacity(remaining_paths.len());
+            let mut parsed_paths = Vec::new();
             for p in remaining_paths {
-                paths.push(resolve_input_path(p)?);
+                let tokens = xlseek_core::search::path::parse_search_paths(p)
+                    .map_err(|_| constants::ERR_CLI_INPUT_PATH.to_string())?;
+                parsed_paths.extend(tokens);
             }
-            (first_pos.clone(), paths)
+            let mut resolved_paths = Vec::with_capacity(parsed_paths.len());
+            for p in parsed_paths {
+                resolved_paths.push(resolve_input_path(&p)?);
+            }
+            let deduplicated =
+                xlseek_core::search::path::deduplicate_and_prune_subpaths(resolved_paths);
+            (first_pos.clone(), deduplicated)
         }
     };
 
@@ -558,8 +570,10 @@ fn parse_bool(
 /// Returns `Err` on non-existence, non-file/directory, or canonicalization failure.
 fn resolve_input_path(input: &str) -> Result<PathBuf, String> {
     let path = expand_home(input)?;
-    let path =
-        std::fs::canonicalize(path).map_err(|_| constants::ERR_CLI_INPUT_PATH.to_string())?;
+    if !path.exists() {
+        return Err(constants::ERR_CLI_INPUT_PATH.to_string());
+    }
+    let path = xlseek_core::search::path::normalize_canonical_path(&path);
     if !path.is_file() && !path.is_dir() {
         return Err(constants::ERR_CLI_INPUT_PATH.to_string());
     }
@@ -601,7 +615,13 @@ fn resolve_output_path(input: &str) -> Result<PathBuf, String> {
 /// ## Errors
 /// Returns `Err` if home directory environment variable is absent.
 fn expand_home(input: &str) -> Result<PathBuf, String> {
-    // Constant reference: constants::HOME_PATH_PREFIX_UNIX, constants::HOME_ENVIRONMENT_VARIABLE
+    // Constant reference: xlseek_core::constants::HOME_PATH_SHORTHAND_EXACT, constants::HOME_PATH_PREFIX_UNIX, constants::HOME_ENVIRONMENT_VARIABLE
+    if input == xlseek_core::constants::HOME_PATH_SHORTHAND_EXACT {
+        let home = std::env::var_os(constants::HOME_ENVIRONMENT_VARIABLE)
+            .or_else(|| std::env::var_os(constants::WINDOWS_HOME_ENVIRONMENT_VARIABLE))
+            .ok_or_else(|| constants::ERR_CLI_HOME.to_string())?;
+        return Ok(PathBuf::from(home));
+    }
     if let Some(suffix) = input.strip_prefix(constants::HOME_PATH_PREFIX_UNIX) {
         let home = std::env::var_os(constants::HOME_ENVIRONMENT_VARIABLE)
             .or_else(|| std::env::var_os(constants::WINDOWS_HOME_ENVIRONMENT_VARIABLE))
@@ -681,7 +701,7 @@ mod tests {
         assert_eq!(options.input_paths.len(), 1);
         assert_eq!(
             options.input_paths[0],
-            std::fs::canonicalize(&input).unwrap()
+            xlseek_core::search::path::normalize_canonical_path(&input)
         );
         assert_eq!(
             options.output_target,
@@ -712,9 +732,9 @@ mod tests {
     fn parses_positional_arguments_and_stdout() {
         let root = repo_root();
         let input1 = root.join("tests/fixtures/sample_report.xlsx");
-        let input2 = root.join("tests/fixtures");
+        let input2 = root.join("crates/cli/src");
         let args = [
-            "search_keyword".to_string(),
+            constants::CLI_TEST_POSITIONAL_QUERY.to_string(),
             input1.to_string_lossy().into_owned(),
             input2.to_string_lossy().into_owned(),
         ];
@@ -722,7 +742,7 @@ mod tests {
         let ParseOutcome::Run(options) = parse_args(args, &catalogs).unwrap() else {
             panic!("valid request must run");
         };
-        assert_eq!(options.query.keyword, "search_keyword");
+        assert_eq!(options.query.keyword, constants::CLI_TEST_POSITIONAL_QUERY);
         assert_eq!(options.input_paths.len(), 2);
         assert_eq!(options.output_target, CliOutputTarget::Stdout);
         assert_eq!(options.format, ExportFormat::Csv);
@@ -907,5 +927,140 @@ mod tests {
             &catalogs,
         );
         assert!(conflict.is_err());
+    }
+
+    /// Verifies that overlapping positional directories are pruned to top-level roots without verbatim prefixes.
+    ///
+    /// ## Arguments / Returns
+    /// Takes no arguments; asserts `CliOptions.input_paths` contains only the parent directory.
+    ///
+    /// ## Errors
+    /// Panics if parsing fails or if subdirectories are not pruned.
+    #[test]
+    fn cli_args_overlapping_positional_directories_pruned() {
+        let catalogs = xlseek_core::i18n::load_embedded_catalogs().unwrap();
+        let temp_dir = std::env::temp_dir().join(format!(
+            "xlseek_cli_test_pos_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let child_dir = temp_dir.join("sub_dir");
+        std::fs::create_dir_all(&child_dir).unwrap();
+
+        let parent_str = temp_dir.to_string_lossy().into_owned();
+        let child_str = child_dir.to_string_lossy().into_owned();
+
+        let result = parse_args(
+            [
+                constants::CLI_TEST_POSITIONAL_QUERY.to_string(),
+                parent_str.clone(),
+                child_str,
+            ],
+            &catalogs,
+        );
+
+        let ParseOutcome::Run(options) = result.unwrap() else {
+            panic!("parse_args must return Run outcome");
+        };
+
+        assert_eq!(options.input_paths.len(), 1);
+        let first_path_str = options.input_paths[0].to_string_lossy();
+        assert!(
+            !first_path_str.starts_with(r"\\?\"),
+            "Path must not contain verbatim prefix: {first_path_str}"
+        );
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    /// Verifies that comma-separated paths in --path option are pruned of subpaths.
+    ///
+    /// ## Arguments / Returns
+    /// Takes no arguments; asserts `CliOptions.input_paths` contains only the parent directory.
+    ///
+    /// ## Errors
+    /// Panics if parsing fails or if comma-separated subpaths are not pruned.
+    #[test]
+    fn cli_args_comma_separated_path_with_subpath_pruned() {
+        let catalogs = xlseek_core::i18n::load_embedded_catalogs().unwrap();
+        let temp_dir = std::env::temp_dir().join(format!(
+            "xlseek_cli_test_csv_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let child_dir = temp_dir.join("sub_dir");
+        std::fs::create_dir_all(&child_dir).unwrap();
+
+        let parent_str = temp_dir.to_string_lossy().into_owned();
+        let child_str = child_dir.to_string_lossy().into_owned();
+        let combined_path = format!("{parent_str},{child_str}");
+
+        let result = parse_args(
+            [
+                format!("--{}", constants::CLI_QUERY_FIELD),
+                constants::CLI_TEST_POSITIONAL_QUERY.to_string(),
+                format!("--{}", constants::CLI_PATH_FIELD),
+                combined_path,
+            ],
+            &catalogs,
+        );
+
+        let ParseOutcome::Run(options) = result.unwrap() else {
+            panic!("parse_args must return Run outcome");
+        };
+
+        assert_eq!(options.input_paths.len(), 1);
+        assert!(!options.input_paths[0]
+            .to_string_lossy()
+            .starts_with(r"\\?\"));
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    /// Verifies that specifying a parent directory and a descendant file prunes the file.
+    ///
+    /// ## Arguments / Returns
+    /// Takes no arguments; asserts `CliOptions.input_paths` contains only the directory.
+    ///
+    /// ## Errors
+    /// Panics if parsing fails or if descendant file is not pruned.
+    #[test]
+    fn cli_args_directory_with_descendant_file_pruned() {
+        let catalogs = xlseek_core::i18n::load_embedded_catalogs().unwrap();
+        let temp_dir = std::env::temp_dir().join(format!(
+            "xlseek_cli_test_file_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        std::fs::create_dir_all(&temp_dir).unwrap();
+        let child_file = temp_dir.join("report.xlsx");
+        std::fs::write(&child_file, b"test content").unwrap();
+
+        let parent_str = temp_dir.to_string_lossy().into_owned();
+        let file_str = child_file.to_string_lossy().into_owned();
+
+        let result = parse_args(
+            [
+                constants::CLI_TEST_POSITIONAL_QUERY.to_string(),
+                parent_str.clone(),
+                file_str,
+            ],
+            &catalogs,
+        );
+
+        let ParseOutcome::Run(options) = result.unwrap() else {
+            panic!("parse_args must return Run outcome");
+        };
+
+        assert_eq!(options.input_paths.len(), 1);
+        assert!(options.input_paths[0].is_dir());
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
     }
 }

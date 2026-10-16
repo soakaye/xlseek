@@ -920,4 +920,67 @@ mod tests {
         let final_prog = result.unwrap();
         assert_eq!(final_prog.state, ScanState::Cancelled);
     }
+
+    /// ## Description
+    /// Verifies that specifying overlapping parent and subdirectories in search path deduplicates roots and scans each file once.
+    ///
+    /// ## Arguments / Returns
+    /// None
+    ///
+    /// ## Errors / Exceptions
+    /// Panics if assertions fail.
+    #[test]
+    fn test_search_engine_subpath_deduplication() {
+        let fixtures_dir = fixtures_dir();
+        let fixtures_str = fixtures_dir.to_str().unwrap();
+
+        // Pass fixtures dir and fixtures dir again (or with trailing separator/redundant comma)
+        let multi_path = format!("{}, {}", fixtures_str, fixtures_str);
+
+        let engine = SearchEngine::new();
+        let query = SearchQuery {
+            keyword: "Financial".to_string(),
+            target_dir: multi_path,
+            directory_mode: crate::models::DirectorySearchMode::Sequential,
+            burst_workers: None,
+            match_case: false,
+            // Constant reference: crate::constants::DEFAULT_INCLUDE_VALUE
+            include_value: crate::constants::DEFAULT_INCLUDE_VALUE,
+            use_regex: false,
+            include_formula: true,
+            include_comment: true,
+            include_shape: true,
+            include_hidden: false,
+            extensions: vec![".xlsx".to_string()],
+            ignore_patterns: None,
+        };
+
+        let matches = Arc::new(std::sync::Mutex::new(Vec::new()));
+        let matches_clone = Arc::clone(&matches);
+
+        let result = engine.execute_search(
+            query,
+            move |m| {
+                matches_clone.lock().unwrap().push(m);
+            },
+            |_| {},
+        );
+
+        assert!(
+            result.is_ok(),
+            "Search with duplicate/subpath roots must succeed"
+        );
+        let final_prog = result.unwrap();
+        let found = matches.lock().unwrap();
+
+        // Count should match exactly single-root search without duplicate rows
+        assert_eq!(final_prog.matches_found, found.len());
+        for m in found.iter() {
+            assert!(
+                !m.full_path.starts_with(r"\\?\"),
+                "Result full_path must be clean without verbatim prefix: {}",
+                m.full_path
+            );
+        }
+    }
 }

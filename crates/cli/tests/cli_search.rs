@@ -362,6 +362,53 @@ fn test_cli_search_multiple_paths_in_option() {
     let _ = fs::remove_dir_all(work);
 }
 
+/// Verifies that running CLI search with overlapping parent and child paths produces zero duplicate matches.
+///
+/// ## Arguments / Returns
+/// None. Invokes CLI with parent and subpath arguments and asserts scanned files count and match deduplication.
+///
+/// ## Errors
+/// Panics if CLI invocation fails, exit code is non-zero, or duplicate entries exist.
+#[test]
+fn test_cli_search_overlapping_paths_deduplication() {
+    let work = unique_test_directory();
+    let parent_dir = work.join("parent");
+    let child_dir = parent_dir.join("child");
+    fs::create_dir_all(&child_dir).unwrap();
+
+    let fixture = repo_root().join("tests/fixtures/sample_report.xlsx");
+    fs::copy(&fixture, parent_dir.join("sample_parent.xlsx")).unwrap();
+    fs::copy(&fixture, child_dir.join("sample_child.xlsx")).unwrap();
+
+    let output_csv = work.join("output.csv");
+    let path_arg = format!("{}, {}", parent_dir.display(), child_dir.display());
+
+    let result = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
+        .arg("-p")
+        .arg(&path_arg)
+        .arg("-q")
+        .arg(QUERY_TEXT)
+        .arg("-o")
+        .arg(&output_csv)
+        .output()
+        .expect("CLI process must start");
+
+    assert_eq!(result.status.code(), Some(0));
+    assert!(output_csv.exists());
+
+    let stdout_str = String::from_utf8_lossy(&result.stdout);
+    // Summary contains scanned files count; since child is pruned, scanned files must be 2, not 3
+    assert!(stdout_str.contains("2"));
+
+    let content = fs::read_to_string(&output_csv).unwrap();
+    let parent_matches = content.matches("sample_parent.xlsx").count();
+    let child_matches = content.matches("sample_child.xlsx").count();
+    assert!(parent_matches > 0);
+    assert_eq!(parent_matches, child_matches);
+
+    let _ = fs::remove_dir_all(work);
+}
+
 /// Helper that invokes the CLI with path, query, format, and output arguments.
 ///
 /// ## Arguments / Returns

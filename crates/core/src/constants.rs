@@ -230,6 +230,7 @@ pub const CLI_VALUE_OPTIONS: [&str; 16] = [
 pub const CLI_TEST_OUTPUT_NAME: &str = "xlseek-cli-args-test.csv";
 pub const CLI_TEST_OVERWRITE_OPTION: &str = "--overwrite";
 pub const CLI_TEST_HYPHEN_QUERY: &str = "--needle";
+pub const CLI_TEST_POSITIONAL_QUERY: &str = "needle";
 pub const CLI_TEST_COMMENT_QUERY: &str = "財務報告レビュー対象セル";
 pub const CLI_TEST_INVALID_REGEX: &str = "[";
 pub const CLI_TEST_INVALID_WORKBOOK_BYTES: &[u8] = b"broken workbook";
@@ -515,6 +516,8 @@ pub const ESCAPED_QUOTE_BACKSLASH: &str = "\\\"";
 pub const ERR_PATH_UNCLOSED_QUOTE: &str = "Unclosed double quote in search path";
 /// Error message returned when no valid search path is specified.
 pub const ERR_NO_VALID_SEARCH_PATHS: &str = "No valid search path specified";
+/// Exact home shorthand path token ("~").
+pub const HOME_PATH_SHORTHAND_EXACT: &str = "~";
 
 // ==============================================================================
 // 8. Unit Tests
@@ -611,5 +614,7 @@ mod tests {
         assert_eq!(CHANNEL_BUFFER_SIZE, 1024);
         assert_eq!(SEARCH_MATCH_BATCH_SIZE, 50);
         assert_eq!(SEARCH_MATCH_BATCH_INTERVAL_MS, 25);
+        assert_eq!(HOME_PATH_SHORTHAND_EXACT, "~");
+        assert_eq!(CLI_TEST_POSITIONAL_QUERY, "needle");
     }
 }

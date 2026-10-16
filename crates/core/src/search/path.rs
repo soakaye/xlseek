@@ -98,6 +98,70 @@ pub fn parse_search_paths(input: &str) -> Result<Vec<String>, PathParseError> {
     Ok(paths)
 }
 
+/// Description: Normalizes an existing filesystem path to its canonical form and removes OS-internal verbatim prefixes.
+/// Arguments/Returns: Accepts `path: &Path`; returns `PathBuf` as clean canonical absolute path.
+/// Errors: None; falls back to resolving relative segments if canonicalization fails.
+pub fn normalize_canonical_path(path: &Path) -> PathBuf {
+    let canonical = path.canonicalize().unwrap_or_else(|_| {
+        let mut components = Vec::new();
+        for component in path.components() {
+            match component {
+                std::path::Component::CurDir => {}
+                std::path::Component::ParentDir => {
+                    components.pop();
+                }
+                c => components.push(c),
+            }
+        }
+        components.iter().collect::<PathBuf>()
+    });
+    let raw_str = canonical.to_string_lossy();
+    let display_str = crate::export::normalize_export_path(&raw_str);
+    PathBuf::from(display_str.into_owned())
+}
+
+/// Description: Removes exact duplicate paths and prunes descendant subpaths from a set of paths.
+/// Arguments/Returns: Accepts `paths: Vec<PathBuf>`; returns deduplicated and pruned `Vec<PathBuf>`.
+/// Errors: None. Uses component-level comparison (`starts_with`) safely.
+pub fn deduplicate_and_prune_subpaths(paths: Vec<PathBuf>) -> Vec<PathBuf> {
+    let mut unique_paths = Vec::new();
+    for path in paths {
+        if !unique_paths.contains(&path) {
+            unique_paths.push(path);
+        }
+    }
+
+    if unique_paths.len() <= 1 {
+        return unique_paths;
+    }
+
+    // Cache directory status to avoid repeated filesystem stat calls across O(N^2) comparisons
+    let path_entries: Vec<(PathBuf, bool)> = unique_paths
+        .into_iter()
+        .map(|p| {
+            let is_dir = p.is_dir();
+            (p, is_dir)
+        })
+        .collect();
+
+    let mut pruned = Vec::new();
+    for (candidate, _) in &path_entries {
+        let has_ancestor = path_entries.iter().any(|(other, other_is_dir)| {
+            if other == candidate {
+                return false;
+            }
+            if !*other_is_dir {
+                return false;
+            }
+            candidate.starts_with(other)
+        });
+        if !has_ancestor && !pruned.contains(candidate) {
+            pruned.push(candidate.clone());
+        }
+    }
+    pruned
+}
+
 /// Description: Resolves, validates, partitions, and deduplicates target paths against the filesystem.
 /// Arguments/Returns: Accepts slice of path strings and optional home directory; returns `PathResolutionResult`.
 /// Errors: None; classifies inaccessible or invalid paths into `invalid_paths` rather than panicking.
@@ -119,7 +183,7 @@ pub fn resolve_and_partition_paths(
 
         match validate_search_directory(&resolved) {
             Ok(()) => {
-                let canonical = resolved.canonicalize().unwrap_or(resolved);
+                let canonical = normalize_canonical_path(&resolved);
                 if !valid_roots.contains(&canonical) {
                     valid_roots.push(canonical);
                 }
@@ -130,19 +194,7 @@ pub fn resolve_and_partition_paths(
         }
     }
 
-    // Prune redundant sub-paths if an ancestor directory is already in valid_roots
-    if valid_roots.len() > 1 {
-        let mut pruned: Vec<PathBuf> = Vec::new();
-        for root in &valid_roots {
-            let has_ancestor = valid_roots
-                .iter()
-                .any(|other| other != root && root.starts_with(other));
-            if !has_ancestor && !pruned.contains(root) {
-                pruned.push(root.clone());
-            }
-        }
-        valid_roots = pruned;
-    }
+    let valid_roots = deduplicate_and_prune_subpaths(valid_roots);
 
     PathResolutionResult {
         valid_roots,
@@ -150,10 +202,13 @@ pub fn resolve_and_partition_paths(
     }
 }
 
-/// Description: Expands home shorthand prefix in input path and returns search path.
+/// Description: Expands home shorthand prefix or exact shorthand in input path and returns search path.
 /// Arguments/Returns: Accepts input string and optional home path, returns resolved PathBuf.
-/// Errors: Returns SearchFailed if home shorthand is present but home path is not provided.
+/// Errors: Returns SearchFailed if home shorthand is present but home path cannot be determined.
 pub fn resolve_search_path(input: &str, home_dir: Option<&Path>) -> Result<PathBuf, PathError> {
+    // Constant reference: crate::constants::HOME_PATH_SHORTHAND_EXACT
+    let is_exact_home = input == crate::constants::HOME_PATH_SHORTHAND_EXACT;
+
     #[cfg(windows)]
     let prefixes = [
         crate::constants::HOME_PATH_PREFIX_WINDOWS,
@@ -162,11 +217,28 @@ pub fn resolve_search_path(input: &str, home_dir: Option<&Path>) -> Result<PathB
     #[cfg(not(windows))]
     let prefixes = [crate::constants::HOME_PATH_PREFIX_UNIX];
 
-    if let Some(remainder) = prefixes
-        .iter()
-        .find_map(|prefix| input.strip_prefix(prefix))
-    {
-        let home = home_dir.ok_or(PathError::SearchFailed)?;
+    let remainder_opt = if is_exact_home {
+        Some("")
+    } else {
+        prefixes
+            .iter()
+            .find_map(|prefix| input.strip_prefix(prefix))
+    };
+
+    if let Some(remainder) = remainder_opt {
+        let fallback_home: Option<PathBuf> =
+            std::env::var_os(crate::constants::HOME_ENVIRONMENT_VARIABLE)
+                .or_else(|| std::env::var_os(crate::constants::WINDOWS_HOME_ENVIRONMENT_VARIABLE))
+                .map(PathBuf::from);
+
+        let home = home_dir
+            .map(Path::to_path_buf)
+            .or(fallback_home)
+            .ok_or(PathError::SearchFailed)?;
+
+        if remainder.is_empty() {
+            return Ok(home);
+        }
         return Ok(home.join(remainder));
     }
 
@@ -551,6 +623,135 @@ mod tests {
         assert_eq!(result.invalid_paths[0].1, PathError::NotFound);
 
         let _ = fs::remove_dir_all(valid_dir);
+    }
+
+    /// Description: Verifies that exact duplicates and descendant subpaths are pruned while preserving ancestors.
+    /// Arguments/Returns: None.
+    /// Errors: Panics on test failure.
+    #[test]
+    fn test_deduplicate_and_prune_subpaths() {
+        let parent = temp_dir();
+        let child = parent.join("child");
+        let grand_child = child.join("grand");
+        fs::create_dir_all(&grand_child).expect("directories should be created");
+
+        let paths = vec![
+            parent.clone(),
+            child.clone(),
+            grand_child.clone(),
+            parent.clone(),
+        ];
+        let pruned = super::deduplicate_and_prune_subpaths(paths);
+        assert_eq!(pruned, vec![parent.clone()]);
+
+        let _ = fs::remove_dir_all(parent);
+    }
+
+    /// Description: Verifies that order of parent and child does not affect pruning result (order independence).
+    /// Arguments/Returns: None.
+    /// Errors: Panics on test failure.
+    #[test]
+    fn test_subpath_order_independence() {
+        let parent = temp_dir();
+        let child = parent.join("child");
+        fs::create_dir_all(&child).expect("directory should be created");
+
+        // Child specified before parent
+        let paths = vec![child.clone(), parent.clone()];
+        let pruned = super::deduplicate_and_prune_subpaths(paths);
+        assert_eq!(pruned, vec![parent.clone()]);
+
+        let _ = fs::remove_dir_all(parent);
+    }
+
+    /// Description: Verifies that sibling directories with shared prefix are NOT falsely pruned (component boundary check).
+    /// Arguments/Returns: None.
+    /// Errors: Panics on test failure.
+    #[test]
+    fn test_sibling_prefix_collision_not_pruned() {
+        let root = temp_dir();
+        let report_dir = root.join("report");
+        let report_archive = root.join("report_archive");
+        fs::create_dir_all(&report_dir).expect("report dir created");
+        fs::create_dir_all(&report_archive).expect("report archive created");
+
+        let paths = vec![report_dir.clone(), report_archive.clone()];
+        let pruned = super::deduplicate_and_prune_subpaths(paths);
+        assert_eq!(pruned.len(), 2);
+        assert!(pruned.contains(&report_dir));
+        assert!(pruned.contains(&report_archive));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    /// Description: Verifies that an invalid subpath still emits warning and valid ancestor is preserved.
+    /// Arguments/Returns: None.
+    /// Errors: Panics on test failure.
+    #[test]
+    fn test_invalid_subpath_warning_preserved() {
+        let parent = temp_dir();
+        let missing_child = parent.join("missing_sub");
+        let paths = vec![
+            parent.to_string_lossy().to_string(),
+            missing_child.to_string_lossy().to_string(),
+        ];
+
+        let result = resolve_and_partition_paths(&paths, None);
+        assert_eq!(result.valid_roots.len(), 1);
+        assert_eq!(result.invalid_paths.len(), 1);
+        assert_eq!(
+            result.invalid_paths[0].0,
+            missing_child.to_string_lossy().to_string()
+        );
+
+        let _ = fs::remove_dir_all(parent);
+    }
+
+    /// Description: Verifies that relative segments and trailing separators normalize to clean canonical paths without verbatim prefix.
+    /// Arguments/Returns: None.
+    /// Errors: Panics on test failure.
+    #[test]
+    fn test_relative_and_verbatim_normalization() {
+        let root = temp_dir();
+        let child = root.join("child");
+        fs::create_dir_all(&child).expect("directory created");
+
+        let relative_input = child.join("..").join("child");
+        let normalized = super::normalize_canonical_path(&relative_input);
+
+        let expected_clean = super::normalize_canonical_path(&child);
+        assert_eq!(normalized, expected_clean);
+        // Ensure no Windows verbatim prefix
+        assert!(!normalized.to_string_lossy().starts_with(r"\\?\"));
+
+        let _ = fs::remove_dir_all(root);
+    }
+
+    /// Description: Verifies SC-004: Deduplication and subpath pruning completes in under 50ms for 50 paths.
+    /// Arguments/Returns: None.
+    /// Errors: Panics on test failure.
+    #[test]
+    fn test_deduplicate_subpaths_performance_50_paths() {
+        let root = temp_dir();
+        let mut paths = Vec::with_capacity(50);
+        for index in 0..50 {
+            let dir = root.join(format!("dir_{index:02}"));
+            fs::create_dir_all(&dir).expect("dir created");
+            paths.push(dir);
+        }
+
+        let start = std::time::Instant::now();
+        let pruned = super::deduplicate_and_prune_subpaths(paths);
+        let elapsed = start.elapsed();
+
+        assert_eq!(pruned.len(), 50);
+        assert!(
+            elapsed.as_millis() < 50,
+            "Pruning 50 paths took {:?}",
+            elapsed
+        );
+
+        let _ = fs::remove_dir_all(root);
     }
 
     #[cfg(windows)]
