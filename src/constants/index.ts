@@ -161,11 +161,16 @@ export const WORD_FILE_EXTENSIONS = {
   DEFAULT_LIST: [".docx", ".docm", ".doc"],
 } as const;
 
-// Constant reference: Fixed UI placeholder and labels for Word documents
+// Constant reference: Fixed UI placeholder, labels, and scroll behavior for Word documents
 export const WORD_UI_CONSTANTS = {
   SHEET_NAME: "Word",
   CELL_ADDRESS_PLACEHOLDER: "-",
+  /** Instant scroll behavior without smooth animation */
+  SCROLL_BEHAVIOR: "auto",
+  /** Vertical alignment block for positioning target paragraph */
+  SCROLL_BLOCK: "center",
 } as const;
+
 
 // ==============================================================================
 // 6. Default Search Options Constants (Default Search Options)

@@ -15,6 +15,8 @@ import React, { useEffect, useRef } from "react";
 import { FileText } from "lucide-react";
 import { WordPreviewPayload } from "../../types/preview";
 import { useTranslation } from "../../i18n";
+import { WORD_UI_CONSTANTS } from "../../constants";
+
 
 interface WordTextPreviewProps {
   payload: WordPreviewPayload | null;
@@ -48,17 +50,18 @@ export const WordTextPreview: React.FC<WordTextPreviewProps> = ({
   const targetParagraphRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to target paragraph when payload updates
+  // Instantly position target paragraph into view without animation delay when payload updates
   useEffect(() => {
     if (!payload || isLoading) return;
-    const timer = window.setTimeout(() => {
-      targetParagraphRef.current?.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }, 50);
-    return () => window.clearTimeout(timer);
-  }, [payload?.file_path, payload?.target_paragraph, isLoading]);
+    targetParagraphRef.current?.scrollIntoView({
+      // Constant reference: WORD_UI_CONSTANTS.SCROLL_BEHAVIOR
+      behavior: WORD_UI_CONSTANTS.SCROLL_BEHAVIOR,
+      // Constant reference: WORD_UI_CONSTANTS.SCROLL_BLOCK
+      block: WORD_UI_CONSTANTS.SCROLL_BLOCK,
+    });
+  }, [payload, isLoading]);
+
+
 
   if (isLoading) {
     return (

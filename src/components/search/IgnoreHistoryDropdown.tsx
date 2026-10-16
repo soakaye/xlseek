@@ -42,9 +42,9 @@ export const IgnoreHistoryDropdown: React.FC<IgnoreHistoryDropdownProps> = ({
   history,
   activeOption,
   onSelect,
-  onClose: _onClose,
   onClearHistory,
 }) => {
+
   const t = useTranslation();
 
   if (!isOpen) {
