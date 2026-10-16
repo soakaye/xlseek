@@ -7,6 +7,10 @@
 **Excel Seek (`xlseek`)** is a fast, lightweight, and secure desktop search application and CLI tool for recursive searching across Excel workbooks (`.xlsx`, `.xlsm`, `.xlsb`, `.xls`) and Microsoft Word documents (`.docx`, `.docm`, `.doc`). It enables users to search cell values, formulas, notes, paragraphs, and shape text using plain text queries or regular expressions.
 
 ![Excel Seek Main UI](docs/images/main-ui-en.png)
+*Excel search mode (default)*
+
+![Excel Seek with Word Search Enabled](docs/images/main-ui-word-en.png)
+*With Word document search enabled in Settings (`.docx`, `.docm`, `.doc`)*
 
 ---
 
