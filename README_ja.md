@@ -6,6 +6,8 @@
 
 **Excel Seek (`xlseek`)** は、Excel ワークブック（`.xlsx`、`.xlsm`、`.xlsb`、`.xls`）および Microsoft Word 文書（`.docx`、`.docm`、`.doc`）を対象に、フォルダ単位で高速・軽量かつセキュアに再帰検索できるデスクトップ検索アプリケーションおよび CLI ツールです。セルの値、数式、コメント/メモ、Word 本文段落、図形（Shape）内テキストを、通常の文字列または正規表現を用いて横断検索できます。
 
+![Excel Seek メイン画面](docs/images/main-ui-ja.png)
+
 ---
 
 ## 主な機能
