@@ -14,8 +14,40 @@
 import { useCallback, useEffect, useState } from "react";
 import { locale } from "@tauri-apps/plugin-os";
 import { DisplayLanguage, LanguagePreference, readLanguagePreference, resolveLanguage, saveLanguagePreference } from "../locale-core";
-import { DISPLAY_LANGUAGES, LANGUAGE_PREFERENCES } from "../constants";
+import { DISPLAY_LANGUAGES, LANGUAGE_PREFERENCES, TIMING_CONSTANTS } from "../constants";
 import { initializeI18n, setI18nLocale } from "../i18n";
+
+/**
+ * ## Description
+ * Races an asynchronous initialization promise against `TIMING_CONSTANTS.I18N_INIT_TIMEOUT_MS`
+ * and resolves to a fallback value if the promise stalls or rejects.
+ *
+ * ## Arguments & Returns
+ * @param task - Promise to await
+ * @param fallback - Fallback value returned on timeout or error
+ * @returns Resolved value from `task` or `fallback`
+ *
+ * ## Errors / Exceptions
+ * Never rejects; catches errors and timeouts to return `fallback`.
+ */
+const withInitTimeout = async <T,>(task: Promise<T>, fallback: T): Promise<T> => {
+  let timerId: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      task,
+      new Promise<T>((resolve) => {
+        // Constant reference: TIMING_CONSTANTS.I18N_INIT_TIMEOUT_MS
+        timerId = setTimeout(() => resolve(fallback), TIMING_CONSTANTS.I18N_INIT_TIMEOUT_MS);
+      }),
+    ]);
+  } catch {
+    return fallback;
+  } finally {
+    if (timerId !== undefined) {
+      clearTimeout(timerId);
+    }
+  }
+};
 
 /**
  * ## Description
@@ -36,10 +68,10 @@ export const useLocale = () => {
     let cancelled = false;
     const initialize = async () => {
       const stored = readLanguagePreference();
-      let systemLanguage: string = DISPLAY_LANGUAGES.EN;
-      try { systemLanguage = (await locale()) ?? DISPLAY_LANGUAGES.EN; } catch { /* Continue with English. */ }
+      const browserLocale = typeof navigator !== "undefined" && navigator.language ? navigator.language : DISPLAY_LANGUAGES.EN;
+      const systemLanguage = (await withInitTimeout(locale(), browserLocale)) ?? browserLocale;
       const resolvedLanguage = stored === LANGUAGE_PREFERENCES.DEFAULT ? resolveLanguage(systemLanguage) : stored;
-      await initializeI18n(resolvedLanguage);
+      await withInitTimeout(initializeI18n(resolvedLanguage), false);
       if (!cancelled) {
         setPreference(stored);
         setLanguage(resolvedLanguage);

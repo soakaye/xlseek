@@ -145,6 +145,32 @@ fn create_app_menu<R: tauri::Runtime>(
 }
 
 /// ## Description
+/// Unminimizes, shows, and focuses the main application window when the user reopens the app from the macOS Dock.
+///
+/// ## Arguments
+/// - `app_handle`: `&tauri::AppHandle<R>` - Active Tauri application handle
+///
+/// ## Returns
+/// - `bool`: `true` if the main window was found and restore operations were invoked, `false` otherwise
+///
+/// ## Errors / Exceptions
+/// Window state errors are ignored safely without panicking.
+#[cfg(target_os = "macos")]
+fn restore_main_window<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> bool {
+    use tauri::Manager;
+
+    // Constant reference: constants::MAIN_WINDOW_LABEL
+    if let Some(window) = app_handle.get_webview_window(constants::MAIN_WINDOW_LABEL) {
+        let _ = window.unminimize();
+        let _ = window.show();
+        let _ = window.set_focus();
+        true
+    } else {
+        false
+    }
+}
+
+/// ## Description
 /// Builds the Tauri application, registers state management, plugins, menus,
 /// and command handlers, and starts the main event loop.
 ///
@@ -160,7 +186,7 @@ fn create_app_menu<R: tauri::Runtime>(
 pub fn run() {
     let engine = Arc::new(SearchEngine::new());
 
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
         .plugin(tauri_plugin_shell::init())
@@ -168,7 +194,8 @@ pub fn run() {
         .setup(|_app| {
             #[cfg(target_os = "macos")]
             {
-                let menu = create_app_menu(_app.handle(), "en")?;
+                // Constant reference: constants::LANGUAGE_EN
+                let menu = create_app_menu(_app.handle(), constants::LANGUAGE_EN)?;
                 _app.set_menu(menu)?;
             }
             Ok(())
@@ -181,6 +208,18 @@ pub fn run() {
             if event.id() == MENU_ITEM_ABOUT_ID {
                 let _ = app_handle.emit(EVENT_OPEN_ABOUT_DIALOG, ());
             }
+        })
+        .on_window_event(|window, event| {
+            #[cfg(target_os = "macos")]
+            // Constant reference: constants::MAIN_WINDOW_LABEL
+            if window.label() == constants::MAIN_WINDOW_LABEL {
+                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                    api.prevent_close();
+                    let _ = window.hide();
+                }
+            }
+            #[cfg(not(target_os = "macos"))]
+            let _ = (window, event);
         })
         .manage(AppState { engine })
         .invoke_handler(tauri::generate_handler![
@@ -198,8 +237,17 @@ pub fn run() {
             commands::launch_associated_app,
             commands::show_open_with_dialog,
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    app.run(|app_handle, event| {
+        #[cfg(target_os = "macos")]
+        if let tauri::RunEvent::Reopen { .. } = event {
+            let _ = restore_main_window(app_handle);
+        }
+        #[cfg(not(target_os = "macos"))]
+        let _ = (app_handle, event);
+    });
 }
 
 /// ## Description

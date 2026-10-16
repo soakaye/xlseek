@@ -150,6 +150,9 @@ pub const EVENT_SEARCH_ISSUE: &str = "search-issue";
 /// Open About dialog event name
 pub const EVENT_OPEN_ABOUT_DIALOG: &str = "open-about-dialog";
 
+/// Main application window label defined in `tauri.conf.json`
+pub const MAIN_WINDOW_LABEL: &str = "main";
+
 /// Menu item ID: About dialog
 pub const MENU_ITEM_ABOUT_ID: &str = "open_about";
 
@@ -417,6 +420,7 @@ mod tests {
     #[test]
     fn test_menu_and_event_constants() {
         assert_eq!(EVENT_OPEN_ABOUT_DIALOG, "open-about-dialog");
+        assert_eq!(MAIN_WINDOW_LABEL, "main");
         assert_eq!(MENU_ITEM_ABOUT_ID, "open_about");
         assert_eq!(MENU_KEY_ABOUT, "menu.about");
         assert_eq!(MENU_KEY_FILE, "menu.file");
@@ -524,6 +528,29 @@ mod tests {
         assert_eq!(
             parsed["productName"], "xlseek",
             "Linux package productName must be xlseek without spaces"
+        );
+    }
+
+    /// ## Description
+    /// Verifies that the primary window configured in `tauri.conf.json` has a label matching
+    /// `MAIN_WINDOW_LABEL` so macOS window hide and reopen restoration target the valid window.
+    ///
+    /// ## Arguments / Returns
+    /// None
+    ///
+    /// ## Errors / Exceptions
+    /// Panics if assertion or JSON parsing fails.
+    #[test]
+    fn test_tauri_config_main_window_label() {
+        let manifest_dir =
+            std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| "src-tauri".to_string());
+        let conf_path = std::path::Path::new(&manifest_dir).join("tauri.conf.json");
+        let content = std::fs::read_to_string(&conf_path).expect("tauri.conf.json should exist");
+        let parsed: serde_json::Value =
+            serde_json::from_str(&content).expect("tauri.conf.json should be valid JSON");
+        assert_eq!(
+            parsed["app"]["windows"][0]["label"], MAIN_WINDOW_LABEL,
+            "Primary window label in tauri.conf.json must match MAIN_WINDOW_LABEL"
         );
     }
 }

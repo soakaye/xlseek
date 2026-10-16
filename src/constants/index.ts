@@ -140,6 +140,8 @@ export const TIMING_CONSTANTS = {
   TOAST_DURATION_MS: 3000,
   /** Progress UI update throttle interval (ms) */
   PROGRESS_THROTTLE_MS: 50,
+  /** Safety timeout (ms) for initial locale and i18n IPC resolution to prevent blank UI on resume */
+  I18N_INIT_TIMEOUT_MS: 1000,
 } as const;
 
 // ==============================================================================
