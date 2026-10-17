@@ -29,21 +29,8 @@ vi.mock("@tauri-apps/plugin-os", () => ({
 
 vi.mock("../../i18n", () => ({
   initializeI18n: (lang: string) => mockInitializeI18n(lang),
-  setI18nLocale: (lang: string) => mockSetI18nLocaleWrapper(lang),
+  setI18nLocale: (lang: string) => mockSetI18nLocale(lang),
 }));
-
-/**
- * ## Description
- * Forwards locale change calls in test mocks to `mockSetI18nLocale`.
- *
- * ## Arguments & Returns
- * @param lang - Target language code
- * @returns Promise resolving to boolean
- *
- * ## Errors / Exceptions
- * Propagates mocked rejections if configured by a test case.
- */
-const mockSetI18nLocaleWrapper = (lang: string): Promise<boolean> => mockSetI18nLocale(lang);
 
 import { useLocale } from "../useLocale";
 
@@ -80,6 +67,7 @@ describe("useLocale", () => {
   });
 
   it("marks ready=true immediately when locale and i18n resolve normally", async () => {
+    // Constant reference: DISPLAY_LANGUAGES.JA
     mockLocale.mockResolvedValue(DISPLAY_LANGUAGES.JA);
     mockInitializeI18n.mockResolvedValue(true);
 
@@ -90,6 +78,7 @@ describe("useLocale", () => {
     });
 
     expect(result.current.ready).toBe(true);
+    // Constant reference: DISPLAY_LANGUAGES.JA, LANGUAGE_PREFERENCES.DEFAULT
     expect(result.current.language).toBe(DISPLAY_LANGUAGES.JA);
     expect(result.current.preference).toBe(LANGUAGE_PREFERENCES.DEFAULT);
   });
@@ -112,6 +101,7 @@ describe("useLocale", () => {
     });
 
     expect(result.current.ready).toBe(true);
+    // Constant reference: DISPLAY_LANGUAGES.EN, DISPLAY_LANGUAGES.JA
     expect([DISPLAY_LANGUAGES.EN, DISPLAY_LANGUAGES.JA]).toContain(result.current.language);
   });
 });

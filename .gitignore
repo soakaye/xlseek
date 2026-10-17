@@ -96,8 +96,8 @@ worktrees/
 tmp/
 .agents
 .agents/
-.claud
-.claud/
+.claude
+.claude/
 
 
 # Node.js / Frontend

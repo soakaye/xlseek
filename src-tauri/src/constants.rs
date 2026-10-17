@@ -157,14 +157,60 @@ pub const MAIN_WINDOW_LABEL: &str = "main";
 pub const MENU_ITEM_ABOUT_ID: &str = "open_about";
 /// Menu item ID: Quit application
 pub const MENU_ITEM_QUIT_ID: &str = "quit";
+/// Keyboard accelerator for quitting the application
+pub const MENU_ACCELERATOR_QUIT: &str = "CmdOrCtrl+Q";
+/// Standard process exit code for normal application termination
+pub const EXIT_CODE_SUCCESS: i32 = 0;
+/// Error message when building the Tauri application context fails
+pub const ERR_TAURI_BUILD_FAILED: &str = "error while building tauri application";
 
 pub const MENU_KEY_ABOUT: &str = "menu.about";
+pub const MENU_KEY_SERVICES: &str = "menu.services";
+pub const MENU_KEY_HIDE: &str = "menu.hide";
+pub const MENU_KEY_HIDE_OTHERS: &str = "menu.hideOthers";
+pub const MENU_KEY_SHOW_ALL: &str = "menu.showAll";
 pub const MENU_KEY_QUIT: &str = "menu.quit";
 pub const MENU_KEY_FILE: &str = "menu.file";
+pub const MENU_KEY_CLOSE_WINDOW: &str = "menu.closeWindow";
 pub const MENU_KEY_EDIT: &str = "menu.edit";
+pub const MENU_KEY_UNDO: &str = "menu.undo";
+pub const MENU_KEY_REDO: &str = "menu.redo";
+pub const MENU_KEY_CUT: &str = "menu.cut";
+pub const MENU_KEY_COPY: &str = "menu.copy";
+pub const MENU_KEY_PASTE: &str = "menu.paste";
+pub const MENU_KEY_SELECT_ALL: &str = "menu.selectAll";
 pub const MENU_KEY_VIEW: &str = "menu.view";
+pub const MENU_KEY_FULLSCREEN: &str = "menu.fullscreen";
 pub const MENU_KEY_WINDOW: &str = "menu.window";
+pub const MENU_KEY_MINIMIZE: &str = "menu.minimize";
+pub const MENU_KEY_MAXIMIZE: &str = "menu.maximize";
 pub const MENU_KEY_HELP: &str = "menu.help";
+
+/// Complete list of macOS menu translation keys
+// Constant reference: MENU_KEY_ABOUT .. MENU_KEY_HELP
+pub const ALL_MENU_KEYS: [&str; 21] = [
+    MENU_KEY_ABOUT,
+    MENU_KEY_SERVICES,
+    MENU_KEY_HIDE,
+    MENU_KEY_HIDE_OTHERS,
+    MENU_KEY_SHOW_ALL,
+    MENU_KEY_QUIT,
+    MENU_KEY_FILE,
+    MENU_KEY_CLOSE_WINDOW,
+    MENU_KEY_EDIT,
+    MENU_KEY_UNDO,
+    MENU_KEY_REDO,
+    MENU_KEY_CUT,
+    MENU_KEY_COPY,
+    MENU_KEY_PASTE,
+    MENU_KEY_SELECT_ALL,
+    MENU_KEY_VIEW,
+    MENU_KEY_FULLSCREEN,
+    MENU_KEY_WINDOW,
+    MENU_KEY_MINIMIZE,
+    MENU_KEY_MAXIMIZE,
+    MENU_KEY_HELP,
+];
 
 // ==============================================================================
 // 5. Export Settings
@@ -412,8 +458,42 @@ mod tests {
         assert!(!ERR_LOCK_FAILED.is_empty());
     }
 
+    const TAURI_MANIFEST_DIR_ENV: &str = "CARGO_MANIFEST_DIR";
+    const TAURI_DEFAULT_MANIFEST_DIR: &str = "src-tauri";
+    const TAURI_CONFIG_FILE: &str = "tauri.conf.json";
+    const TAURI_LINUX_CONFIG_FILE: &str = "tauri.linux.conf.json";
+    const TAURI_KEY_PRODUCT_NAME: &str = "productName";
+    const TAURI_KEY_APP: &str = "app";
+    const TAURI_KEY_WINDOWS: &str = "windows";
+    const TAURI_KEY_LABEL: &str = "label";
+    const EXPECTED_PRODUCT_NAME: &str = "xlseek";
+    const ERR_TAURI_CONFIG_READ: &str = "Tauri configuration file should exist";
+    const ERR_TAURI_CONFIG_PARSE: &str = "Tauri configuration file should be valid JSON";
+
     /// ## Description
-    /// Verifies that menu and event-related constants are non-empty and match expected strings.
+    /// Loads and parses a Tauri JSON configuration file from the crate manifest directory.
+    ///
+    /// ## Arguments
+    /// - `file_name`: `&str` - Configuration file name relative to `src-tauri`
+    ///
+    /// ## Returns
+    /// - `serde_json::Value`: Parsed JSON value of the configuration file
+    ///
+    /// ## Errors / Exceptions
+    /// Panics if the configuration file cannot be read or is not valid JSON.
+    fn load_tauri_config(file_name: &str) -> serde_json::Value {
+        // Constant reference: TAURI_MANIFEST_DIR_ENV, TAURI_DEFAULT_MANIFEST_DIR
+        let manifest_dir = std::env::var(TAURI_MANIFEST_DIR_ENV)
+            .unwrap_or_else(|_| TAURI_DEFAULT_MANIFEST_DIR.to_string());
+        let conf_path = std::path::Path::new(&manifest_dir).join(file_name);
+        // Constant reference: ERR_TAURI_CONFIG_READ, ERR_TAURI_CONFIG_PARSE
+        let content = std::fs::read_to_string(&conf_path).expect(ERR_TAURI_CONFIG_READ);
+        serde_json::from_str(&content).expect(ERR_TAURI_CONFIG_PARSE)
+    }
+
+    /// ## Description
+    /// Verifies that menu and event-related constants are non-empty and match expected strings,
+    /// and that all menu translation keys resolve in both English and Japanese catalogs.
     ///
     /// ## Arguments / Returns
     /// None
@@ -422,17 +502,52 @@ mod tests {
     /// Panics if assertions fail.
     #[test]
     fn test_menu_and_event_constants() {
+        // Constant reference: EVENT_OPEN_ABOUT_DIALOG, MAIN_WINDOW_LABEL, MENU_ITEM_ABOUT_ID, MENU_ITEM_QUIT_ID
         assert_eq!(EVENT_OPEN_ABOUT_DIALOG, "open-about-dialog");
         assert_eq!(MAIN_WINDOW_LABEL, "main");
         assert_eq!(MENU_ITEM_ABOUT_ID, "open_about");
         assert_eq!(MENU_ITEM_QUIT_ID, "quit");
+        // Constant reference: MENU_ACCELERATOR_QUIT, EXIT_CODE_SUCCESS, ERR_TAURI_BUILD_FAILED
+        assert_eq!(MENU_ACCELERATOR_QUIT, "CmdOrCtrl+Q");
+        assert_eq!(EXIT_CODE_SUCCESS, 0);
+        assert!(!ERR_TAURI_BUILD_FAILED.is_empty());
+        // Constant reference: MENU_KEY_ABOUT .. MENU_KEY_HELP
         assert_eq!(MENU_KEY_ABOUT, "menu.about");
+        assert_eq!(MENU_KEY_SERVICES, "menu.services");
+        assert_eq!(MENU_KEY_HIDE, "menu.hide");
+        assert_eq!(MENU_KEY_HIDE_OTHERS, "menu.hideOthers");
+        assert_eq!(MENU_KEY_SHOW_ALL, "menu.showAll");
         assert_eq!(MENU_KEY_QUIT, "menu.quit");
         assert_eq!(MENU_KEY_FILE, "menu.file");
+        assert_eq!(MENU_KEY_CLOSE_WINDOW, "menu.closeWindow");
         assert_eq!(MENU_KEY_EDIT, "menu.edit");
+        assert_eq!(MENU_KEY_UNDO, "menu.undo");
+        assert_eq!(MENU_KEY_REDO, "menu.redo");
+        assert_eq!(MENU_KEY_CUT, "menu.cut");
+        assert_eq!(MENU_KEY_COPY, "menu.copy");
+        assert_eq!(MENU_KEY_PASTE, "menu.paste");
+        assert_eq!(MENU_KEY_SELECT_ALL, "menu.selectAll");
         assert_eq!(MENU_KEY_VIEW, "menu.view");
+        assert_eq!(MENU_KEY_FULLSCREEN, "menu.fullscreen");
         assert_eq!(MENU_KEY_WINDOW, "menu.window");
+        assert_eq!(MENU_KEY_MINIMIZE, "menu.minimize");
+        assert_eq!(MENU_KEY_MAXIMIZE, "menu.maximize");
         assert_eq!(MENU_KEY_HELP, "menu.help");
+
+        // Constant reference: ERR_TRANSLATION_MISSING, ALL_MENU_KEYS, LANGUAGE_EN, LANGUAGE_JA
+        let catalogs = xlseek_core::i18n::load_embedded_catalogs().expect(ERR_TRANSLATION_MISSING);
+        for key in ALL_MENU_KEYS {
+            let en_text = xlseek_core::i18n::resolve_catalog_text(&catalogs, LANGUAGE_EN, key);
+            assert!(
+                en_text.as_deref().is_some_and(|text| !text.is_empty()),
+                "Missing English translation for menu key: {key}"
+            );
+            let ja_text = xlseek_core::i18n::resolve_catalog_text(&catalogs, LANGUAGE_JA, key);
+            assert!(
+                ja_text.as_deref().is_some_and(|text| !text.is_empty()),
+                "Missing Japanese translation for menu key: {key}"
+            );
+        }
     }
 
     /// ## Description
@@ -500,16 +615,9 @@ mod tests {
     /// Panics if assertion or JSON parsing fails.
     #[test]
     fn test_tauri_config_product_name() {
-        let manifest_dir =
-            std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| "src-tauri".to_string());
-        let conf_path = std::path::Path::new(&manifest_dir).join("tauri.conf.json");
-        let content = std::fs::read_to_string(&conf_path).expect("tauri.conf.json should exist");
-        let parsed: serde_json::Value =
-            serde_json::from_str(&content).expect("tauri.conf.json should be valid JSON");
-        assert_eq!(
-            parsed["productName"], "xlseek",
-            "Tauri package productName must be xlseek"
-        );
+        // Constant reference: TAURI_CONFIG_FILE, TAURI_KEY_PRODUCT_NAME, EXPECTED_PRODUCT_NAME
+        let parsed = load_tauri_config(TAURI_CONFIG_FILE);
+        assert_eq!(parsed[TAURI_KEY_PRODUCT_NAME], EXPECTED_PRODUCT_NAME);
     }
 
     /// ## Description
@@ -523,22 +631,14 @@ mod tests {
     /// Panics if assertion or JSON parsing fails.
     #[test]
     fn test_tauri_linux_config_product_name() {
-        let manifest_dir =
-            std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| "src-tauri".to_string());
-        let linux_conf_path = std::path::Path::new(&manifest_dir).join("tauri.linux.conf.json");
-        let content =
-            std::fs::read_to_string(&linux_conf_path).expect("tauri.linux.conf.json should exist");
-        let parsed: serde_json::Value =
-            serde_json::from_str(&content).expect("tauri.linux.conf.json should be valid JSON");
-        assert_eq!(
-            parsed["productName"], "xlseek",
-            "Linux package productName must be xlseek without spaces"
-        );
+        // Constant reference: TAURI_LINUX_CONFIG_FILE, TAURI_KEY_PRODUCT_NAME, EXPECTED_PRODUCT_NAME
+        let parsed = load_tauri_config(TAURI_LINUX_CONFIG_FILE);
+        assert_eq!(parsed[TAURI_KEY_PRODUCT_NAME], EXPECTED_PRODUCT_NAME);
     }
 
     /// ## Description
     /// Verifies that the primary window configured in `tauri.conf.json` has a label matching
-    /// `MAIN_WINDOW_LABEL` so macOS window hide and reopen restoration target the valid window.
+    /// `MAIN_WINDOW_LABEL` so macOS window reopen restoration targets the valid window.
     ///
     /// ## Arguments / Returns
     /// None
@@ -547,15 +647,11 @@ mod tests {
     /// Panics if assertion or JSON parsing fails.
     #[test]
     fn test_tauri_config_main_window_label() {
-        let manifest_dir =
-            std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| "src-tauri".to_string());
-        let conf_path = std::path::Path::new(&manifest_dir).join("tauri.conf.json");
-        let content = std::fs::read_to_string(&conf_path).expect("tauri.conf.json should exist");
-        let parsed: serde_json::Value =
-            serde_json::from_str(&content).expect("tauri.conf.json should be valid JSON");
+        // Constant reference: TAURI_CONFIG_FILE, TAURI_KEY_APP, TAURI_KEY_WINDOWS, TAURI_KEY_LABEL, MAIN_WINDOW_LABEL
+        let parsed = load_tauri_config(TAURI_CONFIG_FILE);
         assert_eq!(
-            parsed["app"]["windows"][0]["label"], MAIN_WINDOW_LABEL,
-            "Primary window label in tauri.conf.json must match MAIN_WINDOW_LABEL"
+            parsed[TAURI_KEY_APP][TAURI_KEY_WINDOWS][0][TAURI_KEY_LABEL],
+            MAIN_WINDOW_LABEL
         );
     }
 }

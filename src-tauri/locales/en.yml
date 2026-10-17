@@ -229,10 +229,25 @@ about.FILTER_ACTIVE: Filter active
 about.APP_VERSION: 1.0.2
 common.translationUnavailable: Some text could not be translated.
 menu.about: About Excel Seek
+menu.services: Services
+menu.hide: Hide Excel Seek
+menu.hideOthers: Hide Others
+menu.showAll: Show All
+menu.quit: Quit Excel Seek
 menu.file: File
+menu.closeWindow: Close Window
 menu.edit: Edit
+menu.undo: Undo
+menu.redo: Redo
+menu.cut: Cut
+menu.copy: Copy
+menu.paste: Paste
+menu.selectAll: Select All
 menu.view: View
+menu.fullscreen: Toggle Full Screen
 menu.window: Window
+menu.minimize: Minimize
+menu.maximize: Zoom
 menu.help: Help
 export.header.id: ID
 export.header.fileName: File name

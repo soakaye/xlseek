@@ -60,6 +60,7 @@ const withInitTimeout = async <T,>(task: Promise<T>, fallback: T): Promise<T> =>
  * Catches OS and localStorage errors, falling back safely to default or English.
  */
 export const useLocale = () => {
+  // Constant reference: LANGUAGE_PREFERENCES.DEFAULT, DISPLAY_LANGUAGES.EN
   const [preference, setPreference] = useState<LanguagePreference>(LANGUAGE_PREFERENCES.DEFAULT);
   const [language, setLanguage] = useState<DisplayLanguage>(DISPLAY_LANGUAGES.EN);
   const [ready, setReady] = useState(false);
@@ -68,6 +69,7 @@ export const useLocale = () => {
     let cancelled = false;
     const initialize = async () => {
       const stored = readLanguagePreference();
+      // Constant reference: DISPLAY_LANGUAGES.EN, LANGUAGE_PREFERENCES.DEFAULT
       const browserLocale = typeof navigator !== "undefined" && navigator.language ? navigator.language : DISPLAY_LANGUAGES.EN;
       const systemLanguage = (await withInitTimeout(locale(), browserLocale)) ?? browserLocale;
       const resolvedLanguage = stored === LANGUAGE_PREFERENCES.DEFAULT ? resolveLanguage(systemLanguage) : stored;
@@ -83,6 +85,7 @@ export const useLocale = () => {
   }, []);
 
   const selectLanguage = useCallback(async (selected: LanguagePreference) => {
+    // Constant reference: LANGUAGE_PREFERENCES.DEFAULT, DISPLAY_LANGUAGES.EN
     let nextLanguage: DisplayLanguage = selected === LANGUAGE_PREFERENCES.DEFAULT ? DISPLAY_LANGUAGES.EN : selected;
     if (selected === LANGUAGE_PREFERENCES.DEFAULT) {
       try { nextLanguage = resolveLanguage(await locale()); } catch { nextLanguage = DISPLAY_LANGUAGES.EN; }

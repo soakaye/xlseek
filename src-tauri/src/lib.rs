@@ -35,14 +35,18 @@ fn create_app_menu<R: tauri::Runtime>(
     language: &str,
 ) -> tauri::Result<tauri::menu::Menu<R>> {
     use constants::{
-        MENU_ITEM_ABOUT_ID, MENU_KEY_ABOUT, MENU_KEY_EDIT, MENU_KEY_FILE, MENU_KEY_HELP,
-        MENU_KEY_VIEW, MENU_KEY_WINDOW,
+        MENU_ACCELERATOR_QUIT, MENU_ITEM_ABOUT_ID, MENU_ITEM_QUIT_ID, MENU_KEY_ABOUT,
+        MENU_KEY_CLOSE_WINDOW, MENU_KEY_COPY, MENU_KEY_CUT, MENU_KEY_EDIT, MENU_KEY_FILE,
+        MENU_KEY_FULLSCREEN, MENU_KEY_HELP, MENU_KEY_HIDE, MENU_KEY_HIDE_OTHERS, MENU_KEY_MAXIMIZE,
+        MENU_KEY_MINIMIZE, MENU_KEY_PASTE, MENU_KEY_QUIT, MENU_KEY_REDO, MENU_KEY_SELECT_ALL,
+        MENU_KEY_SERVICES, MENU_KEY_SHOW_ALL, MENU_KEY_UNDO, MENU_KEY_VIEW, MENU_KEY_WINDOW,
     };
     use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 
     let pkg_name = app_handle.package_info().name.clone();
     let catalogs = app_handle.i18n().get_translations_data();
     let menu_text = |key| -> tauri::Result<String> {
+        // Constant reference: constants::ERR_TRANSLATION_MISSING
         crate::i18n::resolve_catalog_text(&catalogs, language, key).ok_or_else(|| {
             std::io::Error::new(
                 std::io::ErrorKind::NotFound,
@@ -53,7 +57,7 @@ fn create_app_menu<R: tauri::Runtime>(
     };
 
     // 1. App Submenu
-    // Constant reference: constants::MENU_ITEM_ABOUT_ID and MENU_KEY_ABOUT
+    // Constant reference: constants::MENU_ITEM_ABOUT_ID, constants::MENU_KEY_ABOUT
     let about_item = MenuItem::with_id(
         app_handle,
         MENU_ITEM_ABOUT_ID,
@@ -61,7 +65,16 @@ fn create_app_menu<R: tauri::Runtime>(
         true,
         None::<&str>,
     )?;
+    // Constant reference: constants::MENU_ITEM_QUIT_ID, constants::MENU_KEY_QUIT, constants::MENU_ACCELERATOR_QUIT
+    let quit_item = MenuItem::with_id(
+        app_handle,
+        MENU_ITEM_QUIT_ID,
+        menu_text(MENU_KEY_QUIT)?,
+        true,
+        Some(MENU_ACCELERATOR_QUIT),
+    )?;
 
+    // Constant reference: constants::MENU_KEY_SERVICES, constants::MENU_KEY_HIDE, constants::MENU_KEY_HIDE_OTHERS, constants::MENU_KEY_SHOW_ALL
     let app_submenu = Submenu::with_items(
         app_handle,
         &pkg_name,
@@ -69,61 +82,71 @@ fn create_app_menu<R: tauri::Runtime>(
         &[
             &about_item,
             &PredefinedMenuItem::separator(app_handle)?,
-            &PredefinedMenuItem::services(app_handle, None)?,
+            &PredefinedMenuItem::services(app_handle, Some(&menu_text(MENU_KEY_SERVICES)?))?,
             &PredefinedMenuItem::separator(app_handle)?,
-            &PredefinedMenuItem::hide(app_handle, None)?,
-            &PredefinedMenuItem::hide_others(app_handle, None)?,
+            &PredefinedMenuItem::hide(app_handle, Some(&menu_text(MENU_KEY_HIDE)?))?,
+            &PredefinedMenuItem::hide_others(app_handle, Some(&menu_text(MENU_KEY_HIDE_OTHERS)?))?,
+            &PredefinedMenuItem::show_all(app_handle, Some(&menu_text(MENU_KEY_SHOW_ALL)?))?,
             &PredefinedMenuItem::separator(app_handle)?,
-            &PredefinedMenuItem::quit(app_handle, None)?,
+            &quit_item,
         ],
     )?;
 
     // 2. File Submenu
-    // Constant reference: constants::MENU_KEY_FILE
+    // Constant reference: constants::MENU_KEY_FILE, constants::MENU_KEY_CLOSE_WINDOW
     let file_submenu = Submenu::with_items(
         app_handle,
         menu_text(MENU_KEY_FILE)?,
         true,
-        &[&PredefinedMenuItem::close_window(app_handle, None)?],
+        &[&PredefinedMenuItem::close_window(
+            app_handle,
+            Some(&menu_text(MENU_KEY_CLOSE_WINDOW)?),
+        )?],
     )?;
 
     // 3. Edit Submenu
-    // Constant reference: constants::MENU_KEY_EDIT
+    // Constant reference: constants::MENU_KEY_EDIT, constants::MENU_KEY_UNDO, constants::MENU_KEY_REDO, constants::MENU_KEY_CUT, constants::MENU_KEY_COPY, constants::MENU_KEY_PASTE, constants::MENU_KEY_SELECT_ALL
     let edit_submenu = Submenu::with_items(
         app_handle,
         menu_text(MENU_KEY_EDIT)?,
         true,
         &[
-            &PredefinedMenuItem::undo(app_handle, None)?,
-            &PredefinedMenuItem::redo(app_handle, None)?,
+            &PredefinedMenuItem::undo(app_handle, Some(&menu_text(MENU_KEY_UNDO)?))?,
+            &PredefinedMenuItem::redo(app_handle, Some(&menu_text(MENU_KEY_REDO)?))?,
             &PredefinedMenuItem::separator(app_handle)?,
-            &PredefinedMenuItem::cut(app_handle, None)?,
-            &PredefinedMenuItem::copy(app_handle, None)?,
-            &PredefinedMenuItem::paste(app_handle, None)?,
-            &PredefinedMenuItem::select_all(app_handle, None)?,
+            &PredefinedMenuItem::cut(app_handle, Some(&menu_text(MENU_KEY_CUT)?))?,
+            &PredefinedMenuItem::copy(app_handle, Some(&menu_text(MENU_KEY_COPY)?))?,
+            &PredefinedMenuItem::paste(app_handle, Some(&menu_text(MENU_KEY_PASTE)?))?,
+            &PredefinedMenuItem::select_all(app_handle, Some(&menu_text(MENU_KEY_SELECT_ALL)?))?,
         ],
     )?;
 
     // 4. View Submenu
-    // Constant reference: constants::MENU_KEY_VIEW
+    // Constant reference: constants::MENU_KEY_VIEW, constants::MENU_KEY_FULLSCREEN
     let view_submenu = Submenu::with_items(
         app_handle,
         menu_text(MENU_KEY_VIEW)?,
         true,
-        &[&PredefinedMenuItem::fullscreen(app_handle, None)?],
+        &[&PredefinedMenuItem::fullscreen(
+            app_handle,
+            Some(&menu_text(MENU_KEY_FULLSCREEN)?),
+        )?],
     )?;
 
     // 5. Window Submenu
-    // Constant reference: constants::MENU_KEY_WINDOW
+    // Constant reference: constants::MENU_KEY_WINDOW, constants::MENU_KEY_MINIMIZE, constants::MENU_KEY_MAXIMIZE, constants::MENU_KEY_CLOSE_WINDOW
     let window_submenu = Submenu::with_items(
         app_handle,
         menu_text(MENU_KEY_WINDOW)?,
         true,
         &[
-            &PredefinedMenuItem::minimize(app_handle, None)?,
-            &PredefinedMenuItem::maximize(app_handle, None)?,
+            &PredefinedMenuItem::minimize(app_handle, Some(&menu_text(MENU_KEY_MINIMIZE)?))?,
+            &PredefinedMenuItem::maximize(app_handle, Some(&menu_text(MENU_KEY_MAXIMIZE)?))?,
             &PredefinedMenuItem::separator(app_handle)?,
-            &PredefinedMenuItem::close_window(app_handle, None)?,
+            &PredefinedMenuItem::close_window(
+                app_handle,
+                Some(&menu_text(MENU_KEY_CLOSE_WINDOW)?),
+            )?,
         ],
     )?;
 
@@ -185,11 +208,8 @@ fn restore_main_window<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> b
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let engine = Arc::new(SearchEngine::new());
-    #[cfg(target_os = "macos")]
-    let is_quitting = Arc::new(std::sync::atomic::AtomicBool::new(false));
-    #[cfg(target_os = "macos")]
-    let is_quitting_for_window = Arc::clone(&is_quitting);
 
+    // Constant reference: constants::ERR_TAURI_BUILD_FAILED
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_os::init())
@@ -205,27 +225,17 @@ pub fn run() {
             Ok(())
         })
         .on_menu_event(|app_handle, event| {
-            use constants::{EVENT_OPEN_ABOUT_DIALOG, MENU_ITEM_ABOUT_ID};
+            use constants::{
+                EVENT_OPEN_ABOUT_DIALOG, EXIT_CODE_SUCCESS, MENU_ITEM_ABOUT_ID, MENU_ITEM_QUIT_ID,
+            };
             use tauri::Emitter;
 
-            // Constant reference: constants::MENU_ITEM_ABOUT_ID, constants::EVENT_OPEN_ABOUT_DIALOG
+            // Constant reference: constants::MENU_ITEM_ABOUT_ID, constants::EVENT_OPEN_ABOUT_DIALOG, constants::MENU_ITEM_QUIT_ID, constants::EXIT_CODE_SUCCESS
             if event.id() == MENU_ITEM_ABOUT_ID {
                 let _ = app_handle.emit(EVENT_OPEN_ABOUT_DIALOG, ());
+            } else if event.id() == MENU_ITEM_QUIT_ID {
+                app_handle.exit(EXIT_CODE_SUCCESS);
             }
-        })
-        .on_window_event(move |window, event| {
-            #[cfg(target_os = "macos")]
-            // Constant reference: constants::MAIN_WINDOW_LABEL
-            if window.label() == constants::MAIN_WINDOW_LABEL {
-                if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                    if !is_quitting_for_window.load(std::sync::atomic::Ordering::SeqCst) {
-                        api.prevent_close();
-                        let _ = window.hide();
-                    }
-                }
-            }
-            #[cfg(not(target_os = "macos"))]
-            let _ = (window, event);
         })
         .manage(AppState { engine })
         .invoke_handler(tauri::generate_handler![
@@ -244,18 +254,12 @@ pub fn run() {
             commands::show_open_with_dialog,
         ])
         .build(tauri::generate_context!())
-        .expect("error while building tauri application");
+        .expect(constants::ERR_TAURI_BUILD_FAILED);
 
-    app.run(move |app_handle, event| {
+    app.run(|app_handle, event| {
         #[cfg(target_os = "macos")]
-        match event {
-            tauri::RunEvent::ExitRequested { .. } => {
-                is_quitting.store(true, std::sync::atomic::Ordering::SeqCst);
-            }
-            tauri::RunEvent::Reopen { .. } => {
-                let _ = restore_main_window(app_handle);
-            }
-            _ => {}
+        if let tauri::RunEvent::Reopen { .. } = event {
+            let _ = restore_main_window(app_handle);
         }
         #[cfg(not(target_os = "macos"))]
         let _ = (app_handle, event);
@@ -273,6 +277,7 @@ fn set_menu_locale(
     app_handle: tauri::AppHandle,
     language: String,
 ) -> Result<(), models::CommandError> {
+    // Constant reference: constants::LANGUAGE_JA, constants::LANGUAGE_EN
     if language != crate::constants::LANGUAGE_JA && language != crate::constants::LANGUAGE_EN {
         return Err(models::CommandError {
             code: models::ErrorCode::InternalError,

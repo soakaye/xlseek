@@ -216,10 +216,25 @@ about.PACKAGE_COUNT_UNIT: 件
 about.FILTER_ACTIVE: フィルタ適用中
 common.translationUnavailable: 一部の文言を翻訳できませんでした。
 menu.about: Excel Seek について
+menu.services: サービス
+menu.hide: Excel Seek を非表示
+menu.hideOthers: ほかを非表示
+menu.showAll: すべてを表示
+menu.quit: Excel Seek を終了
 menu.file: ファイル
+menu.closeWindow: ウィンドウを閉じる
 menu.edit: 編集
+menu.undo: 取り消す
+menu.redo: やり直す
+menu.cut: カット
+menu.copy: コピー
+menu.paste: ペースト
+menu.selectAll: すべてを選択
 menu.view: 表示
+menu.fullscreen: フルスクリーンを切り替え
 menu.window: ウィンドウ
+menu.minimize: しまう
+menu.maximize: 拡大/縮小
 menu.help: ヘルプ
 export.header.id: ID
 export.header.fileName: ファイル名
