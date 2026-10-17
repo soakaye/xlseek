@@ -155,8 +155,11 @@ pub const MAIN_WINDOW_LABEL: &str = "main";
 
 /// Menu item ID: About dialog
 pub const MENU_ITEM_ABOUT_ID: &str = "open_about";
+/// Menu item ID: Quit application
+pub const MENU_ITEM_QUIT_ID: &str = "quit";
 
 pub const MENU_KEY_ABOUT: &str = "menu.about";
+pub const MENU_KEY_QUIT: &str = "menu.quit";
 pub const MENU_KEY_FILE: &str = "menu.file";
 pub const MENU_KEY_EDIT: &str = "menu.edit";
 pub const MENU_KEY_VIEW: &str = "menu.view";
@@ -422,7 +425,9 @@ mod tests {
         assert_eq!(EVENT_OPEN_ABOUT_DIALOG, "open-about-dialog");
         assert_eq!(MAIN_WINDOW_LABEL, "main");
         assert_eq!(MENU_ITEM_ABOUT_ID, "open_about");
+        assert_eq!(MENU_ITEM_QUIT_ID, "quit");
         assert_eq!(MENU_KEY_ABOUT, "menu.about");
+        assert_eq!(MENU_KEY_QUIT, "menu.quit");
         assert_eq!(MENU_KEY_FILE, "menu.file");
         assert_eq!(MENU_KEY_EDIT, "menu.edit");
         assert_eq!(MENU_KEY_VIEW, "menu.view");

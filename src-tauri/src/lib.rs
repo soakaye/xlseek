@@ -185,6 +185,10 @@ fn restore_main_window<R: tauri::Runtime>(app_handle: &tauri::AppHandle<R>) -> b
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let engine = Arc::new(SearchEngine::new());
+    #[cfg(target_os = "macos")]
+    let is_quitting = Arc::new(std::sync::atomic::AtomicBool::new(false));
+    #[cfg(target_os = "macos")]
+    let is_quitting_for_window = Arc::clone(&is_quitting);
 
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_dialog::init())
@@ -209,13 +213,15 @@ pub fn run() {
                 let _ = app_handle.emit(EVENT_OPEN_ABOUT_DIALOG, ());
             }
         })
-        .on_window_event(|window, event| {
+        .on_window_event(move |window, event| {
             #[cfg(target_os = "macos")]
             // Constant reference: constants::MAIN_WINDOW_LABEL
             if window.label() == constants::MAIN_WINDOW_LABEL {
                 if let tauri::WindowEvent::CloseRequested { api, .. } = event {
-                    api.prevent_close();
-                    let _ = window.hide();
+                    if !is_quitting_for_window.load(std::sync::atomic::Ordering::SeqCst) {
+                        api.prevent_close();
+                        let _ = window.hide();
+                    }
                 }
             }
             #[cfg(not(target_os = "macos"))]
@@ -240,10 +246,16 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
-    app.run(|app_handle, event| {
+    app.run(move |app_handle, event| {
         #[cfg(target_os = "macos")]
-        if let tauri::RunEvent::Reopen { .. } = event {
-            let _ = restore_main_window(app_handle);
+        match event {
+            tauri::RunEvent::ExitRequested { .. } => {
+                is_quitting.store(true, std::sync::atomic::Ordering::SeqCst);
+            }
+            tauri::RunEvent::Reopen { .. } => {
+                let _ = restore_main_window(app_handle);
+            }
+            _ => {}
         }
         #[cfg(not(target_os = "macos"))]
         let _ = (app_handle, event);
