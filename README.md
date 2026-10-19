@@ -257,6 +257,42 @@ Desktop Settings lets you choose Sequential or Burst directory discovery. Sequen
   - `1`: Partial failure (e.g., specific files could not be read or parsed).
   - `2`: Request error, fatal processing error, or file export failure.
 
+### Model Context Protocol (MCP) Server (`xlseek-mcp`)
+
+`xlseek-mcp` is a Model Context Protocol (MCP) server that exposes high-speed document search and Excel sheet preview tools to AI coding assistants (Claude Desktop, Antigravity, Cursor, etc.) via JSON-RPC 2.0 over standard I/O (`stdio`).
+
+#### Tools Provided
+
+- `xlseek_search`: High-speed cross-document search across Excel (`.xlsx`, `.xlsm`, `.xls`, `.xlsb`) and Word (`.docx`, `.doc`) files. Returns matching cells, formulas, comments, and drawing shape text.
+- `xlseek_list_sheets`: List all worksheet names contained within a specific Excel workbook.
+- `xlseek_preview_sheet`: Preview rows and columns of an Excel worksheet formatted as a clean Markdown table with row and column headers.
+
+#### Building and Running
+
+```bash
+# Build binary
+cargo build --release --bin xlseek-mcp
+
+# Run server with unrestricted OS user permissions
+target/release/xlseek-mcp
+
+# Run server bounded to allowed directories (sandboxing)
+target/release/xlseek-mcp --allowed-dir /path/to/spreadsheets
+```
+
+#### Client Configuration Example (`claude_desktop_config.json` / Antigravity / Cursor)
+
+```json
+{
+  "mcpServers": {
+    "xlseek": {
+      "command": "/path/to/xlseek-mcp",
+      "args": ["--allowed-dir", "/path/to/spreadsheets"]
+    }
+  }
+}
+```
+
 ---
 
 ## Packaging & Building

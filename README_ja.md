@@ -257,6 +257,42 @@ xlseek-cli "Revenue" ./reports
   - `1`: 部分的な失敗（一部のファイルが読み取れない、破損している等）。
   - `2`: リクエストエラー、致命的な処理エラー、またはファイル出力の失敗。
 
+### Model Context Protocol (MCP) サーバー (`xlseek-mcp`)
+
+`xlseek-mcp` は、標準入出力 (`stdio`) 経由の JSON-RPC 2.0 通信を通じて、AI アシスタント (Claude Desktop、Antigravity、Cursor など) に対し、高速なドキュメント検索および Excel シートプレビュー機能を提供する Model Context Protocol (MCP) サーバーです。
+
+#### 提供ツール
+
+- `xlseek_search`: Excel (`.xlsx`, `.xlsm`, `.xls`, `.xlsb`) および Word (`.docx`, `.doc`) ドキュメントを対象とした高速横断検索。セル値、数式、コメント、図形内テキストのマッチ結果を返却します。
+- `xlseek_list_sheets`: 指定した Excel ワークブックに含まれるすべてのワークシート名一覧を返却します。
+- `xlseek_preview_sheet`: ワークシートのセルを行・列見出し付きの整然とした Markdown テーブル形式でプレビュー出力します（`start_row` や `max_rows` による範囲指定に対応）。
+
+#### ビルドと実行方法
+
+```bash
+# リリースバイナリのビルド
+cargo build --release --bin xlseek-mcp
+
+# OS ユーザー権限による通常実行
+target/release/xlseek-mcp
+
+# 許可ディレクトリを制限したサンドボックス実行
+target/release/xlseek-mcp --allowed-dir /path/to/spreadsheets
+```
+
+#### クライアント設定例 (`claude_desktop_config.json` / Antigravity / Cursor)
+
+```json
+{
+  "mcpServers": {
+    "xlseek": {
+      "command": "/path/to/xlseek-mcp",
+      "args": ["--allowed-dir", "/path/to/spreadsheets"]
+    }
+  }
+}
+```
+
 ---
 
 ## パッケージングとビルド

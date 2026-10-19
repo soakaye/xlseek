@@ -5029,6 +5029,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "xlseek-mcp"
+version = "1.0.2"
+dependencies = [
+ "calamine",
+ "rayon",
+ "regex",
+ "same-file",
+ "serde",
+ "serde_json",
+ "walkdir",
+ "xlseek-core",
+]
+
+[[package]]
 name = "yoke"
 version = "0.8.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"

@@ -9,9 +9,9 @@
 
 **Purpose**: Initialize the new `crates/mcp` crate in the Cargo workspace and establish shared constants and manifest configurations.
 
-- [ ] T001 Register `crates/mcp` as a workspace member in root `Cargo.toml`
-- [ ] T002 Create package manifest and crate overview for `xlseek-mcp` in `crates/mcp/Cargo.toml` and `crates/mcp/README.md`
-- [ ] T003 [P] Define centralized constants (protocol version, tool names, default row limits, error codes) and constant reference unit tests in `crates/mcp/src/constants.rs`
+- [X] T001 Register `crates/mcp` as a workspace member in root `Cargo.toml`
+- [X] T002 Create package manifest and crate overview for `xlseek-mcp` in `crates/mcp/Cargo.toml` and `crates/mcp/README.md`
+- [X] T003 [P] Define centralized constants (protocol version, tool names, default row limits, error codes) and constant reference unit tests in `crates/mcp/src/constants.rs`
 
 ---
 
@@ -21,13 +21,13 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this foundational phase is complete.
 
-- [ ] T004 Implement JSON-RPC 2.0 error structures and standard error code mappings in `crates/mcp/src/protocol/error.rs`
-- [ ] T005 [P] Implement JSON-RPC 2.0 request and response data models with Serde serialization in `crates/mcp/src/protocol/messages.rs`
-- [ ] T006 [P] Implement directory whitelist and path sandboxing logic with canonical path prefix verification in `crates/mcp/src/security.rs`
-- [ ] T007 Expose protocol types and validation modules in `crates/mcp/src/protocol/mod.rs`
-- [ ] T008 Implement the core stdio event loop and protocol handshake handlers (`initialize`, `notifications/initialized`, `ping`) in `crates/mcp/src/lib.rs`
-- [ ] T009 Implement executable entry point and CLI option parsing (`--allowed-dir`, `--help`, `--version`) in `crates/mcp/src/main.rs`
-- [ ] T010 [P] Add protocol handshake and lifecycle integration tests in `crates/mcp/tests/protocol_test.rs`
+- [X] T004 Implement JSON-RPC 2.0 error structures and standard error code mappings in `crates/mcp/src/protocol/error.rs`
+- [X] T005 [P] Implement JSON-RPC 2.0 request and response data models with Serde serialization in `crates/mcp/src/protocol/messages.rs`
+- [X] T006 [P] Implement directory whitelist and path sandboxing logic with canonical path prefix verification in `crates/mcp/src/security.rs`
+- [X] T007 Expose protocol types and validation modules in `crates/mcp/src/protocol/mod.rs`
+- [X] T008 Implement the core stdio event loop and protocol handshake handlers (`initialize`, `notifications/initialized`, `ping`) in `crates/mcp/src/lib.rs`
+- [X] T009 Implement executable entry point and CLI option parsing (`--allowed-dir`, `--help`, `--version`) in `crates/mcp/src/main.rs`
+- [X] T010 [P] Add protocol handshake and lifecycle integration tests in `crates/mcp/tests/protocol_test.rs`
 
 **Checkpoint**: Foundation ready — JSON-RPC 2.0 stdio dispatcher and lifecycle communication verified. User story tool implementation can now begin.
 
@@ -41,13 +41,13 @@
 
 ### Tests for User Story 1
 
-- [ ] T011 [P] [US1] Create integration tests for `xlseek_search` covering multi-path search, regex, case sensitivity, extension filters, and truncation in `crates/mcp/tests/tools_search_test.rs`
+- [X] T011 [P] [US1] Create integration tests for `xlseek_search` covering multi-path search, regex, case sensitivity, extension filters, and truncation in `crates/mcp/tests/tools_search_test.rs`
 
 ### Implementation for User Story 1
 
-- [ ] T012 [P] [US1] Implement `xlseek_search` parameter extraction, `xlseek_core::models::SearchQuery` mapping, and structured result formatting in `crates/mcp/src/tools/search.rs`
-- [ ] T013 [US1] Implement tool catalog registry exposing `xlseek_search` JSON Schema in `tools/list` and dispatching in `crates/mcp/src/tools/mod.rs`
-- [ ] T014 [US1] Connect `tools/list` and `tools/call` for `xlseek_search` to the stdio message dispatcher in `crates/mcp/src/lib.rs`
+- [X] T012 [P] [US1] Implement `xlseek_search` parameter extraction, `xlseek_core::models::SearchQuery` mapping, and structured result formatting in `crates/mcp/src/tools/search.rs`
+- [X] T013 [US1] Implement tool catalog registry exposing `xlseek_search` JSON Schema in `tools/list` and dispatching in `crates/mcp/src/tools/mod.rs`
+- [X] T014 [US1] Connect `tools/list` and `tools/call` for `xlseek_search` to the stdio message dispatcher in `crates/mcp/src/lib.rs`
 
 **Checkpoint**: User Story 1 (MVP) is fully functional and testable independently. AI assistants can discover and call `xlseek_search`.
 
@@ -61,13 +61,13 @@
 
 ### Tests for User Story 2
 
-- [ ] T015 [P] [US2] Create integration tests for worksheet listing and Markdown preview table generation in `crates/mcp/tests/tools_preview_test.rs`
+- [X] T015 [P] [US2] Create integration tests for worksheet listing and Markdown preview table generation in `crates/mcp/tests/tools_preview_test.rs`
 
 ### Implementation for User Story 2
 
-- [ ] T016 [P] [US2] Implement `xlseek_list_sheets` parameter parsing and workbook sheet extraction using `calamine` in `crates/mcp/src/tools/list_sheets.rs`
-- [ ] T017 [P] [US2] Implement `xlseek_preview_sheet` parameter parsing, cell range extraction, and Markdown table rendering in `crates/mcp/src/tools/preview.rs`
-- [ ] T018 [US2] Register `xlseek_list_sheets` and `xlseek_preview_sheet` schemas and call handlers in `crates/mcp/src/tools/mod.rs` and `crates/mcp/src/lib.rs`
+- [X] T016 [P] [US2] Implement `xlseek_list_sheets` parameter parsing and workbook sheet extraction using `calamine` in `crates/mcp/src/tools/list_sheets.rs`
+- [X] T017 [P] [US2] Implement `xlseek_preview_sheet` parameter parsing, cell range extraction, and Markdown table rendering in `crates/mcp/src/tools/preview.rs`
+- [X] T018 [US2] Register `xlseek_list_sheets` and `xlseek_preview_sheet` schemas and call handlers in `crates/mcp/src/tools/mod.rs` and `crates/mcp/src/lib.rs`
 
 **Checkpoint**: User Stories 1 and 2 are functional and independently testable. AI assistants can search documents and preview specific sheet structures.
 
@@ -81,12 +81,12 @@
 
 ### Tests for User Story 3
 
-- [ ] T019 [P] [US3] Create integration tests for directory whitelist rejection, corrupt file resilience, and invalid argument handling in `crates/mcp/tests/sandboxing_test.rs`
+- [X] T019 [P] [US3] Create integration tests for directory whitelist rejection, corrupt file resilience, and invalid argument handling in `crates/mcp/tests/sandboxing_test.rs`
 
 ### Implementation for User Story 3
 
-- [ ] T020 [US3] Integrate `crates/mcp/src/security.rs` path validation checks into all tool execution pipelines in `crates/mcp/src/tools/mod.rs`
-- [ ] T021 [US3] Enforce non-panicking error conversions and strict stderr-only diagnostic logging across `crates/mcp/src/lib.rs`
+- [X] T020 [US3] Integrate `crates/mcp/src/security.rs` path validation checks into all tool execution pipelines in `crates/mcp/src/tools/mod.rs`
+- [X] T021 [US3] Enforce non-panicking error conversions and strict stderr-only diagnostic logging across `crates/mcp/src/lib.rs`
 
 **Checkpoint**: All three user stories are complete, resilient, and securely bounded.
 
@@ -96,9 +96,9 @@
 
 **Purpose**: Documentation updates, workspace integration, constitution compliance verification, and end-to-end quickstart validation.
 
-- [ ] T022 [P] Update workspace documentation in `README.md` and `README_ja.md` with `xlseek-mcp` configuration and usage examples
-- [ ] T023 Run full constitution quality verification (`cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo fmt --check`)
-- [ ] T024 Validate end-to-end scenarios per `specs/027-mcp-server/quickstart.md`
+- [X] T022 [P] Update workspace documentation in `README.md` and `README_ja.md` with `xlseek-mcp` configuration and usage examples
+- [X] T023 Run full constitution quality verification (`cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo fmt --check`)
+- [X] T024 Validate end-to-end scenarios per `specs/027-mcp-server/quickstart.md`
 
 ---
 

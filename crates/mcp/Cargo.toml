@@ -1,0 +1,29 @@
+# Package manifest for xlseek-mcp binary.
+# Inputs: MCP server source files under src/; output: executable binary xlseek-mcp.
+# Errors: Cargo reports compilation or dependency resolution errors.
+
+[package]
+name = "xlseek-mcp"
+version = "1.0.2"
+description = "Model Context Protocol (MCP) server for Excel Seek"
+authors = ["soakaye"]
+edition = "2021"
+default-run = "xlseek-mcp"
+
+[lib]
+name = "xlseek_mcp"
+path = "src/lib.rs"
+
+[[bin]]
+name = "xlseek-mcp"
+path = "src/main.rs"
+
+[dependencies]
+xlseek-core = { path = "../core" }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+calamine = "0.36"
+same-file = "1.0.6"
+walkdir = "2.5"
+regex = "1.10"
+rayon = "1.10"

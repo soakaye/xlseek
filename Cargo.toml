@@ -6,6 +6,7 @@
 members = [
     "crates/core",
     "crates/cli",
+    "crates/mcp",
     "src-tauri",
 ]
 resolver = "2"
