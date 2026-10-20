@@ -8,7 +8,10 @@
 //! Conforms to Constitution Principle I (English comments/errors), Principle II (Constant references),
 //! and Principle III (Header comments).
 
-use crate::models::{CellPreviewData, CommandError, ErrorCode, WordPreviewPayload};
+use crate::models::{
+    CellPreviewData, CommandError, ErrorCode, LlmCopyOptions, SearchMatch, WordPreviewPayload,
+};
+use crate::search::llm_context::extract_llm_context;
 use crate::search::preview::extract_cell_preview;
 use crate::search::word::extract_word_document;
 
@@ -74,4 +77,32 @@ pub async fn get_word_preview(
     .map_err(|_| CommandError {
         code: ErrorCode::PreviewFailed,
     })
+}
+
+/// ## Description
+/// Generates context-aware Markdown prompt content from search matches for copying into LLMs.
+///
+/// ## Arguments
+/// - matches: Vec<SearchMatch> - Selected search match results
+/// - options: LlmCopyOptions - Options including column window size, copy format, and Word mode
+///
+/// ## Returns
+/// - Result<String, CommandError>: Structured Markdown string on success, or CommandError on failure
+///
+/// ## Errors / Exceptions
+/// Returns Err(CommandError) if extraction fails or background task panics. Does not panic.
+#[tauri::command]
+pub async fn generate_llm_context(
+    matches: Vec<SearchMatch>,
+    options: LlmCopyOptions,
+) -> Result<String, CommandError> {
+    // Constant reference: crate::constants::CMD_GENERATE_LLM_CONTEXT
+    tauri::async_runtime::spawn_blocking(move || extract_llm_context(&matches, &options))
+        .await
+        .map_err(|_| CommandError {
+            code: ErrorCode::PreviewFailed,
+        })?
+        .map_err(|_| CommandError {
+            code: ErrorCode::PreviewFailed,
+        })
 }

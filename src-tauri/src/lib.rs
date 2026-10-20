@@ -245,6 +245,7 @@ pub fn run() {
             commands::cancel_search,
             commands::get_cell_preview,
             commands::get_word_preview,
+            commands::generate_llm_context,
             commands::open_in_excel,
             commands::open_in_folder,
             commands::export_results,

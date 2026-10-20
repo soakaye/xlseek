@@ -55,6 +55,7 @@ export const COMMANDS = {
   SHOW_OPEN_WITH_DIALOG: "show_open_with_dialog",
   SET_MENU_LOCALE: "set_menu_locale",
   GET_WORD_PREVIEW: "get_word_preview",
+  GENERATE_LLM_CONTEXT: "generate_llm_context",
 } as const;
 
 export const SEARCH_LABELS = {
@@ -63,6 +64,30 @@ export const SEARCH_LABELS = {
   SHAPE_RESULT_TYPE: "ui.RESULT_MATCH_TYPE_SHAPE",
   SHAPE_NAME: "ui.SHAPE_NAME_LABEL",
 } as const;
+
+export const LLM_DEFAULTS = {
+  COLUMN_WINDOW_SIZE: 5,
+  MIN_WINDOW_SIZE: 1,
+  MAX_WINDOW_SIZE: 20,
+  DEFAULT_COPY_TYPE: "table" as const,
+  DEFAULT_WORD_MODE: "headings_and_paragraph" as const,
+} as const;
+
+export const LLM_LABELS = {
+  COPY_FOR_LLM: "ui.COPY_FOR_LLM",
+  COPY_FOR_LLM_BTN: "ui.COPY_FOR_LLM_BTN",
+  COPY_FOR_LLM_TABLE: "ui.COPY_FOR_LLM_TABLE",
+  COPY_FOR_LLM_HEADER_ONLY: "ui.COPY_FOR_LLM_HEADER_ONLY",
+  COPY_FOR_LLM_WORD_HEADING: "ui.COPY_FOR_LLM_WORD_HEADING",
+  COPY_FOR_LLM_WORD_PARAGRAPH: "ui.COPY_FOR_LLM_WORD_PARAGRAPH",
+  COPIED_FOR_LLM_SUCCESS: "ui.COPIED_FOR_LLM_SUCCESS",
+  SETTINGS_LLM_SECTION: "ui.SETTINGS_LLM_SECTION",
+  SETTINGS_LLM_WINDOW_SIZE: "ui.SETTINGS_LLM_WINDOW_SIZE",
+  SETTINGS_LLM_WINDOW_SIZE_DESC: "ui.SETTINGS_LLM_WINDOW_SIZE_DESC",
+  SETTINGS_LLM_DEFAULT_COPY_TYPE: "ui.SETTINGS_LLM_DEFAULT_COPY_TYPE",
+  SETTINGS_LLM_WORD_EXTRACTION_MODE: "ui.SETTINGS_LLM_WORD_EXTRACTION_MODE",
+} as const;
+
 
 // Constant reference: Centralizes search history storage keys, limits, and timing.
 export const SEARCH_HISTORY_CONSTANTS = {
@@ -239,5 +264,8 @@ export const DEFAULT_SEARCH_OPTIONS = {
   burst_workers: null,
   enable_word_search: false,
   ignore_patterns: "~$*",
+  llm_column_window_size: 5,
+  llm_default_copy_type: "table" as const,
+  llm_word_extraction_mode: "headings_and_paragraph" as const,
 } as const;
 

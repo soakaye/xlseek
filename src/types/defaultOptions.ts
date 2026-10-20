@@ -24,4 +24,7 @@ export interface DefaultSearchOptions {
   burst_workers: number | null;
   enable_word_search: boolean;
   ignore_patterns: string;
+  llm_column_window_size: number;
+  llm_default_copy_type: "table" | "header_cell_only";
+  llm_word_extraction_mode: "headings_and_paragraph" | "paragraph_only";
 }

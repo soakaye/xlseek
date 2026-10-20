@@ -269,3 +269,15 @@ ui.OPTION_ENABLE_WORD_SEARCH: "Word文書も検索対象に含める (.docx, .do
 ui.OPTION_ENABLE_WORD_SEARCH_DESC: "有効にすると、Word文書内の本文・表・コメント・図形テキストも検索します"
 ui.MATCH_TYPE_WORD_TEXT: Word本文
 ui.RESULT_MATCH_TYPE_WORD_TEXT: Word
+ui.COPY_FOR_LLM_BTN: AIコピー
+ui.COPY_FOR_LLM: AI向けに文脈付きでコピー
+ui.COPY_FOR_LLM_TABLE: AI向けに文脈コピー (表形式)
+ui.COPY_FOR_LLM_HEADER_ONLY: AI向けに文脈コピー (見出し・セルのみ)
+ui.COPY_FOR_LLM_WORD_HEADING: AI向けに文脈コピー (章・節見出し付き)
+ui.COPY_FOR_LLM_WORD_PARAGRAPH: AI向けに文脈コピー (段落情報のみ)
+ui.COPIED_FOR_LLM_SUCCESS: AI向けコンテキストをクリップボードにコピーしました
+ui.SETTINGS_LLM_SECTION: AIコンテキストコピー設定
+ui.SETTINGS_LLM_WINDOW_SIZE: 多列シート時の前後切り出し列数
+ui.SETTINGS_LLM_WINDOW_SIZE_DESC: 横長シートにおいてヒットセルの前後に抽出する列数を指定します
+ui.SETTINGS_LLM_DEFAULT_COPY_TYPE: 既定のコピー形式
+ui.SETTINGS_LLM_WORD_EXTRACTION_MODE: Word文書の既定抽出モード

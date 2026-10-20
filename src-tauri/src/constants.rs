@@ -67,6 +67,8 @@ pub const WORD_SHEET_LABEL: &str = "Word";
 pub const WORD_CELL_DEFAULT_ADDRESS: &str = "-";
 /// Command name for retrieving Word document preview
 pub const CMD_GET_WORD_PREVIEW: &str = "get_word_preview";
+/// Command name for generating structured LLM context from search matches
+pub const CMD_GENERATE_LLM_CONTEXT: &str = "generate_llm_context";
 
 // ==============================================================================
 // 2. Scan & Search Settings
@@ -421,6 +423,7 @@ mod tests {
         assert_eq!(WORD_SHEET_LABEL, "Word");
         assert_eq!(WORD_CELL_DEFAULT_ADDRESS, "-");
         assert_eq!(CMD_GET_WORD_PREVIEW, "get_word_preview");
+        assert_eq!(CMD_GENERATE_LLM_CONTEXT, "generate_llm_context");
     }
 
     /// ## Description

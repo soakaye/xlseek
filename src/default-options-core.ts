@@ -108,6 +108,9 @@ export function normalizeDefaultSearchOptions(value: unknown): DefaultSearchOpti
     burst_workers: validWorkers ? workers : null,
     enable_word_search: enableWordSearch,
     ignore_patterns: ignorePatterns,
+    llm_column_window_size: typeof candidate.llm_column_window_size === "number" && Number.isInteger(candidate.llm_column_window_size) && candidate.llm_column_window_size >= 1 && candidate.llm_column_window_size <= 20 ? candidate.llm_column_window_size : DEFAULT_SEARCH_OPTIONS.llm_column_window_size,
+    llm_default_copy_type: candidate.llm_default_copy_type === "header_cell_only" ? "header_cell_only" : DEFAULT_SEARCH_OPTIONS.llm_default_copy_type,
+    llm_word_extraction_mode: candidate.llm_word_extraction_mode === "paragraph_only" ? "paragraph_only" : DEFAULT_SEARCH_OPTIONS.llm_word_extraction_mode,
   } as DefaultSearchOptions;
 }
 
@@ -138,6 +141,9 @@ export function resetDefaultSearchOptions(): DefaultSearchOptions {
     burst_workers: DEFAULT_SEARCH_OPTIONS.burst_workers,
     enable_word_search: DEFAULT_SEARCH_OPTIONS.enable_word_search,
     ignore_patterns: DEFAULT_SEARCH_OPTIONS.ignore_patterns,
+    llm_column_window_size: DEFAULT_SEARCH_OPTIONS.llm_column_window_size,
+    llm_default_copy_type: DEFAULT_SEARCH_OPTIONS.llm_default_copy_type,
+    llm_word_extraction_mode: DEFAULT_SEARCH_OPTIONS.llm_word_extraction_mode,
   };
 }
 

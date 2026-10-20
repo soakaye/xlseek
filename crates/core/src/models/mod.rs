@@ -7,6 +7,9 @@
 //! spreadsheet preview information, export requests, and external application associations.
 //! Conforms to Constitution Principle II (No Hardcoded Constants) and Principle III (Comprehensive Header Comments).
 
+pub mod llm;
+pub use llm::*;
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

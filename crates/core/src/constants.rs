@@ -520,6 +520,40 @@ pub const ERR_NO_VALID_SEARCH_PATHS: &str = "No valid search path specified";
 pub const HOME_PATH_SHORTHAND_EXACT: &str = "~";
 
 // ==============================================================================
+// 7.2 AI / LLM Context Copy Constants
+// ==============================================================================
+
+/// Command name for generating LLM context from matched cells
+pub const CMD_GENERATE_LLM_CONTEXT: &str = "generate_llm_context";
+
+/// Default number of adjacent columns to extract around target cell
+pub const DEFAULT_LLM_COLUMN_WINDOW_SIZE: u32 = 5;
+
+/// Minimum allowable adjacent column window size
+pub const MIN_LLM_COLUMN_WINDOW_SIZE: u32 = 1;
+
+/// Maximum allowable adjacent column window size
+pub const MAX_LLM_COLUMN_WINDOW_SIZE: u32 = 20;
+
+/// Column label string representing omitted columns in wide sheets
+pub const LLM_ELLIPSIS_COL: &str = "...";
+
+/// Fallback column header prefix when header row has empty cell
+pub const LLM_COLUMN_PREFIX: &str = "Column ";
+
+/// Copy type identifier for structured table context
+pub const LLM_COPY_TYPE_TABLE: &str = "table";
+
+/// Copy type identifier for header and cell context only
+pub const LLM_COPY_TYPE_HEADER_ONLY: &str = "header_cell_only";
+
+/// Word extraction mode for headings and paragraph context
+pub const LLM_WORD_MODE_HEADINGS: &str = "headings_and_paragraph";
+
+/// Word extraction mode for paragraph text only
+pub const LLM_WORD_MODE_PARAGRAPH: &str = "paragraph_only";
+
+// ==============================================================================
 // 8. Unit Tests
 // ==============================================================================
 
@@ -616,5 +650,12 @@ mod tests {
         assert_eq!(SEARCH_MATCH_BATCH_INTERVAL_MS, 25);
         assert_eq!(HOME_PATH_SHORTHAND_EXACT, "~");
         assert_eq!(CLI_TEST_POSITIONAL_QUERY, "needle");
+        assert_eq!(CMD_GENERATE_LLM_CONTEXT, "generate_llm_context");
+        assert_eq!(DEFAULT_LLM_COLUMN_WINDOW_SIZE, 5);
+        assert_eq!(LLM_ELLIPSIS_COL, "...");
+        assert_eq!(LLM_COPY_TYPE_TABLE, "table");
+        assert_eq!(LLM_COPY_TYPE_HEADER_ONLY, "header_cell_only");
+        assert_eq!(LLM_WORD_MODE_HEADINGS, "headings_and_paragraph");
+        assert_eq!(LLM_WORD_MODE_PARAGRAPH, "paragraph_only");
     }
 }

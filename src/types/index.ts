@@ -12,6 +12,7 @@
 export * from "./search";
 export * from "./defaultOptions";
 export * from "./preview";
+export * from "./llm";
 
 /**
  * Search progress phase type (SearchPhase)

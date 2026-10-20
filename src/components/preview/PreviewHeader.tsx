@@ -10,7 +10,7 @@
  */
 
 import React, { useState, useEffect, useRef } from "react";
-import { FileSpreadsheet, FileText, Layers, Folder, Copy, Check, ChevronDown, ExternalLink, BarChart2, Table } from "lucide-react";
+import { FileSpreadsheet, FileText, Layers, Folder, Copy, Check, ChevronDown, ExternalLink, BarChart2, Table, Sparkles } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { SearchMatch, SupportedApp } from "../../types/search";
 import { COMMANDS, LAYOUT_CONSTANTS, WORD_FILE_EXTENSIONS } from "../../constants";
@@ -20,6 +20,7 @@ import { normalizeDisplayPath } from "../../utils/pathDisplay";
 interface PreviewHeaderProps {
   selectedMatch: SearchMatch | null;
   onShowToast: (key: import("../../i18n").TranslationKey) => void;
+  onCopyLlm?: () => void;
 }
 
 /**
@@ -38,6 +39,7 @@ interface PreviewHeaderProps {
 export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
   selectedMatch,
   onShowToast,
+  onCopyLlm,
 }) => {
   const t = useTranslation();
   const [copied, setCopied] = useState(false);
@@ -199,14 +201,14 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
     <div className="p-3 pr-4 bg-[#1c1c1f] border-b border-zinc-800 flex flex-col gap-2 flex-shrink-0">
       {/* Row 1: File name & sheet badge with action button group */}
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 min-w-0 flex-1">
+        <div className="flex items-center gap-2 min-w-0 flex-1 overflow-hidden">
           {isWordDoc ? (
             <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
           ) : (
             <FileSpreadsheet className="w-4 h-4 text-emerald-400 flex-shrink-0" />
           )}
           <span
-            className="text-xs font-semibold text-zinc-100 truncate"
+            className="text-xs font-semibold text-zinc-100 truncate min-w-0 flex-shrink"
             title={selectedMatch.file_name}
           >
             {selectedMatch.file_name}
@@ -215,20 +217,20 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
           {/* Worksheet or Word badge */}
           {isWordDoc ? (
             <div
-              className="flex items-center gap-1.5 bg-blue-950/80 text-blue-300 border border-blue-700/70 px-2 py-0.5 rounded text-[11px] font-medium flex-shrink-0 shadow-sm"
+              className="flex items-center gap-1.5 bg-blue-950/80 text-blue-300 border border-blue-700/70 px-2 py-0.5 rounded text-[11px] font-medium flex-shrink-0 shadow-sm max-w-[140px]"
               title="Word Document"
             >
-              <FileText className="w-3 h-3 text-blue-400" />
+              <FileText className="w-3 h-3 text-blue-400 shrink-0" />
               <span className="font-bold text-blue-200">Word</span>
             </div>
           ) : (
             <div
-              className="flex items-center gap-1.5 bg-emerald-950/80 text-emerald-300 border border-emerald-700/70 px-2 py-0.5 rounded text-[11px] font-medium flex-shrink-0 shadow-sm"
-              title={t("ui.WORKSHEET_TITLE")}
+              className="flex items-center gap-1.5 bg-emerald-950/80 text-emerald-300 border border-emerald-700/70 px-2 py-0.5 rounded text-[11px] font-medium flex-shrink-0 shadow-sm max-w-[150px]"
+              title={selectedMatch.sheet_name ? `${t("ui.LABEL_SHEET")}: ${selectedMatch.sheet_name}` : t("ui.WORKSHEET_TITLE")}
             >
-              <Layers className="w-3 h-3 text-emerald-400" />
-              <span className="text-zinc-400 font-normal">{t("ui.LABEL_SHEET")}</span>
-              <span className="font-bold text-emerald-200">
+              <Layers className="w-3 h-3 text-emerald-400 shrink-0" />
+              <span className="text-zinc-400 font-normal shrink-0">{t("ui.LABEL_SHEET")}</span>
+              <span className="font-bold text-emerald-200 truncate">
                 {selectedMatch.sheet_name}
               </span>
             </div>
@@ -237,6 +239,18 @@ export const PreviewHeader: React.FC<PreviewHeaderProps> = ({
 
         {/* Action button controls */}
         <div className="flex items-center gap-2 flex-shrink-0 mr-1">
+          {onCopyLlm && (
+            <button
+              onClick={onCopyLlm}
+              /* Constant reference: t("ui.COPY_FOR_LLM") */
+              title={t("ui.COPY_FOR_LLM")}
+              className="px-2.5 py-1.5 bg-purple-700 hover:bg-purple-600 active:scale-[0.98] text-white text-xs font-medium rounded flex items-center gap-1.5 transition flex-shrink-0 shadow"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-purple-200 flex-shrink-0" />
+              <span className="whitespace-nowrap">{t("ui.COPY_FOR_LLM_BTN")}</span>
+            </button>
+          )}
+
           {/* Split button (left: launch default app, right: arrow menu) */}
           <div className="relative inline-flex items-stretch rounded shadow" ref={menuRef}>
             <button

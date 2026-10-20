@@ -256,3 +256,15 @@ ui.OPTION_ENABLE_WORD_SEARCH: "Include Word documents (.docx, .docm, .doc)"
 ui.OPTION_ENABLE_WORD_SEARCH_DESC: "Search text, tables, comments, and shape text inside Word documents"
 ui.MATCH_TYPE_WORD_TEXT: Word Text
 ui.RESULT_MATCH_TYPE_WORD_TEXT: Word
+ui.COPY_FOR_LLM_BTN: AI Copy
+ui.COPY_FOR_LLM: Copy for LLM
+ui.COPY_FOR_LLM_TABLE: Copy for LLM (Table Context)
+ui.COPY_FOR_LLM_HEADER_ONLY: Copy for LLM (Header & Cell Only)
+ui.COPY_FOR_LLM_WORD_HEADING: Copy for LLM (With Headings & Context)
+ui.COPY_FOR_LLM_WORD_PARAGRAPH: Copy for LLM (Paragraph Only)
+ui.COPIED_FOR_LLM_SUCCESS: Context copied for LLM to clipboard
+ui.SETTINGS_LLM_SECTION: AI / LLM Context Copy
+ui.SETTINGS_LLM_WINDOW_SIZE: Adjacent Columns Window Size
+ui.SETTINGS_LLM_WINDOW_SIZE_DESC: Number of adjacent columns to extract before and after the hit cell in wide sheets
+ui.SETTINGS_LLM_DEFAULT_COPY_TYPE: Default Copy Format
+ui.SETTINGS_LLM_WORD_EXTRACTION_MODE: Word Document Default Mode

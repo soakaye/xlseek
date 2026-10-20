@@ -53,6 +53,28 @@ describe("shared localization catalogs", () => {
     }
   });
 
+  it("defines all LLM context copy localization keys in English and Japanese", () => {
+    const llmKeys = [
+      "ui.COPY_FOR_LLM",
+      "ui.COPY_FOR_LLM_BTN",
+      "ui.COPY_FOR_LLM_TABLE",
+      "ui.COPY_FOR_LLM_HEADER_ONLY",
+      "ui.COPY_FOR_LLM_WORD_HEADING",
+      "ui.COPY_FOR_LLM_WORD_PARAGRAPH",
+      "ui.COPIED_FOR_LLM_SUCCESS",
+      "ui.SETTINGS_LLM_SECTION",
+      "ui.SETTINGS_LLM_WINDOW_SIZE",
+      "ui.SETTINGS_LLM_WINDOW_SIZE_DESC",
+      "ui.SETTINGS_LLM_DEFAULT_COPY_TYPE",
+      "ui.SETTINGS_LLM_WORD_EXTRACTION_MODE",
+    ];
+
+    for (const key of llmKeys) {
+      expect(english[key], `Missing English key: ${key}`).toBeTruthy();
+      expect(japanese[key], `Missing Japanese key: ${key}`).toBeTruthy();
+    }
+  });
+
   it("uses matching interpolation placeholders in each locale", () => {
     const placeholders = (message: string) => [...message.matchAll(/\{([A-Za-z0-9_]+)\}/g)].map((match) => match[1]).sort();
     const mismatched = Object.keys(japanese)
