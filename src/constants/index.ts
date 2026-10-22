@@ -155,6 +155,12 @@ export const LAYOUT_CONSTANTS = {
   SHEET_SCROLL_OFFSET_PX: 100,
   /** Clipboard copy success feedback display duration (ms) */
   COPY_FEEDBACK_DURATION_MS: 2000,
+  /** Match detail content container max height Tailwind utility class */
+  META_DETAIL_MAX_HEIGHT_CLASS: "max-h-36",
+  /** Match detail content container max height in pixels */
+  META_DETAIL_MAX_HEIGHT_PX: 144,
+  /** Test identifier attribute for the scrollable match detail content element */
+  META_DETAIL_TEST_ID: "meta-info-content",
 } as const;
 
 // ==============================================================================

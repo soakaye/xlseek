@@ -5,7 +5,8 @@
  *
  * ## Description
  * Displays detailed match attributes for the active search match (SearchMatch), including match type
- * (cell value, formula, comment, hidden sheet, shape), full content string, row/col coordinates,
+ * (cell value, formula, comment, hidden sheet, shape), full content string within a bounded scrollable
+ * viewport (max-h-36 with vertical scrolling and newline preservation), row/col coordinates,
  * and hidden sheet status in a card layout.
  * Complies with Constitution Principle I (English documentation), Principle II (constant reference), and Principle III (comprehensive documentation).
  */
@@ -14,7 +15,7 @@ import React from "react";
 import { Info } from "lucide-react";
 import { SearchMatch } from "../../types/search";
 import { useTranslation } from "../../i18n";
-import { SEARCH_LABELS } from "../../constants";
+import { LAYOUT_CONSTANTS, SEARCH_LABELS } from "../../constants";
 
 interface MetaInfoCardProps {
   match: SearchMatch | null;
@@ -73,7 +74,11 @@ export const MetaInfoCard: React.FC<MetaInfoCardProps> = ({ match }) => {
         </span>
       </div>
 
-      <div className="text-zinc-300 bg-zinc-950/80 p-2 rounded border border-zinc-800/80 font-mono text-[11px] select-text break-words">
+      {/* Constant reference: LAYOUT_CONSTANTS.META_DETAIL_TEST_ID, LAYOUT_CONSTANTS.META_DETAIL_MAX_HEIGHT_CLASS */}
+      <div
+        data-testid={LAYOUT_CONSTANTS.META_DETAIL_TEST_ID}
+        className={`text-zinc-300 bg-zinc-950/80 p-2 rounded border border-zinc-800/80 font-mono text-[11px] select-text break-words whitespace-pre-wrap ${LAYOUT_CONSTANTS.META_DETAIL_MAX_HEIGHT_CLASS} overflow-y-auto overscroll-contain`}
+      >
         {/* Constant reference: t("ui.EMPTY_CONTENT") */}
         {match.full_content || t("ui.EMPTY_CONTENT")}
       </div>
@@ -88,17 +93,17 @@ export const MetaInfoCard: React.FC<MetaInfoCardProps> = ({ match }) => {
       <div className="flex items-center gap-4 text-[11px] text-zinc-400 pt-1">
         {(match.match_type !== "Shape" || match.cell_address !== "") && (
           <>
-        <span>
-          {/* Constant reference: t("ui.ROW_NUMBER_LABEL") */}
-          {t("ui.ROW_NUMBER_LABEL")} <strong className="text-zinc-200">{match.row_index}</strong>
-        </span>
-        <span>
-          {/* Constant reference: t("ui.COL_NUMBER_LABEL") */}
-          {t("ui.COL_NUMBER_LABEL")}{" "}
-          <strong className="text-zinc-200">
-            {match.col_index} ({match.col_name})
-          </strong>
-        </span>
+            <span>
+              {/* Constant reference: t("ui.ROW_NUMBER_LABEL") */}
+              {t("ui.ROW_NUMBER_LABEL")} <strong className="text-zinc-200">{match.row_index}</strong>
+            </span>
+            <span>
+              {/* Constant reference: t("ui.COL_NUMBER_LABEL") */}
+              {t("ui.COL_NUMBER_LABEL")}{" "}
+              <strong className="text-zinc-200">
+                {match.col_index} ({match.col_name})
+              </strong>
+            </span>
           </>
         )}
         <span>
