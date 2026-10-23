@@ -376,6 +376,50 @@ fn data_to_string(data: &Data) -> String {
 }
 
 /// ## Description
+/// Formats the Target Cell metadata line including the worksheet tab name enclosed in brackets,
+/// or omitting the brackets if the worksheet name is empty.
+///
+/// ## Arguments
+/// - `sheet_name`: `&str` - Worksheet tab name
+/// - `cell_address`: `&str` - Cell coordinate address (e.g., "A1")
+/// - `column_header`: `&str` - Detected column header text
+/// - `row_key`: `&str` - Detected row key text
+///
+/// ## Returns
+/// - `String`: Formatted "- Target Cell: ..." metadata line
+///
+/// ## Errors / Exceptions
+/// Does not panic.
+fn format_target_cell_line(
+    sheet_name: &str,
+    cell_address: &str,
+    column_header: &str,
+    row_key: &str,
+) -> String {
+    let trimmed_sheet = sheet_name.trim();
+    if trimmed_sheet.is_empty() {
+        // Constant reference: crate::constants::LLM_TARGET_CELL_PREFIX
+        format!(
+            "{}{} (Column: {}, Row: {})",
+            crate::constants::LLM_TARGET_CELL_PREFIX,
+            cell_address,
+            column_header,
+            row_key
+        )
+    } else {
+        // Constant reference: crate::constants::LLM_TARGET_CELL_PREFIX
+        format!(
+            "{}[{}] {} (Column: {}, Row: {})",
+            crate::constants::LLM_TARGET_CELL_PREFIX,
+            trimmed_sheet,
+            cell_address,
+            column_header,
+            row_key
+        )
+    }
+}
+
+/// ## Description
 /// Formats matches in compact Header & Cell Only mode.
 ///
 /// ## Arguments
@@ -407,9 +451,11 @@ fn format_header_only_excel_context(
             &cell_val
         };
 
-        lines.push(format!(
-            "- Target Cell: {} (Column: {}, Row: {})",
-            m.cell_address, headers.column_header, headers.row_key
+        lines.push(format_target_cell_line(
+            sheet_name,
+            &m.cell_address,
+            &headers.column_header,
+            &headers.row_key,
         ));
         lines.push(format!("  - Matched Value: **{}**", display_val));
     }
@@ -452,9 +498,11 @@ fn format_table_excel_context(
         } else {
             &cell_val
         };
-        lines.push(format!(
-            "- Target Cell: {} (Column: {}, Row: {})",
-            m.cell_address, headers.column_header, headers.row_key
+        lines.push(format_target_cell_line(
+            sheet_name,
+            &m.cell_address,
+            &headers.column_header,
+            &headers.row_key,
         ));
         lines.push(format!("  - Matched Value: **{}**", display_val));
     }
@@ -818,6 +866,7 @@ mod tests {
         assert!(header_only.contains("Column: Cost"));
         assert!(header_only.contains("Row: Design"));
         assert!(header_only.contains("**5000**"));
+        assert!(header_only.contains("- Target Cell: [Sheet1] B2 (Column: Cost, Row: Design)"));
 
         // Table format
         let options = LlmCopyOptions {
@@ -829,6 +878,7 @@ mod tests {
             format_table_excel_context("test.xlsx", "Sheet1", &range, &coords, &options).unwrap();
         assert!(table.contains("| Task | Cost |"));
         assert!(table.contains("| Design | **5000** |"));
+        assert!(table.contains("- Target Cell: [Sheet1] B2 (Column: Cost, Row: Design)"));
     }
 
     #[test]
@@ -876,5 +926,67 @@ mod tests {
         assert!(table.contains("..."));
         // Check that target cell is bolded
         assert!(table.contains("**150**"));
+    }
+
+    /// ## Description
+    /// Validates `format_target_cell_line` across standard, Japanese, and special character sheet names,
+    /// ensuring bracket notation `[SheetName]` is correctly applied without corruption.
+    ///
+    /// ## Arguments
+    /// None.
+    ///
+    /// ## Returns
+    /// None.
+    ///
+    /// ## Errors / Exceptions
+    /// Panics on assertion failure.
+    #[test]
+    fn test_target_cell_line_formatting() {
+        // Standard alphanumeric sheet name
+        let line = format_target_cell_line("Sheet1", "B2", "Status", "Item 1");
+        assert_eq!(
+            line,
+            "- Target Cell: [Sheet1] B2 (Column: Status, Row: Item 1)"
+        );
+
+        // Japanese synthetic sheet name
+        let line_ja = format_target_cell_line("シート1", "C10", "Category", "Row 5");
+        assert_eq!(
+            line_ja,
+            "- Target Cell: [シート1] C10 (Column: Category, Row: Row 5)"
+        );
+
+        // Special characters, spaces, and parentheses in sheet name
+        let line_special = format_target_cell_line("FY2026 Q3 (Final)", "A1", "Header", "Key");
+        assert_eq!(
+            line_special,
+            "- Target Cell: [FY2026 Q3 (Final)] A1 (Column: Header, Row: Key)"
+        );
+    }
+
+    /// ## Description
+    /// Validates `format_target_cell_line` fallback behavior when the sheet name is empty
+    /// or consists solely of whitespace, ensuring empty brackets `[]` are omitted.
+    ///
+    /// ## Arguments
+    /// None.
+    ///
+    /// ## Returns
+    /// None.
+    ///
+    /// ## Errors / Exceptions
+    /// Panics on assertion failure.
+    #[test]
+    fn test_target_cell_empty_sheet_fallback() {
+        // Empty sheet name fallback
+        let line_empty = format_target_cell_line("", "B2", "Status", "Item 1");
+        assert_eq!(
+            line_empty,
+            "- Target Cell: B2 (Column: Status, Row: Item 1)"
+        );
+
+        // Whitespace-only sheet name fallback
+        let line_ws = format_target_cell_line("   ", "B2", "Status", "Item 1");
+        assert_eq!(line_ws, "- Target Cell: B2 (Column: Status, Row: Item 1)");
     }
 }

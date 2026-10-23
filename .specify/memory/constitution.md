@@ -1,7 +1,9 @@
 <!-- Sync Impact Report
-Version change: 3.0.0 -> 3.1.0
+Version change: 3.1.0 -> 3.2.0
 List of modified principles:
-- Principle I, Language-Directed Quality: English is the default for all project output and source code comments unless a user instruction or approved specification selects another language.
+- Principle III, Comprehensive Header Comments & Documentation Hygiene: Added mandatory rule that generated and persisted documents (such as data-model.md, spec.md, plan.md) MUST NOT use real data, real search results, or real file paths/content, and MUST use synthetic dummy data.
+- Technical Constraints (Section 2.3, Security & Privacy): Explicitly prohibited inclusion of real search results, file paths, and business data in persisted documents.
+- Development Workflow & Quality Gates (Section 3.3, AI Generation Quality Assurance): Added verification requirement to inspect and guarantee zero real data in generated artifacts.
 Added sections: None
 Removed sections: None
 Follow-up TODOs: None
@@ -27,13 +29,14 @@ Follow-up TODOs: None
 `0` と空文字列（`""`）を除き、定数値（数値、マジックナンバー、固定文字列等）をコードへ直接ハードコードしてはならない（MUST NOT）。すべての定数値は `src/constants.rs` 等の定数定義ファイルへ抽出し、利用箇所には該当定数を参照している旨のコメントを明記しなければならない（MUST）。自動生成されたコードであっても、同様に定数抽出および定数参照コメントを適用しなければならない（MUST）。
 - **根拠**: マジックナンバーやハードコードされた固定値は保守性を著しく低下させ、仕様変更時の修正漏れや不整合を招くため。定数を一元管理し利用箇所を明示することで変更容易性を担保する。
 
-### III. 厳格なヘッダコメントとドキュメンテーション（Comprehensive Header Comments）
+### III. 厳格なヘッダコメントとドキュメンテーション（Comprehensive Header Comments & Documentation Hygiene）
 ファイル、モジュール、構造体、クラス、関数、およびメソッドにはヘッダコメントを必ず記載しなければならない（MUST）。ヘッダコメントには以下を漏れなく含めなければならない（MUST）：
 1. 処理内容の詳細な説明
 2. 引数・戻り値の型と各説明
 3. 起こり得るエラー、`Result`/`Option` の扱い、または panic / 例外の発生条件
 各ファイルごとの変更履歴（バージョン、作成日、作成者、修正内容）はコード内のヘッダコメントに記録・生成してはならず（MUST NOT）、バージョン管理システム（Gitコミットログ等）に委ねるものとする。自動生成されたコードであっても、同様にヘッダコメントを適用しなければならない（MUST）。
-- **根拠**: コードの自己文書化を徹底しつつ、Git等の履歴管理と重複して陳腐化しやすいファイル内変更履歴のメンテナンスオーバーヘッドを排除し、複数開発者・AIエージェント協調時の理解コストを最小化するため。
+また、`data-model.md` や仕様書・計画書など、生成され永続化・保存されるすべての文書において、実際の検索結果や利用者の実在データ（実在ファイル名、実在パス、実在するセル内容等）を使用してはならず（MUST NOT）、常に架空のダミーデータ（合成データ）を用いなければならない（MUST）。
+- **根拠**: コードの自己文書化を徹底しつつ、Git等の履歴管理と重複して陳腐化しやすいファイル内変更履歴のメンテナンスオーバーヘッドを排除し、複数開発者・AIエージェント協調時の理解コストを最小化するため。また、機密情報や個人情報の漏洩を防止し、ドキュメントの再現性と安全性を恒久的に保証するため。
 
 ### IV. 責務に応じたモジュール分割と標準スタイル準拠（Modular Design & Code Standards）
 実装は対象言語の標準的な書式に従い、一貫した正しいインデントを維持しなければならない（MUST）。実装対象言語（Rust等）の公式スタイルガイドおよびベストプラクティス（`clippy`, `rustfmt` 等）に完全準拠すること（MUST）。クラス、関数、責務の単位に応じて適切にモジュール分割を行い、責務と内容を明確に表す分かりやすいファイル名を使用しなければならない（MUST）。
@@ -59,6 +62,8 @@ Follow-up TODOs: None
 ### 3. セキュリティおよびプライバシー
 - 検索処理は完全にローカル環境内で完結させ、利用者の明示的な承諾なく外部ネットワークへファイルデータや検索内容を送信してはならない（MUST NOT）。
 - ファイルアクセス権限およびOS API呼び出しは最小権限の原則に従わなければならない（MUST）。
+- **生成・保存ドキュメントにおける実在データの排除（No Real Data in Persisted Artifacts）**:
+  `data-model.md`、`spec.md`、`plan.md`、`contracts/` など、生成され永続化・保存されるすべての文書において、利用者の実在ファイル名、実在ファイルパス、実際の検索結果や実業務データ（機密情報・個人情報を含む可能性のあるデータ）を記載・引用してはならない（MUST NOT）。データ構造、スキーマ、および出力例を記述する際は、常に完全に架空のダミーデータ（合成データ、例: `sample.xlsx`, `Sheet1`, `dummy value` 等）または抽象化されたプレースホルダーを用いなければならない（MUST）。
 
 ## 開発ワークフローと品質ゲート
 
@@ -71,9 +76,10 @@ Follow-up TODOs: None
 - TypeScriptコードは型エラー（`tsc --noEmit`）およびリンター警告をゼロに保たなければならない（MUST）。
 - ヘッダコメントの記載漏れやハードコードされた定数が残存していないことをレビュー時に検証しなければならない（MUST）。
 
-### 3. AI生成コードの品質保証
+### 3. AI生成コードおよびドキュメントの品質保証
 - AIエージェントが生成したコードやドキュメントは、文字化けや `<PAD>` などの不要トークンがないことを必ず検査し、不備がある場合は提出前に自己修正しなければならない（MUST）。
 - 自動生成されたコードであっても、手動実装と同様のヘッダコメント記載および定数抽出基準を満たさなければならない（MUST）。
+- AIエージェントが生成・保存するすべての設計成果物（`data-model.md`、`contracts/`、`plan.md`、`spec.md` 等）に実在の検索結果や実データが含まれていないことを検査・保証しなければならない（MUST）。
 
 ## Governance
 
@@ -86,4 +92,4 @@ Follow-up TODOs: None
   - **PATCH**: 文言の明確化、表記ゆれ・タイポの修正、意味を変えない説明の補足
 - **実行時ガイダンス**: 開発および仕様策定時には `.specify/` 配下の仕様ファイルおよび本憲章を常時参照し、プロジェクト全体の一貫性を維持しなければならない（MUST）。
 
-**Version**: 3.1.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-09-30
+**Version**: 3.2.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-23

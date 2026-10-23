@@ -553,6 +553,16 @@ pub const LLM_WORD_MODE_HEADINGS: &str = "headings_and_paragraph";
 /// Word extraction mode for paragraph text only
 pub const LLM_WORD_MODE_PARAGRAPH: &str = "paragraph_only";
 
+/// Format template for Target Cell metadata line with explicit sheet name
+/// Prefix label for Target Cell line in LLM context
+pub const LLM_TARGET_CELL_PREFIX: &str = "- Target Cell: ";
+
+/// Format template for Target Cell metadata line with explicit sheet name
+pub const LLM_TARGET_CELL_WITH_SHEET_FMT: &str = "- Target Cell: [{}] {} (Column: {}, Row: {})";
+
+/// Format template for Target Cell metadata line without sheet name (fallback)
+pub const LLM_TARGET_CELL_WITHOUT_SHEET_FMT: &str = "- Target Cell: {} (Column: {}, Row: {})";
+
 // ==============================================================================
 // 8. Unit Tests
 // ==============================================================================
@@ -657,5 +667,14 @@ mod tests {
         assert_eq!(LLM_COPY_TYPE_HEADER_ONLY, "header_cell_only");
         assert_eq!(LLM_WORD_MODE_HEADINGS, "headings_and_paragraph");
         assert_eq!(LLM_WORD_MODE_PARAGRAPH, "paragraph_only");
+        assert_eq!(LLM_TARGET_CELL_PREFIX, "- Target Cell: ");
+        assert_eq!(
+            LLM_TARGET_CELL_WITH_SHEET_FMT,
+            "- Target Cell: [{}] {} (Column: {}, Row: {})"
+        );
+        assert_eq!(
+            LLM_TARGET_CELL_WITHOUT_SHEET_FMT,
+            "- Target Cell: {} (Column: {}, Row: {})"
+        );
     }
 }
