@@ -12,84 +12,78 @@ Follow-up TODOs: None
 
 ## Core Principles
 
-### I. 指定言語の優先と自然な出力（Language-Directed Quality）
-英語を本プロジェクトの基本言語とし、別の言語が明示されていない場合は、ユーザーへの回答、コミットメッセージ、
-生成ドキュメント、ソースコードコメント、製品の画面文言、エラーメッセージ、およびログを自然かつ正確な英語で
-作成しなければならない（MUST）。
-ユーザーへの回答、コミットメッセージ、生成ドキュメント、ソースコードコメント、製品の画面文言、
-エラーメッセージ、およびログは、
-利用者の指示または承認済みの仕様で言語が明示されている場合、その言語で作成しなければならない（MUST）。
-指定言語が英語以外の場合、英語への翻訳を強制してはならない（MUST NOT）。
-成果物を提出する前に、文字化けや `<PAD>`、`<pad>` 等の不要または不明な特殊トークンが含まれていないことを検査し、
-検出時は指定言語に合う自然な表現へ補正しなければならない（MUST）。
-- **根拠**: 国際標準および英語を既定とするドキュメンテーション／回答品質を維持しつつ、
-  明示された要件言語を遵守し、不要トークンや不自然な言語混在による混乱を防ぐため。
+### I. Language-Directed Quality
+English MUST be the primary language of this project. Unless another language is explicitly specified, responses to users, commit messages, generated documents, source code comments, UI text, error messages, and logs MUST be written in natural, accurate English.
+When a user instruction or approved specification explicitly specifies a language, responses to users, commit messages, generated documents, source code comments, UI text, error messages, and logs MUST be written in that specified language.
+If the specified language is not English, English translations MUST NOT be forced.
+Before delivering artifacts, verify that there is no garbled text or unwanted/unexplained special tokens such as `<PAD>` and `<pad>`. If detected, they MUST be corrected using natural expressions appropriate to the specified language.
+- **Rationale**: To maintain international standards and English-by-default documentation and communication quality, while respecting explicitly requested languages and preventing confusion caused by unwanted tokens or unnatural language mixing.
 
-### II. 定数の外部抽出とハードコードの禁止（No Hardcoded Constants）
-`0` と空文字列（`""`）を除き、定数値（数値、マジックナンバー、固定文字列等）をコードへ直接ハードコードしてはならない（MUST NOT）。すべての定数値は `src/constants.rs` 等の定数定義ファイルへ抽出し、利用箇所には該当定数を参照している旨のコメントを明記しなければならない（MUST）。自動生成されたコードであっても、同様に定数抽出および定数参照コメントを適用しなければならない（MUST）。
-- **根拠**: マジックナンバーやハードコードされた固定値は保守性を著しく低下させ、仕様変更時の修正漏れや不整合を招くため。定数を一元管理し利用箇所を明示することで変更容易性を担保する。
+### II. No Hardcoded Constants
+Except for `0` and the empty string (`""`), constant values (numbers, magic numbers, fixed strings, etc.) MUST NOT be hardcoded directly into code. All constant values MUST be extracted into centralized constants definition files such as `src/constants/index.ts` (frontend) or `src-tauri/src/constants.rs` (Rust backend), and every usage site MUST include an explicit comment identifying the referenced constant (e.g., `// Constant reference: constants::MENU_ITEM_ABOUT_ID`). Even for automatically generated code, constant extraction and constant reference comments MUST be applied in the same manner.
+- **Rationale**: Magic numbers and hardcoded fixed values significantly impair maintainability and lead to missed updates and inconsistencies during specification changes. Centralizing constants and explicitly marking their usage ensures ease of modification.
 
-### III. 厳格なヘッダコメントとドキュメンテーション（Comprehensive Header Comments & Documentation Hygiene）
-ファイル、モジュール、構造体、クラス、関数、およびメソッドにはヘッダコメントを必ず記載しなければならない（MUST）。ヘッダコメントには以下を漏れなく含めなければならない（MUST）：
-1. 処理内容の詳細な説明
-2. 引数・戻り値の型と各説明
-3. 起こり得るエラー、`Result`/`Option` の扱い、または panic / 例外の発生条件
-各ファイルごとの変更履歴（バージョン、作成日、作成者、修正内容）はコード内のヘッダコメントに記録・生成してはならず（MUST NOT）、バージョン管理システム（Gitコミットログ等）に委ねるものとする。自動生成されたコードであっても、同様にヘッダコメントを適用しなければならない（MUST）。
-また、`data-model.md` や仕様書・計画書など、生成され永続化・保存されるすべての文書において、実際の検索結果や利用者の実在データ（実在ファイル名、実在パス、実在するセル内容等）を使用してはならず（MUST NOT）、常に架空のダミーデータ（合成データ）を用いなければならない（MUST）。
-- **根拠**: コードの自己文書化を徹底しつつ、Git等の履歴管理と重複して陳腐化しやすいファイル内変更履歴のメンテナンスオーバーヘッドを排除し、複数開発者・AIエージェント協調時の理解コストを最小化するため。また、機密情報や個人情報の漏洩を防止し、ドキュメントの再現性と安全性を恒久的に保証するため。
+### III. Comprehensive Header Comments & Documentation Hygiene
+Every file, module, struct, class, function, and method MUST have a header comment. Header comments MUST comprehensively include all of the following:
+1. A detailed description of what it does
+2. The types and descriptions of its arguments and return value
+3. Possible errors, handling of `Result`/`Option`, or conditions that cause a panic or exception
+Per-file change histories (version, creation date, author, modification details) MUST NOT be recorded or generated in code header comments; version control systems (such as Git commit history) MUST be used for that purpose. Even for automatically generated code, header comments MUST be applied in the same manner.
+Furthermore, across all generated, persisted, and saved documents (such as `data-model.md`, specifications, plans, etc.), actual search results or real user data (real file names, real paths, actual cell contents, etc.) MUST NOT be used; synthetic dummy data MUST always be used.
+- **Rationale**: To enforce code self-documentation while eliminating the maintenance overhead of in-file change logs that quickly become obsolete and duplicate Git history, minimizing cognitive load during multi-developer and AI agent collaboration. In addition, to prevent leakage of confidential or personal information and permanently guarantee the safety and reproducibility of documents.
 
-### IV. 責務に応じたモジュール分割と標準スタイル準拠（Modular Design & Code Standards）
-実装は対象言語の標準的な書式に従い、一貫した正しいインデントを維持しなければならない（MUST）。実装対象言語（Rust等）の公式スタイルガイドおよびベストプラクティス（`clippy`, `rustfmt` 等）に完全準拠すること（MUST）。クラス、関数、責務の単位に応じて適切にモジュール分割を行い、責務と内容を明確に表す分かりやすいファイル名を使用しなければならない（MUST）。
-- **根拠**: 単一責任の原則（SRP）を遵守してコードベースの見通しと再利用性を高め、公式ツールによる自動検証を通じて品質を均一化するため。
+### IV. Modular Design & Code Standards
+Implementations MUST follow standard formatting for the target language and maintain consistent, correct indentation. Implementations MUST fully comply with the official style guides and best practices of the target languages (e.g., Rust's `clippy` and `rustfmt`, TypeScript's zero type errors and zero ESLint warnings). Code MUST be appropriately divided into modules according to classes, functions, and units of responsibility, using clear file names that accurately convey their responsibilities and contents.
+- **Rationale**: To adhere to the Single Responsibility Principle (SRP), improve codebase clarity and reusability, and ensure uniform quality through automated validation with official tooling.
 
-### V. 堅牢なエラーハンドリングとテスト検証（Robust Error Handling & Testing）
-予期しないパニックや未処理例外を排除し、`Result` や適切なエラー型を用いて堅牢なエラーハンドリングを行うこと（MUST）。モジュールおよび関数は独立して単体テストが可能な構造とし、テストケースを作成して正当性を検証すること（MUST）。
-- **根拠**: デスクトップアプリケーションにおいて異常終了やクラッシュはユーザーの作業喪失に直結するため。堅牢なエラー処理と継続的なテスト検証により信頼性を恒常的に保証する。
+### V. Robust Error Handling & Testing
+Unexpected panics and unhandled exceptions MUST be eliminated; robust error handling MUST be performed using `Result` or appropriate error types. Modules and functions MUST be structured to be independently unit-testable, with test cases created to verify their correctness.
+- **Rationale**: In desktop applications, crashes and abnormal terminations directly result in user data and work loss. Robust error handling and continuous test verification permanently guarantee application reliability.
 
-## 技術制約および品質基準
+## Technical Constraints & Quality Standards
 
-### 1. アーキテクチャと技術スタック
-- **GUI層**: Tauri v2, React, TypeScript, Tailwind CSS
-- **バックエンド層**: Rust (2021 edition)
-- **Excel解析エンジン**: `calamine`, `rust_xlsxwriter`, `csv`
-- **並列走査**: `rayon` によるマルチスレッド高速スキャン
-- **パターンマッチング**: `regex`
+### 1. Architecture & Technology Stack
+- **GUI Layer**: Tauri v2, React, TypeScript, Tailwind CSS
+- **Backend Layer**: Rust (2021 edition)
+- **Excel Parsing Engine**: `calamine`, `rust_xlsxwriter`, `csv`
+- **Parallel Scanning**: High-speed multithreaded scanning via `rayon`
+- **Pattern Matching**: `regex`
 
-### 2. パフォーマンスとリソース管理
-- 大容量および多数の Excel ファイルの検索時においても、過剰なメモリ消費を抑え、UI スレッドをブロックしない非同期・並列処理を維持しなければならない（MUST）。
-- 不要なフルスキャンや重複読み込みを避け、効率的なストリーミングおよび反復走査を採用すること（SHOULD）。
+### 2. Performance & Resource Management
+- Even when searching large or numerous Excel files, asynchronous and parallel processing MUST be maintained to prevent excessive memory consumption and avoid blocking the UI thread.
+- Full scans and duplicate reads SHOULD be avoided in favor of efficient streaming and iterative scanning.
 
-### 3. セキュリティおよびプライバシー
-- 検索処理は完全にローカル環境内で完結させ、利用者の明示的な承諾なく外部ネットワークへファイルデータや検索内容を送信してはならない（MUST NOT）。
-- ファイルアクセス権限およびOS API呼び出しは最小権限の原則に従わなければならない（MUST）。
-- **生成・保存ドキュメントにおける実在データの排除（No Real Data in Persisted Artifacts）**:
-  `data-model.md`、`spec.md`、`plan.md`、`contracts/` など、生成され永続化・保存されるすべての文書において、利用者の実在ファイル名、実在ファイルパス、実際の検索結果や実業務データ（機密情報・個人情報を含む可能性のあるデータ）を記載・引用してはならない（MUST NOT）。データ構造、スキーマ、および出力例を記述する際は、常に完全に架空のダミーデータ（合成データ、例: `sample.xlsx`, `Sheet1`, `dummy value` 等）または抽象化されたプレースホルダーを用いなければならない（MUST）。
+### 3. Security & Privacy
+- Search operations MUST be entirely self-contained within the local environment; file data and search queries MUST NOT be transmitted to external networks without explicit user consent.
+- File access permissions and OS API calls MUST adhere to the principle of least privilege.
+- **No Real Data in Persisted Artifacts**:
+  Across all generated, persisted, and saved documents (such as `data-model.md`, `spec.md`, `plan.md`, `contracts/`, etc.), real user file names, real file paths, actual search results, or actual business data (data potentially containing confidential or personally identifiable information) MUST NOT be included or quoted. When describing data structures, schemas, and example outputs, entirely synthetic dummy data (e.g., `sample.xlsx`, `Sheet1`, `dummy value`) or abstract placeholders MUST always be used.
 
-## 開発ワークフローと品質ゲート
+## Development Workflow & Quality Gates
 
-### 1. テスト主導と検証
-- すべての新機能およびバグ修正は、対応する単体テスト（Rust: `cargo test` / TypeScript: ユニットテスト）を作成して動作を検証しなければならない（MUST）。
-- 境界値（空ファイル、破損したブック、パスワード保護ファイル、極小/極大セル値など）に対するテストケースを網羅しなければならない（MUST）。
+### 1. Test-Driven Development & Verification
+- For all new features and bug fixes, corresponding unit tests (Rust: `cargo test` / TypeScript: unit tests) MUST be created to verify behavior.
+- Test cases MUST cover edge cases (empty files, corrupted workbooks, password-protected files, minimal/maximal cell values, etc.).
 
-### 2. コード品質と静的解析
-- Rustコードは `cargo clippy --all-targets -- -D warnings` および `cargo fmt --check` をパスしなければならない（MUST）。
-- TypeScriptコードは型エラー（`tsc --noEmit`）およびリンター警告をゼロに保たなければならない（MUST）。
-- ヘッダコメントの記載漏れやハードコードされた定数が残存していないことをレビュー時に検証しなければならない（MUST）。
+### 2. Code Quality & Static Analysis
+- Rust code MUST pass `cargo clippy --all-targets -- -D warnings` and `cargo fmt --check`.
+- TypeScript code MUST maintain zero type errors (`tsc --noEmit`) and zero linter warnings.
+- Code reviews MUST verify that there are no missing header comments or remaining hardcoded constants.
 
-### 3. AI生成コードおよびドキュメントの品質保証
-- AIエージェントが生成したコードやドキュメントは、文字化けや `<PAD>` などの不要トークンがないことを必ず検査し、不備がある場合は提出前に自己修正しなければならない（MUST）。
-- 自動生成されたコードであっても、手動実装と同様のヘッダコメント記載および定数抽出基準を満たさなければならない（MUST）。
-- AIエージェントが生成・保存するすべての設計成果物（`data-model.md`、`contracts/`、`plan.md`、`spec.md` 等）に実在の検索結果や実データが含まれていないことを検査・保証しなければならない（MUST）。
+### 3. AI-Generated Code & Artifact Quality Assurance
+- Code and documents generated by AI agents MUST be inspected for garbled text or unwanted tokens such as `<PAD>`, and any defects MUST be self-corrected before submission.
+- Even for automatically generated code, header comment requirements and constant extraction standards MUST be satisfied identically to manual implementations.
+- All design artifacts generated and saved by AI agents (such as `data-model.md`, `contracts/`, `plan.md`, `spec.md`, etc.) MUST be inspected and guaranteed to contain zero real search results or actual user data.
 
 ## Governance
 
-- **最上位規約**: 本憲章はプロジェクト内のすべての設計文書、実装ルール、および運用指針に優先する（MUST）。
-- **準拠確認**: すべての変更（Pull Request、レビュー、AIエージェントによるコード生成）において、本憲章に定められた原則への準拠を必須条件とする（MUST）。
-- **改定プロセス**: 憲章の改定は慎重に行われなければならず、変更理由の明記、利害関係者によるレビュー、および後方互換性や移行方針の提示を必要とする（MUST）。
-- **バージョニング方針**: セマンティックバージョニング（MAJOR.MINOR.PATCH）に厳格に準拠する（MUST）：
-  - **MAJOR**: 原則の削除、後方互換性のない方針変更、または統治ルールの全面的な改新
-  - **MINOR**: 新たな原則やセクションの追加、既存指針の適用範囲の実質的な拡充
-  - **PATCH**: 文言の明確化、表記ゆれ・タイポの修正、意味を変えない説明の補足
-- **実行時ガイダンス**: 開発および仕様策定時には `.specify/` 配下の仕様ファイルおよび本憲章を常時参照し、プロジェクト全体の一貫性を維持しなければならない（MUST）。
+- **Supremacy**: This Constitution MUST supersede all other design documents, implementation rules, and operational guidelines within the project.
+- **Compliance Verification**: Strict compliance with the principles defined in this Constitution MUST be a prerequisite for all changes (Pull Requests, reviews, and AI agent code generation).
+- **Amendment Process**: Amendments to this Constitution MUST be made deliberately, requiring explicit statements of rationale, stakeholder review, and presentation of backward compatibility or migration plans.
+- **Versioning Policy**: Semantic Versioning (MAJOR.MINOR.PATCH) MUST be strictly followed:
+  - **MAJOR**: Removal of principles, non-backward-compatible policy changes, or comprehensive overhaul of governance rules
+  - **MINOR**: Addition of new principles or sections, or substantive expansion of the scope of existing guidelines
+  - **PATCH**: Clarification of wording, typo/formatting corrections, or non-semantic explanatory additions
+- **Runtime Guidance**: Specification files under `.specify/` and this Constitution MUST be continuously referenced during development and specification drafting to maintain project-wide consistency.
 
 **Version**: 3.2.0 | **Ratified**: 2026-09-25 | **Last Amended**: 2026-10-23
