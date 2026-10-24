@@ -186,7 +186,8 @@ mod tests {
         assert!(ctx.is_restricted());
 
         // Target inside whitelist
-        let valid_target = temp_dir.join("subfolder");
+        let canonical_base = &ctx.allowed_directories()[0];
+        let valid_target = canonical_base.join("subfolder");
         assert!(ctx.validate_path(&valid_target).is_ok());
 
         // Target outside whitelist

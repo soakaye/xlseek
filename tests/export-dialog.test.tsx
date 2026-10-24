@@ -36,6 +36,7 @@ vi.mock("@razein97/tauri-plugin-i18n", () => ({
 
 describe("StatusBar - Export Dialog Integration (US2)", () => {
   beforeEach(async () => {
+    window.localStorage.clear();
     mocks.save.mockReset();
     mocks.invoke.mockReset().mockResolvedValue(undefined);
     mocks.pluginLocale = "en";
@@ -65,7 +66,7 @@ describe("StatusBar - Export Dialog Integration (US2)", () => {
     sheets_in_workbook: ["Sheet1"],
   };
 
-  it("shows toast warning when exporting with 0 items and does not open save dialog", async () => {
+  it("shows disabled export buttons when 0 items and does not open save dialog", async () => {
     const onShowToast = vi.fn();
     render(
       <LocaleProvider value="en">
@@ -80,17 +81,18 @@ describe("StatusBar - Export Dialog Integration (US2)", () => {
       </LocaleProvider>
     );
 
-    const csvBtn = screen.getByText("Export CSV").closest("button") as HTMLButtonElement;
-    expect(csvBtn.disabled).toBe(true);
+    const exportBtn = screen.getByRole("button", { name: "Export search results" }) as HTMLButtonElement;
+    const menuBtn = screen.getByRole("button", { name: "Select export format" }) as HTMLButtonElement;
+    expect(exportBtn.disabled).toBe(true);
+    expect(menuBtn.disabled).toBe(true);
 
     // Clicking disabled button does not trigger save dialog
-    fireEvent.click(csvBtn);
+    fireEvent.click(exportBtn);
     expect(mocks.save).not.toHaveBeenCalled();
     expect(mocks.invoke).not.toHaveBeenCalled();
   });
 
-
-  it("opens save dialog and triggers export command for CSV when items exist", async () => {
+  it("opens save dialog and triggers export command for CSV when selected from format menu", async () => {
     const onShowToast = vi.fn();
     mocks.save.mockResolvedValue("C:\\dest\\result.csv");
 
@@ -107,16 +109,31 @@ describe("StatusBar - Export Dialog Integration (US2)", () => {
       </LocaleProvider>
     );
 
-    const csvBtn = screen.getByText("Export CSV");
-    fireEvent.click(csvBtn);
+    // Open format menu
+    const menuBtn = screen.getByRole("button", { name: "Select export format" });
+    fireEvent.click(menuBtn);
+
+    // Select CSV format
+    const csvOption = screen.getByRole("menuitem", { name: /csv/i });
+    fireEvent.click(csvOption);
 
     await waitFor(() => expect(mocks.save).toHaveBeenCalled());
+    expect(mocks.save).toHaveBeenCalledWith({
+      filters: [
+        {
+          name: "CSV file",
+          extensions: ["csv"],
+        },
+      ],
+      defaultPath: expect.stringMatching(/ExcelGrep_Results_.*\.csv$/),
+    });
     expect(mocks.invoke).toHaveBeenCalledWith("export_results", {
       request: {
         format: "csv",
         output_path: "C:\\dest\\result.csv",
         items: [mockItem],
         language: "en",
+        llm_options: undefined,
       },
     });
     expect(onShowToast).toHaveBeenCalledWith("ui.EXPORT_CSV_SAVED", { path: "C:\\dest\\result.csv" });
@@ -139,10 +156,20 @@ describe("StatusBar - Export Dialog Integration (US2)", () => {
       </LocaleProvider>
     );
 
-    const excelBtn = screen.getByText("Export Excel");
-    fireEvent.click(excelBtn);
+    // Default format is Excel (.xlsx)
+    const exportBtn = screen.getByRole("button", { name: "Export search results" });
+    fireEvent.click(exportBtn);
 
     await waitFor(() => expect(mocks.save).toHaveBeenCalled());
+    expect(mocks.save).toHaveBeenCalledWith({
+      filters: [
+        {
+          name: "Excel workbook",
+          extensions: ["xlsx"],
+        },
+      ],
+      defaultPath: expect.stringMatching(/ExcelGrep_Results_.*\.xlsx$/),
+    });
     expect(mocks.invoke).not.toHaveBeenCalled();
     expect(onShowToast).not.toHaveBeenCalled();
   });

@@ -11,6 +11,8 @@ use std::sync::{Arc, Mutex};
 use xlseek_core::models::DirectorySearchMode;
 use xlseek_core::search::discovery::discover_files;
 
+static BURST_FIXTURE_SEQ: AtomicUsize = AtomicUsize::new(0);
+
 /// Creates an isolated nested fixture and returns its root and cleanup path.
 ///
 /// ## Arguments / Returns
@@ -19,12 +21,13 @@ use xlseek_core::search::discovery::discover_files;
 /// ## Errors
 /// Panics if temporary directories or files cannot be created.
 fn nested_fixture() -> (PathBuf, PathBuf) {
+    let seq = BURST_FIXTURE_SEQ.fetch_add(1, Ordering::Relaxed);
     let unique_id = std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
         .unwrap()
         .as_nanos();
     let root = std::env::temp_dir().join(format!(
-        "xlseek-burst-{}-{}-{unique_id}",
+        "xlseek-burst-{}-{}-{seq}-{unique_id}",
         std::process::id(),
         xlseek_core::constants::CLI_TEST_BURST_FIXTURE_ID
     ));

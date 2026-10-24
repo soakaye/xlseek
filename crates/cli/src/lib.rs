@@ -27,7 +27,7 @@ use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
 use std::sync::mpsc::sync_channel;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
-use xlseek_core::models::{SearchIssue, SearchMatch, SearchReport};
+use xlseek_core::models::{ExportFormat, SearchIssue, SearchMatch, SearchReport};
 
 /// Parses process arguments and executes Excel search/save without initializing a GUI.
 /// Suppresses summary text when streaming directly to stdout.
@@ -384,13 +384,31 @@ fn execute(
         }
         CliOutputTarget::Stdout => {
             let mut stdout = std::io::stdout().lock();
-            xlseek_core::export::write_csv_to_writer(
-                &mut stdout,
-                &matches_list,
-                &options.language,
-                catalogs,
-                false,
-            )?;
+            match options.format {
+                ExportFormat::Csv => {
+                    xlseek_core::export::write_csv_to_writer(
+                        &mut stdout,
+                        &matches_list,
+                        &options.language,
+                        catalogs,
+                        false,
+                    )?;
+                }
+                ExportFormat::Md => {
+                    let default_options = xlseek_core::models::LlmCopyOptions::default();
+                    xlseek_core::export::write_md_to_writer(
+                        &mut stdout,
+                        &matches_list,
+                        &default_options,
+                    )?;
+                }
+                ExportFormat::Json => {
+                    xlseek_core::export::write_json_to_writer(&mut stdout, &matches_list)?;
+                }
+                ExportFormat::Xlsx => {
+                    return Err(constants::ERR_CLI_FORMAT.to_string());
+                }
+            }
             None
         }
     };

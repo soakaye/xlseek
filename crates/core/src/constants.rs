@@ -121,6 +121,8 @@ pub const CLI_DEFAULT_INCLUDE_SHAPE: bool = false;
 pub const CLI_DEFAULT_INCLUDE_HIDDEN: bool = false;
 pub const CLI_FORMAT_CSV: &str = "csv";
 pub const CLI_FORMAT_XLSX: &str = "xlsx";
+pub const CLI_FORMAT_MD: &str = "md";
+pub const CLI_FORMAT_JSON: &str = "json";
 pub const CLI_OUTPUT_SUFFIX: &str = ".tmp";
 pub const CLI_TEMP_DIRECTORY_PREFIX: &str = ".xlseek-export-";
 pub const CLI_TEMP_FILE_NAME: &str = "result.tmp";
@@ -313,6 +315,9 @@ pub const EXT_XLSX: &str = ".xlsx";
 pub const EXT_XLSM: &str = ".xlsm";
 pub const EXT_XLSB: &str = ".xlsb";
 pub const EXT_XLS: &str = ".xls";
+pub const EXT_CSV: &str = ".csv";
+pub const EXT_MD: &str = ".md";
+pub const EXT_JSON: &str = ".json";
 
 // ==============================================================================
 // 2. Scan & Search Settings
@@ -415,7 +420,10 @@ pub const XLSX_HEADER_FG_COLOR: u32 = 0x00FF_FFFF;
 
 /// Export column widths. Translated headers are retrieved from shared catalogs.
 pub const XLSX_COLUMN_WIDTHS: [f64; 9] = [8.0, 25.0, 40.0, 20.0, 12.0, 22.0, 14.0, 45.0, 30.0];
+pub const DEFAULT_EXPORT_FORMAT: &str = "xlsx";
 pub const ERR_INVALID_LANGUAGE: &str = "Unsupported export language";
+pub const ERR_JSON_EXPORT_WRITE: &str = "Failed to write JSON export data";
+pub const ERR_MD_EXPORT_WRITE: &str = "Failed to write Markdown export data";
 pub const EXPORT_HEADER_KEYS: [&str; 9] = [
     "export.header.id",
     "export.header.fileName",
@@ -609,6 +617,11 @@ mod tests {
         assert_eq!(EXPORT_SHEET_NAME_KEY, "export.sheetName");
         assert_eq!(EXPORT_MATCH_HIDDEN_SHEET_KEY, "export.match.hiddenSheet");
         assert_eq!(EXPORT_MATCH_WORD_TEXT_KEY, "export.match.wordText");
+        assert_eq!(DEFAULT_EXPORT_FORMAT, "xlsx");
+        assert_eq!(CLI_FORMAT_MD, "md");
+        assert_eq!(CLI_FORMAT_JSON, "json");
+        assert_eq!(EXT_MD, ".md");
+        assert_eq!(EXT_JSON, ".json");
     }
 
     /// Validates that error messages are non-empty strings.

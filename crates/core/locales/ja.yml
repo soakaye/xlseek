@@ -20,7 +20,11 @@ ui.EXPORT_ERROR_PREFIX: "エクスポート失敗: "
 ui.EXPORT_SAVED_PREFIX: "ファイルを保存しました: "
 ui.EXPORT_CSV_SAVED: "CSVファイルを保存しました: {path}"
 ui.EXPORT_XLSX_SAVED: "Excelファイルを保存しました: {path}"
+ui.EXPORT_MD_SAVED: "Markdownファイルを保存しました: {path}"
+ui.EXPORT_JSON_SAVED: "JSONファイルを保存しました: {path}"
 ui.EXPORT_CSV_FILTER_NAME: CSVファイル
+ui.EXPORT_MD_FILTER_NAME: Markdownドキュメント
+ui.EXPORT_JSON_FILTER_NAME: JSONファイル
 cli.HELP: |
   使用方法: xlseek-cli [OPTIONS] [QUERY] [PATH]...
   位置引数: 第1引数=検索文字列, 第2引数以降=検索対象パス (複数指定可能)
@@ -28,7 +32,7 @@ cli.HELP: |
     -q, --query TEXT         検索文字列
     -p, --path PATH          検索対象パス
     -o, --output PATH        出力先ファイル (省略時は標準出力へCSV出力)
-    -f, --format csv|xlsx    出力形式 (省略時は拡張子から自動推論)
+    -f, --format csv|xlsx|md|json 出力形式 (省略時は拡張子から自動推論)
     -c, --match-case BOOL    大文字/小文字を区別 (既定: false)
     -r, --regex BOOL         正規表現として解釈 (既定: false)
     -w, --overwrite          既存出力先の上書きを許可
@@ -156,6 +160,13 @@ ui.DEFAULT_OPTIONS_EXTENSIONS_REQUIRED: 対象拡張子を少なくとも1つ選
 ui.INVALID_REGEX: 正規表現が正しくありません
 ui.EXPORT_CSV_BUTTON: CSV 出力
 ui.EXPORT_XLSX_BUTTON: Excel 出力
+ui.EXPORT_BUTTON_LABEL: エクスポート
+ui.EXPORT_BUTTON_TOOLTIP: 検索結果を出力
+ui.EXPORT_MENU_TOOLTIP: 出力形式を選択
+ui.EXPORT_FORMAT_XLSX: Excel (.xlsx)
+ui.EXPORT_FORMAT_CSV: CSV (.csv)
+ui.EXPORT_FORMAT_MD: AI用 Markdown (.md)
+ui.EXPORT_FORMAT_JSON: JSON (.json)
 ui.RESULTS_TITLE: 検索結果リスト
 ui.FILTER_RESULTS_PLACEHOLDER: 結果内を絞り込み...
 ui.COLUMN_FILE: ファイル名

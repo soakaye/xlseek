@@ -409,6 +409,151 @@ fn test_cli_search_overlapping_paths_deduplication() {
     let _ = fs::remove_dir_all(work);
 }
 
+/// Tests that CLI exports search results to a Markdown (.md) file with -f md and via extension inference.
+///
+/// ## Arguments / Returns
+/// No arguments. Returns void.
+///
+/// ## Errors
+/// Panics if CLI fails or exported markdown file is missing or invalid.
+#[test]
+fn test_cli_export_md_file_and_inference() {
+    let root = repo_root();
+    let fixture = root.join("tests/fixtures/sample_report.xlsx");
+    let output_dir = unique_test_directory();
+    fs::create_dir_all(&output_dir).expect("temporary test directory must be created");
+
+    // 1. Explicit -f md
+    let output_md = output_dir.join("result_explicit.md");
+    let res = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
+        .arg("--path")
+        .arg(&fixture)
+        .arg("--query")
+        .arg(QUERY_TEXT)
+        .arg("--format")
+        .arg("md")
+        .arg("--output")
+        .arg(&output_md)
+        .output()
+        .expect("CLI process must start");
+    assert_eq!(res.status.code(), Some(0));
+    let content = fs::read_to_string(&output_md).expect("Read exported markdown");
+    assert!(content.contains(QUERY_TEXT));
+
+    // 2. Extension inference with -o result_inferred.md (no -f)
+    let output_inferred = output_dir.join("result_inferred.md");
+    let res2 = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
+        .arg("--path")
+        .arg(&fixture)
+        .arg("--query")
+        .arg(QUERY_TEXT)
+        .arg("--output")
+        .arg(&output_inferred)
+        .output()
+        .expect("CLI process must start");
+    assert_eq!(res2.status.code(), Some(0));
+    let content2 = fs::read_to_string(&output_inferred).expect("Read inferred markdown");
+    assert!(content2.contains(QUERY_TEXT));
+
+    let _ = fs::remove_dir_all(output_dir);
+}
+
+/// Tests that CLI exports search results to a JSON (.json) file with -f json and via extension inference.
+///
+/// ## Arguments / Returns
+/// No arguments. Returns void.
+///
+/// ## Errors
+/// Panics if CLI fails or exported JSON file cannot be deserialized.
+#[test]
+fn test_cli_export_json_file_and_inference() {
+    let root = repo_root();
+    let fixture = root.join("tests/fixtures/sample_report.xlsx");
+    let output_dir = unique_test_directory();
+    fs::create_dir_all(&output_dir).expect("temporary test directory must be created");
+
+    // 1. Explicit -f json
+    let output_json = output_dir.join("result_explicit.json");
+    let res = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
+        .arg("--path")
+        .arg(&fixture)
+        .arg("--query")
+        .arg(QUERY_TEXT)
+        .arg("--format")
+        .arg("json")
+        .arg("--output")
+        .arg(&output_json)
+        .output()
+        .expect("CLI process must start");
+    assert_eq!(res.status.code(), Some(0));
+    let content = fs::read_to_string(&output_json).expect("Read exported json");
+    assert!(content.contains("\"total_matches\":"));
+    assert!(content.contains("\"matches\":"));
+    assert!(content.contains(QUERY_TEXT));
+
+    // 2. Extension inference with -o result_inferred.json (no -f)
+    let output_inferred = output_dir.join("result_inferred.json");
+    let res2 = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
+        .arg("--path")
+        .arg(&fixture)
+        .arg("--query")
+        .arg(QUERY_TEXT)
+        .arg("--output")
+        .arg(&output_inferred)
+        .output()
+        .expect("CLI process must start");
+    assert_eq!(res2.status.code(), Some(0));
+    let content2 = fs::read_to_string(&output_inferred).expect("Read inferred json");
+    assert!(content2.contains("\"total_matches\":"));
+    assert!(content2.contains("\"matches\":"));
+    assert!(content2.contains(QUERY_TEXT));
+
+    let _ = fs::remove_dir_all(output_dir);
+}
+
+/// Tests that CLI streams Markdown or JSON directly to stdout when --output is omitted.
+///
+/// ## Arguments / Returns
+/// No arguments. Returns void.
+///
+/// ## Errors
+/// Panics if CLI stdout streaming fails or output does not match expected format.
+#[test]
+fn test_cli_stdout_streaming_md_and_json() {
+    let root = repo_root();
+    let fixture = root.join("tests/fixtures/sample_report.xlsx");
+
+    // 1. Stdout streaming for Markdown
+    let md_res = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
+        .arg("--path")
+        .arg(&fixture)
+        .arg("--query")
+        .arg(QUERY_TEXT)
+        .arg("--format")
+        .arg("md")
+        .output()
+        .expect("CLI process must start");
+    assert_eq!(md_res.status.code(), Some(0));
+    let md_stdout = String::from_utf8_lossy(&md_res.stdout);
+    assert!(md_stdout.contains(QUERY_TEXT));
+
+    // 2. Stdout streaming for JSON
+    let json_res = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
+        .arg("--path")
+        .arg(&fixture)
+        .arg("--query")
+        .arg(QUERY_TEXT)
+        .arg("--format")
+        .arg("json")
+        .output()
+        .expect("CLI process must start");
+    assert_eq!(json_res.status.code(), Some(0));
+    let json_stdout = String::from_utf8_lossy(&json_res.stdout);
+    assert!(json_stdout.contains("\"total_matches\":"));
+    assert!(json_stdout.contains("\"matches\":"));
+    assert!(json_stdout.contains(QUERY_TEXT));
+}
+
 /// Helper that invokes the CLI with path, query, format, and output arguments.
 ///
 /// ## Arguments / Returns

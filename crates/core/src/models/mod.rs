@@ -290,12 +290,14 @@ pub struct WordPreviewPayload {
     pub paragraphs: Vec<WordParagraph>,
 }
 
-/// Export format options (CSV or Excel).
+/// Export format options (CSV, Excel, AI Markdown, or JSON).
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum ExportFormat {
     Csv,
     Xlsx,
+    Md,
+    Json,
 }
 
 /// Export request parameter payload from front-end client.
@@ -306,6 +308,8 @@ pub struct ExportRequest {
     pub language: String,
     pub output_path: String,
     pub items: Vec<SearchMatch>,
+    #[serde(default)]
+    pub llm_options: Option<LlmCopyOptions>,
 }
 
 /// Default language fallback for legacy export requests.

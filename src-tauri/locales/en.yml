@@ -20,7 +20,11 @@ ui.EXPORT_ERROR_PREFIX: "Export failed: "
 ui.EXPORT_SAVED_PREFIX: "Saved file: "
 ui.EXPORT_CSV_SAVED: "CSV file saved: {path}"
 ui.EXPORT_XLSX_SAVED: "Excel file saved: {path}"
+ui.EXPORT_MD_SAVED: "Markdown file saved: {path}"
+ui.EXPORT_JSON_SAVED: "JSON file saved: {path}"
 ui.EXPORT_CSV_FILTER_NAME: CSV file
+ui.EXPORT_MD_FILTER_NAME: Markdown document
+ui.EXPORT_JSON_FILTER_NAME: JSON file
 cli.HELP: |
   Usage: xlseek-cli [OPTIONS] [QUERY] [PATH]...
   Positional arguments: 1st argument = search query, 2nd+ arguments = target path(s)
@@ -169,6 +173,13 @@ ui.SEARCH_WARNING_PATH: Could not search {path}
 ui.INVALID_REGEX: The regular expression is invalid
 ui.EXPORT_CSV_BUTTON: Export CSV
 ui.EXPORT_XLSX_BUTTON: Export Excel
+ui.EXPORT_BUTTON_LABEL: Export
+ui.EXPORT_BUTTON_TOOLTIP: Export search results
+ui.EXPORT_MENU_TOOLTIP: Select export format
+ui.EXPORT_FORMAT_XLSX: Excel (.xlsx)
+ui.EXPORT_FORMAT_CSV: CSV (.csv)
+ui.EXPORT_FORMAT_MD: AI Markdown (.md)
+ui.EXPORT_FORMAT_JSON: JSON (.json)
 ui.RESULTS_TITLE: Search results
 ui.FILTER_RESULTS_PLACEHOLDER: Filter results...
 ui.COLUMN_FILE: File name

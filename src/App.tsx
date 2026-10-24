@@ -587,6 +587,12 @@ export const App: React.FC = () => {
 
         language={language}
 
+        llmOptions={{
+          column_window_size: defaultOptions.llm_column_window_size ?? LLM_DEFAULTS.COLUMN_WINDOW_SIZE,
+          copy_type: (defaultOptions.llm_default_copy_type as LlmCopyType) ?? "table",
+          word_mode: (defaultOptions.llm_word_extraction_mode as WordExtractionMode) ?? "headings_and_paragraph",
+        }}
+
       />
 
 

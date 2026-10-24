@@ -130,18 +130,20 @@ export interface CellPreviewData {
 /**
  * Export output format union type
  */
-export type ExportFormat = "csv" | "xlsx";
+export type ExportFormat = "csv" | "xlsx" | "md" | "json";
 
 /**
  * Export request parameter interface
  */
 import type { DisplayLanguage } from "../locale-core";
+import type { LlmCopyOptions } from "./llm";
 
 export interface ExportRequest {
   format: ExportFormat;
   language: DisplayLanguage;
   output_path: string;
   items: SearchMatch[];
+  llm_options?: LlmCopyOptions;
 }
 
 /**

@@ -8,16 +8,16 @@
 //! Conforms to Constitution Principle I (English comments/errors), Principle II (Constant references),
 //! and Principle III (Header comments).
 
-use crate::export::{export_to_csv, export_to_xlsx};
+use crate::export::{export_to_csv, export_to_json, export_to_md, export_to_xlsx};
 use crate::models::{CommandError, ErrorCode, ExportFormat, ExportRequest};
 use tauri_plugin_i18n::PluginI18nExt;
 
 /// ## Description
-/// Exports search result items to the specified file path in the requested format (CSV or Excel).
+/// Exports search result items to the specified file path in the requested format (CSV, Excel, AI Markdown, or JSON).
 ///
 /// ## Arguments
 /// - `app_handle`: `tauri::AppHandle` - Application handle to access plugin translation catalogs
-/// - `request`: `ExportRequest` - Export format, target path, language, and items list
+/// - `request`: `ExportRequest` - Export format, target path, language, items list, and optional LLM context options
 ///
 /// ## Returns
 /// - `Result<(), CommandError>`: `Ok(())` on success, or CommandError on unsupported language or failure
@@ -50,6 +50,12 @@ pub async fn export_results(
             &request.language,
             &catalogs,
         ),
+        ExportFormat::Md => export_to_md(
+            &request.output_path,
+            &request.items,
+            request.llm_options.as_ref(),
+        ),
+        ExportFormat::Json => export_to_json(&request.output_path, &request.items),
     })
     .await
     .map_err(|_| CommandError {

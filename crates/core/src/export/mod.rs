@@ -7,9 +7,13 @@
 //! functionality for search results.
 
 pub mod csv_export;
+pub mod json_export;
+pub mod md_export;
 pub mod xlsx_export;
 
 pub use csv_export::{export_to_csv, write_csv_to_writer};
+pub use json_export::{export_to_json, write_json_to_writer, JsonExportMatch, JsonExportPayload};
+pub use md_export::{export_to_md, write_md_to_writer};
 pub use xlsx_export::export_to_xlsx;
 
 use std::borrow::Cow;

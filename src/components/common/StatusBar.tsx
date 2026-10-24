@@ -5,37 +5,83 @@
  *
  * ## Description
  * Displays scan progress state, scanned file count, match count, and elapsed time at the bottom of the screen.
- * Renders progress bar and triggers CSV/Excel export buttons for search results.
+ * Renders progress bar, consolidated export split button with format selection menu, and dialog triggers.
  * Complies with Constitution Principle I (English documentation), Principle II (constant reference), and Principle III (comprehensive documentation).
  */
 
-import React from "react";
-import { FileText, FileSpreadsheet, Info, Settings } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { FileText, FileSpreadsheet, FileCode, Braces, ChevronDown, Settings, Info } from "lucide-react";
 import { save } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
-import { ScanProgress, SearchMatch, ExportRequest } from "../../types/search";
-import { COMMANDS } from "../../constants";
+import { ScanProgress, SearchMatch, ExportRequest, ExportFormat } from "../../types/search";
+import { LlmCopyOptions } from "../../types/llm";
+import { COMMANDS, EXPORT_CONSTANTS } from "../../constants";
 import { DisplayLanguage } from "../../locale-core";
-import { useTranslation } from "../../i18n";
+import { useTranslation, TranslationKey, TranslationValues } from "../../i18n";
+
+interface ExportFormatOption {
+  format: ExportFormat;
+  labelKey: TranslationKey;
+  filterKey: TranslationKey;
+  savedKey: TranslationKey;
+  icon: React.ComponentType<{ className?: string }>;
+  iconColor: string;
+}
+
+const EXPORT_FORMAT_OPTIONS: ExportFormatOption[] = [
+  {
+    format: "xlsx",
+    labelKey: EXPORT_CONSTANTS.LABEL_XLSX,
+    filterKey: EXPORT_CONSTANTS.FILTER_XLSX,
+    savedKey: EXPORT_CONSTANTS.SAVED_XLSX,
+    icon: FileSpreadsheet,
+    iconColor: "text-emerald-500",
+  },
+  {
+    format: "csv",
+    labelKey: EXPORT_CONSTANTS.LABEL_CSV,
+    filterKey: EXPORT_CONSTANTS.FILTER_CSV,
+    savedKey: EXPORT_CONSTANTS.SAVED_CSV,
+    icon: FileText,
+    iconColor: "text-zinc-400",
+  },
+  {
+    format: "md",
+    labelKey: EXPORT_CONSTANTS.LABEL_MD,
+    filterKey: EXPORT_CONSTANTS.FILTER_MD,
+    savedKey: EXPORT_CONSTANTS.SAVED_MD,
+    icon: FileCode,
+    iconColor: "text-sky-400",
+  },
+  {
+    format: "json",
+    labelKey: EXPORT_CONSTANTS.LABEL_JSON,
+    filterKey: EXPORT_CONSTANTS.FILTER_JSON,
+    savedKey: EXPORT_CONSTANTS.SAVED_JSON,
+    icon: Braces,
+    iconColor: "text-amber-400",
+  },
+];
 
 interface StatusBarProps {
   progress: ScanProgress | null;
   items: SearchMatch[];
-  onShowToast: (key: import("../../i18n").TranslationKey, values?: import("../../i18n").TranslationValues) => void;
+  onShowToast: (key: TranslationKey, values?: TranslationValues) => void;
   onOpenAbout: () => void;
   onOpenSettings: () => void;
   language: DisplayLanguage;
+  llmOptions?: LlmCopyOptions;
 }
 
 /**
  * ## Description
- * Component displaying the bottom status bar of the application.
+ * Component displaying the bottom status bar of the application with consolidated export controls.
  *
  * ## Arguments
- * @param props - Progress details, result match list, toast callback, About modal opener, settings opener
+ * @param props - Progress details, result match list, toast callback, About modal opener, settings opener, and optional LLM context options
  *
  * ## Returns
- * @returns Rendered status bar element
+ * @returns Rendered status bar element with export split button and format menu
  *
  * ## Errors / Exceptions
  * Export failures trigger toast notifications; no uncaught exceptions are thrown.
@@ -47,10 +93,51 @@ export const StatusBar: React.FC<StatusBarProps> = ({
   onOpenAbout,
   onOpenSettings,
   language,
+  llmOptions,
 }) => {
   const t = useTranslation();
   const isScanning = progress?.state === "Scanning";
   const isDetermined = !!(progress && progress.total_files > 0);
+
+  const [activeFormat, setActiveFormat] = useState<ExportFormat>(() => {
+    try {
+      // Constant reference: EXPORT_CONSTANTS.STORAGE_KEY_FORMAT
+      const stored = window.localStorage.getItem(EXPORT_CONSTANTS.STORAGE_KEY_FORMAT);
+      if (stored === "xlsx" || stored === "csv" || stored === "md" || stored === "json") {
+        return stored;
+      }
+    } catch {
+      // Storage access error fallback
+    }
+    // Constant reference: EXPORT_CONSTANTS.DEFAULT_FORMAT
+    return EXPORT_CONSTANTS.DEFAULT_FORMAT as ExportFormat;
+  });
+
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuContainerRef.current && !menuContainerRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isMenuOpen]);
 
   const percent =
     isDetermined && progress
@@ -67,27 +154,25 @@ export const StatusBar: React.FC<StatusBarProps> = ({
       ? 100
       : 0;
 
-  const handleExport = async (format: "csv" | "xlsx") => {
+  const handleExport = async (format: ExportFormat) => {
     if (items.length === 0) {
-      // Translation reference: t("ui.EXPORT_NO_RESULTS_MSG")
-      onShowToast("ui.EXPORT_NO_RESULTS_MSG");
+      // Translation reference: t(EXPORT_CONSTANTS.NO_RESULTS_MSG)
+      onShowToast(EXPORT_CONSTANTS.NO_RESULTS_MSG);
       return;
     }
 
+    const option = EXPORT_FORMAT_OPTIONS.find((opt) => opt.format === format) ?? EXPORT_FORMAT_OPTIONS[0];
+
     try {
-      // Translation reference: t("ui.EXPORT_DEFAULT_FILENAME_PREFIX")
-      const defaultFilename = `${t("ui.EXPORT_DEFAULT_FILENAME_PREFIX")}${new Date()
+      // Translation reference: t(EXPORT_CONSTANTS.DEFAULT_FILENAME_PREFIX)
+      const defaultFilename = `${t(EXPORT_CONSTANTS.DEFAULT_FILENAME_PREFIX)}${new Date()
         .toISOString()
         .slice(0, 10)}.${format}`;
 
       const selectedPath = await save({
         filters: [
           {
-            // Translation reference: t("ui.EXPORT_CSV_FILTER_NAME") / t("ui.EXPORT_XLSX_FILTER_NAME")
-            name:
-              format === "csv"
-                ? t("ui.EXPORT_CSV_FILTER_NAME")
-                : t("ui.EXPORT_XLSX_FILTER_NAME"),
+            name: t(option.filterKey),
             extensions: [format],
           },
         ],
@@ -101,18 +186,34 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         output_path: selectedPath,
         items,
         language,
+        llm_options: llmOptions,
       };
 
       // Constant reference: COMMANDS.EXPORT_RESULTS
       await invoke(COMMANDS.EXPORT_RESULTS, { request: req });
-      // Translation reference: formats path interpolation
-      onShowToast(format === "csv" ? "ui.EXPORT_CSV_SAVED" : "ui.EXPORT_XLSX_SAVED", { path: selectedPath });
+      onShowToast(option.savedKey, { path: selectedPath });
     } catch {
       console.error("[StatusBar] Export failed");
-      // Translation reference: t("ui.EXPORT_FAILED")
-      onShowToast("ui.EXPORT_FAILED");
+      // Translation reference: t(EXPORT_CONSTANTS.EXPORT_FAILED)
+      onShowToast(EXPORT_CONSTANTS.EXPORT_FAILED);
     }
   };
+
+  const handleSelectFormat = (format: ExportFormat) => {
+    setIsMenuOpen(false);
+    setActiveFormat(format);
+    try {
+      // Constant reference: EXPORT_CONSTANTS.STORAGE_KEY_FORMAT
+      window.localStorage.setItem(EXPORT_CONSTANTS.STORAGE_KEY_FORMAT, format);
+    } catch {
+      // Ignore localStorage write error
+    }
+    void handleExport(format);
+  };
+
+  const activeOption =
+    EXPORT_FORMAT_OPTIONS.find((opt) => opt.format === activeFormat) ?? EXPORT_FORMAT_OPTIONS[0];
+  const ActiveIcon = activeOption.icon;
 
   const statusText = (() => {
     if (!progress) {
@@ -203,29 +304,72 @@ export const StatusBar: React.FC<StatusBarProps> = ({
         </span>
       </div>
 
-      {/* Right controls: Export and dialog triggers */}
+      {/* Right controls: Export Split Button and dialog triggers */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        <button type="button" onClick={onOpenSettings} title={t("ui.SETTINGS")} aria-label={t("ui.SETTINGS")} className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded border border-zinc-700/60 transition flex items-center justify-center cursor-pointer">
+        <button
+          type="button"
+          onClick={onOpenSettings}
+          title={t("ui.SETTINGS")}
+          aria-label={t("ui.SETTINGS")}
+          className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded border border-zinc-700/60 transition flex items-center justify-center cursor-pointer"
+        >
           <Settings className="w-3.5 h-3.5" />
         </button>
-        <button
-          type="button"
-          onClick={() => handleExport("csv")}
-          disabled={items.length === 0}
-          className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-200 hover:text-white rounded border border-zinc-700 flex items-center gap-1.5 transition"
-        >
-          <FileText className="w-3.5 h-3.5 text-zinc-400" />
-          <span>{t("ui.EXPORT_CSV_BUTTON")}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => handleExport("xlsx")}
-          disabled={items.length === 0}
-          className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-emerald-400 hover:text-emerald-300 rounded border border-zinc-700 flex items-center gap-1.5 transition"
-        >
-          <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
-          <span>{t("ui.EXPORT_XLSX_BUTTON")}</span>
-        </button>
+
+        {/* Consolidated Export Split Button */}
+        <div ref={menuContainerRef} className="relative flex items-center">
+          <button
+            type="button"
+            onClick={() => handleExport(activeFormat)}
+            disabled={items.length === 0}
+            title={t(EXPORT_CONSTANTS.BUTTON_TOOLTIP)}
+            aria-label={t(EXPORT_CONSTANTS.BUTTON_TOOLTIP)}
+            className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-200 hover:text-white rounded-l border border-zinc-700 flex items-center gap-1.5 transition text-xs font-medium cursor-pointer"
+          >
+            <ActiveIcon className={`w-3.5 h-3.5 ${activeOption.iconColor}`} />
+            <span>{t(activeOption.labelKey)}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsMenuOpen((prev) => !prev)}
+            disabled={items.length === 0}
+            title={t(EXPORT_CONSTANTS.MENU_TOOLTIP)}
+            aria-label={t(EXPORT_CONSTANTS.MENU_TOOLTIP)}
+            aria-haspopup="menu"
+            aria-expanded={isMenuOpen}
+            className="px-1.5 py-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-400 hover:text-zinc-200 rounded-r border-y border-r border-zinc-700 flex items-center justify-center transition cursor-pointer border-l-0"
+          >
+            <ChevronDown className={`w-3 h-3 transition-transform ${isMenuOpen ? "rotate-180" : ""}`} />
+          </button>
+
+          {/* Upward format selection menu */}
+          {isMenuOpen && (
+            <div
+              role="menu"
+              className="absolute bottom-full right-0 mb-1.5 w-44 bg-[#1f1f23] border border-zinc-700/80 rounded-md shadow-xl py-1 z-50 text-xs overflow-hidden"
+            >
+              {EXPORT_FORMAT_OPTIONS.map((opt) => {
+                const Icon = opt.icon;
+                const isSelected = opt.format === activeFormat;
+                return (
+                  <button
+                    key={opt.format}
+                    type="button"
+                    role="menuitem"
+                    onClick={() => handleSelectFormat(opt.format)}
+                    className={`w-full px-3 py-1.5 text-left flex items-center gap-2 hover:bg-zinc-700/70 transition cursor-pointer ${
+                      isSelected ? "bg-zinc-800 text-white font-medium" : "text-zinc-300"
+                    }`}
+                  >
+                    <Icon className={`w-3.5 h-3.5 ${opt.iconColor}`} />
+                    <span className="flex-1">{t(opt.labelKey)}</span>
+                    {isSelected && <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
         {/* Vertical divider */}
         <div className="h-3.5 w-px bg-zinc-800 flex-shrink-0" />

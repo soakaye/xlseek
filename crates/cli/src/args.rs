@@ -353,6 +353,20 @@ where
                         return Err(constants::ERR_CLI_FORMAT.to_string());
                     }
                 }
+                Some(constants::CLI_FORMAT_MD) => {
+                    if ext.eq_ignore_ascii_case(constants::CLI_FORMAT_MD) {
+                        ExportFormat::Md
+                    } else {
+                        return Err(constants::ERR_CLI_FORMAT.to_string());
+                    }
+                }
+                Some(constants::CLI_FORMAT_JSON) => {
+                    if ext.eq_ignore_ascii_case(constants::CLI_FORMAT_JSON) {
+                        ExportFormat::Json
+                    } else {
+                        return Err(constants::ERR_CLI_FORMAT.to_string());
+                    }
+                }
                 Some(_) => return Err(constants::ERR_CLI_FORMAT.to_string()),
                 None => {
                     // Automatic format inference
@@ -360,6 +374,10 @@ where
                         ExportFormat::Csv
                     } else if ext.eq_ignore_ascii_case(constants::CLI_FORMAT_XLSX) {
                         ExportFormat::Xlsx
+                    } else if ext.eq_ignore_ascii_case(constants::CLI_FORMAT_MD) {
+                        ExportFormat::Md
+                    } else if ext.eq_ignore_ascii_case(constants::CLI_FORMAT_JSON) {
+                        ExportFormat::Json
                     } else {
                         return Err(constants::ERR_CLI_FORMAT.to_string());
                     }
@@ -368,9 +386,11 @@ where
             (CliOutputTarget::File(output_path), format)
         }
         None => {
-            // Default to stdout streaming mode when output is omitted. Format is CSV only.
+            // Default to stdout streaming mode when output is omitted. Supported formats: CSV, MD, JSON.
             let format = match format_arg_opt {
                 Some(constants::CLI_FORMAT_CSV) | None => ExportFormat::Csv,
+                Some(constants::CLI_FORMAT_MD) => ExportFormat::Md,
+                Some(constants::CLI_FORMAT_JSON) => ExportFormat::Json,
                 _ => return Err(constants::ERR_CLI_FORMAT.to_string()),
             };
             (CliOutputTarget::Stdout, format)

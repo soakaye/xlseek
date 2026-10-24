@@ -36,8 +36,8 @@
   - **Text Document Preview**: Read matching Word paragraphs with line/paragraph numbering, auto-scrolling to matches, and query term highlighting.
   - **Direct Launching**: Open files in system default applications or specific installed spreadsheet apps, or reveal the file highlighted in File Explorer / Finder / Linux file managers.
 - **Search History & Autocomplete**: Remembers recent search queries, target directory paths, and ignore patterns with autocompletion.
-- **Export Capabilities**: Export search results directly to CSV or formatted Excel (`.xlsx`) files.
-- **Headless CLI Included**: Run batch searches and export results or stream CSV to stdout via `xlseek-cli`.
+- **Export Capabilities**: Consolidated split button to export search results to Excel (`.xlsx`), CSV (`.csv`), AI Markdown (`.md`), or structured JSON (`.json`) files with remembered format preference.
+- **Headless CLI Included**: Run batch searches and export results or stream CSV, Markdown, or JSON to stdout via `xlseek-cli`.
 - **Bilingual Interface**: Seamless switching between Japanese and English UI, configurable default search options, and history limits.
 - **Cross-Platform Desktop & CLI**: Full native support for Windows, macOS, and Linux, including OS-specific file manager integration (Explorer, Finder, DBus ShowItems / xdg-open) and external spreadsheet application launching.
 - **Transparent Open Source**: View application details, version information, and third-party OSS licenses in the About dialog.
@@ -349,7 +349,7 @@ cargo fmt --check
 xlseek/
 ├── crates/
 │   ├── core/           # xlseek-core: shared engine, Excel & Word parsing, i18n, models, and export logic
-│   └── cli/            # xlseek-cli: standalone command-line executable (streaming CSV, XLSX export)
+│   └── cli/            # xlseek-cli: standalone command-line executable (streaming CSV/MD/JSON, XLSX/CSV/MD/JSON export)
 ├── src/                # React / TypeScript frontend
 │   ├── components/     # UI components (search, results, preview, about, dialogs)
 │   ├── hooks/          # Custom hooks for search, history, and internationalization

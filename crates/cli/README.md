@@ -1,7 +1,7 @@
 <!-- Description: Overview and command line reference for xlseek-cli standalone tool. Arguments & Returns: Documents options, positional arguments, stdout streaming, export formats, ignore patterns, and exit statuses. Errors / Exceptions: Explains error validation, overwrite rules, and exit status codes 0, 1, and 2. -->
 # xlseek-cli
 
-Standalone command-line interface for **Excel Seek (`xlseek`)**. Enables fast batch search across Excel workbooks and document files without launching a graphical environment. Search results can be streamed as CSV to standard output (`stdout`) or exported directly to `.csv` or `.xlsx` files.
+Standalone command-line interface for **Excel Seek (`xlseek`)**. Enables fast batch search across Excel workbooks and document files without launching a graphical environment. Search results can be streamed as CSV, Markdown, or JSON to standard output (`stdout`) or exported directly to `.csv`, `.xlsx`, `.md`, or `.json` files.
 
 ---
 
@@ -30,8 +30,8 @@ xlseek-cli [OPTIONS] [QUERY] [PATH]...
 - **Flag Options**:
   - `-q, --query <TEXT>`: Search query string or regular expression.
   - `-p, --path <PATH>`: Search target directory or file (comma-separated or quoted paths supported).
-  - `-o, --output <PATH>`: Destination output file. When omitted, CSV results stream to `stdout`.
-  - `-f, --format <csv|xlsx>`: Export format. Inferred from extension if `-o` is given; defaults to `csv` for `stdout`.
+  - `-o, --output <PATH>`: Destination output file (`.csv`, `.xlsx`, `.md`, `.json`). When omitted, results stream to `stdout` (`csv`, `md`, or `json`).
+  - `-f, --format <csv|xlsx|md|json>`: Export format. Inferred from file extension if `-o` is provided; defaults to `csv` for `stdout` (`xlsx` cannot be streamed to `stdout`).
   - `-i, --ignore-patterns <LIST>`: Comma-separated glob patterns using `.gitignore` syntax (e.g. `~$*, *.tmp, backup/*`).
   - `-c, --match-case <BOOL>`: Case-sensitive matching (default: `false`).
   - `-r, --regex <BOOL>`: Treat query as regular expression (default: `false`).
@@ -48,11 +48,23 @@ xlseek-cli [OPTIONS] [QUERY] [PATH]...
 ## Usage Examples
 
 ```bash
-# Quick positional search piped to grep or head via stdout
+# Quick positional search piped to grep or head via stdout (CSV)
 ./target/release/xlseek-cli "Revenue" ./reports
+
+# Stream structured JSON search results to stdout (matching xlseek-mcp format)
+./target/release/xlseek-cli "Revenue" ./reports -f json
+
+# Stream AI-ready Markdown table context to stdout
+./target/release/xlseek-cli "Revenue" ./reports -f md
 
 # Export search to formatted XLSX file
 ./target/release/xlseek-cli -p ./reports -q "Revenue" -o ./results.xlsx
+
+# Export search to AI-ready Markdown file (format inferred from .md extension)
+./target/release/xlseek-cli -p ./reports -q "Revenue" -o ./results.md
+
+# Export search to structured JSON file (format inferred from .json extension)
+./target/release/xlseek-cli -p ./reports -q "Revenue" -o ./results.json
 
 # Search across multiple directories with ignore patterns and English column headers
 ./target/release/xlseek-cli -p "./reports, ./archive" -q "Revenue" \

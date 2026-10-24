@@ -226,6 +226,9 @@ pub const XLSX_HEADER_FG_COLOR: u32 = 0x00FF_FFFF;
 
 /// Column widths for export. Translated headers are retrieved from shared catalogs.
 pub const XLSX_COLUMN_WIDTHS: [f64; 9] = [8.0, 25.0, 40.0, 20.0, 12.0, 22.0, 14.0, 45.0, 30.0];
+pub const DEFAULT_EXPORT_FORMAT: &str = xlseek_core::constants::DEFAULT_EXPORT_FORMAT;
+pub const EXT_MD: &str = xlseek_core::constants::EXT_MD;
+pub const EXT_JSON: &str = xlseek_core::constants::EXT_JSON;
 pub const ERR_INVALID_LANGUAGE: &str = "Unsupported export language";
 pub const EXPORT_HEADER_KEYS: [&str; 9] = [
     "export.header.id",

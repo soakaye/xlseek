@@ -18,10 +18,10 @@
 
 **Purpose**: Establish centralized constants, file extensions, and translation keys across core, backend, CLI, and frontend.
 
-- [ ] T001 [P] Define export format identifiers (`EXT_MD`, `EXT_JSON`, `CLI_FORMAT_MD`, `CLI_FORMAT_JSON`), default export format constant (`DEFAULT_EXPORT_FORMAT = "xlsx"`), and translation key constants in `crates/core/src/constants.rs`
-- [ ] T002 [P] Define UI translation keys for Markdown/JSON export buttons, dialog filters, and completion toast notifications in `crates/core/locales/en.yml` and `crates/core/locales/ja.yml`
-- [ ] T003 [P] Re-export new format constants in `src-tauri/src/constants.rs` and `crates/cli/src/constants.rs`
-- [ ] T004 [P] Define frontend constants (`EXPORT_FORMATS`, `EXPORT_FORMAT_STORAGE_KEY`, `DEFAULT_EXPORT_FORMAT`) in `src/constants/index.ts`
+- [X] T001 [P] Define export format identifiers (`EXT_MD`, `EXT_JSON`, `CLI_FORMAT_MD`, `CLI_FORMAT_JSON`), default export format constant (`DEFAULT_EXPORT_FORMAT = "xlsx"`), and translation key constants in `crates/core/src/constants.rs`
+- [X] T002 [P] Define UI translation keys for Markdown/JSON export buttons, dialog filters, and completion toast notifications in `crates/core/locales/en.yml` and `crates/core/locales/ja.yml`
+- [X] T003 [P] Re-export new format constants in `src-tauri/src/constants.rs` and `crates/cli/src/constants.rs`
+- [X] T004 [P] Define frontend constants (`EXPORT_FORMATS`, `EXPORT_FORMAT_STORAGE_KEY`, `DEFAULT_EXPORT_FORMAT`) in `src/constants/index.ts`
 
 ---
 
@@ -31,9 +31,9 @@
 
 **⚠️ CRITICAL**: Must be completed before User Story implementation begins.
 
-- [ ] T005 [P] Extend `ExportFormat` enum (`Csv`, `Xlsx`, `Md`, `Json`) with serde lowercase serialization and update `ExportRequest` with optional `llm_options: Option<LlmCopyOptions>` in `crates/core/src/models/mod.rs`
-- [ ] T006 [P] Update frontend `ExportFormat` union type (`"csv" | "xlsx" | "md" | "json"`) and `ExportRequest` interface with `llm_options?: LlmCopyOptions` in `src/types/search.ts`
-- [ ] T007 Re-export `md_export` and `json_export` submodules in `crates/core/src/export/mod.rs`
+- [X] T005 [P] Extend `ExportFormat` enum (`Csv`, `Xlsx`, `Md`, `Json`) with serde lowercase serialization and update `ExportRequest` with optional `llm_options: Option<LlmCopyOptions>` in `crates/core/src/models/mod.rs`
+- [X] T006 [P] Update frontend `ExportFormat` union type (`"csv" | "xlsx" | "md" | "json"`) and `ExportRequest` interface with `llm_options?: LlmCopyOptions` in `src/types/search.ts`
+- [X] T007 Re-export `md_export` and `json_export` submodules in `crates/core/src/export/mod.rs`
 
 **Checkpoint**: Core data models and constants ready - user story implementation can proceed.
 
@@ -47,10 +47,10 @@
 
 ### Implementation for User Story 1
 
-- [ ] T008 [P] [US1] Create frontend unit tests for Export Split Button rendering, format switching, menu open/close, and disabled state in `src/components/common/__tests__/StatusBar.test.tsx`
-- [ ] T009 [US1] Implement Export Split Button component with upward format dropdown menu, `Escape` key and outside-click dismissal, and `localStorage` format persistence in `src/components/common/StatusBar.tsx`
-- [ ] T010 [US1] Pass defaultOptions-derived `LlmCopyOptions` (`column_window_size`, `copy_type`, `word_extraction_mode`) into `StatusBar` in `src/App.tsx`
-- [ ] T011 [US1] Synchronize the standalone HTML UI mockup status bar export split button and upward format menu in `design/mainui/index.html`
+- [X] T008 [P] [US1] Create frontend unit tests for Export Split Button rendering, format switching, menu open/close, and disabled state in `src/components/common/__tests__/StatusBar.test.tsx`
+- [X] T009 [US1] Implement Export Split Button component with upward format dropdown menu, `Escape` key and outside-click dismissal, and `localStorage` format persistence in `src/components/common/StatusBar.tsx`
+- [X] T010 [US1] Pass defaultOptions-derived `LlmCopyOptions` (`column_window_size`, `copy_type`, `word_extraction_mode`) into `StatusBar` in `src/App.tsx`
+- [X] T011 [US1] Synchronize the standalone HTML UI mockup status bar export split button and upward format menu in `design/mainui/index.html`
 
 **Checkpoint**: User Story 1 (MVP) is fully functional in the UI; format switching and dialog triggers operate cleanly.
 
@@ -64,9 +64,9 @@
 
 ### Implementation for User Story 2
 
-- [ ] T012 [P] [US2] Write unit tests for Markdown export generation, workbook grouping, and empty match slice handling in `crates/core/tests/export_md_test.rs`
-- [ ] T013 [US2] Implement `write_md_to_writer` and `export_to_md` reusing `extract_llm_context` with atomic temp-file staging in `crates/core/src/export/md_export.rs`
-- [ ] T014 [US2] Wire `ExportFormat::Md` handling and `llm_options` extraction in Tauri command handler `src-tauri/src/commands/export_cmd.rs`
+- [X] T012 [P] [US2] Write unit tests for Markdown export generation, workbook grouping, and empty match slice handling in `crates/core/tests/export_md_test.rs`
+- [X] T013 [US2] Implement `write_md_to_writer` and `export_to_md` reusing `extract_llm_context` with atomic temp-file staging in `crates/core/src/export/md_export.rs`
+- [X] T014 [US2] Wire `ExportFormat::Md` handling and `llm_options` extraction in Tauri command handler `src-tauri/src/commands/export_cmd.rs`
 
 **Checkpoint**: User Stories 1 and 2 functional; AI Markdown files can be exported from GUI.
 
@@ -80,9 +80,9 @@
 
 ### Implementation for User Story 3
 
-- [ ] T015 [P] [US3] Write unit tests for JSON export serialization, schema fields, and path normalization in `crates/core/tests/export_json_test.rs`
-- [ ] T016 [US3] Implement `JsonExportPayload`, `JsonExportMatch`, `write_json_to_writer`, and `export_to_json` with atomic temp-file staging in `crates/core/src/export/json_export.rs`
-- [ ] T017 [US3] Wire `ExportFormat::Json` handling in Tauri command handler `src-tauri/src/commands/export_cmd.rs`
+- [X] T015 [P] [US3] Write unit tests for JSON export serialization, schema fields, and path normalization in `crates/core/tests/export_json_test.rs`
+- [X] T016 [US3] Implement `JsonExportPayload`, `JsonExportMatch`, `write_json_to_writer`, and `export_to_json` with atomic temp-file staging in `crates/core/src/export/json_export.rs`
+- [X] T017 [US3] Wire `ExportFormat::Json` handling in Tauri command handler `src-tauri/src/commands/export_cmd.rs`
 
 **Checkpoint**: User Stories 1, 2, and 3 functional; JSON export works seamlessly alongside Markdown, CSV, and XLSX.
 
@@ -96,10 +96,10 @@
 
 ### Implementation for User Story 4
 
-- [ ] T018 [P] [US4] Write integration tests for CLI `-f md`, `-f json`, `-o file.md`, `-o file.json`, and stdout streaming in `crates/cli/tests/cli_search.rs`
-- [ ] T019 [US4] Update CLI argument parsing for `-f <csv|xlsx|md|json>` and `.md`/`.json` extension inference in `crates/cli/src/args.rs`
-- [ ] T020 [US4] Update CLI result publication to support `ExportFormat::Md` and `ExportFormat::Json` via temporary directory staging in `crates/cli/src/output.rs`
-- [ ] T021 [US4] Update CLI stdout streaming for Markdown and JSON output in `crates/cli/src/lib.rs`
+- [X] T018 [P] [US4] Write integration tests for CLI `-f md`, `-f json`, `-o file.md`, `-o file.json`, and stdout streaming in `crates/cli/tests/cli_search.rs`
+- [X] T019 [US4] Update CLI argument parsing for `-f <csv|xlsx|md|json>` and `.md`/`.json` extension inference in `crates/cli/src/args.rs`
+- [X] T020 [US4] Update CLI result publication to support `ExportFormat::Md` and `ExportFormat::Json` via temporary directory staging in `crates/cli/src/output.rs`
+- [X] T021 [US4] Update CLI stdout streaming for Markdown and JSON output in `crates/cli/src/lib.rs`
 
 **Checkpoint**: All 4 user stories complete across GUI, CLI, and core engine.
 
@@ -109,9 +109,9 @@
 
 **Purpose**: Documentation updates, quality gate verification, and end-to-end scenario validation.
 
-- [ ] T022 [P] Update CLI documentation and command-line reference in `crates/cli/README.md` and workspace `README.md` / `README_ja.md`
-- [ ] T023 Run all workspace quality gates (`npm run build`, `npm test -- --run`, `cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo fmt --check`)
-- [ ] T024 Validate end-to-end scenarios per `specs/031-export-format-options/quickstart.md`
+- [X] T022 [P] Update CLI documentation and command-line reference in `crates/cli/README.md` and workspace `README.md` / `README_ja.md`
+- [X] T023 Run all workspace quality gates (`npm run build`, `npm test -- --run`, `cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D warnings`, `cargo fmt --check`)
+- [X] T024 Validate end-to-end scenarios per `specs/031-export-format-options/quickstart.md`
 
 ---
 

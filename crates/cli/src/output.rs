@@ -128,6 +128,12 @@ impl OutputGuard {
                 language,
                 catalogs,
             )?,
+            ExportFormat::Md => {
+                xlseek_core::export::export_to_md(&temporary_file_text, matches, None)?
+            }
+            ExportFormat::Json => {
+                xlseek_core::export::export_to_json(&temporary_file_text, matches)?
+            }
         }
         self.verify_output_identity()?;
         if self.overwrite {
