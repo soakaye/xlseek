@@ -94,9 +94,7 @@ worktrees/
 .cache/
 .tmp/
 tmp/
-.agents
 .agents/
-.claude
 .claude/
 
 
