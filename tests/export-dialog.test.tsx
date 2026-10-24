@@ -125,7 +125,7 @@ describe("StatusBar - Export Dialog Integration (US2)", () => {
           extensions: ["csv"],
         },
       ],
-      defaultPath: expect.stringMatching(/ExcelGrep_Results_.*\.csv$/),
+      defaultPath: expect.stringMatching(/ExcelSeek_Results_.*\.csv$/),
     });
     expect(mocks.invoke).toHaveBeenCalledWith("export_results", {
       request: {
@@ -168,7 +168,7 @@ describe("StatusBar - Export Dialog Integration (US2)", () => {
           extensions: ["xlsx"],
         },
       ],
-      defaultPath: expect.stringMatching(/ExcelGrep_Results_.*\.xlsx$/),
+      defaultPath: expect.stringMatching(/ExcelSeek_Results_.*\.xlsx$/),
     });
     expect(mocks.invoke).not.toHaveBeenCalled();
     expect(onShowToast).not.toHaveBeenCalled();

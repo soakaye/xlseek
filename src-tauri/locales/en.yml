@@ -53,7 +53,7 @@ cli.ERROR_OUTPUT: "Cannot save output: {path}"
 cli.ERROR_REGEX: Invalid regular expression
 cli.ERROR_NO_TYPES: Enable at least one search type
 ui.EXPORT_XLSX_FILTER_NAME: Excel workbook
-ui.EXPORT_DEFAULT_FILENAME_PREFIX: ExcelGrep_Results_
+ui.EXPORT_DEFAULT_FILENAME_PREFIX: ExcelSeek_Results_
 ui.COMPLETED: Search completed
 ui.CANCELLED: Search cancelled
 ui.ERROR: Error

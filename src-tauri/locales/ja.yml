@@ -53,7 +53,7 @@ cli.ERROR_OUTPUT: "出力先を保存できません: {path}"
 cli.ERROR_REGEX: 正規表現が不正です
 cli.ERROR_NO_TYPES: 検索対象種別を1つ以上有効にしてください
 ui.EXPORT_XLSX_FILTER_NAME: Excelブック
-ui.EXPORT_DEFAULT_FILENAME_PREFIX: ExcelGrep_Results_
+ui.EXPORT_DEFAULT_FILENAME_PREFIX: ExcelSeek_Results_
 ui.COMPLETED: 検索完了
 ui.CANCELLED: 検索中断
 ui.ERROR: エラー

@@ -232,7 +232,7 @@ describe("StatusBar Component - Export Split Button & Format Menu (US1)", () => 
           extensions: ["md"],
         },
       ],
-      defaultPath: expect.stringMatching(/ExcelGrep_Results_.*\.md$/),
+      defaultPath: expect.stringMatching(/ExcelSeek_Results_.*\.md$/),
     });
 
     // Verify invoke was called with llm_options
@@ -282,7 +282,7 @@ describe("StatusBar Component - Export Split Button & Format Menu (US1)", () => 
           extensions: ["json"],
         },
       ],
-      defaultPath: expect.stringMatching(/ExcelGrep_Results_.*\.json$/),
+      defaultPath: expect.stringMatching(/ExcelSeek_Results_.*\.json$/),
     });
     expect(mocks.invoke).toHaveBeenCalledWith("export_results", {
       request: {
