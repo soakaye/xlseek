@@ -3,5 +3,3 @@ worktree:
     - .venv
     - node_modules
     - .agents    
-
-
