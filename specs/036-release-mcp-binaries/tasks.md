@@ -15,7 +15,7 @@
 
 **Purpose**: Verify repository build prerequisites and current release workflow configuration
 
-- [ ] T001 Inspect current workflow structure in `.github/workflows/publish-to-auto-release.yml` and MCP crate configuration in `crates/mcp/Cargo.toml`
+- [X] T001 Inspect current workflow structure in `.github/workflows/publish-to-auto-release.yml` and MCP crate configuration in `crates/mcp/Cargo.toml`
 
 ---
 
@@ -23,7 +23,7 @@
 
 **Purpose**: Verify standalone `xlseek-mcp` builds and runs cleanly without GUI dependencies
 
-- [ ] T002 Verify local headless build and execution of `xlseek-mcp` via `cargo build --release -p xlseek-mcp` and test `./target/release/xlseek-mcp --help`
+- [X] T002 Verify local headless build and execution of `xlseek-mcp` via `cargo build --release -p xlseek-mcp` and test `./target/release/xlseek-mcp --help`
 
 **Checkpoint**: Core MCP crate verified — workflow implementation can now proceed
 
@@ -37,8 +37,8 @@
 
 ### Implementation for User Story 1
 
-- [ ] T003 [US1] Define `publish-mcp-binaries` job with `contents: write` permissions and checkout/toolchain setup in `.github/workflows/publish-to-auto-release.yml`
-- [ ] T004 [US1] Add the standalone release build step `cargo build --release -p xlseek-mcp --target ${{ matrix.target }}` in `.github/workflows/publish-to-auto-release.yml`
+- [X] T003 [US1] Define `publish-mcp-binaries` job with `contents: write` permissions and checkout/toolchain setup in `.github/workflows/publish-to-auto-release.yml`
+- [X] T004 [US1] Add the standalone release build step `cargo build --release -p xlseek-mcp --target ${{ matrix.target }}` in `.github/workflows/publish-to-auto-release.yml`
 
 **Checkpoint**: At this point, `publish-mcp-binaries` is defined as a standalone compilation job.
 
@@ -52,8 +52,8 @@
 
 ### Implementation for User Story 2
 
-- [ ] T005 [US2] Configure runner matrix with `fail-fast: false` across `macos-latest` (`aarch64-apple-darwin`), `ubuntu-24.04` (`x86_64-unknown-linux-gnu`), and `windows-latest` (`x86_64-pc-windows-msvc`) in `.github/workflows/publish-to-auto-release.yml`
-- [ ] T006 [US2] Implement platform archive packaging step using `tar` (with `chmod +x`) on Unix and `Compress-Archive` on Windows in `.github/workflows/publish-to-auto-release.yml`
+- [X] T005 [US2] Configure runner matrix with `fail-fast: false` across `macos-latest` (`aarch64-apple-darwin`), `ubuntu-24.04` (`x86_64-unknown-linux-gnu`), and `windows-latest` (`x86_64-pc-windows-msvc`) in `.github/workflows/publish-to-auto-release.yml`
+- [X] T006 [US2] Implement platform archive packaging step using `tar` (with `chmod +x`) on Unix and `Compress-Archive` on Windows in `.github/workflows/publish-to-auto-release.yml`
 
 **Checkpoint**: Archives are generated per platform with standard names `xlseek-mcp-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.archive_ext }}`.
 
@@ -67,7 +67,7 @@
 
 ### Implementation for User Story 3
 
-- [ ] T007 [US3] Add release upload step using `softprops/action-gh-release@v2` with `tag_name: ${{ github.ref_name }}` and `draft: true` in `.github/workflows/publish-to-auto-release.yml`
+- [X] T007 [US3] Add release upload step using `softprops/action-gh-release@v2` with `tag_name: ${{ github.ref_name }}` and `draft: true` in `.github/workflows/publish-to-auto-release.yml`
 
 **Checkpoint**: Complete release pipeline configuration attaches per-platform MCP archives to GitHub Releases.
 
@@ -77,9 +77,9 @@
 
 **Purpose**: Validation, syntax verification, and repository quality gates
 
-- [ ] T008 [P] Validate workflow YAML syntax in `.github/workflows/publish-to-auto-release.yml`
-- [ ] T009 [P] Run Rust workspace quality gates via `cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D warnings`, and `cargo fmt --check`
-- [ ] T010 Execute local quickstart verification steps per `specs/036-release-mcp-binaries/quickstart.md`
+- [X] T008 [P] Validate workflow YAML syntax in `.github/workflows/publish-to-auto-release.yml`
+- [X] T009 [P] Run Rust workspace quality gates via `cargo test --workspace`, `cargo clippy --workspace --all-targets -- -D warnings`, and `cargo fmt --check`
+- [X] T010 Execute local quickstart verification steps per `specs/036-release-mcp-binaries/quickstart.md`
 
 ---
 

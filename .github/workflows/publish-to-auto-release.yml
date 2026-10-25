@@ -1,8 +1,9 @@
-# Release workflow: builds the Tauri app for macOS (Apple Silicon), Linux, and Windows
-# and uploads the bundles to a draft GitHub Release.
-# Inputs: a pushed version tag matching `v*` (created by `npm version`); the release is
-# attached to that same tag, so no new tag is created by the workflow.
-# Errors: the job fails if the build fails or the GITHUB_TOKEN cannot create/update the release.
+# Release workflow: builds the Tauri desktop application bundles and compiles standalone
+# xlseek-mcp binary archives for macOS (Apple Silicon), Linux, and Windows, uploading
+# both sets of artifacts to a draft GitHub Release attached to the pushed tag.
+# Inputs: a pushed version tag matching `v*` (created by `npm version`); releases are
+# attached to that same tag without creating separate tags.
+# Errors: jobs fail if compilation, packaging, or the GITHUB_TOKEN release upload fails.
 
 name: 'publish'
 
@@ -12,6 +13,59 @@ on:
       - 'v*'
 
 jobs:
+  publish-mcp-binaries:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'macos-latest'
+            target: 'aarch64-apple-darwin'
+            binary_name: 'xlseek-mcp'
+            archive_ext: 'tar.gz'
+          - platform: 'ubuntu-24.04'
+            target: 'x86_64-unknown-linux-gnu'
+            binary_name: 'xlseek-mcp'
+            archive_ext: 'tar.gz'
+          - platform: 'windows-latest'
+            target: 'x86_64-pc-windows-msvc'
+            binary_name: 'xlseek-mcp.exe'
+            archive_ext: 'zip'
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: build xlseek-mcp release binary
+        run: cargo build --release -p xlseek-mcp --target ${{ matrix.target }}
+
+      - name: package release archive (unix)
+        if: matrix.archive_ext == 'tar.gz'
+        run: |
+          chmod +x target/${{ matrix.target }}/release/${{ matrix.binary_name }}
+          tar -czvf "xlseek-mcp-${{ github.ref_name }}-${{ matrix.target }}.tar.gz" -C "target/${{ matrix.target }}/release" ${{ matrix.binary_name }}
+
+      - name: package release archive (windows)
+        if: matrix.archive_ext == 'zip'
+        shell: pwsh
+        run: |
+          Compress-Archive -Path "target/${{ matrix.target }}/release/${{ matrix.binary_name }}" -DestinationPath "xlseek-mcp-${{ github.ref_name }}-${{ matrix.target }}.zip" -Force
+
+      - name: upload mcp release asset
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          draft: true
+          files: xlseek-mcp-${{ github.ref_name }}-${{ matrix.target }}.${{ matrix.archive_ext }}
+
   publish-tauri:
     permissions:
       contents: write
