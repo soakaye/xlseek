@@ -210,7 +210,6 @@ ui.STATUS_ERROR_DETAIL: An error occurred
 about.TITLE: About Excel Seek
 about.APP_NAME: Excel Seek
 about.APP_DESCRIPTION: Fast and secure desktop search for Excel files
-about.COPYRIGHT: Copyright © 2026 soakaye
 about.APP_LICENSE_LABEL: "Distribution license: MIT License"
 about.TAB_ABOUT: About
 about.TAB_LICENSES: Open source licenses
@@ -237,7 +236,6 @@ about.LICENSE_LABEL: "License:"
 about.PACKAGE_LIST_LINK: View open-source licenses
 about.PACKAGE_COUNT_UNIT: packages
 about.FILTER_ACTIVE: Filter active
-about.APP_VERSION: 1.0.3
 common.translationUnavailable: Some text could not be translated.
 menu.about: About Excel Seek
 menu.services: Services

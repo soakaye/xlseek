@@ -2,8 +2,8 @@
  * Copyright (c) 2026 soakaye
  *
  * ## Description
- * Pure string transformation and file synchronization utilities for keeping
- * repository version configurations in sync across Rust, Tauri, React, and i18n catalogs.
+ * Pure string transformation, Cargo execution, and Git staging verification utilities
+ * for keeping the repository version configuration in sync across the Rust workspace.
  *
  * ## Arguments & Returns
  * Exports validator functions, string transformer functions, and an asynchronous
@@ -11,7 +11,7 @@
  *
  * ## Errors / Exceptions
  * Propagates TypeError on invalid semver or malformed file content. Propagates Node.js
- * filesystem or child process errors when reading, writing, or executing cargo commands.
+ * filesystem or child process errors when reading, writing, or executing Cargo and Git commands.
  */
 
 import { spawnSync } from "node:child_process";
@@ -21,29 +21,19 @@ import {
   CARGO_CHECK_SUBCOMMAND,
   CARGO_COMMAND,
   CARGO_LOCK_PATH,
-  CARGO_PACKAGE_VERSION_PATTERN,
+  CARGO_LOCK_VERIFY_FAILED_MESSAGE,
   CARGO_WORKSPACE_FLAG,
-  CLI_CARGO_TOML_PATH,
-  CONSTANTS_APP_VERSION_PATTERN,
-  CONSTANTS_INDEX_PATH,
-  CORE_CARGO_TOML_PATH,
-  DESIGN_HTML_APP_HEADER_VERSION_PATTERN,
-  DESIGN_HTML_APP_MODAL_VERSION_PATTERN,
-  DESIGN_INDEX_HTML_PATH,
+  CARGO_WORKSPACE_PACKAGE_VERSION_PATTERN,
   GIT_ADD_SUBCOMMAND,
+  GIT_CACHED_FLAG,
   GIT_COMMAND,
+  GIT_DIFF_SUBCOMMAND,
+  GIT_NAME_ONLY_FLAG,
+  GIT_STAGE_VERIFY_FAILED_MESSAGE,
   INVALID_SEMVER_MESSAGE,
-  LOCALE_APP_VERSION_PATTERN,
-  LOCALES_CORE_EN_PATH,
-  LOCALES_CORE_JA_PATH,
-  LOCALES_TAURI_EN_PATH,
-  LOCALES_TAURI_JA_PATH,
-  MCP_CARGO_TOML_PATH,
   PATTERN_NOT_MATCHED_MESSAGE,
+  ROOT_CARGO_TOML_PATH,
   SEMVER_PATTERN,
-  TAURI_CARGO_TOML_PATH,
-  TAURI_CONF_PATH,
-  TAURI_CONF_VERSION_PATTERN,
   UTF8_ENCODING,
   VERSION_PREFIX_PATTERN,
 } from "./sync-version-constants.js";
@@ -77,202 +67,170 @@ export function validateSemver(version) {
 }
 
 /**
- * Updates the version field inside tauri.conf.json content.
+ * Updates the workspace package version entry inside the root Cargo.toml manifest content.
  *
  * ## Description
- * Replaces the top-level "version" property in the JSON string with the new version.
+ * Replaces the `version = "..."` entry within the `[workspace.package]` table with the new version.
  *
  * ## Arguments & Returns
- * - `content` {string}: Existing content of tauri.conf.json.
- * - `newVersion` {string}: Validated semantic version string.
- * - Returns {string}: Updated tauri.conf.json content.
- *
- * ## Errors / Exceptions
- * - Throws {Error}: When the version pattern is not found in the content.
- */
-export function updateTauriConf(content, newVersion) {
-  // Constant reference: TAURI_CONF_VERSION_PATTERN.
-  if (!TAURI_CONF_VERSION_PATTERN.test(content)) {
-    // Constant reference: PATTERN_NOT_MATCHED_MESSAGE.
-    throw new Error(`${PATTERN_NOT_MATCHED_MESSAGE} (tauri.conf.json version)`);
-  }
-  return content.replace(TAURI_CONF_VERSION_PATTERN, `$1${newVersion}$2`);
-}
-
-/**
- * Updates the package version entry inside a Cargo.toml manifest content.
- *
- * ## Description
- * Replaces the `version = "..."` entry within the `[package]` table with the new version.
- *
- * ## Arguments & Returns
- * - `content` {string}: Existing content of Cargo.toml.
+ * - `content` {string}: Existing content of the root Cargo.toml.
  * - `newVersion` {string}: Validated semantic version string.
  * - Returns {string}: Updated Cargo.toml content.
  *
  * ## Errors / Exceptions
- * - Throws {Error}: When the `[package]` version entry is not found.
+ * - Throws {Error}: When the `[workspace.package]` version entry is not found.
  */
-export function updateCargoToml(content, newVersion) {
-  // Constant reference: CARGO_PACKAGE_VERSION_PATTERN.
-  if (!CARGO_PACKAGE_VERSION_PATTERN.test(content)) {
+export function updateWorkspaceCargoToml(content, newVersion) {
+  // Constant reference: CARGO_WORKSPACE_PACKAGE_VERSION_PATTERN.
+  if (!CARGO_WORKSPACE_PACKAGE_VERSION_PATTERN.test(content)) {
     // Constant reference: PATTERN_NOT_MATCHED_MESSAGE.
-    throw new Error(`${PATTERN_NOT_MATCHED_MESSAGE} (Cargo.toml [package] version)`);
+    throw new Error(`${PATTERN_NOT_MATCHED_MESSAGE} (Cargo.toml [workspace.package] version)`);
   }
-  return content.replace(CARGO_PACKAGE_VERSION_PATTERN, `$1${newVersion}$2`);
+  return content.replace(CARGO_WORKSPACE_PACKAGE_VERSION_PATTERN, `$1${newVersion}$2`);
 }
 
 /**
- * Updates the APP_VERSION constant inside src/constants/index.ts content.
+ * Verifies that Cargo.lock reflects the target version for workspace crates.
  *
  * ## Description
- * Replaces the APP_VERSION property in the APP_CONSTANTS object literal.
+ * Reads Cargo.lock from disk and verifies that the target version is present for member packages.
  *
  * ## Arguments & Returns
- * - `content` {string}: Existing content of src/constants/index.ts.
- * - `newVersion` {string}: Validated semantic version string.
- * - Returns {string}: Updated TypeScript source content.
+ * - `repoRoot` {string}: Absolute path to repository root.
+ * - `targetVersion` {string}: Target semantic version expected in Cargo.lock.
+ * - Returns {Promise<boolean>}: Resolves true if verified.
  *
  * ## Errors / Exceptions
- * - Throws {Error}: When APP_VERSION is not found in the content.
+ * - Throws {Error}: When Cargo.lock cannot be read or does not contain the target version.
  */
-export function updateConstantsIndex(content, newVersion) {
-  // Constant reference: CONSTANTS_APP_VERSION_PATTERN.
-  if (!CONSTANTS_APP_VERSION_PATTERN.test(content)) {
-    // Constant reference: PATTERN_NOT_MATCHED_MESSAGE.
-    throw new Error(`${PATTERN_NOT_MATCHED_MESSAGE} (src/constants/index.ts APP_VERSION)`);
+export async function verifyCargoLock(repoRoot, targetVersion) {
+  // Constant references: CARGO_LOCK_PATH and UTF8_ENCODING.
+  const lockFilePath = path.resolve(repoRoot, CARGO_LOCK_PATH);
+  const content = await readFile(lockFilePath, UTF8_ENCODING);
+  const expectedLine = `version = "${targetVersion}"`;
+  if (!content.includes(expectedLine)) {
+    // Constant reference: CARGO_LOCK_VERIFY_FAILED_MESSAGE.
+    throw new Error(`${CARGO_LOCK_VERIFY_FAILED_MESSAGE}: expected '${expectedLine}' in ${CARGO_LOCK_PATH}`);
   }
-  return content.replace(CONSTANTS_APP_VERSION_PATTERN, `$1${newVersion}$2`);
+  return true;
 }
 
 /**
- * Updates the about.APP_VERSION entry inside a locale YAML file content.
+ * Verifies that required files are successfully staged in the Git index with no unstaged modifications.
  *
  * ## Description
- * Replaces the `about.APP_VERSION: ...` line with the new version string.
+ * Executes `git diff --cached --name-only` to ensure required paths are staged, and checks
+ * `git diff <path>` to guarantee there are no remaining unstaged changes.
  *
  * ## Arguments & Returns
- * - `content` {string}: Existing content of the locale YAML file.
- * - `newVersion` {string}: Validated semantic version string.
- * - Returns {string}: Updated YAML content.
+ * - `repoRoot` {string}: Absolute path to repository root.
+ * - `requiredPaths` {Array<string>}: List of relative paths required to be cleanly staged.
+ * - Returns {boolean}: Returns true if all files are staged cleanly.
  *
  * ## Errors / Exceptions
- * - Throws {Error}: When `about.APP_VERSION:` is not found in the content.
+ * - Throws {Error}: When Git diff commands fail or a required file is missing from index or has unstaged diff.
  */
-export function updateLocaleYaml(content, newVersion) {
-  // Constant reference: LOCALE_APP_VERSION_PATTERN.
-  if (!LOCALE_APP_VERSION_PATTERN.test(content)) {
-    // Constant reference: PATTERN_NOT_MATCHED_MESSAGE.
-    throw new Error(`${PATTERN_NOT_MATCHED_MESSAGE} (locale YAML about.APP_VERSION)`);
+export function verifyGitStaged(repoRoot, requiredPaths) {
+  // Constant references: GIT_COMMAND, GIT_DIFF_SUBCOMMAND, GIT_CACHED_FLAG, GIT_NAME_ONLY_FLAG, UTF8_ENCODING.
+  const cachedResult = spawnSync(GIT_COMMAND, [GIT_DIFF_SUBCOMMAND, GIT_CACHED_FLAG, GIT_NAME_ONLY_FLAG], {
+    cwd: repoRoot,
+    encoding: UTF8_ENCODING,
+  });
+
+  if (cachedResult.status !== 0) {
+    // Constant reference: GIT_STAGE_VERIFY_FAILED_MESSAGE.
+    throw new Error(`${GIT_STAGE_VERIFY_FAILED_MESSAGE}: git diff --cached exited with status ${cachedResult.status}`);
   }
-  return content.replace(LOCALE_APP_VERSION_PATTERN, `$1${newVersion}`);
+
+  const stagedFiles = cachedResult.stdout.split(/\r?\n/).map((s) => s.trim()).filter(Boolean);
+
+  for (const relPath of requiredPaths) {
+    if (!stagedFiles.includes(relPath)) {
+      // Constant reference: GIT_STAGE_VERIFY_FAILED_MESSAGE.
+      throw new Error(`${GIT_STAGE_VERIFY_FAILED_MESSAGE}: ${relPath} is not staged in git index`);
+    }
+
+    // Check unstaged diff for this file
+    const unstagedResult = spawnSync(GIT_COMMAND, [GIT_DIFF_SUBCOMMAND, relPath], {
+      cwd: repoRoot,
+      encoding: UTF8_ENCODING,
+    });
+    if (unstagedResult.status === 0 && unstagedResult.stdout.trim().length > 0) {
+      // Constant reference: GIT_STAGE_VERIFY_FAILED_MESSAGE.
+      throw new Error(`${GIT_STAGE_VERIFY_FAILED_MESSAGE}: ${relPath} has unstaged modifications after staging`);
+    }
+  }
+
+  return true;
 }
 
 /**
- * Updates version mentions inside the standalone UI design mockup HTML.
+ * Synchronizes minimal version manifests across the repository.
  *
  * ## Description
- * Replaces version strings in the About dialog mockup section of design/mainui/index.html.
- *
- * ## Arguments & Returns
- * - `content` {string}: Existing content of design/mainui/index.html.
- * - `newVersion` {string}: Validated semantic version string.
- * - Returns {string}: Updated HTML content.
- *
- * ## Errors / Exceptions
- * - None. Returns unchanged content if no version pattern matches.
- */
-export function updateDesignHtml(content, newVersion) {
-  // Constant references: DESIGN_HTML_APP_HEADER_VERSION_PATTERN and DESIGN_HTML_APP_MODAL_VERSION_PATTERN.
-  return content
-    .replace(DESIGN_HTML_APP_HEADER_VERSION_PATTERN, `$1${newVersion}`)
-    .replace(DESIGN_HTML_APP_MODAL_VERSION_PATTERN, `$1${newVersion}`);
-}
-
-/**
- * Reads, transforms, and synchronizes all project files to a specified version.
- *
- * ## Description
- * Iterates through all designated target files in the repository, validates the target
- * semver, applies the corresponding transformation, writes the updated content, and
- * optionally triggers `cargo check --workspace` to synchronize Cargo.lock.
+ * Validates the target SemVer, updates the root Cargo.toml workspace package version,
+ * runs `cargo check --workspace` to update Cargo.lock, verifies the lockfile content,
+ * stages both Cargo.toml and Cargo.lock, and verifies that they are cleanly staged in Git.
  *
  * ## Arguments & Returns
  * - `repoRoot` {string}: Absolute path to the repository root directory.
  * - `targetVersion` {string}: Candidate version to validate and apply.
  * - `options` {Object} [options]: Optional configuration.
- *   - `options.dryRun` {boolean}: When true, skips writing files to disk.
- *   - `options.skipCargoLock` {boolean}: When true, skips running `cargo check`.
+ *   - `options.dryRun` {boolean}: When true, skips writing files to disk and Git operations.
+ *   - `options.skipCargoLock` {boolean}: When true, skips running `cargo check` and lockfile operations.
  * - Returns {Promise<Array<string>>}: List of relative paths for all synchronized files.
  *
  * ## Errors / Exceptions
  * - Throws {TypeError}: When semver validation fails.
- * - Throws {Error}: When any file transformation fails or I/O encounters an error.
+ * - Throws {Error}: When file transformation, Cargo execution, or Git staging encounters an error.
  */
 export async function syncAllFiles(repoRoot, targetVersion, options = {}) {
   const version = validateSemver(targetVersion);
   const dryRun = Boolean(options.dryRun);
   const skipCargoLock = Boolean(options.skipCargoLock);
 
-  const fileTransforms = [
-    // Constant reference: TAURI_CONF_PATH.
-    { relativePath: TAURI_CONF_PATH, transform: updateTauriConf },
-    // Constant reference: CORE_CARGO_TOML_PATH.
-    { relativePath: CORE_CARGO_TOML_PATH, transform: updateCargoToml },
-    // Constant reference: CLI_CARGO_TOML_PATH.
-    { relativePath: CLI_CARGO_TOML_PATH, transform: updateCargoToml },
-    // Constant reference: MCP_CARGO_TOML_PATH.
-    { relativePath: MCP_CARGO_TOML_PATH, transform: updateCargoToml },
-    // Constant reference: TAURI_CARGO_TOML_PATH.
-    { relativePath: TAURI_CARGO_TOML_PATH, transform: updateCargoToml },
-    // Constant reference: CONSTANTS_INDEX_PATH.
-    { relativePath: CONSTANTS_INDEX_PATH, transform: updateConstantsIndex },
-    // Constant reference: LOCALES_CORE_EN_PATH.
-    { relativePath: LOCALES_CORE_EN_PATH, transform: updateLocaleYaml },
-    // Constant reference: LOCALES_CORE_JA_PATH.
-    { relativePath: LOCALES_CORE_JA_PATH, transform: updateLocaleYaml },
-    // Constant reference: LOCALES_TAURI_EN_PATH.
-    { relativePath: LOCALES_TAURI_EN_PATH, transform: updateLocaleYaml },
-    // Constant reference: LOCALES_TAURI_JA_PATH.
-    { relativePath: LOCALES_TAURI_JA_PATH, transform: updateLocaleYaml },
-    // Constant reference: DESIGN_INDEX_HTML_PATH.
-    { relativePath: DESIGN_INDEX_HTML_PATH, transform: updateDesignHtml },
-  ];
+  // Constant references: ROOT_CARGO_TOML_PATH and UTF8_ENCODING.
+  const rootCargoPath = path.resolve(repoRoot, ROOT_CARGO_TOML_PATH);
+  const originalContent = await readFile(rootCargoPath, UTF8_ENCODING);
+  const updatedContent = updateWorkspaceCargoToml(originalContent, version);
 
-  const updatedPaths = [];
-
-  for (const { relativePath, transform } of fileTransforms) {
-    const absolutePath = path.resolve(repoRoot, relativePath);
-    // Constant reference: UTF8_ENCODING.
-    const originalContent = await readFile(absolutePath, UTF8_ENCODING);
-    const updatedContent = transform(originalContent, version);
-
-    if (!dryRun && updatedContent !== originalContent) {
-      // Constant reference: UTF8_ENCODING.
-      await writeFile(absolutePath, updatedContent, UTF8_ENCODING);
-    }
-    updatedPaths.push(relativePath);
+  if (!dryRun && updatedContent !== originalContent) {
+    await writeFile(rootCargoPath, updatedContent, UTF8_ENCODING);
   }
+
+  const updatedPaths = [ROOT_CARGO_TOML_PATH];
 
   if (!dryRun && !skipCargoLock) {
     // Constant references: CARGO_COMMAND, CARGO_CHECK_SUBCOMMAND, CARGO_WORKSPACE_FLAG.
-    const result = spawnSync(CARGO_COMMAND, [CARGO_CHECK_SUBCOMMAND, CARGO_WORKSPACE_FLAG], {
+    const cargoResult = spawnSync(CARGO_COMMAND, [CARGO_CHECK_SUBCOMMAND, CARGO_WORKSPACE_FLAG], {
       cwd: repoRoot,
       stdio: "pipe",
     });
-    if (result.status === 0) {
-      // Constant reference: CARGO_LOCK_PATH.
-      updatedPaths.push(CARGO_LOCK_PATH);
-    }
-  }
 
-  if (!dryRun) {
-    // Stage all updated files so `npm version` includes them in the version commit.
+    if (cargoResult.status !== 0) {
+      // Constant reference: CARGO_LOCK_VERIFY_FAILED_MESSAGE.
+      throw new Error(`${CARGO_LOCK_VERIFY_FAILED_MESSAGE}: cargo check --workspace failed with status ${cargoResult.status}`);
+    }
+
+    // Verify Cargo.lock contains the target version
+    await verifyCargoLock(repoRoot, version);
+    // Constant reference: CARGO_LOCK_PATH.
+    updatedPaths.push(CARGO_LOCK_PATH);
+
+    // Stage both Cargo.toml and Cargo.lock
     // Constant references: GIT_COMMAND and GIT_ADD_SUBCOMMAND.
-    spawnSync(GIT_COMMAND, [GIT_ADD_SUBCOMMAND, ...updatedPaths], {
+    const addResult = spawnSync(GIT_COMMAND, [GIT_ADD_SUBCOMMAND, ...updatedPaths], {
       cwd: repoRoot,
       stdio: "pipe",
     });
+
+    if (addResult.status !== 0) {
+      // Constant reference: GIT_STAGE_VERIFY_FAILED_MESSAGE.
+      throw new Error(`${GIT_STAGE_VERIFY_FAILED_MESSAGE}: git add failed with status ${addResult.status}`);
+    }
+
+    // Verify Git staging index
+    verifyGitStaged(repoRoot, updatedPaths);
   }
 
   return updatedPaths;

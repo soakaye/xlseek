@@ -10,3 +10,9 @@ members = [
     "src-tauri",
 ]
 resolver = "2"
+
+[workspace.package]
+version = "1.0.3"
+authors = ["soakaye"]
+edition = "2021"
+license = "MIT"

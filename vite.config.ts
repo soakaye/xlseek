@@ -16,6 +16,7 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
+import packageJson from "./package.json";
 
 /**
  * ## Description
@@ -31,6 +32,9 @@ const LICENSE_CATALOG_CHUNK_SIZE_KB = 3500;
 
 // https://vitejs.dev/config/
 export default defineConfig({
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
   plugins: [tailwindcss(), react()],
   clearScreen: false,
   server: {

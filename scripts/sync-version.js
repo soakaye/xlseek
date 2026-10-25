@@ -4,8 +4,8 @@
  *
  * ## Description
  * Executable script invoked during the `npm version` lifecycle hook or directly
- * from the command line to synchronize the version string across all project configuration
- * files (Cargo manifests, Tauri config, frontend constants, i18n catalogs, and mockups).
+ * from the command line to synchronize the version string to the root Cargo workspace
+ * manifest, verify and stage Cargo.lock, and guarantee lockfile inclusion in release commits.
  *
  * ## Arguments & Returns
  * - Optional command-line argument: `[target-version]` (defaults to `process.env.npm_package_version`

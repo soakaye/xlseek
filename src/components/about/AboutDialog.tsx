@@ -14,7 +14,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { X, FileCode2, ShieldCheck } from "lucide-react";
 import { PackageLicenseRecord, AboutTabType } from "../../types/license";
-import { LAYOUT_CONSTANTS } from "../../constants";
+import { LAYOUT_CONSTANTS, APP_CONSTANTS } from "../../constants";
 import defaultLicensesJson from "../../constants/licenses.json";
 import { PackageList } from "./PackageList";
 import { PackageDetail } from "./PackageDetail";
@@ -144,8 +144,9 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
             <div>
               <h2 className="text-base font-semibold text-zinc-100 flex items-center gap-2">
                 {t("about.TITLE")}
+                {/* Constant reference: APP_CONSTANTS.APP_VERSION */}
                 <span className="text-[11px] font-mono px-2 py-0.5 rounded-full bg-zinc-800 text-zinc-300 border border-zinc-700">
-                  v{t("about.APP_VERSION")}
+                  v{APP_CONSTANTS.APP_VERSION}
                 </span>
               </h2>
             </div>
@@ -204,8 +205,9 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
               <h3 className="text-2xl font-bold text-zinc-100 mb-1">
                 {t("about.APP_NAME")}
               </h3>
+              {/* Constant reference: APP_CONSTANTS.APP_VERSION */}
               <p className="text-xs font-mono text-zinc-400 mb-4 bg-zinc-900/80 px-3 py-1 rounded-full border border-zinc-800">
-                Version {t("about.APP_VERSION")}
+                Version {APP_CONSTANTS.APP_VERSION}
               </p>
 
               <p className="text-sm text-zinc-300 max-w-lg mb-6 leading-relaxed">
@@ -215,7 +217,10 @@ export const AboutDialog: React.FC<AboutDialogProps> = ({
               <div className="w-full max-w-md bg-[#1c1c20] border border-zinc-800 rounded-lg p-4 text-xs text-zinc-400 space-y-2 mb-6">
                 <div className="flex justify-between items-center py-1 border-b border-zinc-800/80">
                   <span className="text-zinc-500">{t("about.COPYRIGHT_LABEL")}</span>
-                  <span className="font-mono text-zinc-300">{t("about.COPYRIGHT")}</span>
+                  {/* Constant reference: APP_CONSTANTS.APP_AUTHOR */}
+                  <span className="font-mono text-zinc-300">
+                    {`Copyright © ${new Date().getFullYear()} ${APP_CONSTANTS.APP_AUTHOR}`}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center py-1 border-b border-zinc-800/80">
                   <span className="text-zinc-500">{t("about.LICENSE_LABEL")}</span>

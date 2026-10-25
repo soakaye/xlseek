@@ -130,6 +130,8 @@ describe("localized application UI", () => {
 
     render(<LocaleProvider value="ja"><AboutDialog isOpen onClose={() => undefined} onShowToast={() => undefined} /></LocaleProvider>);
     expect(screen.getByText("Excel Seek について")).toBeTruthy();
+    expect(screen.getByText("著作権:")).toBeTruthy();
+    expect(screen.getByText(`Copyright © ${new Date().getFullYear()} soakaye`)).toBeTruthy();
     expect(screen.getAllByRole("button", { name: "閉じる" }).length).toBeGreaterThan(0);
   });
 

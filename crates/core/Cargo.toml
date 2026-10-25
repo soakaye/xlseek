@@ -4,10 +4,11 @@
 
 [package]
 name = "xlseek-core"
-version = "1.0.3"
+version.workspace = true
 description = "Core search engine, parser, models, and export library for Excel Seek"
-authors = ["soakaye"]
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
+license.workspace = true
 
 [lib]
 name = "xlseek_core"
