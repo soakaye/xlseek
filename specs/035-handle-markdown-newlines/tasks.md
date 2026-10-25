@@ -19,8 +19,8 @@ description: "Task list for multiline text handling in Markdown and CSV search r
 
 **Purpose**: Define centralized constants and unit tests conforming to Constitution Principle II
 
-- [ ] T001 Define Markdown line break constant MD_LINE_BREAK and string constants in crates/core/src/constants.rs
-- [ ] T002 [P] Add unit tests for new export constants in crates/core/src/constants.rs
+- [X] T001 Define Markdown line break constant MD_LINE_BREAK and string constants in crates/core/src/constants.rs
+- [X] T002 [P] Add unit tests for new export constants in crates/core/src/constants.rs
 
 ---
 
@@ -30,8 +30,8 @@ description: "Task list for multiline text handling in Markdown and CSV search r
 
 **⚠️ CRITICAL**: No user story integration work can begin until this phase is complete
 
-- [ ] T003 Implement escape_markdown_cell with newline-to-break conversion, pipe escaping, and outer trimming in crates/core/src/search/llm_context.rs
-- [ ] T004 [P] Implement sanitize_csv_field with newline-to-space conversion and outer trimming in crates/core/src/export/csv_export.rs
+- [X] T003 Implement escape_markdown_cell with newline-to-break conversion, pipe escaping, and outer trimming in crates/core/src/search/llm_context.rs
+- [X] T004 [P] Implement sanitize_csv_field with newline-to-space conversion and outer trimming in crates/core/src/export/csv_export.rs
 
 **Checkpoint**: Core string sanitization primitives ready - story integration can begin
 
@@ -43,9 +43,9 @@ description: "Task list for multiline text handling in Markdown and CSV search r
 
 **Independent Test**: Search a workbook containing multiline cells (`"Line 1\nLine 2"`), export to Markdown, and verify that the table row is intact on a single line with `Line 1<br>Line 2`.
 
-- [ ] T005 [P] [US1] Add unit tests for escape_markdown_cell verifying newline conversion, pipe escaping, and multiline preservation in crates/core/src/search/llm_context.rs
-- [ ] T006 [US1] Integrate escape_markdown_cell into format_table_excel_context in crates/core/src/search/llm_context.rs
-- [ ] T007 [P] [US1] Add integration test for multiline cell table export in crates/core/tests/export_md_test.rs
+- [X] T005 [P] [US1] Add unit tests for escape_markdown_cell verifying newline conversion, pipe escaping, and multiline preservation in crates/core/src/search/llm_context.rs
+- [X] T006 [US1] Integrate escape_markdown_cell into format_table_excel_context in crates/core/src/search/llm_context.rs
+- [X] T007 [P] [US1] Add integration test for multiline cell table export in crates/core/tests/export_md_test.rs
 
 **Checkpoint**: User Story 1 complete and independently testable. Markdown table exports retain multiline structure.
 
@@ -57,10 +57,10 @@ description: "Task list for multiline text handling in Markdown and CSV search r
 
 **Independent Test**: Search a workbook containing multiline cells, export to CSV or stream via CLI stdout, and verify that `wc -l` outputs exactly `match_count + 1`.
 
-- [ ] T008 [P] [US2] Add unit tests for sanitize_csv_field verifying newline-to-space conversion and outer trimming in crates/core/src/export/csv_export.rs
-- [ ] T009 [US2] Apply sanitize_csv_field to full_content, formula, and shape_name in write_csv_to_writer in crates/core/src/export/csv_export.rs
-- [ ] T010 [P] [US2] Add integration test verifying N matches yield exactly N+1 lines in crates/core/tests/export_csv_test.rs
-- [ ] T011 [P] [US2] Add CLI integration test verifying stdout CSV streaming with multiline cells in crates/cli/tests/cli_search.rs
+- [X] T008 [P] [US2] Add unit tests for sanitize_csv_field verifying newline-to-space conversion and outer trimming in crates/core/src/export/csv_export.rs
+- [X] T009 [US2] Apply sanitize_csv_field to full_content, formula, and shape_name in write_csv_to_writer in crates/core/src/export/csv_export.rs
+- [X] T010 [P] [US2] Add integration test verifying N matches yield exactly N+1 lines in crates/core/tests/export_csv_test.rs
+- [X] T011 [P] [US2] Add CLI integration test verifying stdout CSV streaming with multiline cells in crates/cli/tests/cli_search.rs
 
 **Checkpoint**: User Stories 1 and 2 complete. CSV exports strictly enforce 1 record per line.
 
@@ -72,8 +72,8 @@ description: "Task list for multiline text handling in Markdown and CSV search r
 
 **Independent Test**: Export or copy in Header & Cell Only mode with multiline values and verify `- Matched Value: **Line 1<br>Line 2**` maintains bullet list structure.
 
-- [ ] T012 [US3] Sanitize display_val using escape_markdown_cell in format_header_only_excel_context in crates/core/src/search/llm_context.rs
-- [ ] T013 [P] [US3] Add integration test for multiline values in Header & Cell Only mode in crates/core/tests/export_md_test.rs
+- [X] T012 [US3] Sanitize display_val using escape_markdown_cell in format_header_only_excel_context in crates/core/src/search/llm_context.rs
+- [X] T013 [P] [US3] Add integration test for multiline values in Header & Cell Only mode in crates/core/tests/export_md_test.rs
 
 **Checkpoint**: User Stories 1, 2, and 3 complete. Both Markdown table and list exports format multiline text cleanly.
 
@@ -85,8 +85,8 @@ description: "Task list for multiline text handling in Markdown and CSV search r
 
 **Independent Test**: Search a workbook with cells containing `"\n\nHeader\n\nValue\n\n"` and verify output becomes `"Header<br><br>Value"` in Markdown and `"Header  Value"` in CSV.
 
-- [ ] T014 [P] [US4] Add edge case unit tests for CRLF, CR, LF, consecutive newlines, and whitespace-only cells in crates/core/src/search/llm_context.rs
-- [ ] T015 [P] [US4] Add edge case unit tests for CRLF, CR, LF, and whitespace trimming in crates/core/src/export/csv_export.rs
+- [X] T014 [P] [US4] Add edge case unit tests for CRLF, CR, LF, consecutive newlines, and whitespace-only cells in crates/core/src/search/llm_context.rs
+- [X] T015 [P] [US4] Add edge case unit tests for CRLF, CR, LF, and whitespace trimming in crates/core/src/export/csv_export.rs
 
 **Checkpoint**: All user stories complete and edge cases verified.
 
@@ -96,10 +96,10 @@ description: "Task list for multiline text handling in Markdown and CSV search r
 
 **Purpose**: Quality gate verification, static analysis, and regression testing across workspace
 
-- [ ] T016 Run cargo clippy and fix any warnings across workspace in crates/core and crates/cli
-- [ ] T017 [P] Run cargo fmt check across workspace
-- [ ] T018 [P] Run npm test and npm run build to verify frontend and CLI integration
-- [ ] T019 Run quickstart verification scenarios per specs/035-handle-markdown-newlines/quickstart.md
+- [X] T016 Run cargo clippy and fix any warnings across workspace in crates/core and crates/cli
+- [X] T017 [P] Run cargo fmt check across workspace
+- [X] T018 [P] Run npm test and npm run build to verify frontend and CLI integration
+- [X] T019 Run quickstart verification scenarios per specs/035-handle-markdown-newlines/quickstart.md
 
 ---
 

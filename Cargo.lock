@@ -5001,6 +5001,7 @@ dependencies = [
  "calamine",
  "rayon",
  "regex",
+ "rust_xlsxwriter",
  "same-file",
  "walkdir",
  "xlseek-core",

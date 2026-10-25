@@ -444,6 +444,10 @@ pub const EXPORT_MATCH_SHAPE_KEY: &str = "export.match.shape";
 pub const EXPORT_MATCH_WORD_TEXT_KEY: &str = "export.match.wordText";
 pub const EXPORT_BUTTON_LABEL_WITH_FORMAT_KEY: &str = "ui.EXPORT_BUTTON_LABEL_WITH_FORMAT";
 pub const EXPORT_BUTTON_TOOLTIP_WITH_FORMAT_KEY: &str = "ui.EXPORT_BUTTON_TOOLTIP_WITH_FORMAT";
+/// Markdown line break tag used inside table cells and list items
+pub const MD_LINE_BREAK: &str = "<br>";
+/// Space replacement string used to normalize newlines in CSV exports
+pub const CSV_SPACE_REPLACEMENT: &str = " ";
 
 // ==============================================================================
 // 6. Supported Apps
@@ -632,6 +636,8 @@ mod tests {
         assert_eq!(CLI_FORMAT_JSON, "json");
         assert_eq!(EXT_MD, ".md");
         assert_eq!(EXT_JSON, ".json");
+        assert_eq!(MD_LINE_BREAK, "<br>");
+        assert_eq!(CSV_SPACE_REPLACEMENT, " ");
     }
 
     /// Validates that error messages are non-empty strings.

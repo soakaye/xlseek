@@ -457,7 +457,8 @@ fn format_header_only_excel_context(
             &headers.column_header,
             &headers.row_key,
         ));
-        lines.push(format!("  - Matched Value: **{}**", display_val));
+        let clean_val = escape_markdown_cell(display_val);
+        lines.push(format!("  - Matched Value: **{}**", clean_val));
     }
 
     lines.join("\n")
@@ -504,7 +505,8 @@ fn format_table_excel_context(
             &headers.column_header,
             &headers.row_key,
         ));
-        lines.push(format!("  - Matched Value: **{}**", display_val));
+        let clean_val = escape_markdown_cell(display_val);
+        lines.push(format!("  - Matched Value: **{}**", clean_val));
     }
     lines.push(String::new());
 
@@ -767,20 +769,29 @@ fn highlight_word_match(raw_text: &str, snippet: &str) -> String {
 }
 
 /// ## Description
-/// Escapes pipe characters and cleans newlines for Markdown table compatibility.
+/// ## Description
+/// Trims outer whitespace/newlines, escapes pipe delimiters, and replaces internal
+/// newlines (`\r\n`, `\n`, `\r`) with `<br>` tags to preserve multiline structure
+/// within Markdown table cells and list items without breaking Markdown syntax.
 ///
 /// ## Arguments
-/// - `text`: `&str` - Cell text
+/// - `text`: `&str` - Cell or match text
 ///
 /// ## Returns
-/// - `String`: Escaped safe cell text
+/// - `String`: Escaped safe cell text with `<br>` line breaks
 ///
 /// ## Errors / Exceptions
 /// Does not panic.
-fn escape_markdown_cell(text: &str) -> String {
-    text.replace('|', "\\|")
-        .replace('\n', " ")
-        .replace('\r', "")
+pub fn escape_markdown_cell(text: &str) -> String {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+    // Constant reference: crate::constants::MD_LINE_BREAK
+    trimmed
+        .replace('|', "\\|")
+        .replace("\r\n", crate::constants::MD_LINE_BREAK)
+        .replace(['\r', '\n'], crate::constants::MD_LINE_BREAK)
 }
 
 #[cfg(test)]
@@ -803,7 +814,23 @@ mod tests {
     fn test_escape_markdown_cell() {
         assert_eq!(escape_markdown_cell("Normal"), "Normal");
         assert_eq!(escape_markdown_cell("Col | Val"), "Col \\| Val");
-        assert_eq!(escape_markdown_cell("Multi\nLine"), "Multi Line");
+        assert_eq!(escape_markdown_cell("Multi\nLine"), "Multi<br>Line");
+        assert_eq!(escape_markdown_cell("Multi\r\nLine"), "Multi<br>Line");
+        assert_eq!(
+            escape_markdown_cell("\n\nHeader\nValue\n\n"),
+            "Header<br>Value"
+        );
+        assert_eq!(
+            escape_markdown_cell("Para 1\n\nPara 2"),
+            "Para 1<br><br>Para 2"
+        );
+        assert_eq!(escape_markdown_cell("A | B\nC | D"), "A \\| B<br>C \\| D");
+        assert_eq!(escape_markdown_cell("Multi\rLine"), "Multi<br>Line");
+        assert_eq!(
+            escape_markdown_cell("Multi\r\n\r\nLine"),
+            "Multi<br><br>Line"
+        );
+        assert_eq!(escape_markdown_cell("\n  \n"), "");
     }
 
     #[test]

@@ -83,6 +83,18 @@ pub fn write_csv_to_writer<W: Write>(
             .ok_or_else(|| crate::constants::ERR_TRANSLATION_MISSING.to_string())?;
 
         let clean_path = crate::export::normalize_export_path(&item.full_path);
+        let sanitized_shape = item
+            .shape_name
+            .as_deref()
+            .map(sanitize_csv_field)
+            .unwrap_or_default();
+        let sanitized_content = sanitize_csv_field(&item.full_content);
+        let sanitized_formula = item
+            .formula
+            .as_deref()
+            .map(sanitize_csv_field)
+            .unwrap_or_default();
+
         // Pass array directly to avoid Clippy needless_borrows_for_generic_args
         csv_writer
             .write_record([
@@ -91,10 +103,10 @@ pub fn write_csv_to_writer<W: Write>(
                 clean_path.into_owned(),
                 item.sheet_name.clone(),
                 item.cell_address.clone(),
-                item.shape_name.clone().unwrap_or_default(),
+                sanitized_shape,
                 match_type_str,
-                item.full_content.clone(),
-                item.formula.clone().unwrap_or_default(),
+                sanitized_content,
+                sanitized_formula,
             ])
             .map_err(|e| {
                 // Constant reference: crate::constants::ERR_CSV_RECORD_WRITE
@@ -107,6 +119,29 @@ pub fn write_csv_to_writer<W: Write>(
         format!("{}: {}", crate::constants::ERR_CSV_RECORD_WRITE, e)
     })?;
     Ok(())
+}
+
+/// ## Description
+/// Trims outer whitespace/newlines and replaces internal newline sequences (`\r\n`, `\n`, `\r`)
+/// with a single space to enforce the 1-record-per-line CSV guarantee.
+///
+/// ## Arguments
+/// - `text`: `&str` - Raw field text (cell value, formula, etc.)
+///
+/// ## Returns
+/// - `String`: Single-line text safe for line-oriented CSV export
+///
+/// ## Errors / Exceptions
+/// Does not panic.
+pub fn sanitize_csv_field(text: &str) -> String {
+    let trimmed = text.trim();
+    if trimmed.is_empty() {
+        return String::new();
+    }
+    // Constant reference: crate::constants::CSV_SPACE_REPLACEMENT
+    trimmed
+        .replace("\r\n", crate::constants::CSV_SPACE_REPLACEMENT)
+        .replace(['\r', '\n'], crate::constants::CSV_SPACE_REPLACEMENT)
 }
 
 /// ## Description
@@ -360,5 +395,94 @@ mod localization_tests {
         assert!(output_str.contains("doc1.docx"));
         assert!(output_str.contains("Word"));
         assert!(output_str.contains("Entire paragraph containing keyword"));
+    }
+
+    /// ## Description
+    /// Verifies sanitize_csv_field trims outer whitespace and replaces internal newlines with space.
+    ///
+    /// ## Arguments / Returns
+    /// None.
+    ///
+    /// ## Errors
+    /// Panics on assertion failure.
+    #[test]
+    fn test_sanitize_csv_field() {
+        assert_eq!(super::sanitize_csv_field("Normal"), "Normal");
+        assert_eq!(super::sanitize_csv_field("Line 1\nLine 2"), "Line 1 Line 2");
+        assert_eq!(
+            super::sanitize_csv_field("Line 1\r\nLine 2"),
+            "Line 1 Line 2"
+        );
+        assert_eq!(
+            super::sanitize_csv_field("\n\nHeader\nValue\n\n"),
+            "Header Value"
+        );
+        assert_eq!(
+            super::sanitize_csv_field("Para 1\n\nPara 2"),
+            "Para 1  Para 2"
+        );
+        assert_eq!(super::sanitize_csv_field("Line 1\rLine 2"), "Line 1 Line 2");
+        assert_eq!(
+            super::sanitize_csv_field("Line 1\r\n\r\nLine 2"),
+            "Line 1  Line 2"
+        );
+        assert_eq!(super::sanitize_csv_field("\n   \r\n"), "");
+    }
+
+    /// ## Description
+    /// Verifies that writing CSV with multiline content yields strictly one line per record.
+    ///
+    /// ## Arguments / Returns
+    /// None.
+    ///
+    /// ## Errors
+    /// Panics on assertion failure.
+    #[test]
+    fn test_csv_multiline_field_single_line_guarantee() {
+        let mut catalogs = BTreeMap::new();
+        let mut english = BTreeMap::new();
+        for key in crate::constants::EXPORT_HEADER_KEYS {
+            english.insert(key.to_string(), key.to_string());
+        }
+        english.insert(
+            crate::constants::EXPORT_MATCH_VALUE_KEY.to_string(),
+            "Cell Value".to_string(),
+        );
+        catalogs.insert(crate::constants::LANGUAGE_EN.to_string(), english);
+
+        let item1 = crate::models::SearchMatch {
+            id: 1,
+            file_name: "test.xlsx".to_string(),
+            full_path: "/data/test.xlsx".to_string(),
+            sheet_name: "Sheet1".to_string(),
+            cell_address: "A1".to_string(),
+            row_index: 1,
+            col_index: 1,
+            col_name: "A".to_string(),
+            shape_name: None,
+            match_type: crate::models::MatchType::CellValue,
+            sheet_hidden: false,
+            snippet: "Multi\nLine".to_string(),
+            full_content: "Line 1\nLine 2\r\nLine 3".to_string(),
+            formula: Some("=IF(\nA1>0,\nTRUE,\nFALSE)".to_string()),
+            sheets_in_workbook: vec!["Sheet1".to_string()],
+        };
+
+        let mut buffer = Vec::new();
+        super::write_csv_to_writer(
+            &mut buffer,
+            &[item1],
+            crate::constants::LANGUAGE_EN,
+            &catalogs,
+            false,
+        )
+        .unwrap();
+
+        let output_str = String::from_utf8(buffer).unwrap();
+        let lines: Vec<&str> = output_str.trim_end().split('\n').collect();
+        // 1 header line + 1 match line = 2 lines total
+        assert_eq!(lines.len(), 2);
+        assert!(lines[1].contains("Line 1 Line 2 Line 3"));
+        assert!(lines[1].contains("=IF( A1>0, TRUE, FALSE)"));
     }
 }

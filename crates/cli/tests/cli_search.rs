@@ -554,6 +554,50 @@ fn test_cli_stdout_streaming_md_and_json() {
     assert!(json_stdout.contains(QUERY_TEXT));
 }
 
+/// ## Description
+/// Tests that streaming CSV to stdout replaces newlines in multiline cells with spaces,
+/// guaranteeing strictly 1 physical line per match.
+///
+/// ## Arguments / Returns
+/// Validates process exit code, stdout line count, and sanitized field text.
+///
+/// ## Errors
+/// Panics if CLI fails or stdout does not match the 1-record-per-line guarantee.
+#[test]
+fn test_cli_stdout_csv_multiline_cells() {
+    let temp_dir = unique_test_directory();
+    fs::create_dir_all(&temp_dir).expect("create temp dir");
+    let workbook_path = temp_dir.join("multiline_sample.xlsx");
+
+    let mut workbook = rust_xlsxwriter::Workbook::new();
+    let worksheet = workbook.add_worksheet();
+    worksheet.write_string(0, 0, "ColA").expect("write header");
+    worksheet
+        .write_string(1, 0, "Multiline\nTarget\r\nCell")
+        .expect("write cell");
+    workbook.save(&workbook_path).expect("save workbook");
+
+    let res = Command::new(env!("CARGO_BIN_EXE_xlseek-cli"))
+        .arg("--path")
+        .arg(&workbook_path)
+        .arg("--query")
+        .arg("Target")
+        .arg("--format")
+        .arg("csv")
+        .output()
+        .expect("CLI process must start");
+
+    assert_eq!(res.status.code(), Some(0));
+    let stdout_str = String::from_utf8(res.stdout).expect("Valid UTF-8 stdout");
+    let lines: Vec<&str> = stdout_str.trim_end().split('\n').collect();
+
+    // 1 header line + 1 match line = 2 lines total
+    assert_eq!(lines.len(), 2);
+    assert!(lines[1].contains("Multiline Target Cell"));
+
+    let _ = fs::remove_dir_all(temp_dir);
+}
+
 /// Helper that invokes the CLI with path, query, format, and output arguments.
 ///
 /// ## Arguments / Returns
