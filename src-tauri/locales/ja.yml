@@ -174,7 +174,9 @@ ui.INVALID_REGEX: 正規表現が正しくありません
 ui.EXPORT_CSV_BUTTON: CSV 出力
 ui.EXPORT_XLSX_BUTTON: Excel 出力
 ui.EXPORT_BUTTON_LABEL: エクスポート
+ui.EXPORT_BUTTON_LABEL_WITH_FORMAT: "結果を保存: {format}"
 ui.EXPORT_BUTTON_TOOLTIP: 検索結果を出力
+ui.EXPORT_BUTTON_TOOLTIP_WITH_FORMAT: "検索結果を保存 ({format})"
 ui.EXPORT_MENU_TOOLTIP: 出力形式を選択
 ui.EXPORT_FORMAT_XLSX: Excel (.xlsx)
 ui.EXPORT_FORMAT_CSV: CSV (.csv)

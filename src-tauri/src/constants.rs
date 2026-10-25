@@ -247,6 +247,10 @@ pub const EXPORT_MATCH_FORMULA_KEY: &str = "export.match.formula";
 pub const EXPORT_MATCH_COMMENT_KEY: &str = "export.match.comment";
 pub const EXPORT_MATCH_HIDDEN_SHEET_KEY: &str = "export.match.hiddenSheet";
 pub const EXPORT_MATCH_SHAPE_KEY: &str = "export.match.shape";
+pub const EXPORT_BUTTON_LABEL_WITH_FORMAT_KEY: &str =
+    xlseek_core::constants::EXPORT_BUTTON_LABEL_WITH_FORMAT_KEY;
+pub const EXPORT_BUTTON_TOOLTIP_WITH_FORMAT_KEY: &str =
+    xlseek_core::constants::EXPORT_BUTTON_TOOLTIP_WITH_FORMAT_KEY;
 
 // ==============================================================================
 // 6. Application Identifiers and Display Names
@@ -445,6 +449,14 @@ mod tests {
         assert_eq!(EXPORT_HEADER_KEYS[8], "export.header.formula");
         assert_eq!(EXPORT_SHEET_NAME_KEY, "export.sheetName");
         assert_eq!(EXPORT_MATCH_HIDDEN_SHEET_KEY, "export.match.hiddenSheet");
+        assert_eq!(
+            EXPORT_BUTTON_LABEL_WITH_FORMAT_KEY,
+            "ui.EXPORT_BUTTON_LABEL_WITH_FORMAT"
+        );
+        assert_eq!(
+            EXPORT_BUTTON_TOOLTIP_WITH_FORMAT_KEY,
+            "ui.EXPORT_BUTTON_TOOLTIP_WITH_FORMAT"
+        );
     }
 
     /// ## Description

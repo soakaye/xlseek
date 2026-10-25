@@ -20,10 +20,10 @@
 
 **Purpose**: Register new translation keys and centralized constants for the explicit save label across frontend and backend.
 
-- [ ] T001 Register `ui.EXPORT_BUTTON_LABEL_WITH_FORMAT: "結果を保存: {format}"` and `ui.EXPORT_BUTTON_TOOLTIP_WITH_FORMAT: "検索結果を保存 ({format})"` in `crates/core/locales/ja.yml`
-- [ ] T002 [P] Register `ui.EXPORT_BUTTON_LABEL_WITH_FORMAT: "Save Results: {format}"` and `ui.EXPORT_BUTTON_TOOLTIP_WITH_FORMAT: "Save search results ({format})"` in `crates/core/locales/en.yml`
-- [ ] T003 [P] Add `BUTTON_LABEL_WITH_FORMAT: "ui.EXPORT_BUTTON_LABEL_WITH_FORMAT"` and `BUTTON_TOOLTIP_WITH_FORMAT: "ui.EXPORT_BUTTON_TOOLTIP_WITH_FORMAT"` to `EXPORT_CONSTANTS` in `src/constants/index.ts`
-- [ ] T004 [P] Add `EXPORT_BUTTON_LABEL_WITH_FORMAT_KEY` and `EXPORT_BUTTON_TOOLTIP_WITH_FORMAT_KEY` constants in `crates/core/src/constants.rs` and re-export in `src-tauri/src/constants.rs`
+- [X] T001 Register `ui.EXPORT_BUTTON_LABEL_WITH_FORMAT: "結果を保存: {format}"` and `ui.EXPORT_BUTTON_TOOLTIP_WITH_FORMAT: "検索結果を保存 ({format})"` in `crates/core/locales/ja.yml`
+- [X] T002 [P] Register `ui.EXPORT_BUTTON_LABEL_WITH_FORMAT: "Save Results: {format}"` and `ui.EXPORT_BUTTON_TOOLTIP_WITH_FORMAT: "Save search results ({format})"` in `crates/core/locales/en.yml`
+- [X] T003 [P] Add `BUTTON_LABEL_WITH_FORMAT: "ui.EXPORT_BUTTON_LABEL_WITH_FORMAT"` and `BUTTON_TOOLTIP_WITH_FORMAT: "ui.EXPORT_BUTTON_TOOLTIP_WITH_FORMAT"` to `EXPORT_CONSTANTS` in `src/constants/index.ts`
+- [X] T004 [P] Add `EXPORT_BUTTON_LABEL_WITH_FORMAT_KEY` and `EXPORT_BUTTON_TOOLTIP_WITH_FORMAT_KEY` constants in `crates/core/src/constants.rs` and re-export in `src-tauri/src/constants.rs`
 
 ---
 
@@ -33,7 +33,7 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T005 Verify constants compilation and frontend type checking with `npm run build` and `cargo test --workspace`
+- [X] T005 Verify constants compilation and frontend type checking with `npm run build` and `cargo test --workspace`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin.
 
@@ -49,12 +49,12 @@
 
 > **NOTE: Write/update these tests FIRST, ensure they fail or assert the new requirements before implementation.**
 
-- [ ] T006 [P] [US1] Update unit tests in `src/components/common/__tests__/StatusBar.test.tsx` to assert explicit save button label ("Save Results: Excel (.xlsx)") in both enabled and disabled states
+- [X] T006 [P] [US1] Update unit tests in `src/components/common/__tests__/StatusBar.test.tsx` to assert explicit save button label ("Save Results: Excel (.xlsx)") in both enabled and disabled states
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Update primary button text in `src/components/common/StatusBar.tsx` to interpolate active format with `t(EXPORT_CONSTANTS.BUTTON_LABEL_WITH_FORMAT, { format: t(activeOption.labelKey) })`
-- [ ] T008 [US1] Verify User Story 1 unit tests pass with `npm test -- src/components/common/__tests__/StatusBar.test.tsx --run`
+- [X] T007 [US1] Update primary button text in `src/components/common/StatusBar.tsx` to interpolate active format with `t(EXPORT_CONSTANTS.BUTTON_LABEL_WITH_FORMAT, { format: t(activeOption.labelKey) })`
+- [X] T008 [US1] Verify User Story 1 unit tests pass with `npm test -- src/components/common/__tests__/StatusBar.test.tsx --run`
 
 **Checkpoint**: At this point, User Story 1 is fully functional and delivers the core MVP increment.
 
@@ -68,12 +68,12 @@
 
 ### Tests for User Story 2 ⚠️
 
-- [ ] T009 [P] [US2] Update format switching and accessibility test cases in `src/components/common/__tests__/StatusBar.test.tsx` to assert updated button label and `aria-label` after selecting alternative formats
+- [X] T009 [P] [US2] Update format switching and accessibility test cases in `src/components/common/__tests__/StatusBar.test.tsx` to assert updated button label and `aria-label` after selecting alternative formats
 
 ### Implementation for User Story 2
 
-- [ ] T010 [US2] Update `title` and `aria-label` on the primary export button in `src/components/common/StatusBar.tsx` using `t(EXPORT_CONSTANTS.BUTTON_TOOLTIP_WITH_FORMAT, { format: t(activeOption.labelKey) })`
-- [ ] T011 [US2] Verify User Story 2 format switching and accessibility tests pass with `npm test -- src/components/common/__tests__/StatusBar.test.tsx --run`
+- [X] T010 [US2] Update `title` and `aria-label` on the primary export button in `src/components/common/StatusBar.tsx` using `t(EXPORT_CONSTANTS.BUTTON_TOOLTIP_WITH_FORMAT, { format: t(activeOption.labelKey) })`
+- [X] T011 [US2] Verify User Story 2 format switching and accessibility tests pass with `npm test -- src/components/common/__tests__/StatusBar.test.tsx --run`
 
 **Checkpoint**: At this point, User Stories 1 AND 2 are both fully functional and tested.
 
@@ -87,8 +87,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T012 [P] [US3] Update standalone HTML prototype in `design/mainui/index.html` with explicit save button text (`結果を保存: Excel (.xlsx)`) and tooltip (`検索結果を保存 (Excel (.xlsx))`)
-- [ ] T013 [US3] Verify status bar fixed height (`h-10`), flex layout, and ellipsis truncation at 800px minimum viewport width in `src/components/common/StatusBar.tsx` and `design/mainui/index.html`
+- [X] T012 [P] [US3] Update standalone HTML prototype in `design/mainui/index.html` with explicit save button text (`結果を保存: Excel (.xlsx)`) and tooltip (`検索結果を保存 (Excel (.xlsx))`)
+- [X] T013 [US3] Verify status bar fixed height (`h-10`), flex layout, and ellipsis truncation at 800px minimum viewport width in `src/components/common/StatusBar.tsx` and `design/mainui/index.html`
 
 **Checkpoint**: All user stories and UI prototypes are complete and consistent.
 
@@ -98,11 +98,11 @@
 
 **Purpose**: Execute full verification suite across all repository crates and quality gates.
 
-- [ ] T014 Run full frontend build and type-check with `npm run build`
-- [ ] T015 [P] Run Rust workspace tests with `cargo test --workspace`
-- [ ] T016 [P] Run Rust workspace Clippy check with `cargo clippy --workspace --all-targets -- -D warnings`
-- [ ] T017 [P] Run Rust formatting check with `cargo fmt --check`
-- [ ] T018 Execute manual verification scenarios from `specs/034-clarify-save-results-button/quickstart.md`
+- [X] T014 Run full frontend build and type-check with `npm run build`
+- [X] T015 [P] Run Rust workspace tests with `cargo test --workspace`
+- [X] T016 [P] Run Rust workspace Clippy check with `cargo clippy --workspace --all-targets -- -D warnings`
+- [X] T017 [P] Run Rust formatting check with `cargo fmt --check`
+- [X] T018 Execute manual verification scenarios from `specs/034-clarify-save-results-button/quickstart.md`
 
 ---
 

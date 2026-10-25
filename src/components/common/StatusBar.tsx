@@ -322,12 +322,15 @@ export const StatusBar: React.FC<StatusBarProps> = ({
             type="button"
             onClick={() => handleExport(activeFormat)}
             disabled={items.length === 0}
-            title={t(EXPORT_CONSTANTS.BUTTON_TOOLTIP)}
-            aria-label={t(EXPORT_CONSTANTS.BUTTON_TOOLTIP)}
+            // Constant reference: EXPORT_CONSTANTS.BUTTON_TOOLTIP_WITH_FORMAT
+            title={t(EXPORT_CONSTANTS.BUTTON_TOOLTIP_WITH_FORMAT, { format: t(activeOption.labelKey) })}
+            // Constant reference: EXPORT_CONSTANTS.BUTTON_TOOLTIP_WITH_FORMAT
+            aria-label={t(EXPORT_CONSTANTS.BUTTON_TOOLTIP_WITH_FORMAT, { format: t(activeOption.labelKey) })}
             className="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-200 hover:text-white rounded-l border border-zinc-700 flex items-center gap-1.5 transition text-xs font-medium cursor-pointer"
           >
             <ActiveIcon className={`w-3.5 h-3.5 ${activeOption.iconColor}`} />
-            <span>{t(activeOption.labelKey)}</span>
+            {/* Constant reference: EXPORT_CONSTANTS.BUTTON_LABEL_WITH_FORMAT */}
+            <span>{t(EXPORT_CONSTANTS.BUTTON_LABEL_WITH_FORMAT, { format: t(activeOption.labelKey) })}</span>
           </button>
           <button
             type="button"

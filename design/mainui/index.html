@@ -595,11 +595,11 @@
           <button
             id="exportPrimaryBtn"
             type="button"
-            title="検索結果を出力"
-            aria-label="検索結果を出力"
+            title="検索結果を保存 (Excel (.xlsx))"
+            aria-label="検索結果を保存 (Excel (.xlsx))"
             class="px-2.5 py-1 bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 disabled:cursor-not-allowed text-zinc-200 hover:text-white rounded-l border border-zinc-700 flex items-center gap-1.5 transition text-xs font-medium cursor-pointer">
             <i id="exportActiveIcon" data-lucide="file-spreadsheet" class="w-3.5 h-3.5 text-emerald-500"></i>
-            <span id="exportActiveLabel">Excel (.xlsx)</span>
+            <span id="exportActiveLabel">結果を保存: Excel (.xlsx)</span>
           </button>
           <button
             id="exportMenuBtn"
@@ -9351,7 +9351,11 @@
       const applyExportFormat = (fmt) => {
         currentExportFormat = fmt;
         const config = exportFormats[fmt];
-        exportActiveLabel.textContent = config.label;
+        exportActiveLabel.textContent = `結果を保存: ${config.label}`;
+        if (exportPrimaryBtn) {
+          exportPrimaryBtn.title = `検索結果を保存 (${config.label})`;
+          exportPrimaryBtn.setAttribute("aria-label", `検索結果を保存 (${config.label})`);
+        }
         exportActiveIcon.setAttribute("data-lucide", config.icon);
         exportActiveIcon.className = `w-3.5 h-3.5 ${config.iconColor}`;
 

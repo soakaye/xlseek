@@ -81,7 +81,7 @@ describe("StatusBar - Export Dialog Integration (US2)", () => {
       </LocaleProvider>
     );
 
-    const exportBtn = screen.getByRole("button", { name: "Export search results" }) as HTMLButtonElement;
+    const exportBtn = screen.getByRole("button", { name: "Save search results (Excel (.xlsx))" }) as HTMLButtonElement;
     const menuBtn = screen.getByRole("button", { name: "Select export format" }) as HTMLButtonElement;
     expect(exportBtn.disabled).toBe(true);
     expect(menuBtn.disabled).toBe(true);
@@ -157,7 +157,7 @@ describe("StatusBar - Export Dialog Integration (US2)", () => {
     );
 
     // Default format is Excel (.xlsx)
-    const exportBtn = screen.getByRole("button", { name: "Export search results" });
+    const exportBtn = screen.getByRole("button", { name: "Save search results (Excel (.xlsx))" });
     fireEvent.click(exportBtn);
 
     await waitFor(() => expect(mocks.save).toHaveBeenCalled());

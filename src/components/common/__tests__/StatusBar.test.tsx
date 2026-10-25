@@ -21,7 +21,7 @@ import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/re
 import { parse } from "yaml";
 import enSource from "../../../../src-tauri/locales/en.yml?raw";
 import jaSource from "../../../../src-tauri/locales/ja.yml?raw";
-import { initializeI18n, LocaleProvider } from "../../../i18n";
+import { initializeI18n, setI18nLocale, LocaleProvider } from "../../../i18n";
 import { StatusBar } from "../StatusBar";
 import { SearchMatch } from "../../../types/search";
 import { LlmCopyOptions } from "../../../types/llm";
@@ -101,12 +101,32 @@ describe("StatusBar Component - Export Split Button & Format Menu (US1)", () => 
       </LocaleProvider>
     );
 
-    const primaryBtn = screen.getByRole("button", { name: "Export search results" }) as HTMLButtonElement;
+    const primaryBtn = screen.getByRole("button", { name: "Save search results (Excel (.xlsx))" }) as HTMLButtonElement;
     const menuBtn = screen.getByRole("button", { name: "Select export format" }) as HTMLButtonElement;
 
     expect(primaryBtn.disabled).toBe(true);
+    expect(primaryBtn.textContent).toContain("Save Results: Excel (.xlsx)");
     expect(menuBtn.disabled).toBe(true);
     expect(screen.queryByRole("menu")).toBeNull();
+  });
+
+  it("renders Japanese explicit save label and accessible tooltip", async () => {
+    await setI18nLocale("ja");
+    render(
+      <LocaleProvider value="ja">
+        <StatusBar
+          progress={null}
+          items={[mockItem]}
+          onShowToast={() => undefined}
+          onOpenAbout={() => undefined}
+          onOpenSettings={() => undefined}
+          language="ja"
+        />
+      </LocaleProvider>
+    );
+
+    const primaryBtn = screen.getByRole("button", { name: "検索結果を保存 (Excel (.xlsx))" });
+    expect(primaryBtn.textContent).toContain("結果を保存: Excel (.xlsx)");
   });
 
   it("toggles format menu open and closed when clicking menu chevron button", () => {
@@ -223,6 +243,10 @@ describe("StatusBar Component - Export Split Button & Format Menu (US1)", () => 
     // Constant reference: EXPORT_CONSTANTS.STORAGE_KEY_FORMAT
     expect(window.localStorage.getItem(EXPORT_CONSTANTS.STORAGE_KEY_FORMAT)).toBe("md");
 
+    // Verify main button updated to Markdown format
+    const updatedPrimaryBtn = screen.getByRole("button", { name: "Save search results (AI Markdown (.md))" });
+    expect(updatedPrimaryBtn.textContent).toContain("Save Results: AI Markdown (.md)");
+
     // Verify save dialog was called with Markdown filters
     await waitFor(() => expect(mocks.save).toHaveBeenCalled());
     expect(mocks.save).toHaveBeenCalledWith({
@@ -268,8 +292,8 @@ describe("StatusBar Component - Export Split Button & Format Menu (US1)", () => 
     );
 
     // Main button label should reflect JSON format
-    const primaryBtn = screen.getByRole("button", { name: "Export search results" });
-    expect(primaryBtn.textContent).toContain("JSON (.json)");
+    const primaryBtn = screen.getByRole("button", { name: "Save search results (JSON (.json))" });
+    expect(primaryBtn.textContent).toContain("Save Results: JSON (.json)");
 
     // Clicking primary button directly exports JSON
     fireEvent.click(primaryBtn);

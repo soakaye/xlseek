@@ -161,7 +161,9 @@ ui.INVALID_REGEX: The regular expression is invalid
 ui.EXPORT_CSV_BUTTON: Export CSV
 ui.EXPORT_XLSX_BUTTON: Export Excel
 ui.EXPORT_BUTTON_LABEL: Export
+ui.EXPORT_BUTTON_LABEL_WITH_FORMAT: "Save Results: {format}"
 ui.EXPORT_BUTTON_TOOLTIP: Export search results
+ui.EXPORT_BUTTON_TOOLTIP_WITH_FORMAT: "Save search results ({format})"
 ui.EXPORT_MENU_TOOLTIP: Select export format
 ui.EXPORT_FORMAT_XLSX: Excel (.xlsx)
 ui.EXPORT_FORMAT_CSV: CSV (.csv)

@@ -442,6 +442,8 @@ pub const EXPORT_MATCH_COMMENT_KEY: &str = "export.match.comment";
 pub const EXPORT_MATCH_HIDDEN_SHEET_KEY: &str = "export.match.hiddenSheet";
 pub const EXPORT_MATCH_SHAPE_KEY: &str = "export.match.shape";
 pub const EXPORT_MATCH_WORD_TEXT_KEY: &str = "export.match.wordText";
+pub const EXPORT_BUTTON_LABEL_WITH_FORMAT_KEY: &str = "ui.EXPORT_BUTTON_LABEL_WITH_FORMAT";
+pub const EXPORT_BUTTON_TOOLTIP_WITH_FORMAT_KEY: &str = "ui.EXPORT_BUTTON_TOOLTIP_WITH_FORMAT";
 
 // ==============================================================================
 // 6. Supported Apps
@@ -617,6 +619,14 @@ mod tests {
         assert_eq!(EXPORT_SHEET_NAME_KEY, "export.sheetName");
         assert_eq!(EXPORT_MATCH_HIDDEN_SHEET_KEY, "export.match.hiddenSheet");
         assert_eq!(EXPORT_MATCH_WORD_TEXT_KEY, "export.match.wordText");
+        assert_eq!(
+            EXPORT_BUTTON_LABEL_WITH_FORMAT_KEY,
+            "ui.EXPORT_BUTTON_LABEL_WITH_FORMAT"
+        );
+        assert_eq!(
+            EXPORT_BUTTON_TOOLTIP_WITH_FORMAT_KEY,
+            "ui.EXPORT_BUTTON_TOOLTIP_WITH_FORMAT"
+        );
         assert_eq!(DEFAULT_EXPORT_FORMAT, "xlsx");
         assert_eq!(CLI_FORMAT_MD, "md");
         assert_eq!(CLI_FORMAT_JSON, "json");
