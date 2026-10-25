@@ -159,17 +159,17 @@ On Windows, the standalone executable built by this Cargo command is `target\rel
 
 ### Run the CLI from an installed package
 
-The CLI executable `xlseek-cli` is bundled with desktop installer packages as a Tauri Sidecar. Because the Sidecar is not registered on system `PATH` by default (except for standard Linux system package directories), invoke it using its full path or create a shell alias or symlink.
+The CLI executable `xlseek-cli` is bundled with desktop installer packages as a Tauri Sidecar. On Windows, the installer includes an interactive component selection page where `xlseek-cli` is enabled by default. Because the Sidecar is not registered on system `PATH` by default (except for standard Linux system package directories), invoke it using its full path or create a shell alias or symlink.
 
 #### Windows
 
-The Windows x64 NSIS and MSI packages install `xlseek-cli.exe` alongside `xlseek.exe`:
+The Windows x64 NSIS (`.exe`) and WiX (`.msi`) packages install `xlseek-cli.exe` alongside `xlseek.exe`:
 
-| Installer | Default CLI location |
-| :--- | :--- |
-| NSIS (current user) | `%LOCALAPPDATA%\xlseek\xlseek-cli.exe` |
-| NSIS (all users) | `%ProgramFiles%\xlseek\xlseek-cli.exe` |
-| MSI | `%ProgramFiles%\xlseek\xlseek-cli.exe` |
+| Installer | Default CLI location | Component Selection Default |
+| :--- | :--- | :--- |
+| NSIS (current user) | `%LOCALAPPDATA%\xlseek\xlseek-cli.exe` | Enabled (default ON) |
+| NSIS (all users) | `%ProgramFiles%\xlseek\xlseek-cli.exe` | Enabled (default ON) |
+| MSI | `%ProgramFiles%\xlseek\xlseek-cli.exe` | Enabled (default ON) |
 
 Run it from PowerShell using its full path:
 
@@ -261,6 +261,22 @@ Desktop Settings lets you choose Sequential or Burst directory discovery. Sequen
 
 `xlseek-mcp` is a Model Context Protocol (MCP) server that exposes high-speed document search and Excel sheet preview tools to AI coding assistants (Claude Desktop, Antigravity, Cursor, etc.) via JSON-RPC 2.0 over standard I/O (`stdio`).
 
+#### Desktop Packaging & Windows Installer Options
+
+`xlseek-mcp` is packaged alongside the desktop application across all platforms:
+
+- **Windows Installer Options**:
+  - **NSIS Installer (`.exe`)**: Features a **Components Selection** step where `xlseek-mcp` is available as an optional component (`xlseek-mcp (MCP Server)`). It is **unchecked (OFF) by default**; check the box during setup to install `xlseek-mcp.exe`. The core application (`Excel Seek (GUI)`) is mandatory and locked, while `xlseek-cli` is enabled by default.
+  - **WiX Installer (`.msi`)**: Features a **Custom Setup** (`CustomizeDlg`) feature tree where `xlseek-mcp` is disabled by default (`Level=2`). To install it silently, pass `ADDLOCAL=MainProgram,CliFeature,McpFeature`.
+- **Installed Locations**:
+  | Platform / Package | Default Location | Installer Selection Default |
+  | :--- | :--- | :--- |
+  | Windows NSIS (current user) | `%LOCALAPPDATA%\xlseek\xlseek-mcp.exe` | Opt-in (default OFF) |
+  | Windows NSIS (all users) / MSI | `%ProgramFiles%\xlseek\xlseek-mcp.exe` | Opt-in (default OFF) |
+  | macOS (`.dmg` / `.app`) | `/Applications/xlseek.app/Contents/MacOS/xlseek-mcp` | Bundled in `.app` |
+  | Linux (`.deb`) | `/usr/bin/xlseek-mcp` | Included in package |
+  | Linux (`.AppImage`) | `squashfs-root/usr/bin/xlseek-mcp` | Bundled in AppImage |
+
 #### Tools Provided
 
 - `xlseek_search`: High-speed cross-document search across Excel (`.xlsx`, `.xlsm`, `.xls`, `.xlsb`) and Word (`.docx`, `.doc`) files. Returns matching cells, formulas, comments, and drawing shape text.
@@ -282,11 +298,18 @@ target/release/xlseek-mcp --allowed-dir /path/to/spreadsheets
 
 #### Client Configuration Example (`claude_desktop_config.json` / Antigravity / Cursor)
 
+When configuring your AI assistant to use an installed `xlseek-mcp` binary:
+
+- **macOS**: `"/Applications/xlseek.app/Contents/MacOS/xlseek-mcp"`
+- **Windows (all users / MSI)**: `"C:\\Program Files\\xlseek\\xlseek-mcp.exe"`
+- **Windows (current user NSIS)**: `"%LOCALAPPDATA%\\xlseek\\xlseek-mcp.exe"`
+- **Linux (`.deb`)**: `"xlseek-mcp"` (or `"/usr/bin/xlseek-mcp"`)
+
 ```json
 {
   "mcpServers": {
     "xlseek": {
-      "command": "/path/to/xlseek-mcp",
+      "command": "/Applications/xlseek.app/Contents/MacOS/xlseek-mcp",
       "args": ["--allowed-dir", "/path/to/spreadsheets"]
     }
   }

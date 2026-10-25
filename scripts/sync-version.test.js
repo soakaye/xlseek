@@ -30,6 +30,7 @@ import {
   LOCALES_CORE_JA_PATH,
   LOCALES_TAURI_EN_PATH,
   LOCALES_TAURI_JA_PATH,
+  MCP_CARGO_TOML_PATH,
   TAURI_CARGO_TOML_PATH,
   TAURI_CONF_PATH,
   UTF8_ENCODING,
@@ -110,6 +111,7 @@ test("syncAllFiles: updates all project files in a temporary workspace", async (
     await writeFile(path.join(tempDir, TAURI_CONF_PATH), '{"version": "0.1.0"}', UTF8_ENCODING);
     await writeFile(path.join(tempDir, CORE_CARGO_TOML_PATH), '[package]\nversion = "0.1.0"\n', UTF8_ENCODING);
     await writeFile(path.join(tempDir, CLI_CARGO_TOML_PATH), '[package]\nversion = "0.1.0"\n', UTF8_ENCODING);
+    await writeFile(path.join(tempDir, MCP_CARGO_TOML_PATH), '[package]\nversion = "0.1.0"\n', UTF8_ENCODING);
     await writeFile(path.join(tempDir, TAURI_CARGO_TOML_PATH), '[package]\nversion = "0.1.0"\n', UTF8_ENCODING);
     await writeFile(path.join(tempDir, CONSTANTS_INDEX_PATH), 'APP_VERSION: "0.1.0"', UTF8_ENCODING);
     await writeFile(path.join(tempDir, LOCALES_CORE_EN_PATH), "about.APP_VERSION: 0.1.0", UTF8_ENCODING);
@@ -134,6 +136,9 @@ test("syncAllFiles: updates all project files in a temporary workspace", async (
 
     const updatedCargo = await readFile(path.join(tempDir, CORE_CARGO_TOML_PATH), UTF8_ENCODING);
     assert.match(updatedCargo, /version = "1.2.3"/);
+
+    const updatedMcpCargo = await readFile(path.join(tempDir, MCP_CARGO_TOML_PATH), UTF8_ENCODING);
+    assert.match(updatedMcpCargo, /version = "1.2.3"/);
 
     const updatedConstants = await readFile(path.join(tempDir, CONSTANTS_INDEX_PATH), UTF8_ENCODING);
     assert.match(updatedConstants, /APP_VERSION: "1.2.3"/);

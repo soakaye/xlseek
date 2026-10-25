@@ -56,41 +56,43 @@ export function resolveTargetTriple(environment, hostTriple) {
 
 /**
  * Derives the executable filename for a Rust target triple.
- * Takes a target triple string and returns the CLI filename. Throws TypeError
- * if the target is malformed or absent.
+ * Takes a target triple string and optional binary name; returns the filename.
+ * Throws TypeError if the target is malformed or absent.
  */
-export function getExecutableName(targetTriple) {
+export function getExecutableName(targetTriple, binaryName = CLI_BINARY_NAME) {
   const validTarget = validateTargetTriple(targetTriple);
   // Constant references: SIDECAR_TARGET_SEPARATOR, WINDOWS_TARGET_OS_TOKEN, WINDOWS_EXECUTABLE_EXTENSION, and CLI_BINARY_NAME.
   const isWindows = validTarget.split(SIDECAR_TARGET_SEPARATOR).includes(WINDOWS_TARGET_OS_TOKEN);
-  return `${CLI_BINARY_NAME}${isWindows ? WINDOWS_EXECUTABLE_EXTENSION : ""}`;
+  return `${binaryName}${isWindows ? WINDOWS_EXECUTABLE_EXTENSION : ""}`;
 }
 
 /**
  * Derives the Cargo release artifact path for the selected target.
- * Takes a target triple string and repository root path string; returns an
- * artifact path string. Throws TypeError for malformed targets or invalid roots.
+ * Takes a target triple string, repository root path string, and optional binary
+ * name; returns an artifact path string. Throws TypeError for malformed targets
+ * or invalid roots.
  */
-export function getCargoArtifactPath(targetTriple, repositoryRoot) {
-  // Constant references: CARGO_TARGET_DIRECTORY_NAME and CARGO_RELEASE_DIRECTORY_NAME.
+export function getCargoArtifactPath(targetTriple, repositoryRoot, binaryName = CLI_BINARY_NAME) {
+  // Constant references: CARGO_TARGET_DIRECTORY_NAME, CARGO_RELEASE_DIRECTORY_NAME, and CLI_BINARY_NAME.
   return path.join(
     repositoryRoot,
     CARGO_TARGET_DIRECTORY_NAME,
     validateTargetTriple(targetTriple),
     CARGO_RELEASE_DIRECTORY_NAME,
-    getExecutableName(targetTriple),
+    getExecutableName(targetTriple, binaryName),
   );
 }
 
 /**
  * Derives the target-suffixed Tauri Sidecar staging path.
- * Takes a target triple string and repository root path string; returns a
- * staging path string. Throws TypeError for malformed targets or invalid roots.
+ * Takes a target triple string, repository root path string, and optional binary
+ * name; returns a staging path string. Throws TypeError for malformed targets
+ * or invalid roots.
  */
-export function getSidecarPath(targetTriple, repositoryRoot) {
+export function getSidecarPath(targetTriple, repositoryRoot, binaryName = CLI_BINARY_NAME) {
   const validTarget = validateTargetTriple(targetTriple);
-  const { name, ext } = path.parse(getExecutableName(validTarget));
-  // Constant references: GENERATED_BINARIES_DIRECTORY and SIDECAR_TARGET_SEPARATOR.
+  const { name, ext } = path.parse(getExecutableName(validTarget, binaryName));
+  // Constant references: GENERATED_BINARIES_DIRECTORY, SIDECAR_TARGET_SEPARATOR, and CLI_BINARY_NAME.
   return path.join(
     repositoryRoot,
     GENERATED_BINARIES_DIRECTORY,

@@ -2,8 +2,9 @@
  * Copyright (c) 2026 soakaye
  *
  * ## Description
- * Builds xlseek-cli for Tauri's selected Rust target (or the local Rust host)
- * and stages its target-suffixed executable for Tauri Sidecar bundling.
+ * Builds xlseek-cli and xlseek-mcp for Tauri's selected Rust target (or the
+ * local Rust host) and stages their target-suffixed executables for Tauri
+ * Sidecar bundling.
  *
  * ## Arguments & Returns
  * Takes no CLI arguments. Reads TAURI_ENV_TARGET_TRIPLE when provided and
@@ -32,14 +33,13 @@ import {
   CARGO_PACKAGE_FLAG,
   CARGO_RELEASE_FLAG,
   CARGO_TARGET_FLAG,
-  CLI_BINARY_NAME,
-  CLI_CARGO_PACKAGE_NAME,
   COMMAND_ARGUMENT_SEPARATOR,
   HOST_TARGET_NOT_FOUND_MESSAGE,
   RUSTC_COMMAND,
   RUSTC_HOST_LINE_PREFIX,
   RUSTC_OUTPUT_LINE_SEPARATOR,
   RUSTC_VERBOSE_VERSION_FLAG,
+  SIDECAR_TARGETS,
   TAURI_TARGET_TRIPLE_ENV_VAR,
 } from "./build-constants.js";
 import {
@@ -72,8 +72,8 @@ function getHostTargetTriple() {
 }
 
 let targetTriple;
-let sourceArtifact;
-let stagedArtifact;
+let currentSourceArtifact;
+let currentStagedArtifact;
 
 try {
   // Constant reference: TAURI_TARGET_TRIPLE_ENV_VAR.
@@ -85,43 +85,47 @@ try {
   );
 
   const repositoryRoot = path.resolve();
-  sourceArtifact = getCargoArtifactPath(targetTriple, repositoryRoot);
-  stagedArtifact = getSidecarPath(targetTriple, repositoryRoot);
 
-  // Constant references: BUILD_LOG_PREFIX and BUILD_START_MESSAGE.
-  console.log(`${BUILD_LOG_PREFIX} ${BUILD_START_MESSAGE} ${targetTriple}`);
+  // Constant reference: SIDECAR_TARGETS.
+  for (const sidecarTarget of SIDECAR_TARGETS) {
+    currentSourceArtifact = getCargoArtifactPath(targetTriple, repositoryRoot, sidecarTarget.binaryName);
+    currentStagedArtifact = getSidecarPath(targetTriple, repositoryRoot, sidecarTarget.binaryName);
 
-  // Constant references: CARGO_COMMAND, CARGO_BUILD_SUBCOMMAND, CARGO_RELEASE_FLAG, CARGO_PACKAGE_FLAG, CLI_CARGO_PACKAGE_NAME, CARGO_BINARY_FLAG, CLI_BINARY_NAME, CARGO_TARGET_FLAG, and COMMAND_ARGUMENT_SEPARATOR.
-  const cargoCommand = [
-    CARGO_COMMAND,
-    CARGO_BUILD_SUBCOMMAND,
-    CARGO_RELEASE_FLAG,
-    CARGO_PACKAGE_FLAG,
-    CLI_CARGO_PACKAGE_NAME,
-    CARGO_BINARY_FLAG,
-    CLI_BINARY_NAME,
-    CARGO_TARGET_FLAG,
-    targetTriple,
-  ].join(COMMAND_ARGUMENT_SEPARATOR);
-  execSync(cargoCommand, { stdio: "inherit" });
+    // Constant references: BUILD_LOG_PREFIX and BUILD_START_MESSAGE.
+    console.log(`${BUILD_LOG_PREFIX} ${BUILD_START_MESSAGE} ${sidecarTarget.binaryName} (${targetTriple})`);
 
-  if (!fs.existsSync(sourceArtifact)) {
-    // Constant reference: BUILD_ARTIFACT_MISSING_MESSAGE.
-    throw new Error(`${BUILD_ARTIFACT_MISSING_MESSAGE}: ${sourceArtifact}`);
+    // Constant references: CARGO_COMMAND, CARGO_BUILD_SUBCOMMAND, CARGO_RELEASE_FLAG, CARGO_PACKAGE_FLAG, CARGO_BINARY_FLAG, CARGO_TARGET_FLAG, and COMMAND_ARGUMENT_SEPARATOR.
+    const cargoCommand = [
+      CARGO_COMMAND,
+      CARGO_BUILD_SUBCOMMAND,
+      CARGO_RELEASE_FLAG,
+      CARGO_PACKAGE_FLAG,
+      sidecarTarget.packageName,
+      CARGO_BINARY_FLAG,
+      sidecarTarget.binaryName,
+      CARGO_TARGET_FLAG,
+      targetTriple,
+    ].join(COMMAND_ARGUMENT_SEPARATOR);
+    execSync(cargoCommand, { stdio: "inherit" });
+
+    if (!fs.existsSync(currentSourceArtifact)) {
+      // Constant reference: BUILD_ARTIFACT_MISSING_MESSAGE.
+      throw new Error(`${BUILD_ARTIFACT_MISSING_MESSAGE}: ${currentSourceArtifact}`);
+    }
+
+    fs.mkdirSync(path.dirname(currentStagedArtifact), { recursive: true });
+    fs.copyFileSync(currentSourceArtifact, currentStagedArtifact);
+
+    // Constant references: BUILD_LOG_PREFIX and BUILD_SUCCESS_MESSAGE.
+    console.log(`${BUILD_LOG_PREFIX} ${BUILD_SUCCESS_MESSAGE}: ${currentStagedArtifact}`);
   }
-
-  fs.mkdirSync(path.dirname(stagedArtifact), { recursive: true });
-  fs.copyFileSync(sourceArtifact, stagedArtifact);
-
-  // Constant references: BUILD_LOG_PREFIX and BUILD_SUCCESS_MESSAGE.
-  console.log(`${BUILD_LOG_PREFIX} ${BUILD_SUCCESS_MESSAGE}: ${stagedArtifact}`);
 } catch (error) {
   // Constant references: BUILD_LOG_PREFIX and BUILD_ERROR_MESSAGE.
   console.error(`${BUILD_LOG_PREFIX} ${BUILD_ERROR_MESSAGE}: ${error instanceof Error ? error.message : String(error)}`);
   if (targetTriple) {
     // Constant references: BUILD_SOURCE_PATH_LABEL and BUILD_STAGE_PATH_LABEL.
-    console.error(`${BUILD_LOG_PREFIX} ${BUILD_SOURCE_PATH_LABEL}: ${sourceArtifact}`);
-    console.error(`${BUILD_LOG_PREFIX} ${BUILD_STAGE_PATH_LABEL}: ${stagedArtifact}`);
+    console.error(`${BUILD_LOG_PREFIX} ${BUILD_SOURCE_PATH_LABEL}: ${currentSourceArtifact}`);
+    console.error(`${BUILD_LOG_PREFIX} ${BUILD_STAGE_PATH_LABEL}: ${currentStagedArtifact}`);
   }
   process.exitCode = 1;
 }

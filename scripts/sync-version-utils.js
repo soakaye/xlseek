@@ -38,6 +38,7 @@ import {
   LOCALES_CORE_JA_PATH,
   LOCALES_TAURI_EN_PATH,
   LOCALES_TAURI_JA_PATH,
+  MCP_CARGO_TOML_PATH,
   PATTERN_NOT_MATCHED_MESSAGE,
   SEMVER_PATTERN,
   TAURI_CARGO_TOML_PATH,
@@ -220,6 +221,8 @@ export async function syncAllFiles(repoRoot, targetVersion, options = {}) {
     { relativePath: CORE_CARGO_TOML_PATH, transform: updateCargoToml },
     // Constant reference: CLI_CARGO_TOML_PATH.
     { relativePath: CLI_CARGO_TOML_PATH, transform: updateCargoToml },
+    // Constant reference: MCP_CARGO_TOML_PATH.
+    { relativePath: MCP_CARGO_TOML_PATH, transform: updateCargoToml },
     // Constant reference: TAURI_CARGO_TOML_PATH.
     { relativePath: TAURI_CARGO_TOML_PATH, transform: updateCargoToml },
     // Constant reference: CONSTANTS_INDEX_PATH.

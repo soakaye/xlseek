@@ -24,6 +24,7 @@ import { fileURLToPath } from "node:url";
 import {
   CLI_BINARY_NAME,
   GENERATED_BINARIES_DIRECTORY,
+  MCP_BINARY_NAME,
   TAURI_TARGET_TRIPLE_ENV_VAR,
 } from "./build-constants.js";
 
@@ -115,10 +116,13 @@ test("target triple: empty and malformed inputs fail", async () => {
  */
 test("executable name: Windows gets .exe", async () => {
   const { getExecutableName } = await loadBuildHelpers();
-  // Constant reference: CLI_BINARY_NAME.
+  // Constant references: CLI_BINARY_NAME and MCP_BINARY_NAME.
   assert.equal(getExecutableName(WINDOWS_TARGET), `${CLI_BINARY_NAME}.exe`);
   assert.equal(getExecutableName(MAC_TARGET), CLI_BINARY_NAME);
   assert.equal(getExecutableName(LINUX_TARGET), CLI_BINARY_NAME);
+  assert.equal(getExecutableName(WINDOWS_TARGET, MCP_BINARY_NAME), `${MCP_BINARY_NAME}.exe`);
+  assert.equal(getExecutableName(MAC_TARGET, MCP_BINARY_NAME), MCP_BINARY_NAME);
+  assert.equal(getExecutableName(LINUX_TARGET, MCP_BINARY_NAME), MCP_BINARY_NAME);
 });
 
 /**
@@ -129,7 +133,7 @@ test("executable name: Windows gets .exe", async () => {
 test("artifact paths: Cargo and Sidecar use the selected target", async () => {
   const { getCargoArtifactPath, getSidecarPath } = await loadBuildHelpers();
   const repositoryRoot = path.resolve("fixture-repository");
-  // Constant references: CLI_BINARY_NAME and GENERATED_BINARIES_DIRECTORY.
+  // Constant references: CLI_BINARY_NAME, MCP_BINARY_NAME, and GENERATED_BINARIES_DIRECTORY.
   assert.equal(
     getCargoArtifactPath(WINDOWS_TARGET, repositoryRoot),
     path.join(repositoryRoot, "target", WINDOWS_TARGET, "release", `${CLI_BINARY_NAME}.exe`),
@@ -145,6 +149,14 @@ test("artifact paths: Cargo and Sidecar use the selected target", async () => {
   assert.equal(
     getSidecarPath(MAC_TARGET, repositoryRoot),
     path.join(repositoryRoot, GENERATED_BINARIES_DIRECTORY, `${CLI_BINARY_NAME}-${MAC_TARGET}`),
+  );
+  assert.equal(
+    getCargoArtifactPath(WINDOWS_TARGET, repositoryRoot, MCP_BINARY_NAME),
+    path.join(repositoryRoot, "target", WINDOWS_TARGET, "release", `${MCP_BINARY_NAME}.exe`),
+  );
+  assert.equal(
+    getSidecarPath(WINDOWS_TARGET, repositoryRoot, MCP_BINARY_NAME),
+    path.join(repositoryRoot, GENERATED_BINARIES_DIRECTORY, `${MCP_BINARY_NAME}-${WINDOWS_TARGET}.exe`),
   );
 });
 

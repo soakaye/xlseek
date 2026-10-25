@@ -17,6 +17,7 @@ export const PACKAGE_JSON_PATH = "package.json";
 export const TAURI_CONF_PATH = "src-tauri/tauri.conf.json";
 export const CORE_CARGO_TOML_PATH = "crates/core/Cargo.toml";
 export const CLI_CARGO_TOML_PATH = "crates/cli/Cargo.toml";
+export const MCP_CARGO_TOML_PATH = "crates/mcp/Cargo.toml";
 export const TAURI_CARGO_TOML_PATH = "src-tauri/Cargo.toml";
 export const CONSTANTS_INDEX_PATH = "src/constants/index.ts";
 export const LOCALES_CORE_EN_PATH = "crates/core/locales/en.yml";
@@ -29,6 +30,7 @@ export const ALL_VERSION_TARGET_PATHS = [
   TAURI_CONF_PATH,
   CORE_CARGO_TOML_PATH,
   CLI_CARGO_TOML_PATH,
+  MCP_CARGO_TOML_PATH,
   TAURI_CARGO_TOML_PATH,
   CONSTANTS_INDEX_PATH,
   LOCALES_CORE_EN_PATH,

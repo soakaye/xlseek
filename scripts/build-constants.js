@@ -17,8 +17,23 @@
 
 export const CLI_CARGO_PACKAGE_NAME = "xlseek-cli";
 export const CLI_BINARY_NAME = "xlseek-cli";
+export const MCP_CARGO_PACKAGE_NAME = "xlseek-mcp";
+export const MCP_BINARY_NAME = "xlseek-mcp";
 export const TAURI_TARGET_TRIPLE_ENV_VAR = "TAURI_ENV_TARGET_TRIPLE";
 export const SIDECAR_BASE_PATH = "binaries/xlseek-cli";
+export const MCP_SIDECAR_BASE_PATH = "binaries/xlseek-mcp";
+export const SIDECAR_TARGETS = [
+  {
+    packageName: CLI_CARGO_PACKAGE_NAME,
+    binaryName: CLI_BINARY_NAME,
+    basePath: SIDECAR_BASE_PATH,
+  },
+  {
+    packageName: MCP_CARGO_PACKAGE_NAME,
+    binaryName: MCP_BINARY_NAME,
+    basePath: MCP_SIDECAR_BASE_PATH,
+  },
+];
 export const GENERATED_BINARIES_DIRECTORY = "src-tauri/binaries";
 export const WINDOWS_TARGET_OS_TOKEN = "windows";
 export const WINDOWS_EXECUTABLE_EXTENSION = ".exe";

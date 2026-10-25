@@ -159,17 +159,17 @@ Windows では、この Cargo コマンドで生成される単体の実行フ�
 
 ### インストール済みパッケージから CLI を実行する
 
-デスクトップ版のインストーラーには、CLI バイナリ `xlseek-cli` が Tauri Sidecar として同梱されています。Sidecar バイナリは（Linux の標準システムパッケージを除き）システムの `PATH` に自動登録されないため、フルパスで実行するか、エイリアスやシンボリックリンクを作成して利用します。
+デスクトップ版のインストーラーには、CLI バイナリ `xlseek-cli` が Tauri Sidecar として同梱されています。Windows 版インストーラーではコンポーネント選択画面が提供され、`xlseek-cli` は既定で有効（選択状態）になっています。Sidecar バイナリは（Linux の標準システムパッケージを除き）システムの `PATH` に自動登録されないため、フルパスで実行するか、エイリアスやシンボリックリンクを作成して利用します。
 
 #### Windows
 
-Windows x64 の NSIS および MSI パッケージでは、`xlseek.exe` と同一ディレクトリに `xlseek-cli.exe` が配置されます：
+Windows x64 の NSIS (`.exe`) および WiX (`.msi`) パッケージでは、`xlseek.exe` と同一ディレクトリに `xlseek-cli.exe` が配置されます：
 
-| インストーラー | CLI の既定の配置先 |
-| :--- | :--- |
-| NSIS（現在のユーザー） | `%LOCALAPPDATA%\xlseek\xlseek-cli.exe` |
-| NSIS（すべてのユーザー） | `%ProgramFiles%\xlseek\xlseek-cli.exe` |
-| MSI | `%ProgramFiles%\xlseek\xlseek-cli.exe` |
+| インストーラー | CLI の既定の配置先 | コンポーネント選択の既定値 |
+| :--- | :--- | :--- |
+| NSIS（現在のユーザー） | `%LOCALAPPDATA%\xlseek\xlseek-cli.exe` | 有効 (ON) |
+| NSIS（すべてのユーザー） | `%ProgramFiles%\xlseek\xlseek-cli.exe` | 有効 (ON) |
+| MSI | `%ProgramFiles%\xlseek\xlseek-cli.exe` | 有効 (ON) |
 
 PowerShell からの実行例：
 
@@ -261,6 +261,22 @@ xlseek-cli "Revenue" ./reports
 
 `xlseek-mcp` は、標準入出力 (`stdio`) 経由の JSON-RPC 2.0 通信を通じて、AI アシスタント (Claude Desktop、Antigravity、Cursor など) に対し、高速なドキュメント検索および Excel シートプレビュー機能を提供する Model Context Protocol (MCP) サーバーです。
 
+#### デスクトップ版への同梱と Windows インストーラーの選択オプション
+
+`xlseek-mcp` は、全プラットフォーム向けにデスクトップアプリと同一パッケージに同梱されます：
+
+- **Windows インストーラーの選択オプション**:
+  - **NSIS インストーラー (`.exe`)**: **コンポーネント選択** 画面にて、`xlseek-mcp` がオプションコンポーネント（`xlseek-mcp (MCP サーバー)`）として提供されます。**既定ではチェックが外れており（OFF）**、必要な場合のみチェックを入れて `xlseek-mcp.exe` をインストールできます。本体（`Excel Seek (GUI)`）は必須選択（変更不可）で、`xlseek-cli` は既定で有効（ON）です。
+  - **WiX インストーラー (`.msi`)**: **カスタムセットアップ** (`CustomizeDlg`) 機能ツリーにおいて、`xlseek-mcp` は既定で無効（`Level=2`）です。サイレントインストールで追加導入する場合は、`ADDLOCAL=MainProgram,CliFeature,McpFeature` を指定します。
+- **インストール先の配置場所**:
+  | プラットフォーム / パッケージ | 既定の配置先 | インストーラー選択の既定値 |
+  | :--- | :--- | :--- |
+  | Windows NSIS（現在のユーザー） | `%LOCALAPPDATA%\xlseek\xlseek-mcp.exe` | オプトイン（既定 OFF） |
+  | Windows NSIS（すべてのユーザー） / MSI | `%ProgramFiles%\xlseek\xlseek-mcp.exe` | オプトイン（既定 OFF） |
+  | macOS (`.dmg` / `.app`) | `/Applications/xlseek.app/Contents/MacOS/xlseek-mcp` | `.app` 内に常時同梱 |
+  | Linux (`.deb`) | `/usr/bin/xlseek-mcp` | パッケージに同梱 |
+  | Linux (`.AppImage`) | `squashfs-root/usr/bin/xlseek-mcp` | AppImage 内に同梱 |
+
 #### 提供ツール
 
 - `xlseek_search`: Excel (`.xlsx`, `.xlsm`, `.xls`, `.xlsb`) および Word (`.docx`, `.doc`) ドキュメントを対象とした高速横断検索。セル値、数式、コメント、図形内テキストのマッチ結果を返却します。
@@ -282,11 +298,18 @@ target/release/xlseek-mcp --allowed-dir /path/to/spreadsheets
 
 #### クライアント設定例 (`claude_desktop_config.json` / Antigravity / Cursor)
 
+各 OS でインストールされた `xlseek-mcp` を AI アシスタントに登録する際の設定例：
+
+- **macOS**: `"/Applications/xlseek.app/Contents/MacOS/xlseek-mcp"`
+- **Windows (すべてのユーザー / MSI)**: `"C:\\Program Files\\xlseek\\xlseek-mcp.exe"`
+- **Windows (現在のユーザー NSIS)**: `"%LOCALAPPDATA%\\xlseek\\xlseek-mcp.exe"`
+- **Linux (`.deb`)**: `"xlseek-mcp"`（または `"/usr/bin/xlseek-mcp"`）
+
 ```json
 {
   "mcpServers": {
     "xlseek": {
-      "command": "/path/to/xlseek-mcp",
+      "command": "/Applications/xlseek.app/Contents/MacOS/xlseek-mcp",
       "args": ["--allowed-dir", "/path/to/spreadsheets"]
     }
   }
