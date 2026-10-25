@@ -38,6 +38,7 @@
 - **検索履歴と入力補完**: 直近の検索キーワード、対象ディレクトリパス、除外パターンを履歴として保持し、パスの入力補完をサポート。
 - **エクスポート機能**: 検索結果を Excel（`.xlsx`）、CSV（`.csv`）、AI 向け Markdown（`.md`）、構造化 JSON（`.json`）ファイルとして統合スプリットボタンから直接出力。選択形式は自動記憶。
 - **ヘッドレス CLI 同梱**: GUI を起動せずにバッチ検索、ファイル出力、または標準出力（stdout）への CSV / Markdown / JSON ストリーミングが可能な `xlseek-cli` を提供。
+- **Model Context Protocol (MCP) サーバー対応**: `xlseek-mcp` により Claude Desktop、Cursor、Antigravity などの AI アシスタントと連携可能。GitHub Releases から単独バイナリとして直接ダウンロードできるほか、デスクトップインストーラーにも同梱。
 - **バイリンガル対応**: 日本語と英語の UI 切り替え、デフォルト検索オプションおよび履歴件数の設定が可能。
 - **クロスプラットフォーム対応（デスクトップ & CLI）**: Windows、macOS、Linux をネイティブサポート。各 OS のファイルマネージャー（Explorer、Finder、DBus ShowItems / xdg-open）連携や表計算アプリの直接起動に対応。
 - **オープンソース情報の透明性**: About ダイアログからアプリケーション情報、バージョン、およびサードパーティ OSS ライセンス条項を確認可能。
@@ -66,9 +67,9 @@ Excel Seek は、Windows、macOS、Linux の各 OS にネイティブ対応し�
 
 | プラットフォーム | 対応バージョン / アーキテクチャ | パッケージ形式 | ファイルマネージャー連携 | 表計算アプリ検出 |
 | :--- | :--- | :--- | :--- | :--- |
-| **Windows** | Windows 10, 11 (x64) | NSIS インストーラー (`.exe`)、WiX (`.msi`) | エクスプローラー (`explorer.exe /select,<path>`) | Microsoft Excel、LibreOffice Calc、WPS Office（レジストリ経由） |
-| **macOS** | macOS 11.0+ (Apple Silicon) | ディスクイメージ (`.dmg`)、アプリバンドル (`.app`) | Finder (`open -R <path>`) | Microsoft Excel、Apple Numbers、LibreOffice Calc（`/Applications` 配下） |
-| **Linux** | Ubuntu, Debian, Fedora, Arch Linux (x86_64) | Debian パッケージ (`.deb`)、AppImage (`.AppImage`) | DBus `FileManager1` (Nautilus, Dolphin, Nemo) / `gio` / `xdg-open` / WSL `explorer.exe` | システム既定の表計算アプリ |
+| **Windows** | Windows 10, 11 (x64) | NSIS (`.exe`)、WiX (`.msi`)、MCP 単独バイナリ (`.zip`) | エクスプローラー (`explorer.exe /select,<path>`) | Microsoft Excel、LibreOffice Calc、WPS Office（レジストリ経由） |
+| **macOS** | macOS 11.0+ (Apple Silicon) | ディスクイメージ (`.dmg`)、アプリバンドル (`.app`)、MCP 単独バイナリ (`.tar.gz`) | Finder (`open -R <path>`) | Microsoft Excel、Apple Numbers、LibreOffice Calc（`/Applications` 配下） |
+| **Linux** | Ubuntu, Debian, Fedora, Arch Linux (x86_64) | Debian パッケージ (`.deb`)、AppImage (`.AppImage`)、MCP 単独バイナリ (`.tar.gz`) | DBus `FileManager1` (Nautilus, Dolphin, Nemo) / `gio` / `xdg-open` / WSL `explorer.exe` | システム既定の表計算アプリ |
 
 ### 各プラットフォームの特長
 
@@ -261,21 +262,32 @@ xlseek-cli "Revenue" ./reports
 
 `xlseek-mcp` は、標準入出力 (`stdio`) 経由の JSON-RPC 2.0 通信を通じて、AI アシスタント (Claude Desktop、Antigravity、Cursor など) に対し、高速なドキュメント検索および Excel シートプレビュー機能を提供する Model Context Protocol (MCP) サーバーです。
 
-#### デスクトップ版への同梱と Windows インストーラーの選択オプション
+#### 配布形態とインストール
 
-`xlseek-mcp` は、全プラットフォーム向けにデスクトップアプリと同一パッケージに同梱されます：
+`xlseek-mcp` は、**単独バイナリとしてのリリース配布** および **デスクトップアプリインストーラーのオプションコンポーネント** として提供されています：
 
-- **Windows インストーラーの選択オプション**:
-  - **NSIS インストーラー (`.exe`)**: **コンポーネント選択** 画面にて、`xlseek-mcp` がオプションコンポーネント（`xlseek-mcp (MCP サーバー)`）として提供されます。**既定ではチェックが外れており（OFF）**、必要な場合のみチェックを入れて `xlseek-mcp.exe` をインストールできます。本体（`Excel Seek (GUI)`）は必須選択（変更不可）で、`xlseek-cli` は既定で有効（ON）です。
-  - **WiX インストーラー (`.msi`)**: **カスタムセットアップ** (`CustomizeDlg`) 機能ツリーにおいて、`xlseek-mcp` は既定で無効（`Level=2`）です。サイレントインストールで追加導入する場合は、`ADDLOCAL=MainProgram,CliFeature,McpFeature` を指定します。
-- **インストール先の配置場所**:
-  | プラットフォーム / パッケージ | 既定の配置先 | インストーラー選択の既定値 |
-  | :--- | :--- | :--- |
-  | Windows NSIS（現在のユーザー） | `%LOCALAPPDATA%\xlseek\xlseek-mcp.exe` | オプトイン（既定 OFF） |
-  | Windows NSIS（すべてのユーザー） / MSI | `%ProgramFiles%\xlseek\xlseek-mcp.exe` | オプトイン（既定 OFF） |
-  | macOS (`.dmg` / `.app`) | `/Applications/xlseek.app/Contents/MacOS/xlseek-mcp` | `.app` 内に常時同梱 |
-  | Linux (`.deb`) | `/usr/bin/xlseek-mcp` | パッケージに同梱 |
-  | Linux (`.AppImage`) | `squashfs-root/usr/bin/xlseek-mcp` | AppImage 内に同梱 |
+1. **スタンドアロン単独バイナリ（GitHub Releases）**:
+   各リリースの [GitHub Releases](https://github.com/soakaye/xlseek/releases) から、主要プラットフォーム向けにコンパイル済みの圧縮アーカイブをダウンロードして単体で利用できます：
+   - **macOS (Apple Silicon)**: `xlseek-mcp-<tag>-aarch64-apple-darwin.tar.gz`
+   - **Linux (x86_64)**: `xlseek-mcp-<tag>-x86_64-unknown-linux-gnu.tar.gz`
+   - **Windows (x86_64)**: `xlseek-mcp-<tag>-x86_64-pc-windows-msvc.zip`
+
+   ダウンロードしたアーカイブを展開し、実行ファイル（Windows は `xlseek-mcp.exe`）を任意のディレクトリ（例: `~/.local/bin` や `C:\tools\` など）に配置して MCP クライアントの設定に指定するだけで、GUI アプリのインストールや Rust ビルドを行うことなく即座に利用可能です。
+
+2. **デスクトップ版への同梱と Windows インストーラーの選択オプション**:
+   - **NSIS インストーラー (`.exe`)**: **コンポーネント選択** 画面にて、`xlseek-mcp` がオプションコンポーネント（`xlseek-mcp (MCP サーバー)`）として提供されます。**既定ではチェックが外れており（OFF）**、必要な場合のみチェックを入れて `xlseek-mcp.exe` をインストールできます。本体（`Excel Seek (GUI)`）は必須選択（変更不可）で、`xlseek-cli` は既定で有効（ON）です。
+   - **WiX インストーラー (`.msi`)**: **カスタムセットアップ** (`CustomizeDlg`) 機能ツリーにおいて、`xlseek-mcp` は既定で無効（`Level=2`）です。サイレントインストールで追加導入する場合は、`ADDLOCAL=MainProgram,CliFeature,McpFeature` を指定します。
+
+#### 配置場所と実行パス
+
+| プラットフォーム / 配布形態 | 実行ファイルの配置先 | 補足 |
+| :--- | :--- | :--- |
+| **単独バイナリ（全プラットフォーム）** | 展開先パス（例: `~/.local/bin/xlseek-mcp` または `C:\tools\xlseek-mcp.exe`） | GitHub Releases から直接ダウンロード |
+| Windows NSIS（現在のユーザー） | `%LOCALAPPDATA%\xlseek\xlseek-mcp.exe` | オプトイン（既定 OFF） |
+| Windows NSIS（すべてのユーザー） / MSI | `%ProgramFiles%\xlseek\xlseek-mcp.exe` | オプトイン（既定 OFF） |
+| macOS (`.dmg` / `.app`) | `/Applications/xlseek.app/Contents/MacOS/xlseek-mcp` | `.app` 内に常時同梱 |
+| Linux (`.deb`) | `/usr/bin/xlseek-mcp` | パッケージに同梱 |
+| Linux (`.AppImage`) | `squashfs-root/usr/bin/xlseek-mcp` | AppImage 内に同梱 |
 
 #### 提供ツール
 
@@ -298,9 +310,10 @@ target/release/xlseek-mcp --allowed-dir /path/to/spreadsheets
 
 #### クライアント設定例 (`claude_desktop_config.json` / Antigravity / Cursor)
 
-各 OS でインストールされた `xlseek-mcp` を AI アシスタントに登録する際の設定例：
+各 OS でインストールまたはダウンロードした `xlseek-mcp` を AI アシスタントに登録する際の設定例：
 
-- **macOS**: `"/Applications/xlseek.app/Contents/MacOS/xlseek-mcp"`
+- **単独バイナリ（各OS共通）**: 展開先の実行ファイルパス（例: `"/usr/local/bin/xlseek-mcp"` または `"C:\\tools\\xlseek-mcp.exe"`）
+- **macOS アプリ内蔵**: `"/Applications/xlseek.app/Contents/MacOS/xlseek-mcp"`
 - **Windows (すべてのユーザー / MSI)**: `"C:\\Program Files\\xlseek\\xlseek-mcp.exe"`
 - **Windows (現在のユーザー NSIS)**: `"%LOCALAPPDATA%\\xlseek\\xlseek-mcp.exe"`
 - **Linux (`.deb`)**: `"xlseek-mcp"`（または `"/usr/bin/xlseek-mcp"`）

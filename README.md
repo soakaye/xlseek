@@ -38,6 +38,7 @@
 - **Search History & Autocomplete**: Remembers recent search queries, target directory paths, and ignore patterns with autocompletion.
 - **Export Capabilities**: Consolidated split button to export search results to Excel (`.xlsx`), CSV (`.csv`), AI Markdown (`.md`), or structured JSON (`.json`) files with remembered format preference.
 - **Headless CLI Included**: Run batch searches and export results or stream CSV, Markdown, or JSON to stdout via `xlseek-cli`.
+- **Model Context Protocol (MCP) Server**: Connect AI assistants (Claude Desktop, Cursor, Antigravity) to local spreadsheets via `xlseek-mcp`. Distributed as standalone pre-built binaries on GitHub Releases and bundled with desktop installers.
 - **Bilingual Interface**: Seamless switching between Japanese and English UI, configurable default search options, and history limits.
 - **Cross-Platform Desktop & CLI**: Full native support for Windows, macOS, and Linux, including OS-specific file manager integration (Explorer, Finder, DBus ShowItems / xdg-open) and external spreadsheet application launching.
 - **Transparent Open Source**: View application details, version information, and third-party OSS licenses in the About dialog.
@@ -66,9 +67,9 @@ Excel Seek provides first-class support for Windows, macOS, and Linux with nativ
 
 | Platform | Supported Versions / Architectures | Package Formats | File Manager Integration | Spreadsheet App Detection |
 | :--- | :--- | :--- | :--- | :--- |
-| **Windows** | Windows 10, 11 (x64) | NSIS Installer (`.exe`), WiX (`.msi`) | File Explorer (`explorer.exe /select,<path>`) | Microsoft Excel, LibreOffice Calc, WPS Office (via Registry) |
-| **macOS** | macOS 11.0+ (Apple Silicon) | Apple Disk Image (`.dmg`), App bundle (`.app`) | Finder (`open -R <path>`) | Microsoft Excel, Apple Numbers, LibreOffice Calc (via `/Applications`) |
-| **Linux** | Ubuntu, Debian, Fedora, Arch Linux (x86_64) | Debian package (`.deb`), AppImage (`.AppImage`) | DBus `ShowItems` (Nautilus, Dolphin, Nemo) / `gio` / `xdg-open` / WSL `explorer.exe` | System default spreadsheet handler |
+| **Windows** | Windows 10, 11 (x64) | NSIS (`.exe`), WiX (`.msi`), Standalone MCP (`.zip`) | File Explorer (`explorer.exe /select,<path>`) | Microsoft Excel, LibreOffice Calc, WPS Office (via Registry) |
+| **macOS** | macOS 11.0+ (Apple Silicon) | Apple Disk Image (`.dmg`), App bundle (`.app`), Standalone MCP (`.tar.gz`) | Finder (`open -R <path>`) | Microsoft Excel, Apple Numbers, LibreOffice Calc (via `/Applications`) |
+| **Linux** | Ubuntu, Debian, Fedora, Arch Linux (x86_64) | Debian (`.deb`), AppImage (`.AppImage`), Standalone MCP (`.tar.gz`) | DBus `ShowItems` (Nautilus, Dolphin, Nemo) / `gio` / `xdg-open` / WSL `explorer.exe` | System default spreadsheet handler |
 
 ### Platform Highlights
 
@@ -261,21 +262,32 @@ Desktop Settings lets you choose Sequential or Burst directory discovery. Sequen
 
 `xlseek-mcp` is a Model Context Protocol (MCP) server that exposes high-speed document search and Excel sheet preview tools to AI coding assistants (Claude Desktop, Antigravity, Cursor, etc.) via JSON-RPC 2.0 over standard I/O (`stdio`).
 
-#### Desktop Packaging & Windows Installer Options
+#### Distribution & Installation
 
-`xlseek-mcp` is packaged alongside the desktop application across all platforms:
+`xlseek-mcp` is distributed both as **standalone multi-platform binaries** and as an optional component of the desktop application:
 
-- **Windows Installer Options**:
-  - **NSIS Installer (`.exe`)**: Features a **Components Selection** step where `xlseek-mcp` is available as an optional component (`xlseek-mcp (MCP Server)`). It is **unchecked (OFF) by default**; check the box during setup to install `xlseek-mcp.exe`. The core application (`Excel Seek (GUI)`) is mandatory and locked, while `xlseek-cli` is enabled by default.
-  - **WiX Installer (`.msi`)**: Features a **Custom Setup** (`CustomizeDlg`) feature tree where `xlseek-mcp` is disabled by default (`Level=2`). To install it silently, pass `ADDLOCAL=MainProgram,CliFeature,McpFeature`.
-- **Installed Locations**:
-  | Platform / Package | Default Location | Installer Selection Default |
-  | :--- | :--- | :--- |
-  | Windows NSIS (current user) | `%LOCALAPPDATA%\xlseek\xlseek-mcp.exe` | Opt-in (default OFF) |
-  | Windows NSIS (all users) / MSI | `%ProgramFiles%\xlseek\xlseek-mcp.exe` | Opt-in (default OFF) |
-  | macOS (`.dmg` / `.app`) | `/Applications/xlseek.app/Contents/MacOS/xlseek-mcp` | Bundled in `.app` |
-  | Linux (`.deb`) | `/usr/bin/xlseek-mcp` | Included in package |
-  | Linux (`.AppImage`) | `squashfs-root/usr/bin/xlseek-mcp` | Bundled in AppImage |
+1. **Standalone Pre-built Binaries (GitHub Releases)**:
+   Pre-built binary archives are published for every release on [GitHub Releases](https://github.com/soakaye/xlseek/releases):
+   - **macOS (Apple Silicon)**: `xlseek-mcp-<tag>-aarch64-apple-darwin.tar.gz`
+   - **Linux (x86_64)**: `xlseek-mcp-<tag>-x86_64-unknown-linux-gnu.tar.gz`
+   - **Windows (x86_64)**: `xlseek-mcp-<tag>-x86_64-pc-windows-msvc.zip`
+
+   Download the archive for your operating system, extract the standalone executable (`xlseek-mcp` or `xlseek-mcp.exe`), and point your MCP client to that executable path. No desktop GUI installation or Rust toolchain required.
+
+2. **Desktop Packaging & Windows Installer Options**:
+   - **NSIS Installer (`.exe`)**: Features a **Components Selection** step where `xlseek-mcp` is available as an optional component (`xlseek-mcp (MCP Server)`). It is **unchecked (OFF) by default**; check the box during setup to install `xlseek-mcp.exe`. The core application (`Excel Seek (GUI)`) is mandatory and locked, while `xlseek-cli` is enabled by default.
+   - **WiX Installer (`.msi`)**: Features a **Custom Setup** (`CustomizeDlg`) feature tree where `xlseek-mcp` is disabled by default (`Level=2`). To install it silently, pass `ADDLOCAL=MainProgram,CliFeature,McpFeature`.
+
+#### Binary Locations & Paths
+
+| Platform / Installation Method | Default / Recommended Location | Notes |
+| :--- | :--- | :--- |
+| **Standalone Release (All Platforms)** | Extracted path (e.g. `~/.local/bin/xlseek-mcp` or `C:\tools\xlseek-mcp.exe`) | Downloaded from GitHub Releases |
+| Windows NSIS (current user) | `%LOCALAPPDATA%\xlseek\xlseek-mcp.exe` | Opt-in (default OFF) |
+| Windows NSIS (all users) / MSI | `%ProgramFiles%\xlseek\xlseek-mcp.exe` | Opt-in (default OFF) |
+| macOS (`.dmg` / `.app`) | `/Applications/xlseek.app/Contents/MacOS/xlseek-mcp` | Bundled in `.app` |
+| Linux (`.deb`) | `/usr/bin/xlseek-mcp` | Included in package |
+| Linux (`.AppImage`) | `squashfs-root/usr/bin/xlseek-mcp` | Bundled in AppImage |
 
 #### Tools Provided
 
@@ -298,9 +310,10 @@ target/release/xlseek-mcp --allowed-dir /path/to/spreadsheets
 
 #### Client Configuration Example (`claude_desktop_config.json` / Antigravity / Cursor)
 
-When configuring your AI assistant to use an installed `xlseek-mcp` binary:
+When configuring your AI assistant to use an installed or standalone `xlseek-mcp` binary:
 
-- **macOS**: `"/Applications/xlseek.app/Contents/MacOS/xlseek-mcp"`
+- **Standalone Binary**: Path to extracted executable (e.g. `"/usr/local/bin/xlseek-mcp"` or `"C:\\tools\\xlseek-mcp.exe"`)
+- **macOS App**: `"/Applications/xlseek.app/Contents/MacOS/xlseek-mcp"`
 - **Windows (all users / MSI)**: `"C:\\Program Files\\xlseek\\xlseek-mcp.exe"`
 - **Windows (current user NSIS)**: `"%LOCALAPPDATA%\\xlseek\\xlseek-mcp.exe"`
 - **Linux (`.deb`)**: `"xlseek-mcp"` (or `"/usr/bin/xlseek-mcp"`)

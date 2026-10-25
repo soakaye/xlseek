@@ -12,6 +12,25 @@ Standalone Model Context Protocol (MCP) server for Excel Seek (`xlseek`).
 2. **`xlseek_list_sheets`**: Lists all worksheet names within a specified workbook file.
 3. **`xlseek_preview_sheet`**: Extracts a window of cells from a specified worksheet and formats them as a clean Markdown table with row and column headers.
 
+## Installation & Downloads
+
+### Standalone Pre-built Binaries (GitHub Releases)
+
+Pre-built binary archives are available on [GitHub Releases](https://github.com/soakaye/xlseek/releases):
+
+- **macOS (Apple Silicon)**: `xlseek-mcp-<tag>-aarch64-apple-darwin.tar.gz`
+- **Linux (x86_64)**: `xlseek-mcp-<tag>-x86_64-unknown-linux-gnu.tar.gz`
+- **Windows (x86_64)**: `xlseek-mcp-<tag>-x86_64-pc-windows-msvc.zip`
+
+Extract the executable (`xlseek-mcp` or `xlseek-mcp.exe`) and place it in your PATH or tools directory. No Rust toolchain or desktop GUI application is required.
+
+### Building from Source
+
+```bash
+cargo build --release -p xlseek-mcp
+```
+The compiled binary will be located at `target/release/xlseek-mcp` (or `target/release/xlseek-mcp.exe`).
+
 ## Configuration Example (Claude Desktop)
 
 Add the server to `claude_desktop_config.json`:
