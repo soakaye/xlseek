@@ -4,7 +4,7 @@
 
 [package]
 name = "xlseek-mcp"
-version = "1.0.2"
+version = "1.0.3"
 description = "Model Context Protocol (MCP) server for Excel Seek"
 authors = ["soakaye"]
 edition = "2021"
