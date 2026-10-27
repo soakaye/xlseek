@@ -97,13 +97,15 @@ where
     FFile: Fn(&Path) -> Result<(), String> + Send + Sync,
     FIssue: Fn(DiscoveryIssue) + Send + Sync,
 {
-    let passthrough = crate::search::ignore::IgnoreMatcher::passthrough();
+    let passthrough_pattern = crate::search::pattern::FilePatternMatcher::passthrough();
+    let passthrough_ignore = crate::search::ignore::IgnoreMatcher::passthrough();
     discover_files_with_ignore(
         roots,
         extensions,
         mode,
         requested_workers,
-        &passthrough,
+        &passthrough_pattern,
+        &passthrough_ignore,
         cancelled,
         on_file,
         on_issue,
@@ -116,8 +118,9 @@ where
 /// ## Arguments / Returns
 /// `roots` are files' parent directories to traverse; `extensions` are dot-prefixed file types;
 /// `mode` selects one visitor or a bounded Burst pool; `requested_workers` is optional custom
-/// count; `ignore_matcher` evaluates candidate paths against gitignore rules; `cancelled` is checked
-/// between operations; `on_file` receives each eligible path; `on_issue` receives nonfatal failures.
+/// count; `pattern_matcher` evaluates candidate paths against inclusion rules; `ignore_matcher`
+/// evaluates candidate paths against gitignore rules; `cancelled` is checked between operations;
+/// `on_file` receives each eligible path; `on_issue` receives nonfatal failures.
 /// Returns `Ok(())` on completion or `Err` on fatal errors.
 ///
 /// ## Errors
@@ -128,6 +131,7 @@ pub fn discover_files_with_ignore<FFile, FIssue>(
     extensions: &[String],
     mode: DirectorySearchMode,
     requested_workers: Option<usize>,
+    pattern_matcher: &crate::search::pattern::FilePatternMatcher,
     ignore_matcher: &crate::search::ignore::IgnoreMatcher,
     cancelled: &AtomicBool,
     on_file: FFile,
@@ -175,6 +179,7 @@ where
     });
     let on_file = Arc::new(on_file);
     let on_issue = Arc::new(on_issue);
+    let pattern_matcher = Arc::new(pattern_matcher.clone());
     let ignore_matcher = Arc::new(ignore_matcher.clone());
 
     std::thread::scope(|scope| {
@@ -183,11 +188,13 @@ where
             let extensions = Arc::clone(&extensions);
             let on_file = Arc::clone(&on_file);
             let on_issue = Arc::clone(&on_issue);
+            let pattern_matcher = Arc::clone(&pattern_matcher);
             let ignore_matcher = Arc::clone(&ignore_matcher);
             scope.spawn(move || {
                 visit_directories(
                     &scheduler,
                     &extensions,
+                    &pattern_matcher,
                     &ignore_matcher,
                     cancelled,
                     on_file.as_ref(),
@@ -207,13 +214,14 @@ where
 /// Advances a visitor's local continuation stack and shared pending queue.
 ///
 /// ## Arguments / Returns
-/// Accepts shared scheduler, normalized extensions, ignore matcher, cancellation flag, and callbacks; returns `()`.
+/// Accepts shared scheduler, normalized extensions, pattern matcher, ignore matcher, cancellation flag, and callbacks; returns `()`.
 ///
 /// ## Errors
 /// Fatal root/delivery errors stop all visitors; descendant filesystem errors go to `on_issue`.
 fn visit_directories<FFile, FIssue>(
     scheduler: &Scheduler,
     extensions: &[String],
+    pattern_matcher: &crate::search::pattern::FilePatternMatcher,
     ignore_matcher: &crate::search::ignore::IgnoreMatcher,
     cancelled: &AtomicBool,
     on_file: &FFile,
@@ -312,20 +320,30 @@ fn visit_directories<FFile, FIssue>(
             }
             push_directory_frame(entry_path, false, &mut frames, scheduler, on_issue);
         } else if file_type.is_file() {
+            if entry_path
+                .file_name()
+                .and_then(|name| name.to_str())
+                .is_some_and(|name| name.starts_with(constants::EXCEL_TEMP_FILE_PREFIX))
+            {
+                continue;
+            }
+            // Sequential filter step 1: File Search Pattern (Include filter)
+            if !pattern_matcher.is_match(&entry_path, extensions) {
+                continue;
+            }
+            // Sequential filter step 2: Ignore Pattern (Exclude filter)
             if ignore_matcher.is_ignored(&entry_path, false) {
                 continue;
             }
-            if is_eligible_file(&entry_path, extensions) {
-                let delivery =
-                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| on_file(&entry_path)));
-                match delivery {
-                    Ok(Ok(())) => {}
-                    Ok(Err(error)) => set_fatal(scheduler, error),
-                    Err(_) => set_fatal(
-                        scheduler,
-                        constants::ERR_DISCOVERY_CALLBACK_PANIC.to_string(),
-                    ),
-                }
+            let delivery =
+                std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| on_file(&entry_path)));
+            match delivery {
+                Ok(Ok(())) => {}
+                Ok(Err(error)) => set_fatal(scheduler, error),
+                Err(_) => set_fatal(
+                    scheduler,
+                    constants::ERR_DISCOVERY_CALLBACK_PANIC.to_string(),
+                ),
             }
         }
     }
@@ -395,34 +413,6 @@ where
         cause: error.to_string(),
     };
     let _ = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| on_issue(issue)));
-}
-
-/// Filters temporary and unsupported files without following symlinks.
-///
-/// ## Arguments / Returns
-/// `path` is the file path and `extensions` are normalized dot-prefixed values; returns `true` if eligible.
-///
-/// ## Errors
-/// Missing or non-Unicode extensions are treated as ineligible.
-fn is_eligible_file(path: &Path, extensions: &[String]) -> bool {
-    if path
-        .file_name()
-        .and_then(|name| name.to_str())
-        .is_some_and(|name| name.starts_with(constants::EXCEL_TEMP_FILE_PREFIX))
-    {
-        return false;
-    }
-    path.extension()
-        .and_then(|extension| extension.to_str())
-        .map(|extension| {
-            let extension = format!(
-                "{}{}",
-                constants::CLI_EXTENSION_PREFIX,
-                extension.to_ascii_lowercase()
-            );
-            extensions.contains(&extension)
-        })
-        .unwrap_or(false)
 }
 
 /// Sets the first fatal scheduler error and wakes all waiting visitors.

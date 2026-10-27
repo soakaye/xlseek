@@ -27,6 +27,10 @@ pub const EXT_DOCM: &str = ".docm";
 pub const EXT_DOC: &str = ".doc";
 /// Supported Word document extensions
 pub const WORD_EXTENSIONS: [&str; 3] = [EXT_DOCX, EXT_DOCM, EXT_DOC];
+/// All supported document extensions across Excel and Word
+pub const SUPPORTED_ALL_EXTENSIONS: [&str; 7] = [
+    ".xlsx", ".xlsm", ".xlsb", ".xls", EXT_DOCX, EXT_DOCM, EXT_DOC,
+];
 /// Fixed sheet name label for Word document search matches
 pub const WORD_SHEET_LABEL: &str = "Word";
 /// Fixed cell address placeholder for Word document search matches
@@ -45,6 +49,16 @@ pub const IGNORE_PATTERN_DELIMITER: char = ',';
 pub const IGNORE_PATTERN_QUOTE: char = '"';
 /// Search stage identifier for ignore pattern evaluation errors.
 pub const STAGE_IGNORE_PATTERNS: &str = "ignore_patterns";
+/// Default inclusion file search patterns applied to newly initiated search sessions (empty matches enabled extensions).
+pub const DEFAULT_FILE_PATTERNS: &str = "";
+/// Field name for inclusion file search patterns in SearchQuery JSON.
+pub const SEARCH_QUERY_FILE_PATTERNS_FIELD: &str = "file_patterns";
+/// Delimiter used to separate inclusion file search patterns in raw comma-delimited strings.
+pub const FILE_PATTERN_DELIMITER: char = ',';
+/// Quotation character used to wrap inclusion file search patterns containing commas or spaces.
+pub const FILE_PATTERN_QUOTE: char = '"';
+/// Search stage identifier for file search pattern evaluation errors.
+pub const STAGE_FILE_PATTERNS: &str = "file_patterns";
 /// Canonical Sequential directory discovery token.
 pub const DIRECTORY_MODE_SEQUENTIAL: &str = "sequential";
 /// Canonical concurrent Burst directory discovery token.
@@ -110,6 +124,9 @@ pub const CLI_SHAPES_FIELD: &str = "shapes";
 pub const CLI_HIDDEN_SHEETS_FIELD: &str = "hidden-sheets";
 pub const CLI_IGNORE_PATTERNS_FIELD: &str = "ignore-patterns";
 pub const CLI_SHORT_IGNORE_PATTERNS: &str = "-i";
+pub const CLI_FILE_PATTERNS_FIELD: &str = "file-patterns";
+pub const CLI_SHORT_FILE_PATTERNS: &str = "-g";
+pub const CLI_LONG_FILE_PATTERNS: &str = "--file-patterns";
 pub const CLI_EXTENSIONS_FIELD: &str = "extensions";
 pub const CLI_LANGUAGE_FIELD: &str = "language";
 pub const CLI_OVERWRITE_FIELD: &str = "overwrite";
@@ -197,7 +214,7 @@ pub const CLI_SHORT_OVERWRITE: &str = "-w";
 pub const CLI_SHORT_LANGUAGE: &str = "-l";
 pub const CLI_SHORT_EXTENSIONS: &str = "-e";
 
-pub const CLI_SHORT_TO_LONG_OPTIONS: [(&str, &str); 11] = [
+pub const CLI_SHORT_TO_LONG_OPTIONS: [(&str, &str); 12] = [
     (CLI_SHORT_PATH, CLI_PATH_FIELD),
     (CLI_SHORT_QUERY, CLI_QUERY_FIELD),
     (CLI_SHORT_FORMAT, CLI_FORMAT_FIELD),
@@ -208,10 +225,11 @@ pub const CLI_SHORT_TO_LONG_OPTIONS: [(&str, &str); 11] = [
     (CLI_SHORT_LANGUAGE, CLI_LANGUAGE_FIELD),
     (CLI_SHORT_EXTENSIONS, CLI_EXTENSIONS_FIELD),
     (CLI_SHORT_IGNORE_PATTERNS, CLI_IGNORE_PATTERNS_FIELD),
+    (CLI_SHORT_FILE_PATTERNS, CLI_FILE_PATTERNS_FIELD),
     (CLI_SHORT_HELP, CLI_HELP_FIELD),
 ];
 
-pub const CLI_VALUE_OPTIONS: [&str; 16] = [
+pub const CLI_VALUE_OPTIONS: [&str; 17] = [
     CLI_PATH_FIELD,
     CLI_QUERY_FIELD,
     CLI_FORMAT_FIELD,
@@ -225,6 +243,7 @@ pub const CLI_VALUE_OPTIONS: [&str; 16] = [
     CLI_HIDDEN_SHEETS_FIELD,
     CLI_EXTENSIONS_FIELD,
     CLI_IGNORE_PATTERNS_FIELD,
+    CLI_FILE_PATTERNS_FIELD,
     CLI_LANGUAGE_FIELD,
     CLI_DIRECTORY_MODE_FIELD,
     CLI_BURST_WORKERS_FIELD,

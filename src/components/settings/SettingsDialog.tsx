@@ -20,7 +20,8 @@ import {
 
   SEARCH_HISTORY_CONSTANTS, SEARCH_LABELS, SETTINGS_DIALOG_IDS, SETTINGS_KEYBOARD_KEYS, SETTINGS_PAGES, SETTINGS_TRANSLATION_KEYS,
 
-  IGNORE_PATTERNS_CONSTANTS,
+  IGNORE_PATTERNS_CONSTANTS,
+  FILE_PATTERNS_CONSTANTS,
 
 } from "../../constants";
 
@@ -600,6 +601,37 @@ export const SettingsDialog: React.FC<SettingsDialogProps> = ({
 
 
 
+                  {/* Default File Search Patterns */}
+                  <div className="rounded border border-zinc-800 bg-zinc-850 p-3">
+                    <label
+                      // Constant reference: FILE_PATTERNS_CONSTANTS.SETTINGS_INPUT_ID
+                      htmlFor={FILE_PATTERNS_CONSTANTS.SETTINGS_INPUT_ID}
+                      className="mb-1 block font-medium text-zinc-200"
+                    >
+                      {/* Constant reference: t("ui.SETTINGS_DEFAULT_FILE_PATTERNS_LABEL") */}
+                      {t("ui.SETTINGS_DEFAULT_FILE_PATTERNS_LABEL")}
+                    </label>
+                    <input
+                      id={FILE_PATTERNS_CONSTANTS.SETTINGS_INPUT_ID}
+                      type="text"
+                      disabled={saving}
+                      value={options.file_patterns ?? ""}
+                      onChange={(event) =>
+                        setOptions((current) => ({
+                          ...current,
+                          file_patterns: event.target.value,
+                        }))
+                      }
+                      /* Constant reference: t("ui.FILE_PATTERNS_PLACEHOLDER") */
+                      placeholder={t("ui.FILE_PATTERNS_PLACEHOLDER")}
+                      className="w-full rounded border border-zinc-700 bg-zinc-800 px-3 py-1.5 font-mono text-xs text-zinc-100 placeholder-zinc-500 focus:border-emerald-500 focus:outline-none"
+                    />
+                    <p className="mt-1.5 text-[11px] text-zinc-400">
+                      {/* Constant reference: t("ui.SETTINGS_DEFAULT_FILE_PATTERNS_HELP") */}
+                      {t("ui.SETTINGS_DEFAULT_FILE_PATTERNS_HELP")}
+                    </p>
+                  </div>
+
                   {/* Default Ignore Patterns */}
 
                   <div className="rounded border border-zinc-800 bg-zinc-850 p-3">

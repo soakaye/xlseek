@@ -299,6 +299,7 @@ mod tests {
             include_hidden: false,
             extensions: Vec::new(),
             ignore_patterns: None,
+            file_patterns: None,
         };
 
         assert!(matches!(
@@ -332,6 +333,7 @@ mod tests {
             include_hidden: false,
             extensions: vec![".xlsx".to_string()],
             ignore_patterns: None,
+            file_patterns: None,
         };
         assert!(matches!(
             validate_required_search_fields(&query),
@@ -365,6 +367,7 @@ mod tests {
             include_hidden: false,
             extensions: vec![crate::constants::EXT_XLSX.to_string()],
             ignore_patterns: None,
+            file_patterns: None,
         };
         assert!(matches!(
             validate_directory_settings(&query),

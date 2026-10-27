@@ -32,6 +32,7 @@ xlseek-cli [OPTIONS] [QUERY] [PATH]...
   - `-p, --path <PATH>`: Search target directory or file (comma-separated or quoted paths supported).
   - `-o, --output <PATH>`: Destination output file (`.csv`, `.xlsx`, `.md`, `.json`). When omitted, results stream to `stdout` (`csv`, `md`, or `json`).
   - `-f, --format <csv|xlsx|md|json>`: Export format. Inferred from file extension if `-o` is provided; defaults to `csv` for `stdout` (`xlsx` cannot be streamed to `stdout`).
+  - `-g, --file-patterns <LIST>`: Comma-separated inclusion glob patterns to filter candidate files (e.g. `*budget*, report*.xlsx`).
   - `-i, --ignore-patterns <LIST>`: Comma-separated glob patterns using `.gitignore` syntax (e.g. `~$*, *.tmp, backup/*`).
   - `-c, --match-case <BOOL>`: Case-sensitive matching (default: `false`).
   - `-r, --regex <BOOL>`: Treat query as regular expression (default: `false`).

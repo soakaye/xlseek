@@ -11,17 +11,19 @@
  */
 
 import React, { KeyboardEvent, useState, useRef, useEffect } from "react";
-import { Search, X, Folder, FolderOpen, SlidersHorizontal, Square, ArrowDownToLine, History, Filter } from "lucide-react";
+import { Search, X, Folder, FolderOpen, SlidersHorizontal, Square, ArrowDownToLine, History, Filter, FileText } from "lucide-react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { SearchQuery } from "../../types/search";
 import { SEARCH_LABELS } from "../../constants";
-import { COMMANDS, FILE_EXTENSIONS, WORD_FILE_EXTENSIONS, KEYBOARD_KEYS, PATH_COMPLETION_CONSTANTS, IGNORE_PATTERNS_CONSTANTS } from "../../constants";
+import { COMMANDS, FILE_EXTENSIONS, WORD_FILE_EXTENSIONS, KEYBOARD_KEYS, PATH_COMPLETION_CONSTANTS, IGNORE_PATTERNS_CONSTANTS, FILE_PATTERNS_CONSTANTS } from "../../constants";
 import { useTranslation } from "../../i18n";
 import { appendSearchPath, getActivePathSegment } from "../../utils/pathTokenizer";
 import { loadIgnoreHistory, clearIgnoreHistory } from "../../utils/ignoreHistory";
 import { IgnoreHistoryDropdown } from "./IgnoreHistoryDropdown";
+import { loadFilePatternHistory, clearFilePatternHistory } from "../../utils/filePatternHistory";
+import { FilePatternHistoryDropdown } from "./FilePatternHistoryDropdown";
 
 interface SearchBarProps {
   query: SearchQuery;
@@ -62,9 +64,11 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   const keywordInputRef = useRef<HTMLDivElement>(null);
   const folderInputRef = useRef<HTMLDivElement>(null);
   const folderInputElementRef = useRef<HTMLInputElement>(null);
+  const filePatternInputRef = useRef<HTMLDivElement>(null);
   const ignoreInputRef = useRef<HTMLDivElement>(null);
-  const [openList, setOpenList] = useState<"keyword" | "directory" | "directory-history" | "ignore-history" | null>(null);
+  const [openList, setOpenList] = useState<"keyword" | "directory" | "directory-history" | "file-pattern-history" | "ignore-history" | null>(null);
   const [directorySuggestions, setDirectorySuggestions] = useState<string[]>([]);
+  const [filePatternHistory, setFilePatternHistory] = useState<string[]>(() => loadFilePatternHistory());
   const [ignoreHistory, setIgnoreHistory] = useState<string[]>(() => loadIgnoreHistory());
   const [activeOption, setActiveOption] = useState<number | null>(null);
   const [completionDismissed, setCompletionDismissed] = useState(false);
@@ -107,8 +111,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   /** Closes active history or suggestion dropdown list. */
   const closeList = () => { setOpenList(null); setActiveOption(null); };
 
-  /** Handles blur on search, directory, or ignore patterns input field to close dropdown. */
-  const handleFieldBlur = (event: React.FocusEvent<HTMLDivElement>, field: "keyword" | "directory" | "ignore-history") => {
+  /** Handles blur on search, directory, file pattern, or ignore patterns input field to close dropdown. */
+  const handleFieldBlur = (event: React.FocusEvent<HTMLDivElement>, field: "keyword" | "directory" | "file-pattern-history" | "ignore-history") => {
     if (event.relatedTarget instanceof Node && event.currentTarget.contains(event.relatedTarget)) return;
     completionRequestRef.current++;
     if (field === "directory") setDirectoryFocused(false);
@@ -122,6 +126,8 @@ export const SearchBar: React.FC<SearchBarProps> = ({
       const region =
         openList === "keyword"
           ? keywordInputRef.current
+          : openList === "file-pattern-history"
+          ? filePatternInputRef.current
           : openList === "ignore-history"
           ? ignoreInputRef.current
           : folderInputRef.current;
@@ -236,10 +242,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   };
 
   /** Toggles history list visibility. */
-  const toggleHistory = (field: "keyword" | "directory" | "ignore-history") => {
+  const toggleHistory = (field: "keyword" | "directory" | "file-pattern-history" | "ignore-history") => {
     completionRequestRef.current += 1;
     if (field === "directory") setCompletionDismissed(true);
-    if (field === "ignore-history") {
+    if (field === "file-pattern-history") {
+      setFilePatternHistory(loadFilePatternHistory());
+      setOpenList(openList === "file-pattern-history" ? null : "file-pattern-history");
+    } else if (field === "ignore-history") {
       setIgnoreHistory(loadIgnoreHistory());
       setOpenList(openList === "ignore-history" ? null : "ignore-history");
     } else {
@@ -398,6 +407,70 @@ export const SearchBar: React.FC<SearchBarProps> = ({
     if (handleListKeyDown(e)) return;
     if (e.key === "Enter") {
       e.preventDefault();
+    }
+  };
+
+  /**
+   * ## Description
+   * Handles keyboard navigation and selection for file search patterns and its history list.
+   *
+   * ## Arguments
+   * @param e - KeyboardEvent from input element
+   *
+   * ## Returns
+   * None
+   *
+   * ## Errors / Exceptions
+   * None
+   */
+  const handleFilePatternKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (
+      e.nativeEvent.isComposing ||
+      isComposingRef.current ||
+      e.key === "Process" ||
+      e.keyCode === 229
+    ) {
+      return;
+    }
+    if (Date.now() - compositionEndTimeRef.current < 50) {
+      return;
+    }
+    if (openList === "file-pattern-history") {
+      // Constant reference: KEYBOARD_KEYS.ESCAPE
+      if (e.key === KEYBOARD_KEYS.ESCAPE) {
+        e.preventDefault();
+        closeList();
+        return;
+      }
+      // Constant reference: KEYBOARD_KEYS.ARROW_DOWN / ARROW_UP
+      if (e.key === KEYBOARD_KEYS.ARROW_DOWN || e.key === KEYBOARD_KEYS.ARROW_UP) {
+        e.preventDefault();
+        if (!filePatternHistory.length) return;
+        const delta = e.key === KEYBOARD_KEYS.ARROW_DOWN ? 1 : -1;
+        const current = activeOption === null ? (delta > 0 ? -1 : filePatternHistory.length) : activeOption;
+        setActiveOption(Math.max(0, Math.min(filePatternHistory.length - 1, current + delta)));
+        return;
+      }
+      // Constant reference: KEYBOARD_KEYS.ENTER
+      if (e.key === KEYBOARD_KEYS.ENTER && activeOption !== null) {
+        e.preventDefault();
+        const selected = filePatternHistory[activeOption];
+        if (selected) {
+          onChangeQuery({ file_patterns: selected });
+        }
+        closeList();
+        return;
+      }
+    } else {
+      // Constant reference: KEYBOARD_KEYS.ARROW_DOWN
+      if (e.key === KEYBOARD_KEYS.ARROW_DOWN) {
+        e.preventDefault();
+        toggleHistory("file-pattern-history");
+        return;
+      }
+    }
+    if (e.key === KEYBOARD_KEYS.ENTER && !isScanning) {
+      onSearch();
     }
   };
 
@@ -635,7 +708,87 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           </div>
         </div>
 
-        {/* Row 2: Ignore Patterns row directly beneath directory input */}
+        {/* Row 2: File Search Patterns row between Directory and Ignore Patterns */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
+          <div
+            ref={filePatternInputRef}
+            onBlur={(event) => handleFieldBlur(event, "file-pattern-history")}
+            className="lg:col-span-12 relative"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-zinc-400 text-xs font-medium flex items-center gap-1.5 flex-shrink-0 select-none">
+                <FileText className="w-3.5 h-3.5 text-zinc-400" />
+                {/* Constant reference: t("ui.FILE_PATTERNS_LABEL") */}
+                <span>{t("ui.FILE_PATTERNS_LABEL")}</span>
+              </span>
+              <div className="relative flex-1">
+                <input
+                  // Constant reference: FILE_PATTERNS_CONSTANTS.INPUT_ID
+                  id={FILE_PATTERNS_CONSTANTS.INPUT_ID}
+                  type="text"
+                  value={query.file_patterns ?? ""}
+                  onChange={(e) => onChangeQuery({ file_patterns: e.target.value })}
+                  onKeyDown={handleFilePatternKeyDown}
+                  onCompositionStart={handleCompositionStart}
+                  onCompositionEnd={handleCompositionEnd}
+                  /* Constant reference: t("ui.FILE_PATTERNS_PLACEHOLDER") */
+                  placeholder={t("ui.FILE_PATTERNS_PLACEHOLDER")}
+                  /* Constant reference: t("ui.FILE_PATTERNS_TOOLTIP") */
+                  title={t("ui.FILE_PATTERNS_TOOLTIP")}
+                  /* Constant reference: t("ui.FILE_PATTERNS_LABEL") */
+                  aria-label={t("ui.FILE_PATTERNS_LABEL")}
+                  className="w-full pl-3 pr-20 py-1.5 bg-[#202024] border border-zinc-700 rounded-lg text-xs font-mono text-zinc-300 placeholder-zinc-500 focus:outline-none focus:border-excel-light focus:ring-1 focus:ring-excel-light transition"
+                />
+                <div className="absolute inset-y-0 right-1 flex items-center gap-1 pr-1.5">
+                  {(query.file_patterns ?? "").length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => onChangeQuery({ file_patterns: "" })}
+                      /* Constant reference: t("ui.CLEAR_TOOLTIP") */
+                      title={t("ui.CLEAR_TOOLTIP")}
+                      className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={(event) => {
+                      event.currentTarget.focus();
+                      toggleHistory("file-pattern-history");
+                    }}
+                    /* Constant reference: t("ui.FILE_PATTERN_HISTORY_BUTTON") */
+                    title={t("ui.FILE_PATTERN_HISTORY_BUTTON")}
+                    aria-label={t("ui.FILE_PATTERN_HISTORY_BUTTON")}
+                    className="p-1 hover:bg-zinc-700 text-zinc-400 hover:text-zinc-200 rounded"
+                  >
+                    <History className="w-3.5 h-3.5" />
+                  </button>
+                  <span className="text-[10px] text-zinc-400 font-mono bg-zinc-800 px-1.5 py-0.5 rounded border border-zinc-700">
+                    Enter
+                  </span>
+                </div>
+                <FilePatternHistoryDropdown
+                  isOpen={openList === "file-pattern-history"}
+                  history={filePatternHistory}
+                  activeOption={activeOption}
+                  onSelect={(pattern) => {
+                    onChangeQuery({ file_patterns: pattern });
+                    closeList();
+                  }}
+                  onClose={closeList}
+                  onClearHistory={() => {
+                    clearFilePatternHistory();
+                    setFilePatternHistory([]);
+                    closeList();
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Row 3: Ignore Patterns row directly beneath file search patterns */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
           <div
             ref={ignoreInputRef}

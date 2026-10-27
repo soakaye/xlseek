@@ -30,9 +30,11 @@ import {
   TIMING_CONSTANTS,
   WORD_FILE_EXTENSIONS,
   IGNORE_PATTERNS_CONSTANTS,
+  FILE_PATTERNS_CONSTANTS,
 } from "../constants";
 import { TranslationKey } from "../i18n";
 import { saveIgnorePattern } from "../utils/ignoreHistory";
+import { saveFilePattern } from "../utils/filePatternHistory";
 
 interface UseSearchOptions {
   onShowToast?: (key: TranslationKey) => void;
@@ -69,6 +71,8 @@ export function useSearch(options?: UseSearchOptions) {
       burst_workers: defaults.burst_workers,
       // Constant reference: IGNORE_PATTERNS_CONSTANTS.DEFAULT_PATTERNS
       ignore_patterns: defaults.ignore_patterns ?? IGNORE_PATTERNS_CONSTANTS.DEFAULT_PATTERNS,
+      // Constant reference: FILE_PATTERNS_CONSTANTS.DEFAULT_PATTERNS
+      file_patterns: defaults.file_patterns ?? FILE_PATTERNS_CONSTANTS.DEFAULT_PATTERNS,
     };
   });
 
@@ -352,6 +356,9 @@ export function useSearch(options?: UseSearchOptions) {
     try {
       // Constant reference: COMMANDS.START_SEARCH
       await invoke(COMMANDS.START_SEARCH, { query });
+      if (query.file_patterns && query.file_patterns.trim()) {
+        saveFilePattern(query.file_patterns);
+      }
       if (query.ignore_patterns && query.ignore_patterns.trim()) {
         saveIgnorePattern(query.ignore_patterns);
       }
@@ -442,6 +449,7 @@ export function useSearch(options?: UseSearchOptions) {
       directory_mode: options.directory_mode,
       burst_workers: options.burst_workers,
       ignore_patterns: options.ignore_patterns,
+      file_patterns: options.file_patterns,
     }));
   }, []);
 
@@ -449,11 +457,16 @@ export function useSearch(options?: UseSearchOptions) {
     updateQuery({ ignore_patterns: "" });
   }, [updateQuery]);
 
+  const clearFilePatterns = useCallback(() => {
+    updateQuery({ file_patterns: "" });
+  }, [updateQuery]);
+
   return {
     query,
     updateQuery,
     applyDefaultOptions,
     clearIgnorePatterns,
+    clearFilePatterns,
     results,
     progress,
     searchIssues,

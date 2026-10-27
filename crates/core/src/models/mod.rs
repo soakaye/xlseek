@@ -47,6 +47,9 @@ pub struct SearchQuery {
     /// Comma-separated gitignore-style ignore patterns (e.g., `"~$*, *.tmp, backup/"`).
     #[serde(default)]
     pub ignore_patterns: Option<String>,
+    /// Comma-separated inclusion file search patterns (e.g., `"*budget*, quarterly_*"`).
+    #[serde(default)]
+    pub file_patterns: Option<String>,
 }
 
 /// Returns the backward-compatible default value for value search when omitted in legacy JSON.

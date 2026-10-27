@@ -18,9 +18,9 @@
 
 **Purpose**: Centralized constants, localization catalogs, and shared project infrastructure.
 
-- [ ] T001 Define centralized core constants in `crates/core/src/constants.rs` (`SEARCH_QUERY_FILE_PATTERNS_FIELD`, `CLI_FILE_PATTERNS_FIELD = "file_patterns"`, `CLI_SHORT_FILE_PATTERNS = "-g"`, `CLI_LONG_FILE_PATTERNS = "--file-patterns"`, `DEFAULT_FILE_PATTERNS = ""`, `STAGE_FILE_PATTERNS = "file_patterns"`, delimiter and quote constants)
-- [ ] T002 [P] Define centralized frontend constants in `src/constants/index.ts` (`FILE_PATTERNS_CONSTANTS`, `STORAGE_KEY_FILE_PATTERN_HISTORY = "xlseek.filePatternHistory"`, `DEFAULT_FILE_PATTERNS = ""`, `MAX_FILE_PATTERN_HISTORY_ENTRIES = 20`, input IDs, dropdown IDs)
-- [ ] T003 [P] Add localized UI labels, tooltips, and placeholder strings in `crates/core/locales/ja.yml` and `crates/core/locales/en.yml` (`ui.FILE_PATTERNS_LABEL`, `ui.FILE_PATTERNS_PLACEHOLDER`, `ui.FILE_PATTERNS_CLEAR`, `ui.FILE_PATTERN_HISTORY_BUTTON`, `ui.SETTINGS_DEFAULT_FILE_PATTERNS_LABEL`, `ui.SETTINGS_DEFAULT_FILE_PATTERNS_HELP`)
+- [X] T001 Define centralized core constants in `crates/core/src/constants.rs` (`SEARCH_QUERY_FILE_PATTERNS_FIELD`, `CLI_FILE_PATTERNS_FIELD = "file_patterns"`, `CLI_SHORT_FILE_PATTERNS = "-g"`, `CLI_LONG_FILE_PATTERNS = "--file-patterns"`, `DEFAULT_FILE_PATTERNS = ""`, `STAGE_FILE_PATTERNS = "file_patterns"`, delimiter and quote constants)
+- [X] T002 [P] Define centralized frontend constants in `src/constants/index.ts` (`FILE_PATTERNS_CONSTANTS`, `STORAGE_KEY_FILE_PATTERN_HISTORY = "xlseek.filePatternHistory"`, `DEFAULT_FILE_PATTERNS = ""`, `MAX_FILE_PATTERN_HISTORY_ENTRIES = 20`, input IDs, dropdown IDs)
+- [X] T003 [P] Add localized UI labels, tooltips, and placeholder strings in `crates/core/locales/ja.yml` and `crates/core/locales/en.yml` (`ui.FILE_PATTERNS_LABEL`, `ui.FILE_PATTERNS_PLACEHOLDER`, `ui.FILE_PATTERNS_CLEAR`, `ui.FILE_PATTERN_HISTORY_BUTTON`, `ui.SETTINGS_DEFAULT_FILE_PATTERNS_LABEL`, `ui.SETTINGS_DEFAULT_FILE_PATTERNS_HELP`)
 
 ---
 
@@ -30,10 +30,10 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T004 Extend `SearchQuery` in `crates/core/src/models/mod.rs` with `pub file_patterns: Option<String>` with serde attributes and doc comments
-- [ ] T005 [P] Extend `SearchQuery` interface in `src/types/search.ts` with `filePatterns?: string`
-- [ ] T006 [P] Implement `FilePatternMatcher` domain module in `crates/core/src/search/pattern.rs` (`parse_file_patterns`, quote handling, `from_patterns`, `is_match`, `has_explicit_extension`, `complement_tokens`, and `passthrough`)
-- [ ] T007 [P] Add unit tests for `FilePatternMatcher` in `crates/core/src/search/pattern.rs` (testing tokenization, extensionless complement, explicit extensions, case-insensitive matching, and malformed globs)
+- [X] T004 Extend `SearchQuery` in `crates/core/src/models/mod.rs` with `pub file_patterns: Option<String>` with serde attributes and doc comments
+- [X] T005 [P] Extend `SearchQuery` interface in `src/types/search.ts` with `filePatterns?: string`
+- [X] T006 [P] Implement `FilePatternMatcher` domain module in `crates/core/src/search/pattern.rs` (`parse_file_patterns`, quote handling, `from_patterns`, `is_match`, `has_explicit_extension`, `complement_tokens`, and `passthrough`)
+- [X] T007 [P] Add unit tests for `FilePatternMatcher` in `crates/core/src/search/pattern.rs` (testing tokenization, extensionless complement, explicit extensions, case-insensitive matching, and malformed globs)
 
 **Checkpoint**: Foundation ready — User Story 1 implementation can now begin.
 
@@ -47,10 +47,10 @@
 
 ### Implementation & Tests for User Story 1
 
-- [ ] T008 [P] [US1] Integrate `FilePatternMatcher` into directory traversal in `crates/core/src/search/discovery.rs` to filter candidate files against complemented inclusion patterns before file delivery
-- [ ] T009 [P] [US1] Wire `file_patterns` from `SearchQuery` through search execution pipeline in `crates/core/src/search/engine.rs` into `discover_files_with_ignore`
-- [ ] T010 [P] [US1] Update Tauri IPC search command in `src-tauri/src/commands/search_cmd.rs` to forward `file_patterns` from IPC payload into `SearchEngine`
-- [ ] T011 [P] [US1] Add integration tests in `crates/core/tests/file_patterns_test.rs` validating multiple comma-separated inclusion patterns and default empty fallback
+- [X] T008 [P] [US1] Integrate `FilePatternMatcher` into directory traversal in `crates/core/src/search/discovery.rs` to filter candidate files against complemented inclusion patterns before file delivery
+- [X] T009 [P] [US1] Wire `file_patterns` from `SearchQuery` through search execution pipeline in `crates/core/src/search/engine.rs` into `discover_files_with_ignore`
+- [X] T010 [P] [US1] Update Tauri IPC search command in `src-tauri/src/commands/search_cmd.rs` to forward `file_patterns` from IPC payload into `SearchEngine`
+- [X] T011 [P] [US1] Add integration tests in `crates/core/tests/file_patterns_test.rs` validating multiple comma-separated inclusion patterns and default empty fallback
 
 **Checkpoint**: At this point, User Story 1 is functional and testable via Tauri backend commands and unit tests.
 
@@ -64,8 +64,8 @@
 
 ### Implementation & Tests for User Story 2
 
-- [ ] T012 [US2] Update directory traversal loop in `crates/core/src/search/discovery.rs` to enforce strict sequential order: evaluate file against `FilePatternMatcher` first, and only matching candidates are tested against `IgnoreMatcher`
-- [ ] T013 [P] [US2] Add integration tests in `crates/core/tests/sequential_pattern_filter_test.rs` verifying that candidate files matching include patterns but also matching ignore patterns (e.g. `~$*` or `archive/*`) are excluded
+- [X] T012 [US2] Update directory traversal loop in `crates/core/src/search/discovery.rs` to enforce strict sequential order: evaluate file against `FilePatternMatcher` first, and only matching candidates are tested against `IgnoreMatcher`
+- [X] T013 [P] [US2] Add integration tests in `crates/core/tests/sequential_pattern_filter_test.rs` verifying that candidate files matching include patterns but also matching ignore patterns (e.g. `~$*` or `archive/*`) are excluded
 
 **Checkpoint**: At this point, User Stories 1 AND 2 are complete with verified sequential filtering.
 
@@ -79,9 +79,9 @@
 
 ### Implementation & Tests for User Story 3
 
-- [ ] T014 [US3] Implement `has_explicit_extension` and `complement_tokens` in `crates/core/src/search/pattern.rs` supporting `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.docx`, `.docm`, `.doc`, preserving explicit extensions and expanding extensionless tokens with active options
-- [ ] T015 [US3] Enforce explicit extension precedence in `crates/core/src/search/pattern.rs` and `crates/core/src/search/discovery.rs` so explicit extensions in search patterns match supported formats even if unchecked in options toggles
-- [ ] T016 [P] [US3] Add unit and integration tests in `crates/core/tests/extension_complement_test.rs` verifying extensionless pattern complement, explicit extension preservation, and override behavior
+- [X] T014 [US3] Implement `has_explicit_extension` and `complement_tokens` in `crates/core/src/search/pattern.rs` supporting `.xlsx`, `.xlsm`, `.xls`, `.xlsb`, `.docx`, `.docm`, `.doc`, preserving explicit extensions and expanding extensionless tokens with active options
+- [X] T015 [US3] Enforce explicit extension precedence in `crates/core/src/search/pattern.rs` and `crates/core/src/search/discovery.rs` so explicit extensions in search patterns match supported formats even if unchecked in options toggles
+- [X] T016 [P] [US3] Add unit and integration tests in `crates/core/tests/extension_complement_test.rs` verifying extensionless pattern complement, explicit extension preservation, and override behavior
 
 **Checkpoint**: At this point, User Stories 1, 2, and 3 provide robust pattern matching and extension complement.
 
@@ -95,14 +95,14 @@
 
 ### Implementation & Tests for User Story 4
 
-- [ ] T017 [P] [US4] Implement `FilePatternHistoryStore` in `src/utils/filePatternHistory.ts` with `localStorage` persistence under `xlseek.filePatternHistory`, LRU deduplication, trimming, and 20-entry limit
-- [ ] T018 [P] [US4] Implement `FilePatternHistoryDropdown.tsx` in `src/components/search/FilePatternHistoryDropdown.tsx` with mouse and keyboard navigation (ArrowUp, ArrowDown, Enter, Escape)
-- [ ] T019 [US4] Update search state and query dispatch in `src/hooks/useSearch.ts` and `src/App.tsx` to manage `filePatterns` state, history recording on search execution, and clear/reset actions
-- [ ] T020 [US4] Update `src/components/search/SearchBar.tsx` to render the dedicated File Search Patterns row directly between Search Directory and Ignore Patterns (`Directory` → `File Search Patterns` → `Ignore Patterns`), including icon, placeholder, clear button, and history dropdown
-- [ ] T021 [P] [US4] Add `-g` and `--file-patterns` CLI argument parsing in `crates/cli/src/args.rs` and forward to `SearchQuery`
-- [ ] T022 [P] [US4] Add CLI integration tests in `crates/cli/tests/cli_file_patterns.rs` verifying `-g` and `--file-patterns` execution
-- [ ] T023 [P] [US4] Add `file_patterns` parameter to MCP `search` tool JSON schema and argument extraction in `crates/mcp/src/tools/search.rs`
-- [ ] T024 [P] [US4] Update standalone HTML prototype in `design/mainui/index.html` to reflect the new File Search Patterns row per AGENTS.md rule
+- [X] T017 [P] [US4] Implement `FilePatternHistoryStore` in `src/utils/filePatternHistory.ts` with `localStorage` persistence under `xlseek.filePatternHistory`, LRU deduplication, trimming, and 20-entry limit
+- [X] T018 [P] [US4] Implement `FilePatternHistoryDropdown.tsx` in `src/components/search/FilePatternHistoryDropdown.tsx` with mouse and keyboard navigation (ArrowUp, ArrowDown, Enter, Escape)
+- [X] T019 [US4] Update search state and query dispatch in `src/hooks/useSearch.ts` and `src/App.tsx` to manage `filePatterns` state, history recording on search execution, and clear/reset actions
+- [X] T020 [US4] Update `src/components/search/SearchBar.tsx` to render the dedicated File Search Patterns row directly between Search Directory and Ignore Patterns (`Directory` → `File Search Patterns` → `Ignore Patterns`), including icon, placeholder, clear button, and history dropdown
+- [X] T021 [P] [US4] Add `-g` and `--file-patterns` CLI argument parsing in `crates/cli/src/args.rs` and forward to `SearchQuery`
+- [X] T022 [P] [US4] Add CLI integration tests in `crates/cli/tests/cli_file_patterns.rs` verifying `-g` and `--file-patterns` execution
+- [X] T023 [P] [US4] Add `file_patterns` parameter to MCP `search` tool JSON schema and argument extraction in `crates/mcp/src/tools/search.rs`
+- [X] T024 [P] [US4] Update standalone HTML prototype in `design/mainui/index.html` to reflect the new File Search Patterns row per AGENTS.md rule
 
 **Checkpoint**: At this point, User Stories 1 through 4 are complete across GUI, CLI, and MCP.
 
@@ -116,10 +116,10 @@
 
 ### Implementation & Tests for User Story 5
 
-- [ ] T025 [US5] Add `defaultFilePatterns: string` to `SearchOptionsConfig` in `src/settings-core.ts` with default value `""`
-- [ ] T026 [US5] Add "Default File Search Patterns" text input field to `src/components/settings/SavedDefaultsTab.tsx` with localized label and help text
-- [ ] T027 [US5] Wire default file search patterns initialization on app startup and search bar reset in `src/hooks/useSearch.ts`
-- [ ] T028 [P] [US5] Add frontend unit tests in `src/utils/__tests__/filePatternHistory.test.ts` for history management and settings default loading
+- [X] T025 [US5] Add `defaultFilePatterns: string` to `SearchOptionsConfig` in `src/settings-core.ts` with default value `""`
+- [X] T026 [US5] Add "Default File Search Patterns" text input field to `src/components/settings/SavedDefaultsTab.tsx` with localized label and help text
+- [X] T027 [US5] Wire default file search patterns initialization on app startup and search bar reset in `src/hooks/useSearch.ts`
+- [X] T028 [P] [US5] Add frontend unit tests in `src/utils/__tests__/filePatternHistory.test.ts` for history management and settings default loading
 
 **Checkpoint**: All 5 user stories are complete and integrated.
 
@@ -129,12 +129,12 @@
 
 **Purpose**: Documentation updates, quality gate verification, and end-to-end testing across all crates.
 
-- [ ] T029 [P] Update documentation in `crates/cli/README.md` and `README.md` describing file search patterns, `-g`, `--file-patterns`, and sequential filtering
-- [ ] T030 Execute synthetic quickstart validation scenarios from `specs/037-file-search-patterns/quickstart.md`
-- [ ] T031 [P] Run Rust test suite: `cargo test --workspace`
-- [ ] T032 [P] Run Rust Clippy static analysis: `cargo clippy --workspace --all-targets -- -D warnings`
-- [ ] T033 [P] Run Rust format check: `cargo fmt --check`
-- [ ] T034 [P] Run Frontend build & typecheck: `npm run build`
+- [X] T029 [P] Update documentation in `crates/cli/README.md` and `README.md` describing file search patterns, `-g`, `--file-patterns`, and sequential filtering
+- [X] T030 Execute synthetic quickstart validation scenarios from `specs/037-file-search-patterns/quickstart.md`
+- [X] T031 [P] Run Rust test suite: `cargo test --workspace`
+- [X] T032 [P] Run Rust Clippy static analysis: `cargo clippy --workspace --all-targets -- -D warnings`
+- [X] T033 [P] Run Rust format check: `cargo fmt --check`
+- [X] T034 [P] Run Frontend build & typecheck: `npm run build`
 
 ---
 

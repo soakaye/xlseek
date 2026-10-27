@@ -35,7 +35,7 @@
   - **Spreadsheet Grid Preview**: Inspect matched cell values, formulas, and surrounding cells in a familiar spreadsheet view for Excel documents.
   - **Text Document Preview**: Read matching Word paragraphs with line/paragraph numbering, auto-scrolling to matches, and query term highlighting.
   - **Direct Launching**: Open files in system default applications or specific installed spreadsheet apps, or reveal the file highlighted in File Explorer / Finder / Linux file managers.
-- **Search History & Autocomplete**: Remembers recent search queries, target directory paths, and ignore patterns with autocompletion.
+- **Search History & Autocomplete**: Remembers recent search queries, target directory paths, file search patterns, and ignore patterns with autocompletion.
 - **Export Capabilities**: Consolidated split button to export search results to Excel (`.xlsx`), CSV (`.csv`), AI Markdown (`.md`), or structured JSON (`.json`) files with remembered format preference.
 - **Headless CLI Included**: Run batch searches and export results or stream CSV, Markdown, or JSON to stdout via `xlseek-cli`.
 - **Model Context Protocol (MCP) Server**: Connect AI assistants (Claude Desktop, Cursor, Antigravity) to local spreadsheets via `xlseek-mcp`. Distributed as standalone pre-built binaries on GitHub Releases and bundled with desktop installers.
@@ -241,6 +241,8 @@ Desktop Settings lets you choose Sequential or Burst directory discovery. Sequen
   - `-o, --output <path>`: Destination file. When omitted, CSV output is streamed directly to standard output (`stdout`).
   - `-f, --format <csv|xlsx>`: Output format. When omitted with `-o`, format is auto-inferred from file extension (`.csv` or `.xlsx`). Defaults to `csv` for stdout.
   - `-w, --overwrite`: Overwrites existing output destination files safely.
+- **File Search Patterns**:
+  - `-g, --file-patterns <LIST>`: Comma-separated inclusion glob patterns to filter candidate files (e.g. `*budget*, report*.xlsx`).
 - **Ignore Patterns**:
   - `-i, --ignore-patterns <LIST>`: Comma-separated glob patterns using standard `.gitignore` syntax (e.g. `~$*, *.tmp, backup/`). Matching directories are skipped during traversal.
 - **Search Scope & Options**:

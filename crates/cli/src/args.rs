@@ -537,6 +537,11 @@ where
         .cloned()
         .filter(|s| !s.trim().is_empty());
 
+    let file_patterns = values
+        .get(constants::CLI_FILE_PATTERNS_FIELD)
+        .cloned()
+        .filter(|s| !s.trim().is_empty());
+
     Ok(ParseOutcome::Run(CliOptions {
         query: SearchQuery {
             keyword: query_str,
@@ -552,6 +557,7 @@ where
             include_hidden,
             extensions,
             ignore_patterns,
+            file_patterns,
         },
         input_paths,
         output_target,

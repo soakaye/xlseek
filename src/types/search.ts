@@ -31,6 +31,8 @@ export interface SearchQuery {
   burst_workers?: number | null;
   /** Comma-separated gitignore-style ignore patterns (e.g. "~$*, *.tmp, backup/"). */
   ignore_patterns?: string;
+  /** Comma-separated inclusion file search patterns (e.g. "*budget*, quarterly_*"). */
+  file_patterns?: string;
 }
 
 /** Describes an inaccessible descendant folder reported during directory discovery. */

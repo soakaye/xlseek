@@ -13,6 +13,7 @@ pub mod ignore;
 pub mod llm_context;
 pub mod parser;
 pub mod path;
+pub mod pattern;
 pub mod preview;
 pub mod shape;
 pub mod word;

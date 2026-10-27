@@ -99,6 +99,7 @@ fn test_ignore_lock_files_and_directories() {
         include_hidden: false,
         extensions: vec![".xlsx".to_string()],
         ignore_patterns: Some("~$*, Archive/".to_string()),
+        file_patterns: None,
     };
 
     let matched_files = Arc::new(Mutex::new(Vec::new()));

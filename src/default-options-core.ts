@@ -46,8 +46,9 @@ export function isDefaultSearchOptions(value: unknown): value is DefaultSearchOp
       candidate.burst_workers <= DIRECTORY_SEARCH_CONSTANTS.CUSTOM_WORKERS_MAX);
 
   const validIgnorePatterns = candidate.ignore_patterns === undefined || typeof candidate.ignore_patterns === "string";
+  const validFilePatterns = candidate.file_patterns === undefined || typeof candidate.file_patterns === "string";
 
-  return validMode && validWorkers && validIgnorePatterns;
+  return validMode && validWorkers && validIgnorePatterns && validFilePatterns;
 }
 
 /** Validates persisted search fields that predate the directory search mode. */
@@ -101,6 +102,9 @@ export function normalizeDefaultSearchOptions(value: unknown): DefaultSearchOpti
   const ignorePatterns = typeof candidate.ignore_patterns === "string"
     ? candidate.ignore_patterns
     : DEFAULT_SEARCH_OPTIONS.ignore_patterns;
+  const filePatterns = typeof candidate.file_patterns === "string"
+    ? candidate.file_patterns
+    : DEFAULT_SEARCH_OPTIONS.file_patterns;
   return {
     ...resetDefaultSearchOptions(),
     ...candidate,
@@ -108,6 +112,7 @@ export function normalizeDefaultSearchOptions(value: unknown): DefaultSearchOpti
     burst_workers: validWorkers ? workers : null,
     enable_word_search: enableWordSearch,
     ignore_patterns: ignorePatterns,
+    file_patterns: filePatterns,
     llm_column_window_size: typeof candidate.llm_column_window_size === "number" && Number.isInteger(candidate.llm_column_window_size) && candidate.llm_column_window_size >= 1 && candidate.llm_column_window_size <= 20 ? candidate.llm_column_window_size : DEFAULT_SEARCH_OPTIONS.llm_column_window_size,
     llm_default_copy_type: candidate.llm_default_copy_type === "header_cell_only" ? "header_cell_only" : DEFAULT_SEARCH_OPTIONS.llm_default_copy_type,
     llm_word_extraction_mode: candidate.llm_word_extraction_mode === "paragraph_only" ? "paragraph_only" : DEFAULT_SEARCH_OPTIONS.llm_word_extraction_mode,
@@ -141,6 +146,7 @@ export function resetDefaultSearchOptions(): DefaultSearchOptions {
     burst_workers: DEFAULT_SEARCH_OPTIONS.burst_workers,
     enable_word_search: DEFAULT_SEARCH_OPTIONS.enable_word_search,
     ignore_patterns: DEFAULT_SEARCH_OPTIONS.ignore_patterns,
+    file_patterns: DEFAULT_SEARCH_OPTIONS.file_patterns,
     llm_column_window_size: DEFAULT_SEARCH_OPTIONS.llm_column_window_size,
     llm_default_copy_type: DEFAULT_SEARCH_OPTIONS.llm_default_copy_type,
     llm_word_extraction_mode: DEFAULT_SEARCH_OPTIONS.llm_word_extraction_mode,

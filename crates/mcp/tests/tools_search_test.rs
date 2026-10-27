@@ -202,3 +202,44 @@ fn test_search_tool_single_file_target() {
         .expect("text content");
     assert!(text.contains("sample_report.xlsx"));
 }
+
+/// Tests that `xlseek_search` filters candidate files using `file_patterns`.
+///
+/// ## Arguments / Returns
+/// No arguments; asserts matching file is found while non-matching file is excluded.
+///
+/// ## Errors
+/// Panics on JSON or assertion failure.
+#[test]
+fn test_search_tool_file_patterns_filter() {
+    let server = McpServer::new(McpSecurityContext::default());
+    let fixtures = fixtures_dir();
+
+    let req = serde_json::json!({
+        // Constant reference: constants::JSONRPC_VERSION
+        // Constant reference: constants::METHOD_TOOLS_CALL
+        // Constant reference: constants::TOOL_NAME_SEARCH
+        "jsonrpc": constants::JSONRPC_VERSION,
+        "id": 6,
+        "method": constants::METHOD_TOOLS_CALL,
+        "params": {
+            "name": constants::TOOL_NAME_SEARCH,
+            "arguments": {
+                "paths": [fixtures.display().to_string()],
+                "query": "Financial",
+                "file_patterns": "*report*"
+            }
+        }
+    });
+
+    let resp_str = server
+        .handle_request(&req.to_string())
+        .expect("response generated");
+    let resp: Value = serde_json::from_str(&resp_str).expect("valid json response");
+
+    assert_eq!(resp["id"], 6);
+    let text = resp["result"]["content"][0]["text"]
+        .as_str()
+        .expect("text content");
+    assert!(text.contains("sample_report.xlsx"));
+}

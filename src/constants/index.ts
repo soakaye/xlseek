@@ -265,6 +265,19 @@ export const IGNORE_PATTERNS_CONSTANTS = {
   QUOTE: '"',
 } as const;
 
+// Constant reference: Configuration and identifiers for file search pattern filtering and history.
+export const FILE_PATTERNS_CONSTANTS = {
+  STORAGE_KEY_HISTORY: "xlseek.filePatternHistory",
+  DEFAULT_PATTERNS: "",
+  MAX_HISTORY_ENTRIES: 20,
+  INPUT_ID: "search-file-patterns-input",
+  HISTORY_DROPDOWN_ID: "search-file-history-dropdown",
+  SETTINGS_INPUT_ID: "settings-default-file-patterns-input",
+  DELIMITER: ",",
+  DELIMITER_SPACE: ", ",
+  QUOTE: '"',
+} as const;
+
 export const DEFAULT_SEARCH_OPTIONS = {
   match_case: false,
   use_regex: false,
@@ -277,6 +290,7 @@ export const DEFAULT_SEARCH_OPTIONS = {
   burst_workers: null,
   enable_word_search: false,
   ignore_patterns: "~$*",
+  file_patterns: "",
   llm_column_window_size: 5,
   llm_default_copy_type: "table" as const,
   llm_word_extraction_mode: "headings_and_paragraph" as const,

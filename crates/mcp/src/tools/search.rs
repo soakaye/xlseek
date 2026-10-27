@@ -77,6 +77,10 @@ pub fn tool_definition() -> ToolDefinition {
                     "type": "string",
                     "description": "Comma-separated .gitignore-style exclusion patterns (e.g. '~$*, *.tmp')."
                 },
+                "file_patterns": {
+                    "type": "string",
+                    "description": "Comma-separated inclusion glob patterns to filter candidate files (e.g. 'budget*, report*.xlsx')."
+                },
                 "max_results": {
                     "type": "integer",
                     "default": crate::constants::DEFAULT_MAX_RESULTS,
@@ -202,6 +206,11 @@ pub fn execute(args: &Value, security: &McpSecurityContext) -> ToolCallResult {
         .and_then(|v| v.as_str())
         .map(|s| s.to_string());
 
+    let file_patterns = args
+        .get("file_patterns")
+        .and_then(|v| v.as_str())
+        .map(|s| s.to_string());
+
     let (include_val, include_form, include_comm, include_shp) =
         if let Some(targets) = args.get("targets").and_then(|t| t.as_array()) {
             let mut v = false;
@@ -275,6 +284,7 @@ pub fn execute(args: &Value, security: &McpSecurityContext) -> ToolCallResult {
             include_hidden: false,
             extensions: extensions.clone(),
             ignore_patterns: ignore_patterns.clone(),
+            file_patterns: file_patterns.clone(),
         };
 
         let engine = SearchEngine::new();

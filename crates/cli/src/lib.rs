@@ -170,6 +170,7 @@ fn execute(
         let directory_mode = options.query.directory_mode;
         let burst_workers = options.query.burst_workers;
         let ignore_patterns = options.query.ignore_patterns.clone();
+        let file_patterns = options.query.file_patterns.clone();
         let sender_for_discovery = sender.clone();
         let guard_ref = output_guard.as_ref();
 
@@ -200,6 +201,27 @@ fn execute(
                 .first()
                 .cloned()
                 .unwrap_or_else(|| PathBuf::from("."));
+            let pattern_matcher =
+                match xlseek_core::search::pattern::FilePatternMatcher::from_patterns(
+                    &root_for_matcher,
+                    file_patterns.as_deref(),
+                    &extensions,
+                ) {
+                    Ok(matcher) => matcher,
+                    Err(cause) => {
+                        if let Ok(mut issues_list) = issues_for_producer.lock() {
+                            issues_list.push(SearchIssue {
+                                path: PathBuf::from(
+                                    xlseek_core::constants::SEARCH_QUERY_FILE_PATTERNS_FIELD,
+                                ),
+                                stage: xlseek_core::constants::STAGE_FILE_PATTERNS.to_string(),
+                                sheet_name: None,
+                                cause,
+                            });
+                        }
+                        xlseek_core::search::pattern::FilePatternMatcher::passthrough()
+                    }
+                };
             let ignore_matcher = match xlseek_core::search::ignore::IgnoreMatcher::from_patterns(
                 &root_for_matcher,
                 ignore_patterns.as_deref(),
@@ -227,6 +249,9 @@ fn execute(
                 .collect::<Vec<_>>();
 
             for path in file_roots {
+                if !pattern_matcher.is_match(&path, &extensions) {
+                    continue;
+                }
                 if ignore_matcher.is_ignored(&path, false) {
                     continue;
                 }
@@ -241,6 +266,7 @@ fn execute(
                 &extensions,
                 directory_mode,
                 burst_workers,
+                &pattern_matcher,
                 &ignore_matcher,
                 &AtomicBool::new(false),
                 deliver,
