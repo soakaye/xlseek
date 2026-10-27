@@ -38,6 +38,8 @@ cli.HELP: |
     -w, --overwrite          既存出力先の上書きを許可
     -l, --language ja|en     出力言語 (既定: ja)
     -e, --extensions LIST    対象拡張子 (.xlsx,.xlsm,.xlsb,.xls)
+    -g, --file-patterns LIST ファイル検索パターン (カンマ区切り、例: 'budget*, report*.xlsx')
+    -i, --ignore-patterns LIST 除外パターン (カンマ区切り、.gitignore構文)
     -h, --help               ヘルプを表示
     --values BOOL, --formulas BOOL, --comments BOOL, --shapes BOOL, --hidden-sheets BOOL
   --help と -h は --language ja|en だけ併用できます。
@@ -72,8 +74,15 @@ ui.IGNORE_PATTERNS_PLACEHOLDER: "~$*, *.tmp, backup/ (カンマ区切り)"
 ui.IGNORE_PATTERNS_TOOLTIP: "除外するファイルまたはフォルダのパターン (.gitignore構文)"
 ui.IGNORE_PATTERNS_CLEAR: "除外パターンをクリア"
 ui.IGNORE_HISTORY_BUTTON: "除外パターンの履歴"
+ui.FILE_PATTERNS_LABEL: "検索パターン:"
+ui.FILE_PATTERNS_PLACEHOLDER: "*budget*, quarterly_* (カンマ区切り、拡張子は自動補完)"
+ui.FILE_PATTERNS_TOOLTIP: "検索対象のファイルパターン。除外パターンの前に評価されます。"
+ui.FILE_PATTERNS_CLEAR: "検索パターンをクリア"
+ui.FILE_PATTERN_HISTORY_BUTTON: "過去の検索パターン"
 ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_LABEL: "デフォルトの除外パターン"
 ui.SETTINGS_DEFAULT_IGNORE_PATTERNS_HELP: "新しい検索セッションで初期設定される除外パターン（カンマ区切り）"
+ui.SETTINGS_DEFAULT_FILE_PATTERNS_LABEL: "デフォルトの検索パターン"
+ui.SETTINGS_DEFAULT_FILE_PATTERNS_HELP: "新しい検索セッションで初期設定されるファイル検索パターン（空の場合は有効な拡張子すべて）"
 ui.BUTTON_CANCEL: CANCEL
 ui.BUTTON_SEARCH: SEARCH
 ui.OPTIONS_LABEL: "オプション:"

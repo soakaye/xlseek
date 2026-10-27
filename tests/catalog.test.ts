@@ -36,6 +36,23 @@ describe("shared localization catalogs", () => {
     }
   });
 
+  it("defines all file search pattern localization keys in English and Japanese", () => {
+    const filePatternKeys = [
+      "ui.FILE_PATTERNS_LABEL",
+      "ui.FILE_PATTERNS_PLACEHOLDER",
+      "ui.FILE_PATTERNS_TOOLTIP",
+      "ui.FILE_PATTERNS_CLEAR",
+      "ui.FILE_PATTERN_HISTORY_BUTTON",
+      "ui.SETTINGS_DEFAULT_FILE_PATTERNS_LABEL",
+      "ui.SETTINGS_DEFAULT_FILE_PATTERNS_HELP",
+    ];
+
+    for (const key of filePatternKeys) {
+      expect(english[key], `Missing English key: ${key}`).toBeTruthy();
+      expect(japanese[key], `Missing Japanese key: ${key}`).toBeTruthy();
+    }
+  });
+
   it("defines all ignore pattern localization keys in English and Japanese", () => {
     const ignoreKeys = [
       "ui.IGNORE_PATTERNS_LABEL",
