@@ -19,7 +19,7 @@
 
 **Purpose**: Baseline review of existing pattern controls and layout structures.
 
-- [ ] T001 Review existing SearchBar pattern controls and layout styles in src/components/search/SearchBar.tsx
+- [X] T001 Review existing SearchBar pattern controls and layout styles in src/components/search/SearchBar.tsx
 
 ---
 
@@ -29,7 +29,7 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T002 Verify constants and element IDs for file search and ignore patterns in src/constants/index.ts
+- [X] T002 Verify constants and element IDs for file search and ignore patterns in src/constants/index.ts
 
 **Checkpoint**: Foundation verified - user story implementation can now begin.
 
@@ -43,11 +43,11 @@
 
 ### Tests for User Story 1
 
-- [ ] T003 [P] [US1] Create automated layout test asserting side-by-side pattern grid in tests/pattern-layout-ui.test.tsx
+- [X] T003 [P] [US1] Create automated layout test asserting side-by-side pattern grid in tests/pattern-layout-ui.test.tsx
 
 ### Implementation for User Story 1
 
-- [ ] T004 [US1] Refactor SearchBar pattern rows into a unified side-by-side grid in src/components/search/SearchBar.tsx
+- [X] T004 [US1] Refactor SearchBar pattern rows into a unified side-by-side grid in src/components/search/SearchBar.tsx
 
 **Checkpoint**: At this point, User Story 1 is fully functional and delivers a compact side-by-side pattern layout.
 
@@ -61,11 +61,11 @@
 
 ### Tests for User Story 2
 
-- [ ] T005 [P] [US2] Add test cases for independent pattern clearing and history dropdown exclusivity in tests/pattern-layout-ui.test.tsx
+- [X] T005 [P] [US2] Add test cases for independent pattern clearing and history dropdown exclusivity in tests/pattern-layout-ui.test.tsx
 
 ### Implementation for User Story 2
 
-- [ ] T006 [US2] Ensure dropdown overlay positioning and z-index layering in src/components/search/SearchBar.tsx
+- [X] T006 [US2] Ensure dropdown overlay positioning and z-index layering in src/components/search/SearchBar.tsx
 
 **Checkpoint**: User Stories 1 and 2 are functional; history dropdowns and clear buttons operate without conflict.
 
@@ -79,8 +79,8 @@
 
 ### Implementation for User Story 3
 
-- [ ] T007 [P] [US3] Update standalone HTML prototype in design/mainui/index.html with side-by-side pattern row
-- [ ] T008 [P] [US3] Add automated layout check for design/mainui/index.html in tests/pattern-layout-ui.test.tsx
+- [X] T007 [P] [US3] Update standalone HTML prototype in design/mainui/index.html with side-by-side pattern row
+- [X] T008 [P] [US3] Add automated layout check for design/mainui/index.html in tests/pattern-layout-ui.test.tsx
 
 **Checkpoint**: All user stories functional, responsive fallback active, and UI prototype fully synchronized.
 
@@ -90,9 +90,9 @@
 
 **Purpose**: Verification across all automated quality gates and project constitution compliance.
 
-- [ ] T009 [P] Execute frontend test suite and build validation via npm test and npm run build
-- [ ] T010 [P] Execute Rust workspace test suite and clippy linting via cargo test --workspace and cargo clippy --workspace --all-targets -- -D warnings
-- [ ] T011 Perform manual verification of scenarios in specs/038-horizontal-pattern-inputs/quickstart.md
+- [X] T009 [P] Execute frontend test suite and build validation via npm test and npm run build
+- [X] T010 [P] Execute Rust workspace test suite and clippy linting via cargo test --workspace and cargo clippy --workspace --all-targets -- -D warnings
+- [X] T011 Perform manual verification of scenarios in specs/038-horizontal-pattern-inputs/quickstart.md
 
 ---
 

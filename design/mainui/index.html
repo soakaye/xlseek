@@ -188,9 +188,9 @@
           </div>
         </div>
 
-        <!-- 中段: ファイル検索パターン指定 (検索ディレクトリと無視パターンの間) -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
-          <div id="filePatternControl" class="lg:col-span-12 relative">
+        <!-- 中段: ファイル検索パターン & 無視パターン指定 (横並び) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
+          <div id="filePatternControl" class="relative">
             <div class="flex items-center gap-2">
               <span class="text-zinc-400 text-xs font-medium flex items-center gap-1.5 flex-shrink-0 select-none">
                 <i data-lucide="file-text" class="w-3.5 h-3.5 text-zinc-400"></i>
@@ -219,11 +219,8 @@
               </div>
             </div>
           </div>
-        </div>
 
-        <!-- 中段: 無視パターン指定 (ファイル検索パターン直下) -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
-          <div id="ignorePatternControl" class="lg:col-span-12 relative">
+          <div id="ignorePatternControl" class="relative">
             <div class="flex items-center gap-2">
               <span class="text-zinc-400 text-xs font-medium flex items-center gap-1.5 flex-shrink-0 select-none">
                 <i data-lucide="filter" class="w-3.5 h-3.5 text-zinc-400"></i>

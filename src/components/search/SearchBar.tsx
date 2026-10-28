@@ -708,12 +708,13 @@ export const SearchBar: React.FC<SearchBarProps> = ({
           </div>
         </div>
 
-        {/* Row 2: File Search Patterns row between Directory and Ignore Patterns */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
+        {/* Row 2: File Search Patterns & Ignore Patterns (Side-by-side row) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-center">
+          {/* Column 1: File Search Patterns */}
           <div
             ref={filePatternInputRef}
             onBlur={(event) => handleFieldBlur(event, "file-pattern-history")}
-            className="lg:col-span-12 relative"
+            className="relative"
           >
             <div className="flex items-center gap-2">
               <span className="text-zinc-400 text-xs font-medium flex items-center gap-1.5 flex-shrink-0 select-none">
@@ -786,14 +787,12 @@ export const SearchBar: React.FC<SearchBarProps> = ({
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Row 3: Ignore Patterns row directly beneath file search patterns */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 items-center">
+          {/* Column 2: Ignore Patterns */}
           <div
             ref={ignoreInputRef}
             onBlur={(event) => handleFieldBlur(event, "ignore-history")}
-            className="lg:col-span-12 relative"
+            className="relative"
           >
             <div className="flex items-center gap-2">
               <span className="text-zinc-400 text-xs font-medium flex items-center gap-1.5 flex-shrink-0 select-none">
