@@ -385,15 +385,21 @@ mod tests {
     const TEST_DIRECTORY_COUNT: usize = 12;
     const EXPECTED_COMPLETION_COUNT: usize = 10;
 
-    /// Description: Creates a test-only temporary directory to verify path behavior on real filesystem.
-    /// Arguments/Returns: None. Returns created temporary PathBuf.
+    static TEST_COUNTER: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+    /// Description: Creates an isolated, test-only temporary directory to verify path behavior on real filesystem.
+    /// Arguments/Returns: None. Returns created temporary PathBuf with process ID and atomic counter suffix.
     /// Errors: Panics if temporary directory creation fails.
     fn temp_dir() -> PathBuf {
+        let count = TEST_COUNTER.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
         let unique = SystemTime::now()
             .duration_since(UNIX_EPOCH)
             .expect("system time should be after the Unix epoch")
             .as_nanos();
-        let path = std::env::temp_dir().join(format!("xlseek-path-tests-{unique}"));
+        let path = std::env::temp_dir().join(format!(
+            "xlseek-path-tests-{}-{unique}-{count}",
+            std::process::id()
+        ));
         let _ = fs::remove_dir_all(&path);
         fs::create_dir_all(&path).expect("temporary directory should be created");
         path

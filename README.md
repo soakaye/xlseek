@@ -20,10 +20,16 @@
   - **Excel Workbooks**: Recursively searches `.xlsx`, `.xlsm`, `.xlsb`, and `.xls` files within designated directories.
   - **Word Documents**: Optional support for `.docx`, `.docm`, and `.doc` files (opt-in via Settings). When enabled, Word extension toggles appear directly on the search bar.
 - **Multiple Target Paths**: Specify multiple search paths separated by commas. Paths containing commas or spaces can be enclosed in double quotes (e.g. `"/Volumes/Data, 2026", "C:\My Reports"`).
+- **File Search Patterns (Inclusion Glob)**:
+  - Narrow down candidate files with comma-separated inclusion glob patterns (e.g. `*budget*, quarterly_report*`).
+  - Automatic extension complement: patterns entered without an explicit extension automatically match all currently enabled document extensions (e.g. `budget` complements to `budget.xlsx`, `budget.xlsm`, etc.). Explicit extensions (e.g. `*.xls`) match even if that extension toggle is turned off.
+  - Pattern history dropdown autocompletion and configurable default patterns in Settings.
 - **Ignore File Patterns (.gitignore Syntax)**:
   - Exclude temporary office locks, backup files, or unwanted subdirectories using standard `.gitignore` glob patterns (comma-separated, e.g. `~$*, *.tmp, backup/`).
   - Pre-populated with `~$*` by default to skip Microsoft Office temporary lock files.
   - Full pattern history with dropdown selection, customizable baseline defaults in Settings, and instant directory skipping for matching folders.
+- **Side-by-Side Pattern Filtering**:
+  - File search patterns (inclusion) and ignore patterns (exclusion) are aligned horizontally side-by-side in a responsive 2-column grid, matching sequential evaluation order (inclusion applied first, then exclusion) and saving vertical screen space.
 - **Flexible Search Options**:
   - Case-sensitive / Case-insensitive matching.
   - Regular expression (regex) search.
@@ -293,7 +299,7 @@ Desktop Settings lets you choose Sequential or Burst directory discovery. Sequen
 
 #### Tools Provided
 
-- `xlseek_search`: High-speed cross-document search across Excel (`.xlsx`, `.xlsm`, `.xls`, `.xlsb`) and Word (`.docx`, `.doc`) files. Returns matching cells, formulas, comments, and drawing shape text.
+- `xlseek_search`: High-speed cross-document search across Excel (`.xlsx`, `.xlsm`, `.xls`, `.xlsb`) and Word (`.docx`, `.doc`) files. Returns matching cells, formulas, comments, and drawing shape text. Supports regular expressions, case sensitivity, target filters, inclusion file patterns (`file_patterns`), and exclusion patterns (`ignore_patterns`).
 - `xlseek_list_sheets`: List all worksheet names contained within a specific Excel workbook.
 - `xlseek_preview_sheet`: Preview rows and columns of an Excel worksheet formatted as a clean Markdown table with row and column headers.
 

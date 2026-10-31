@@ -8,7 +8,7 @@ Standalone Model Context Protocol (MCP) server for Excel Seek (`xlseek`).
 
 ## Exposed Tools
 
-1. **`xlseek_search`**: Cross-document search across Excel (`.xlsx`, `.xlsm`, `.xls`, `.xlsb`) and Word (`.docx`, `.doc`) files. Searches cell values, formulas, comments, and drawing shape text with support for regular expressions, case sensitivity, target filters, and exclusion patterns.
+1. **`xlseek_search`**: Cross-document search across Excel (`.xlsx`, `.xlsm`, `.xls`, `.xlsb`) and Word (`.docx`, `.doc`) files. Searches cell values, formulas, comments, and drawing shape text with support for regular expressions, case sensitivity, target filters, inclusion file patterns (`file_patterns`), and exclusion patterns (`ignore_patterns`).
 2. **`xlseek_list_sheets`**: Lists all worksheet names within a specified workbook file.
 3. **`xlseek_preview_sheet`**: Extracts a window of cells from a specified worksheet and formats them as a clean Markdown table with row and column headers.
 

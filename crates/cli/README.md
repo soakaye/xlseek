@@ -71,6 +71,9 @@ xlseek-cli [OPTIONS] [QUERY] [PATH]...
 ./target/release/xlseek-cli -p "./reports, ./archive" -q "Revenue" \
   -i "~$*, *.tmp, backup/*" -f csv -o ./results.csv -l en
 
+# Target specific file names using inclusion glob patterns (e.g. *budget*, *quarterly*)
+./target/release/xlseek-cli -p ./reports -q "Revenue" -g "*budget*, *quarterly*"
+
 # Run Burst parallel traversal with 8 directory workers
 ./target/release/xlseek-cli "Revenue" ./large_archive --burst-workers 8
 ```

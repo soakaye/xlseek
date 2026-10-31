@@ -12,7 +12,7 @@ Used by both the Tauri desktop application (`src-tauri`) and the standalone CLI 
 | Module | Location | Description |
 | :--- | :--- | :--- |
 | **`models`** | `src/models/` | Domain structs and enums (`SearchQuery`, `SearchResult`, `CellPosition`, `ExportFormat`, `DirectorySearchMode`, etc.) |
-| **`search`** | `src/search/` | Core search engine (`engine.rs`), Excel parsing (`excel/`), Word document parsing (`word/`), shape text extraction, and cell preview extraction |
+| **`search`** | `src/search/` | Core search engine (`engine.rs`), inclusion and ignore pattern filtering (`pattern.rs`), Excel parsing (`excel/`), Word document parsing (`word/`), shape text extraction, and cell preview extraction |
 | **`export`** | `src/export/` | Formatted export generators for CSV (`csv_export.rs`) and Excel (`xlsx_export.rs`) with atomic temp-file safety |
 | **`constants`** | `src/constants.rs` | Centralized constants (field keys, default limits, regex limits, error messages) |
 | **`i18n`** | `src/i18n.rs` | Embedded YAML translation catalog management (`locales/ja.yml`, `locales/en.yml`) |
@@ -33,11 +33,13 @@ Used by both the Tauri desktop application (`src-tauri`) and the standalone CLI 
 
 ---
 
-## Directory Traversal & Ignore Filtering
+## Directory Traversal & Pattern Filtering
 
 - **Sequential Mode**: Depth-first directory traversal (default).
 - **Burst Mode**: Concurrently traverses subdirectories using bounded worker threads (auto or 2..32 workers) via `rayon`.
-- **Ignore Pattern Matching**: Matches paths and directory names against standard `.gitignore` glob patterns via the `ignore` / `globset` crates. Matching directories are skipped immediately during traversal.
+- **File Search Patterns (Inclusion)**: Filters candidate files using inclusion glob patterns with automatic extension complement for enabled document types.
+- **Ignore Pattern Matching (Exclusion)**: Matches paths and directory names against standard `.gitignore` glob patterns via the `ignore` / `globset` crates. Matching directories are skipped immediately during traversal.
+- **Evaluation Order**: Candidate files are filtered sequentially—inclusion search patterns are evaluated first, followed by ignore exclusion patterns.
 
 ---
 
